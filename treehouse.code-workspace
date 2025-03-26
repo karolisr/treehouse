@@ -1,0 +1,36 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "editor.rulers": [
+            100,
+        ],
+        "launch": {
+            "configurations": [],
+            "compounds": []
+        },
+        "rust-analyzer.completion.hideDeprecated": true,
+        "emeraldwalk.runonsave": {
+            "autoClearConsole": true,
+            "commands": [
+                {
+                    "match": ".*/(examples|tree)/(node|newick).*\\.rs$",
+                    "cmd": "echo && cd . &>/dev/null || cd . && cargo run --quiet --example newick && echo"
+                },
+                {
+                    "match": ".*/(examples|tree)/(playground).*\\.rs$",
+                    "cmd": "echo && cd . &>/dev/null || cd . && cargo run --quiet --example playground && echo"
+                }
+            ]
+        },
+        "editor.wordWrap": "off",
+        "editor.formatOnPaste": true,
+        "editor.minimap.autohide": true
+    },
+    "extensions": {
+        "recommendations": []
+    }
+}

@@ -1,0 +1,224 @@
+[package]
+name = "treehouse"
+version = "0.1.0"
+edition = "2024"
+authors = ["Karolis Ramanauskas"]
+license = "GNU General Public License v3.0"
+repository = "https://github.com/karolisr/treehouse"
+
+[profile.dev.build-override]
+
+[lib]
+name = "treehouse"
+crate-type = ["lib"]
+
+# cargo-bundle ------------------------
+# https://github.com/burtonageo/cargo-bundle/tree/master
+
+# [package.metadata.bundle]
+# name = "TreeHouse"
+# identifier = "is.karol.treehouse"
+
+[package.metadata.bundle.bin.treehouse]
+name = "TreeHouse"
+identifier = "is.karol.treehouse"
+
+# The icons used for your application. This should be an array of file paths or globs
+# (with images in various sizes/formats); cargo-bundle will automatically convert between
+# image formats as necessary for different platforms. Supported formats include ICNS, ICO, PNG,
+# and anything else that can be decoded by the image crate. Icons intended for high-resolution
+# (e.g. Retina) displays should have a filename with @2x just before the extension.
+# e.g.: icon = ["32x32.png", "128x128.png", "128x128@2x.png"]
+icon = ["resources/icons/treehouse*.png", "resources/icons/treehouse*.icns"]
+# resources = ["./resources/macos/Info.plist", "./resources/macos/*.icns"]
+copyright = "Copyright (c) Karolis Ramanauskas 2025. All rights reserved."
+category = "public.app-category.utilities"
+short_description = "Short description."
+long_description = """Long description."""
+osx_frameworks = []
+osx_url_schemes = ["is.karol.treehouse"]
+# osx_minimum_system_version = "10.11"
+linux_mime_types = []
+# linux_exec_args = []
+linux_use_terminal = false
+deb_depends = []
+# -------------------------------------
+
+# See more keys and their definitions at:
+#   https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# Code generation options
+#   https://doc.rust-lang.org/rustc/codegen-options/index.html
+
+[profile.dev]
+debug-assertions = true
+incremental = true      # Compile your binary in smaller steps.
+codegen-units = 6       # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
+lto = false             # Enables link-time-optimizations. Use false for faster compile time.
+opt-level = 3           # "s" prioritizes small binary size. Use 3 for faster compile time.
+panic = "abort"         # Higher performance by disabling panic handlers.
+strip = false           # Ensures debug symbols are removed.
+debug = true
+overflow-checks = true
+rpath = false
+
+# Defaults ---------------
+# debug-assertions = true
+# incremental = true
+# codegen-units = 256
+# lto = false
+# opt-level = 1
+# panic = "unwind"
+# strip = false
+# debug = true
+# overflow-checks = true
+# rpath = false
+# -----------------------
+
+[profile.release]
+debug-assertions = false
+incremental = true       # Compile your binary in smaller steps.
+codegen-units = 1        # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
+lto = true               # Enables link-time-optimizations. Use false for faster compile time.
+opt-level = "s"          # "s" prioritizes small binary size. Use 3 for faster compile time.
+panic = "abort"          # Higher performance by disabling panic handlers.
+strip = true             # Ensures debug symbols are removed.
+debug = false
+overflow-checks = false
+rpath = false
+
+# Defaults ---------------
+# debug-assertions = false
+# incremental = false
+# codegen-units = 16
+# lto = false
+# opt-level = 3
+# panic = "unwind"
+# strip = "none"
+# debug = false
+# overflow-checks = false
+# rpath = false
+# -----------------------
+
+[dependencies]
+objc2 = "0.6.0"
+objc2-app-kit = "0.3.0"
+objc2-foundation = "0.3.0"
+
+[dependencies.iced]
+# version = "0.14.0-dev"
+# git = "https://github.com/karolisr/iced.git"
+path = "submodules/iced"
+default-features = false
+features = [
+    ### Enables the "canvas" widget
+    "canvas",
+    ### Enables the "wgpu" GPU-accelerated renderer backend
+    "wgpu",
+    ### Enables "tokio" as the "executor::Default" on native platforms
+    "tokio",
+    ### Enables the advanced module
+    "advanced",
+    ### Enables a debug view in native platforms (press F12)
+    # "debug",
+    ### Redraws on every runtime event, and not only when a widget requests it
+    # "unconditional-rendering",
+    ### Enables the "tiny-skia" software renderer backend
+    # "tiny-skia",
+    ### Auto-detects light/dark mode for the built-in theme
+    # "auto-detect-theme",
+    ### Enables querying system information
+    # "system",
+    ### Enables the "image" widget, without any built-in codecs of the "image" crate
+    # "image-without-codecs",
+    ### Enables the "qr_code" widget
+    # "qr_code",
+    ### Enables the "markdown" widget
+    # "markdown",
+    ### Enables lazy widgets
+    # "lazy",
+    ### Enables "async-std" as the "executor::Default" on native platforms
+    # "async-std",
+    ### Enables "smol" as the "executor::Default" on native platforms
+    # "smol",
+    ### Enables broken "sRGB linear" blending to reproduce color management of the Web
+    # "web-colors",
+    ### Enables the WebGL backend
+    # "webgl",
+    ### Enables syntax highligthing
+    # "highlighter",
+    ### Embeds Fira Sans into the final application; useful for testing and Wasm builds
+    # "fira-sans",
+    ### Enables strict assertions for debugging purposes at the expense of performance
+    # "strict-assertions",
+    ### Enables the "image" widget
+    # "image",
+    ### Enables the "svg" widget
+    # "svg",
+]
+
+[dependencies.iced_core]
+# version = "0.14.0-dev"
+# git = "https://github.com/karolisr/iced.git"
+path = "submodules/iced/core"
+default-features = false
+features = ["advanced"]
+
+[dependencies.iced_widget]
+# version = "0.14.0-dev"
+# git = "https://github.com/karolisr/iced.git"
+path = "submodules/iced/widget"
+default-features = false
+features = ["advanced"]
+
+[dependencies.iced_graphics]
+# version = "0.14.0-dev"
+# git = "https://github.com/karolisr/iced.git"
+path = "submodules/iced/graphics"
+default-features = false
+features = []
+
+[dependencies.iced_renderer]
+# version = "0.14.0-dev"
+# git = "https://github.com/karolisr/iced.git"
+path = "submodules/iced/renderer"
+default-features = false
+features = []
+
+[dependencies.iced_runtime]
+# version = "0.14.0-dev"
+# git = "https://github.com/karolisr/iced.git"
+path = "submodules/iced/runtime"
+default-features = false
+features = []
+
+[dependencies.muda]
+# version = "0.16.1"
+# git = "https://github.com/karolisr/muda.git"
+path = "submodules/muda"
+default-features = false
+features = [
+    # "common-controls-v6",
+    # "libxdo",
+    # "serde",
+]
+
+[dependencies.tokio]
+version = "1.44.1"
+default-features = false
+features = [
+    "fs",
+    "rt",
+]
+
+[dependencies.rfd]
+version = "0.15.3"
+default-features = false
+features = [
+    ### Uses GTK for dialogs on Linux & BSDs; has no effect on Windows and macOS
+    # "gtk3",
+    ### Uses XDG Desktop Portal instead of GTK on Linux & BSDs
+    # "xdg-portal",
+    ### Use TaskDialogIndirect API from ComCtl32.dll v6 for showing message dialog. This is necessary if you need to customize dialog button texts
+    # "common-controls-v6",
+]
