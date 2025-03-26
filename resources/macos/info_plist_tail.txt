@@ -1,0 +1,33 @@
+  <key>CFBundleDocumentTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleTypeName</key>
+      <string>NEWICK Tree File</string>
+      <key>CFBundleTypeRole</key>
+      <string>Editor</string>
+      <key>CFBundleTypeIconFile</key>
+      <string>newick.icns</string>
+      <key>CFBundleTypeExtensions</key>
+      <array>
+        <string>newick</string>
+        <string>tre</string>
+      </array>
+  </dict>
+  <dict>
+      <key>CFBundleTypeName</key>
+      <string>NEXUS File</string>
+      <key>CFBundleTypeRole</key>
+      <string>Editor</string>
+      <key>CFBundleTypeIconFile</key>
+      <string>nexus.icns</string>
+      <key>CFBundleTypeExtensions</key>
+      <array>
+        <string>tree</string>
+        <string>trees</string>
+        <string>nex</string>
+        <string>nexus</string>
+      </array>
+    </dict>
+  </array>
+</dict>
+</plist>

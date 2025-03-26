@@ -3,46 +3,42 @@ name = "treehouse"
 version = "0.1.0"
 edition = "2024"
 authors = ["Karolis Ramanauskas"]
-license = "GNU General Public License v3.0"
 repository = "https://github.com/karolisr/treehouse"
+readme = "README.md"
+license-file = "LICENSE"
 
-[profile.dev.build-override]
+categories = [
+    "science::bioinformatics",
+    "science::bioinformatics::sequence-analysis",
+    "visualization",
+    "gui",
+]
+
+autobins = true
+autoexamples = false
+autotests = false
+autobenches = false
 
 [lib]
 name = "treehouse"
-crate-type = ["lib"]
+crate-type = ["rlib"]
 
-# cargo-bundle ------------------------
-# https://github.com/burtonageo/cargo-bundle/tree/master
-
-# [package.metadata.bundle]
-# name = "TreeHouse"
-# identifier = "is.karol.treehouse"
-
-[package.metadata.bundle.bin.treehouse]
+# cargo-bundle (https://github.com/burtonageo/cargo-bundle) --------------
+[package.metadata.bundle]
 name = "TreeHouse"
 identifier = "is.karol.treehouse"
-
-# The icons used for your application. This should be an array of file paths or globs
-# (with images in various sizes/formats); cargo-bundle will automatically convert between
-# image formats as necessary for different platforms. Supported formats include ICNS, ICO, PNG,
-# and anything else that can be decoded by the image crate. Icons intended for high-resolution
-# (e.g. Retina) displays should have a filename with @2x just before the extension.
-# e.g.: icon = ["32x32.png", "128x128.png", "128x128@2x.png"]
-icon = ["resources/icons/treehouse*.png", "resources/icons/treehouse*.icns"]
-# resources = ["./resources/macos/Info.plist", "./resources/macos/*.icns"]
+icon = ["resources/icons/treehouse*.icns"]
 copyright = "Copyright (c) Karolis Ramanauskas 2025. All rights reserved."
 category = "public.app-category.utilities"
 short_description = "Short description."
 long_description = """Long description."""
 osx_frameworks = []
 osx_url_schemes = ["is.karol.treehouse"]
-# osx_minimum_system_version = "10.11"
 linux_mime_types = []
 # linux_exec_args = []
 linux_use_terminal = false
 deb_depends = []
-# -------------------------------------
+# ------------------------------------------------------------------------
 
 # See more keys and their definitions at:
 #   https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -107,8 +103,8 @@ objc2-foundation = "0.3.0"
 
 [dependencies.iced]
 # version = "0.14.0-dev"
-# git = "https://github.com/karolisr/iced.git"
-path = "submodules/iced"
+git = "https://github.com/karolisr/iced.git"
+# path = "submodules/iced"
 default-features = false
 features = [
     ### Enables the "canvas" widget
@@ -157,45 +153,10 @@ features = [
     # "svg",
 ]
 
-[dependencies.iced_core]
-# version = "0.14.0-dev"
-# git = "https://github.com/karolisr/iced.git"
-path = "submodules/iced/core"
-default-features = false
-features = ["advanced"]
-
-[dependencies.iced_widget]
-# version = "0.14.0-dev"
-# git = "https://github.com/karolisr/iced.git"
-path = "submodules/iced/widget"
-default-features = false
-features = ["advanced"]
-
-[dependencies.iced_graphics]
-# version = "0.14.0-dev"
-# git = "https://github.com/karolisr/iced.git"
-path = "submodules/iced/graphics"
-default-features = false
-features = []
-
-[dependencies.iced_renderer]
-# version = "0.14.0-dev"
-# git = "https://github.com/karolisr/iced.git"
-path = "submodules/iced/renderer"
-default-features = false
-features = []
-
-[dependencies.iced_runtime]
-# version = "0.14.0-dev"
-# git = "https://github.com/karolisr/iced.git"
-path = "submodules/iced/runtime"
-default-features = false
-features = []
-
 [dependencies.muda]
 # version = "0.16.1"
-# git = "https://github.com/karolisr/muda.git"
-path = "submodules/muda"
+git = "https://github.com/karolisr/muda.git"
+# path = "submodules/muda"
 default-features = false
 features = [
     # "common-controls-v6",

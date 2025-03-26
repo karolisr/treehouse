@@ -1,6 +1,0 @@
-[submodule "submodules/muda"]
-	path = submodules/muda
-	url = git@github.com:karolisr/muda.git
-[submodule "submodules/iced"]
-	path = submodules/iced
-	url = git@github.com:karolisr/iced.git

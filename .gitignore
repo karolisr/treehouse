@@ -1,4 +1,5 @@
-/target
+/target*
 *.psd
 examples/test*
 submodules/*
+.DS_Store

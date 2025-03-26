@@ -1,19 +1,25 @@
-use iced_core::{
-    Clipboard, Element, Length, Rectangle, Shell, Size, Theme as ThemeCore, Vector, Widget,
-    event::{Event, Status as EventStatus},
-    layout::{self, Layout, Limits, Node as LayoutNode},
-    mouse::{Cursor, Interaction},
-    renderer::Style,
-    widget::tree::{State as WidgetTreeState, Tag as WidgetTreeTag, Tree as WidgetTree},
-    window::{Event as WindowEvent, RedrawRequest},
-};
-use iced_graphics::geometry::Renderer as GeometryRenderer;
-use iced_renderer::Renderer as RendererRenderer;
-use iced_widget::canvas::Program;
 use std::marker::PhantomData;
 
+use iced::{
+    Element, Length, Rectangle, Renderer as RendererRenderer, Size, Theme as IcedTheme, Vector,
+    advanced::{
+        Clipboard, Shell,
+        graphics::geometry::Renderer as GeometryRenderer,
+        layout::{self, Layout, Limits, Node as LayoutNode},
+        renderer::Style,
+        widget::{
+            Widget,
+            tree::{State as WidgetTreeState, Tag as WidgetTreeTag, Tree as WidgetTree},
+        },
+    },
+    event::{Event, Status as EventStatus},
+    mouse::{Cursor, Interaction},
+    widget::canvas::Program,
+    window::{Event as WindowEvent, RedrawRequest},
+};
+
 #[derive(Debug)]
-pub struct Canvas<P, Message, Theme = ThemeCore, Renderer = RendererRenderer>
+pub struct Canvas<P, Message, Theme = IcedTheme, Renderer = RendererRenderer>
 where
     Renderer: GeometryRenderer,
     P: Program<Message, Theme, Renderer>,
