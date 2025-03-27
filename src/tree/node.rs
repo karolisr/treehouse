@@ -297,7 +297,7 @@ pub fn parse_name<'a>(name: impl Into<&'a str>) -> (Option<String>, Option<Float
 
     let name = match name.trim_matches(['\'', '"']) {
         "" => None,
-        x => Some(x.to_string()),
+        x => Some(x.replace("_", " ").replace("|", " ").to_string()),
     };
 
     (name, brln)
