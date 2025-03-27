@@ -1,5 +1,5 @@
 // #[cfg(not(debug_assertions))]
-use crate::{SimpleColor, Tree, TreeView, window_settings};
+use crate::{SimpleColor, Tree, TreeView1, window_settings};
 use iced::{
     Color, Padding, Pixels, Point, Rectangle, Size,
     alignment::Vertical,
@@ -8,7 +8,7 @@ use iced::{
 };
 
 #[derive(Debug)]
-pub struct TreeViewState {
+pub struct TreeView1State {
     // pub(super) tip_count: usize,
     // tree_height: f32,
     pub(super) scale_factor_x: f32,
@@ -36,7 +36,7 @@ pub struct TreeViewState {
 // #[cfg(debug_assertions)]
 // static mut COUNTER: usize = 0;
 
-impl Default for TreeViewState {
+impl Default for TreeView1State {
     fn default() -> Self {
         Self {
             label_width: 1.5e2,
@@ -65,8 +65,8 @@ impl Default for TreeViewState {
     }
 }
 
-impl TreeViewState {
-    pub(super) fn cache_tree_state(&mut self, tree_view: &TreeView, bounds: &Rectangle) {
+impl TreeView1State {
+    pub(super) fn cache_tree_state(&mut self, tree_view: &TreeView1, bounds: &Rectangle) {
         let offset: f32 = 1e1;
         // self.bounds_global = bounds.shrink(Padding::new(0e0));
         self.bounds_global = Rectangle::new(

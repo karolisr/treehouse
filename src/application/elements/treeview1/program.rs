@@ -1,13 +1,13 @@
 // #[cfg(not(debug_assertions))]
-use super::{TreeView, TreeViewMsg, TreeViewState};
+use super::{TreeView1, TreeView1Msg, TreeView1State};
 use iced::{
     Event, Rectangle, Renderer, Theme,
     mouse::{Cursor, Interaction},
     widget::canvas::{Action, Geometry, Program},
 };
 
-impl Program<TreeViewMsg> for TreeView {
-    type State = TreeViewState;
+impl Program<TreeView1Msg> for TreeView1 {
+    type State = TreeView1State;
 
     fn draw(
         &self,
@@ -102,7 +102,7 @@ impl Program<TreeViewMsg> for TreeView {
         event: &Event,
         bounds: Rectangle,
         cursor: Cursor,
-    ) -> Option<Action<TreeViewMsg>> {
+    ) -> Option<Action<TreeView1Msg>> {
         match event {
             Event::Mouse(e) => match e {
                 iced::mouse::Event::CursorMoved { position } => {
@@ -181,7 +181,7 @@ impl Program<TreeViewMsg> for TreeView {
                 // iced::window::Event::Moved(_point) => None,
                 iced::window::Event::Resized(size) => {
                     state.height_win = size.height;
-                    Some(Action::publish(TreeViewMsg::WindowHeightChanged(
+                    Some(Action::publish(TreeView1Msg::WindowHeightChanged(
                         state.height_win,
                     )))
                 }
@@ -193,7 +193,7 @@ impl Program<TreeViewMsg> for TreeView {
 
                     if state.height != state.height_prev {
                         state.height_prev = state.height;
-                        return Some(Action::publish(TreeViewMsg::CanvasHeightChanged(
+                        return Some(Action::publish(TreeView1Msg::CanvasHeightChanged(
                             state.height,
                         )));
                     }

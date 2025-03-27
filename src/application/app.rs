@@ -1,8 +1,9 @@
 #[cfg(target_os = "macos")]
 use super::macos::register_ns_application_delegate_handlers;
+use super::windows::{AppWin, Win1, Win1Msg, Win2, Win2Msg};
 use crate::{
-    AppWin, MainWin, MainWinMsg, MenuEvent, MenuEventReplyMsg, Tree, TreeView, TreeViewMsg,
-    menu_events, parse_newick, prepare_app_menu, window_settings,
+    MenuEvent, MenuEventReplyMsg, Tree, menu_events, parse_newick, prepare_app_menu,
+    window_settings,
 };
 use iced::Element;
 use iced::Subscription;
@@ -14,17 +15,14 @@ use iced::window::Event as WindowEvent;
 use iced::window::Id as WinId;
 use iced::window::close as close_window;
 use iced::window::gain_focus;
-use iced::window::open as open_window;
+use iced::window::open;
 use iced::window::{close_events, close_requests, events, open_events};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tokio::runtime::Runtime as TokioRt;
-// use iced::event::Event as RuntimeEvent;
-// use iced::event::{Status as EventStatus, listen, listen_raw, listen_url};
 
 #[derive(Default)]
 pub struct App {
-    main_win_id: Option<WinId>,
     windows: HashMap<WinId, AppWin>,
     menu_events_sender: Option<Sender<MenuEventReplyMsg>>,
     menu: Option<muda::Menu>,
@@ -33,21 +31,25 @@ pub struct App {
 #[derive(Debug, Clone)]
 pub enum AppMsg {
     AppInitialized,
-    MainWinMsg(MainWinMsg),
+    Win1Msg(Win1Msg),
+    Win2Msg(Win2Msg),
     MenuEvent(MenuEvent),
     MenuEventsSender(Sender<MenuEventReplyMsg>),
-    OpenMainWin,
+    OpenWin(Win),
     Path(PathBuf),
-    // RawEvent(RuntimeEvent, EventStatus, WinId),
-    // RuntimeEvent(RuntimeEvent),
     TerminateApp,
     TerminationConfirmed,
-    // Url(String),
     Win(WinId, WindowEvent),
     WinCloseRequested(WinId),
     WinClosed(WinId),
     WinOpened(WinId),
     Nada,
+}
+
+#[derive(Debug, Clone)]
+pub enum Win {
+    Win1,
+    Win2,
 }
 
 pub enum FileType {
@@ -66,7 +68,8 @@ pub enum ParsedData {
 impl App {
     pub fn view(&self, id: WinId) -> Element<AppMsg> {
         match &self.windows.get(&id) {
-            Some(AppWin::MainWin(x)) => x.view().map(AppMsg::MainWinMsg),
+            Some(AppWin::Win1(x)) => x.view().map(AppMsg::Win1Msg),
+            Some(AppWin::Win2(x)) => x.view().map(AppMsg::Win2Msg),
             None => widget::horizontal_space().into(),
         }
     }
@@ -74,56 +77,16 @@ impl App {
     pub fn update(&mut self, app_msg: AppMsg) -> Task<AppMsg> {
         match app_msg {
             AppMsg::Nada => Task::none(),
-            // AppMsg::RawEvent(e, _status, _id) => match e {
-            //     RuntimeEvent::Keyboard(_event) => Task::none(),
-            //     RuntimeEvent::Mouse(_event) => Task::none(),
-            //     RuntimeEvent::Window(event) => match event {
-            //         WindowEvent::Opened {
-            //             position: _,
-            //             size: _,
-            //         } => Task::none(),
-            //         WindowEvent::Closed => Task::none(),
-            //         WindowEvent::Moved(_point) => Task::none(),
-            //         WindowEvent::Resized(_size) => Task::none(),
-            //         WindowEvent::RedrawRequested(_instant) => Task::none(),
-            //         WindowEvent::CloseRequested => Task::none(),
-            //         WindowEvent::Focused => Task::none(),
-            //         WindowEvent::Unfocused => Task::none(),
-            //         WindowEvent::FileHovered(_path_buf) => Task::none(),
-            //         WindowEvent::FileDropped(_path_buf) => Task::none(),
-            //         WindowEvent::FilesHoveredLeft => Task::none(),
-            //         // _ => {
-            //         //     println!("{event:?} {status:?} {id:?}");
-            //         //     Task::none()
-            //         // }
-            //     },
-            //     RuntimeEvent::Touch(_event) => Task::none(),
-            //     RuntimeEvent::InputMethod(_event) => Task::none(),
-            //     // _ => {
-            //     //     println!("{e:?} {status:?} {id:?}");
-            //     //     Task::none()
-            //     // }
-            // },
-            // AppMsg::RuntimeEvent(_e) => {
-            //     // println!("{e:?}");
-            //     Task::none()
-            // }
-            // AppMsg::Url(_url) => {
-            //     // println!("{url}");
-            //     Task::none()
-            // }
+            AppMsg::AppInitialized => {
+                let menu = prepare_app_menu();
+                #[cfg(target_os = "macos")]
+                menu.init_for_nsapp();
+                self.menu = Some(menu);
+                Task::done(AppMsg::OpenWin(Win::Win1))
+            }
+            AppMsg::OpenWin(win) => open_window(self, win),
             AppMsg::Win(_id, e) => match e {
-                // WindowEvent::Opened { position: _, size: _, } => Task::none(),
-                // WindowEvent::Closed => Task::none(),
-                // WindowEvent::Moved(_point) => Task::none(),
-                // WindowEvent::Resized(_size) => Task::none(),
-                // WindowEvent::RedrawRequested(_instant) => Task::none(),
-                // WindowEvent::CloseRequested => Task::none(),
-                // WindowEvent::Focused => Task::none(),
-                // WindowEvent::Unfocused => Task::none(),
-                // WindowEvent::FileHovered(path_buf) => Task::none(),
                 WindowEvent::FileDropped(path_buf) => Task::done(AppMsg::Path(path_buf)),
-                // WindowEvent::FilesHoveredLeft => Task::none(),
                 _ => Task::none(),
             },
             AppMsg::Path(path_buf) => {
@@ -156,18 +119,26 @@ impl App {
 
                 match parsed_data {
                     ParsedData::Tree(tree) => match tree {
-                        Some(tree) => Task::done(AppMsg::MainWinMsg(MainWinMsg::TreeViewMsg(
-                            TreeViewMsg::TreeDataUpdated(tree),
-                        )))
-                        .chain(Task::done(AppMsg::MainWinMsg(MainWinMsg::SetTitle(
-                            String::from(
-                                path_buf
-                                    .file_name()
-                                    .unwrap_or_default()
-                                    .to_str()
-                                    .unwrap_or_default(),
-                            ),
-                        )))),
+                        Some(tree) => Task::done(AppMsg::Win1Msg(Win1Msg::TreeUpdated(tree)))
+                            .chain(Task::done(AppMsg::Win1Msg(Win1Msg::SetTitle(
+                                String::from(
+                                    path_buf
+                                        .file_name()
+                                        .unwrap_or_default()
+                                        .to_str()
+                                        .unwrap_or_default(),
+                                ),
+                            )))),
+                        // Some(tree) => Task::done(AppMsg::Win2Msg(Win2Msg::TreeUpdated(tree)))
+                        //     .chain(Task::done(AppMsg::Win2Msg(Win2Msg::SetTitle(
+                        //         String::from(
+                        //             path_buf
+                        //                 .file_name()
+                        //                 .unwrap_or_default()
+                        //                 .to_str()
+                        //                 .unwrap_or_default(),
+                        //         ),
+                        //     )))),
                         None => {
                             println!("ParsedData::Tree(None)");
                             Task::none()
@@ -201,31 +172,46 @@ impl App {
                 Ok(_) => Task::none(),
                 Err(_) => Task::done(AppMsg::TerminationConfirmed),
             },
-            AppMsg::AppInitialized => {
-                let menu = prepare_app_menu();
-                #[cfg(target_os = "macos")]
-                menu.init_for_nsapp();
-                self.menu = Some(menu);
-                Task::done(AppMsg::OpenMainWin)
-            }
-            AppMsg::OpenMainWin => open_main_window(self),
-            AppMsg::MainWinMsg(main_win_msg) => {
-                let app_task = match main_win_msg {
-                    MainWinMsg::OpenFile => Task::future(choose_file()),
+            AppMsg::Win1Msg(msg) => {
+                let app_task = match msg {
+                    Win1Msg::OpenFile => Task::future(choose_file()),
                     _ => Task::none(),
                 };
-                let main_win_task = match self.main_win_id {
-                    Some(id) => match self.windows.get_mut(&id) {
-                        Some(AppWin::MainWin(w)) => w.update(main_win_msg).map(AppMsg::MainWinMsg),
-                        None => Task::none(),
-                    },
-                    None => Task::none(),
+
+                let mut win_task: Task<AppMsg> = Task::none();
+                for w in self.windows.values_mut() {
+                    match w {
+                        AppWin::Win1(w) => {
+                            win_task = w.update(msg.clone()).map(AppMsg::Win1Msg);
+                            break;
+                        }
+                        _ => win_task = Task::none(),
+                    };
+                }
+                app_task.chain(win_task)
+            }
+            AppMsg::Win2Msg(msg) => {
+                let app_task = match msg {
+                    Win2Msg::OpenFile => Task::future(choose_file()),
+                    _ => Task::none(),
                 };
 
-                app_task.chain(main_win_task)
+                let mut win_task: Task<AppMsg> = Task::none();
+                for w in self.windows.values_mut() {
+                    match w {
+                        AppWin::Win2(w) => {
+                            win_task = w.update(msg.clone()).map(AppMsg::Win2Msg);
+                            break;
+                        }
+                        _ => win_task = Task::none(),
+                    };
+                }
+                app_task.chain(win_task)
             }
             AppMsg::WinOpened(id) => match self.windows.get(&id) {
-                Some(AppWin::MainWin(_)) => {
+                // Some(AppWin::Win1(_)) => Task::none(),
+                // Some(AppWin::Win2(_)) => Task::none(),
+                Some(_) => {
                     #[cfg(not(debug_assertions))]
                     {
                         Task::none()
@@ -238,7 +224,13 @@ impl App {
                 None => Task::none(),
             },
             AppMsg::WinCloseRequested(id) => match self.windows.get(&id) {
-                Some(AppWin::MainWin(_)) => {
+                Some(AppWin::Win1(_)) => {
+                    muda::MenuEvent::send(muda::MenuEvent {
+                        id: muda::MenuId(MenuEvent::QuitInternal.to_string()),
+                    });
+                    close_window(id)
+                }
+                Some(AppWin::Win2(_)) => {
                     muda::MenuEvent::send(muda::MenuEvent {
                         id: muda::MenuId(MenuEvent::QuitInternal.to_string()),
                     });
@@ -246,21 +238,18 @@ impl App {
                 }
                 None => Task::none(),
             },
-            AppMsg::WinClosed(id) => {
-                if self.main_win_id == Some(id) {
-                    self.main_win_id = None
-                };
-                match self.windows.remove(&id) {
-                    Some(AppWin::MainWin(_)) => Task::done(AppMsg::TerminateApp),
-                    None => Task::none(),
-                }
-            }
+            AppMsg::WinClosed(id) => match self.windows.remove(&id) {
+                Some(AppWin::Win1(_)) => Task::done(AppMsg::TerminateApp),
+                Some(AppWin::Win2(_)) => Task::done(AppMsg::TerminateApp),
+                None => Task::none(),
+            },
         }
     }
 
     pub fn title(&self, id: WinId) -> String {
         match self.windows.get(&id) {
-            Some(AppWin::MainWin(w)) => w.title(),
+            Some(AppWin::Win1(w)) => w.title(),
+            Some(AppWin::Win2(w)) => w.title(),
             None => format!("{id:?}"),
         }
     }
@@ -299,6 +288,7 @@ fn subscriptions() -> Subscription<AppMsg> {
     // let runtime_events = listen().map(AppMsg::RuntimeEvent);
     // let raw_events = listen_raw(|e, status, id| Some(AppMsg::RawEvent(e, status, id)));
     let menu_events = menu_events();
+
     Subscription::batch([
         open_events,
         close_requests,
@@ -311,31 +301,27 @@ fn subscriptions() -> Subscription<AppMsg> {
     ])
 }
 
-fn open_main_window(app: &mut App) -> Task<AppMsg> {
-    let (win_id, task) = open_window(window_settings());
-    let main_win = Box::new(MainWin {
-        tree_view: TreeView::new(),
-        ..Default::default()
-    });
-    let win: AppWin = AppWin::MainWin(main_win);
+fn open_window(app: &mut App, win: Win) -> Task<AppMsg> {
+    let (win_id, task) = open(window_settings());
+    let win: AppWin = match win {
+        Win::Win1 => AppWin::Win1(Box::new(Win1::new())),
+        Win::Win2 => AppWin::Win2(Box::new(Win2::new())),
+    };
     app.windows.insert(win_id, win);
-    app.main_win_id = Some(win_id);
     task.discard().chain(gain_focus(win_id))
 }
 
 fn close_last_window(app: &App) -> Task<AppMsg> {
-    {
-        let nwin = app.windows.len();
-        if nwin == 1 {
-            match app.windows.keys().last() {
-                Some(id) => Task::done(AppMsg::WinCloseRequested(*id)),
-                None => Task::none(),
-            }
-        } else if nwin == 0 {
-            Task::done(AppMsg::TerminateApp)
-        } else {
-            Task::none()
+    let nwin = app.windows.len();
+    if nwin == 1 {
+        match app.windows.keys().last() {
+            Some(id) => Task::done(AppMsg::WinCloseRequested(*id)),
+            None => Task::none(),
         }
+    } else if nwin == 0 {
+        Task::done(AppMsg::TerminateApp)
+    } else {
+        Task::none()
     }
 }
 
@@ -343,14 +329,8 @@ async fn choose_file() -> AppMsg {
     let chosen = rfd::AsyncFileDialog::new()
         .add_filter("newick", &["newick", "tre"])
         .add_filter("nexus", &["tree", "trees", "nex", "nexus"])
-        // .add_filter("tre", &["tre"])
-        // .add_filter("trees", &["trees"])
-        // .add_filter("text", &["txt"])
-        // .add_filter("fasta", &["fasta", "fsa", "mfa", "fa"])
-        // .set_directory("/")
         .pick_file()
         .await;
-
     AppMsg::Path(match chosen {
         Some(pb) => pb.path().into(),
         None => PathBuf::new(),

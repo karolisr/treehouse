@@ -1,10 +1,16 @@
-use iced::window::settings::PlatformSpecific;
-mod main;
+mod win1;
+mod win2;
+
 use iced::Size;
+use iced::window::settings::PlatformSpecific;
 use iced::window::{Level, Position, Settings};
-pub use main::{MainWin, MainWinMsg};
+
+pub use win1::{Win1, Win1Msg};
+pub use win2::{Win2, Win2Msg};
+
 pub enum AppWin {
-    MainWin(Box<MainWin>),
+    Win1(Box<Win1>),
+    Win2(Box<Win2>),
 }
 
 pub fn window_settings() -> Settings {
@@ -14,8 +20,8 @@ pub fn window_settings() -> Settings {
             height: 800.0,
         },
         min_size: Some(Size {
-            width: 500.0,
-            height: 300.0,
+            width: 100.0,
+            height: 100.0,
         }),
         // position: Position::Specific(Point { x: 10.0, y: 30.0 }),
         // position: Position::Default,

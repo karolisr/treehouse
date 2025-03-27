@@ -1,5 +1,6 @@
 // #[cfg(not(debug_assertions))]
-use crate::{Canvas, Tree, window_settings};
+use super::super::canvas::Canvas;
+use crate::{Tree, window_settings};
 use iced::{
     Element, Length, Task,
     alignment::{Horizontal, Vertical},
@@ -9,7 +10,7 @@ use iced::{
 };
 
 #[derive(Debug, Default)]
-pub struct TreeView {
+pub struct TreeView1 {
     pub(super) tree: Tree,
     tree_orig: Tree,
     pub(super) cache: Cache,
@@ -23,9 +24,9 @@ pub struct TreeView {
     node_count: usize,
 }
 #[derive(Debug, Clone)]
-pub enum TreeViewMsg {
+pub enum TreeView1Msg {
     CacheClearRequested,
-    TreeDataUpdated(Tree),
+    TreeUpdated(Tree),
     NodeSortOptionChanged(NodeSortOptions),
     CanvasHeightChanged(f32),
     WindowHeightChanged(f32),
@@ -50,7 +51,7 @@ impl std::fmt::Display for NodeSortOptions {
     }
 }
 
-impl TreeView {
+impl TreeView1 {
     const NODE_SORT_OPTIONS: [NodeSortOptions; 3] = [
         NodeSortOptions::Original,
         NodeSortOptions::Ascending,
@@ -75,25 +76,25 @@ impl TreeView {
         &self.tree
     }
 
-    pub fn update(&mut self, msg: TreeViewMsg) -> Task<TreeViewMsg> {
+    pub fn update(&mut self, msg: TreeView1Msg) -> Task<TreeView1Msg> {
         match msg {
-            TreeViewMsg::CacheClearRequested => {
+            TreeView1Msg::CacheClearRequested => {
                 self.cache.clear();
                 Task::none()
             }
-            TreeViewMsg::NodeSizeChanged(s) => {
+            TreeView1Msg::NodeSizeChanged(s) => {
                 self.node_size = s;
                 Task::none()
             }
-            TreeViewMsg::LabelSizeChanged(s) => {
+            TreeView1Msg::LabelSizeChanged(s) => {
                 self.lab_size = s;
-                Task::done(TreeViewMsg::CacheClearRequested)
+                Task::done(TreeView1Msg::CacheClearRequested)
             }
-            TreeViewMsg::CanvasHeightChanged(h) => {
+            TreeView1Msg::CanvasHeightChanged(h) => {
                 self.canvas_height = h;
-                Task::done(TreeViewMsg::CacheClearRequested)
+                Task::done(TreeView1Msg::CacheClearRequested)
             }
-            TreeViewMsg::WindowHeightChanged(h) => {
+            TreeView1Msg::WindowHeightChanged(h) => {
                 self.window_height = h - 2e1;
                 self.node_size = self.window_height / self.tip_count as f32;
                 if self.node_size < 4e0 {
@@ -103,7 +104,7 @@ impl TreeView {
                 }
                 Task::none()
             }
-            TreeViewMsg::TreeDataUpdated(tree) => {
+            TreeView1Msg::TreeUpdated(tree) => {
                 self.tree_orig = tree.clone();
                 self.tree = tree;
 
@@ -122,21 +123,21 @@ impl TreeView {
                 } else {
                     self.lab_size = self.node_size;
                 }
-                Task::done(TreeViewMsg::CacheClearRequested)
+                Task::done(TreeView1Msg::CacheClearRequested)
             }
-            TreeViewMsg::NodeSortOptionChanged(option) => {
+            TreeView1Msg::NodeSortOptionChanged(option) => {
                 match option {
                     NodeSortOptions::Original => self.tree = self.tree_orig.clone(),
                     NodeSortOptions::Ascending => self.tree.sort(false),
                     NodeSortOptions::Descending => self.tree.sort(true),
                 };
                 self.node_sort_selection = Some(option);
-                Task::done(TreeViewMsg::CacheClearRequested)
+                Task::done(TreeView1Msg::CacheClearRequested)
             }
         }
     }
 
-    pub fn view(&self) -> Element<TreeViewMsg> {
+    pub fn view(&self) -> Element<TreeView1Msg> {
         if self.tree.tip_count_all() > 0 {
             let cnv = Canvas::new(self)
                 .width(Length::Fill)
@@ -182,7 +183,7 @@ impl TreeView {
                         slider(
                             self.window_height / self.tip_count as f32..=1e1,
                             self.lab_size,
-                            TreeViewMsg::LabelSizeChanged
+                            TreeView1Msg::LabelSizeChanged
                         )
                         .height(text_size)
                     ]
@@ -195,7 +196,7 @@ impl TreeView {
                         slider(
                             self.window_height / self.tip_count as f32..=2e1,
                             self.node_size,
-                            TreeViewMsg::NodeSizeChanged
+                            TreeView1Msg::NodeSizeChanged
                         )
                         .height(text_size)
                     ]
@@ -208,7 +209,7 @@ impl TreeView {
                         pick_list(
                             Self::NODE_SORT_OPTIONS,
                             self.node_sort_selection,
-                            TreeViewMsg::NodeSortOptionChanged
+                            TreeView1Msg::NodeSortOptionChanged
                         )
                         .text_size(text_size)
                         .width(sidebar_width)
