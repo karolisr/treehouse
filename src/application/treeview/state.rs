@@ -18,7 +18,7 @@ pub struct TreeViewState {
     pub(super) bounds_tree: Rectangle,
     pub(super) bounds_tl_sep: Rectangle,
     pub(super) bounds_tip_labels: Rectangle,
-    tip_names: Vec<String>,
+    // tip_names: Vec<String>,
     pub(super) label_width: f32,
     pub(super) label_height: f32,
     pub(super) scale_factor_y_min: f32,
@@ -56,7 +56,7 @@ impl Default for TreeViewState {
             bounds_tree: Default::default(),
             bounds_tl_sep: Default::default(),
             bounds_tip_labels: Default::default(),
-            tip_names: Default::default(),
+            // tip_names: Default::default(),
             // tip_label_rects: Default::default(),
             dragging_tl_sep: Default::default(),
             drag_start_x: Default::default(),
@@ -66,12 +66,7 @@ impl Default for TreeViewState {
 }
 
 impl TreeViewState {
-    pub(super) fn cache_tree_state(
-        &mut self,
-        tree_view: &TreeView,
-        tree: &Tree,
-        bounds: &Rectangle,
-    ) {
+    pub(super) fn cache_tree_state(&mut self, tree_view: &TreeView, bounds: &Rectangle) {
         let offset: f32 = 1e1;
         // self.bounds_global = bounds.shrink(Padding::new(0e0));
         self.bounds_global = Rectangle::new(
@@ -105,11 +100,11 @@ impl TreeViewState {
         // self.scale_factor_y = self.bounds_tree.height / tree_view.tip_count as f32;
         self.scale_factor_y = self.scale_factor_y_min;
         self.height = offset * 2e0 + self.scale_factor_y * tree_view.tip_count as f32;
-        self.tip_names = tree
-            .tip_node_ids_all()
-            .iter()
-            .map(|&id| tree.name(id))
-            .collect();
+        // self.tip_names = tree
+        //     .tip_node_ids_all()
+        //     .iter()
+        //     .map(|&id| tree.name(id))
+        //     .collect();
     }
 
     fn child_heights(&self, node_id: usize, tree: &Tree) -> Vec<f32> {
@@ -318,8 +313,9 @@ impl TreeViewState {
         frame: &mut Frame,
         cursor: &Cursor,
         tip_label_rects: Vec<Rectangle>,
+        tip_names: Vec<String>,
     ) {
-        for (i, name) in self.tip_names.iter().enumerate() {
+        for (i, name) in tip_names.iter().enumerate() {
             // self.draw_tip_label(name, &self.tip_label_rects[i], frame, cursor);
             self.draw_tip_label(name, &tip_label_rects[i], frame, cursor);
         }

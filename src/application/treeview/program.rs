@@ -82,7 +82,14 @@ impl Program<TreeViewMsg> for TreeView {
                 tip_label_rects.push(label_bounds);
             } // ------------------------------------------------
 
-            state.draw_tip_labels(frame, &cursor, tip_label_rects);
+            let tip_names = self
+                .tree
+                .tip_node_ids_all()
+                .iter()
+                .map(|&id| self.tree.name(id))
+                .collect();
+
+            state.draw_tip_labels(frame, &cursor, tip_label_rects, tip_names);
             // println!("  END cache.draw");
         });
         // println!("  END draw");
@@ -182,7 +189,7 @@ impl Program<TreeViewMsg> for TreeView {
                 iced::window::Event::RedrawRequested(_instant) => {
                     state.label_height = self.lab_size;
                     state.scale_factor_y_min = self.node_size;
-                    state.cache_tree_state(self, &self.tree, &bounds);
+                    state.cache_tree_state(self, &bounds);
 
                     if state.height != state.height_prev {
                         state.height_prev = state.height;
