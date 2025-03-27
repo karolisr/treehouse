@@ -1,5 +1,5 @@
 // #[cfg(not(debug_assertions))]
-use crate::{SimpleColor, Tree, TreeView, main_win_settings};
+use crate::{SimpleColor, Tree, TreeView, window_settings};
 use iced::{
     Color, Padding, Pixels, Point, Rectangle, Size,
     alignment::Vertical,
@@ -39,15 +39,15 @@ pub struct TreeViewState {
 impl Default for TreeViewState {
     fn default() -> Self {
         Self {
-            label_width: 1e2,
-            label_width_prev: 1e2,
+            label_width: 1.5e2,
+            label_width_prev: 1.5e2,
             scale_factor_y: 2e-3,
             scale_factor_y_min: 2e-3,
             label_height: 2e-3,
             label_offset: 5e0,
             height: 0e0,
             height_prev: 0e0,
-            height_win: main_win_settings().size.height,
+            height_win: window_settings().size.height,
             // tip_count: Default::default(),
             // tree_height: Default::default(),
             scale_factor_x: Default::default(),

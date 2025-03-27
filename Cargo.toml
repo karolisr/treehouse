@@ -14,11 +14,6 @@ categories = [
     "gui",
 ]
 
-autobins = true
-autoexamples = false
-autotests = false
-autobenches = false
-
 [lib]
 name = "treehouse"
 crate-type = ["rlib"]
@@ -101,6 +96,37 @@ objc2 = "0.6.0"
 objc2-app-kit = "0.3.0"
 objc2-foundation = "0.3.0"
 
+[dependencies.muda]
+# version = "0.16.1"
+git = "https://github.com/karolisr/muda.git"
+# path = "submodules/muda"
+default-features = false
+features = [
+    # "common-controls-v6",
+    # "libxdo",
+    # "serde",
+]
+
+[dependencies.tokio]
+version = "1.44.1"
+default-features = false
+features = [
+    "fs",
+    "rt",
+]
+
+[dependencies.rfd]
+version = "0.15.3"
+default-features = false
+features = [
+    ### Uses GTK for dialogs on Linux & BSDs; has no effect on Windows and macOS
+    # "gtk3",
+    ### Uses XDG Desktop Portal instead of GTK on Linux & BSDs
+    # "xdg-portal",
+    ### Use TaskDialogIndirect API from ComCtl32.dll v6 for showing message dialog. This is necessary if you need to customize dialog button texts
+    # "common-controls-v6",
+]
+
 [dependencies.iced]
 # version = "0.14.0-dev"
 git = "https://github.com/karolisr/iced.git"
@@ -151,35 +177,4 @@ features = [
     # "image",
     ### Enables the "svg" widget
     # "svg",
-]
-
-[dependencies.muda]
-# version = "0.16.1"
-git = "https://github.com/karolisr/muda.git"
-# path = "submodules/muda"
-default-features = false
-features = [
-    # "common-controls-v6",
-    # "libxdo",
-    # "serde",
-]
-
-[dependencies.tokio]
-version = "1.44.1"
-default-features = false
-features = [
-    "fs",
-    "rt",
-]
-
-[dependencies.rfd]
-version = "0.15.3"
-default-features = false
-features = [
-    ### Uses GTK for dialogs on Linux & BSDs; has no effect on Windows and macOS
-    # "gtk3",
-    ### Uses XDG Desktop Portal instead of GTK on Linux & BSDs
-    # "xdg-portal",
-    ### Use TaskDialogIndirect API from ComCtl32.dll v6 for showing message dialog. This is necessary if you need to customize dialog button texts
-    # "common-controls-v6",
 ]

@@ -1,9 +1,14 @@
 use crate::{Tree, node, nodes_from_string};
 
-pub fn parse_newick(s: String) -> Tree {
-    let tree: Tree = Tree::new();
+pub fn parse_newick(s: String) -> Option<Tree> {
+    let mut tree: Tree = Tree::new();
     let sc = clean_newick_str(&s);
-    parse(sc, 0, tree)
+    tree = parse(sc, 0, tree);
+    if tree.tip_count_all() > 0 {
+        Some(tree)
+    } else {
+        None
+    }
 }
 
 fn parse(s: String, parent_id: usize, mut tree: Tree) -> Tree {

@@ -1,14 +1,12 @@
 #[cfg(target_os = "macos")]
-use super::macos::macos_register_open_files_handler;
+use super::macos::register_ns_application_delegate_handlers;
 use crate::{
-    AppWin, MainWin, MainWinMsg, MenuEvent, MenuEventReplyMsg, TreeView, TreeViewMsg,
-    main_win_settings, menu_events, parse_newick, prepare_app_menu,
+    AppWin, MainWin, MainWinMsg, MenuEvent, MenuEventReplyMsg, Tree, TreeView, TreeViewMsg,
+    menu_events, parse_newick, prepare_app_menu, window_settings,
 };
 use iced::Element;
 use iced::Subscription;
 use iced::Task;
-// use iced::event::Event as RuntimeEvent;
-// use iced::event::{Status as EventStatus, listen, listen_raw, listen_url};
 use iced::exit;
 use iced::futures::channel::mpsc::Sender;
 use iced::widget;
@@ -20,6 +18,9 @@ use iced::window::open as open_window;
 use iced::window::{close_events, close_requests, events, open_events};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use tokio::runtime::Runtime as TokioRt;
+// use iced::event::Event as RuntimeEvent;
+// use iced::event::{Status as EventStatus, listen, listen_raw, listen_url};
 
 #[derive(Default)]
 pub struct App {
@@ -46,6 +47,20 @@ pub enum AppMsg {
     WinCloseRequested(WinId),
     WinClosed(WinId),
     WinOpened(WinId),
+    Nada,
+}
+
+pub enum FileType {
+    Newick,
+    Nexus,
+    Other(String),
+    Exception,
+}
+
+pub enum ParsedData {
+    Tree(Option<Tree>),
+    Other(String),
+    Exception,
 }
 
 impl App {
@@ -58,6 +73,7 @@ impl App {
 
     pub fn update(&mut self, app_msg: AppMsg) -> Task<AppMsg> {
         match app_msg {
+            AppMsg::Nada => Task::none(),
             // AppMsg::RawEvent(e, _status, _id) => match e {
             //     RuntimeEvent::Keyboard(_event) => Task::none(),
             //     RuntimeEvent::Mouse(_event) => Task::none(),
@@ -105,40 +121,65 @@ impl App {
                 // WindowEvent::CloseRequested => Task::none(),
                 // WindowEvent::Focused => Task::none(),
                 // WindowEvent::Unfocused => Task::none(),
-                WindowEvent::FileHovered(path_buf) => {
-                    println!("{path_buf:?}");
-                    Task::none()
-                }
+                // WindowEvent::FileHovered(path_buf) => Task::none(),
                 WindowEvent::FileDropped(path_buf) => Task::done(AppMsg::Path(path_buf)),
                 // WindowEvent::FilesHoveredLeft => Task::none(),
-                _ => {
-                    // println!("{id:?} {e:?}");
-                    Task::none()
-                }
+                _ => Task::none(),
             },
-            AppMsg::Path(path_buf) => match path_buf.extension() {
-                Some(ext) => match ext.to_str() {
-                    Some("newick" | "tre") => Task::perform(read_text_file(path_buf.clone()), {
-                        |data| {
-                            let tree_data = parse_newick(data);
-                            AppMsg::MainWinMsg(MainWinMsg::TreeViewMsg(
-                                TreeViewMsg::TreeDataUpdated(tree_data),
-                            ))
+            AppMsg::Path(path_buf) => {
+                let file_type: FileType = match path_buf.extension() {
+                    Some(ext_os_str) => match ext_os_str.to_str() {
+                        Some(ext) => match ext {
+                            "newick" | "tre" => FileType::Newick,
+                            "tree" | "trees" | "nexus" | "nex" => FileType::Nexus,
+                            ext => FileType::Other(ext.to_string()),
+                        },
+                        None => FileType::Exception,
+                    },
+                    None => FileType::Exception,
+                };
+
+                let parsed_data: ParsedData = match file_type {
+                    FileType::Other(s) => ParsedData::Other(s),
+                    FileType::Exception => ParsedData::Exception,
+                    file_type => match file_type {
+                        FileType::Newick => match TokioRt::new() {
+                            Ok(rt) => ParsedData::Tree(parse_newick(
+                                rt.block_on(async { read_text_file(path_buf.clone()).await }),
+                            )),
+                            Err(_) => ParsedData::Exception,
+                        },
+                        FileType::Nexus => ParsedData::Tree(None),
+                        _ => ParsedData::Exception,
+                    },
+                };
+
+                match parsed_data {
+                    ParsedData::Tree(tree) => match tree {
+                        Some(tree) => Task::done(AppMsg::MainWinMsg(MainWinMsg::TreeViewMsg(
+                            TreeViewMsg::TreeDataUpdated(tree),
+                        )))
+                        .chain(Task::done(AppMsg::MainWinMsg(MainWinMsg::SetTitle(
+                            String::from(
+                                path_buf
+                                    .file_name()
+                                    .unwrap_or_default()
+                                    .to_str()
+                                    .unwrap_or_default(),
+                            ),
+                        )))),
+                        None => {
+                            println!("ParsedData::Tree(None)");
+                            Task::none()
                         }
-                    })
-                    .chain(Task::done(AppMsg::MainWinMsg(MainWinMsg::Title(
-                        String::from(
-                            path_buf
-                                .file_name()
-                                .unwrap_or_default()
-                                .to_str()
-                                .unwrap_or_default(),
-                        ),
-                    )))),
-                    _ => Task::none(),
-                },
-                None => Task::none(),
-            },
+                    },
+                    ParsedData::Other(s) => {
+                        println!("ParsedData::Other({s})");
+                        Task::none()
+                    }
+                    ParsedData::Exception => Task::none(),
+                }
+            }
             AppMsg::TerminationConfirmed => exit(),
             AppMsg::MenuEventsSender(mut sender) => {
                 let _ = sender.try_send(MenuEventReplyMsg::Ack);
@@ -160,7 +201,6 @@ impl App {
                 Ok(_) => Task::none(),
                 Err(_) => Task::done(AppMsg::TerminationConfirmed),
             },
-
             AppMsg::AppInitialized => {
                 let menu = prepare_app_menu();
                 #[cfg(target_os = "macos")]
@@ -192,9 +232,7 @@ impl App {
                     }
                     #[cfg(debug_assertions)]
                     {
-                        Task::done(AppMsg::Path(PathBuf::from(
-                            "/Users/karolis/Desktop/tmp3.newick",
-                        )))
+                        Task::done(AppMsg::Path(PathBuf::from("tests/data/tree01.newick")))
                     }
                 }
                 None => Task::none(),
@@ -236,7 +274,7 @@ impl App {
             ..Default::default()
         };
         #[cfg(target_os = "macos")]
-        macos_register_open_files_handler();
+        register_ns_application_delegate_handlers();
         (app, Task::done(AppMsg::AppInitialized))
     }
 }
@@ -274,7 +312,7 @@ fn subscriptions() -> Subscription<AppMsg> {
 }
 
 fn open_main_window(app: &mut App) -> Task<AppMsg> {
-    let (win_id, task) = open_window(main_win_settings());
+    let (win_id, task) = open_window(window_settings());
     let main_win = Box::new(MainWin {
         tree_view: TreeView::new(),
         ..Default::default()
@@ -303,9 +341,9 @@ fn close_last_window(app: &App) -> Task<AppMsg> {
 
 async fn choose_file() -> AppMsg {
     let chosen = rfd::AsyncFileDialog::new()
-        .add_filter("newick", &["newick"])
-        .add_filter("tre", &["tre"])
-        // .add_filter("tree", &["tree"])
+        .add_filter("newick", &["newick", "tre"])
+        .add_filter("nexus", &["tree", "trees", "nex", "nexus"])
+        // .add_filter("tre", &["tre"])
         // .add_filter("trees", &["trees"])
         // .add_filter("text", &["txt"])
         // .add_filter("fasta", &["fasta", "fsa", "mfa", "fa"])
@@ -326,7 +364,6 @@ pub async fn read_text_file(path_buf: PathBuf) -> String {
         .map_err(|e| {
             eprintln!("IO error: {:?}", e);
         })
-        .ok()
         .unwrap();
     String::from_utf8(data).unwrap()
 }
