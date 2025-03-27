@@ -1,5 +1,5 @@
 // #[cfg(not(debug_assertions))]
-use crate::{Canvas, Tree, main_win_settings};
+use crate::{Canvas, Tree, window_settings};
 use iced::{
     Element, Length, Task,
     alignment::{Horizontal, Vertical},
@@ -63,8 +63,8 @@ impl TreeView {
             tree_orig: Tree::default(),
             cache: Cache::new(),
             node_sort_selection: Some(NodeSortOptions::Ascending),
-            canvas_height: main_win_settings().size.height,
-            window_height: main_win_settings().size.height - 2e1,
+            canvas_height: window_settings().size.height,
+            window_height: window_settings().size.height - 2e1,
             lab_size: 1e0,
             node_size: 1e0,
             ..Default::default()
@@ -96,7 +96,11 @@ impl TreeView {
             TreeViewMsg::WindowHeightChanged(h) => {
                 self.window_height = h - 2e1;
                 self.node_size = self.window_height / self.tip_count as f32;
-                self.lab_size = self.node_size;
+                if self.node_size < 4e0 {
+                    self.lab_size = 4e0;
+                } else {
+                    self.lab_size = self.node_size;
+                }
                 Task::none()
             }
             TreeViewMsg::TreeDataUpdated(tree) => {
@@ -113,7 +117,11 @@ impl TreeView {
                 self.tip_count = self.tree.tip_count_all();
                 self.node_count = self.tree.node_count_all();
                 self.node_size = self.window_height / self.tip_count as f32;
-                self.lab_size = self.node_size;
+                if self.node_size < 4e0 {
+                    self.lab_size = 4e0;
+                } else {
+                    self.lab_size = self.node_size;
+                }
                 Task::done(TreeViewMsg::CacheClearRequested)
             }
             TreeViewMsg::NodeSortOptionChanged(option) => {

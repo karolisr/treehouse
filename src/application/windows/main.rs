@@ -1,12 +1,9 @@
-use crate::{Phylo, TreeView, TreeViewMsg};
+use crate::{TreeView, TreeViewMsg};
 use iced::widget::{button, container};
-use iced::window::settings::PlatformSpecific;
-use iced::window::{Level, Position, Settings};
-use iced::{Element, Length, Size, Task};
+use iced::{Element, Length, Task};
 
 #[derive(Debug, Default)]
 pub struct MainWin {
-    pub phylo: Phylo,
     pub tree_view: TreeView,
     pub title: Option<String>,
 }
@@ -15,7 +12,7 @@ pub struct MainWin {
 pub enum MainWinMsg {
     TreeViewMsg(TreeViewMsg),
     OpenFile,
-    Title(String),
+    SetTitle(String),
 }
 
 impl MainWin {
@@ -28,7 +25,7 @@ impl MainWin {
 
     pub fn update(&mut self, main_win_msg: MainWinMsg) -> Task<MainWinMsg> {
         match main_win_msg {
-            MainWinMsg::Title(title) => {
+            MainWinMsg::SetTitle(title) => {
                 self.title = Some(title);
                 Task::none()
             }
@@ -49,47 +46,5 @@ impl MainWin {
                 .center(Length::Fill)
                 .into()
         }
-
-        // container(
-        //     container(self.phylo.view())
-        //         .width(Length::Fixed(4e2))
-        //         .height(Length::Fixed(4e2)),
-        // )
-        // .align_x(Center)
-        // .align_y(Center)
-        // .width(Length::Fill)
-        // .height(Length::Fill)
-        // .into()
-    }
-}
-
-pub fn main_win_settings() -> Settings {
-    Settings {
-        size: Size {
-            width: 900.0,
-            height: 600.0,
-        },
-        min_size: Some(Size {
-            width: 500.0,
-            height: 300.0,
-        }),
-        // position: Position::Specific(Point { x: 10.0, y: 30.0 }),
-        // position: Position::Default,
-        position: Position::Centered,
-        resizable: true,
-        level: Level::Normal,
-        #[cfg(target_os = "macos")]
-        platform_specific: PlatformSpecific {
-            title_hidden: false,
-            titlebar_transparent: false,
-            fullsize_content_view: false,
-        },
-        #[cfg(target_os = "linux")]
-        platform_specific: PlatformSpecific {
-            application_id: String::from("APP_ID"),
-            override_redirect: true,
-        },
-        exit_on_close_request: false,
-        ..Default::default()
     }
 }

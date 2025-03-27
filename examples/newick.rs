@@ -4,5 +4,5 @@ fn main() {
     let data = String::from(data);
     println!("\n{data}\n");
     let tree = parse_newick(data);
-    println!("{}", tree);
+    println!("{:?}", tree);
 }
