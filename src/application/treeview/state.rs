@@ -1,5 +1,5 @@
 // #[cfg(not(debug_assertions))]
-use crate::{SimpleColor, Tree, main_win_settings};
+use crate::{SimpleColor, Tree, TreeView, main_win_settings};
 use iced::{
     Color, Padding, Pixels, Point, Rectangle, Size,
     alignment::Vertical,
@@ -9,21 +9,21 @@ use iced::{
 
 #[derive(Debug)]
 pub struct TreeViewState {
-    tip_count: usize,
-    tree_height: f32,
-    scale_factor_x: f32,
-    scale_factor_y: f32,
+    // pub(super) tip_count: usize,
+    // tree_height: f32,
+    pub(super) scale_factor_x: f32,
+    pub(super) scale_factor_y: f32,
     bounds_global: Rectangle,
     pub(super) bounds_full: Rectangle,
     pub(super) bounds_tree: Rectangle,
     pub(super) bounds_tl_sep: Rectangle,
-    bounds_tip_labels: Rectangle,
+    pub(super) bounds_tip_labels: Rectangle,
     tip_names: Vec<String>,
     pub(super) label_width: f32,
     pub(super) label_height: f32,
     pub(super) scale_factor_y_min: f32,
     label_offset: f32,
-    pub(super) tip_label_rects: Vec<Rectangle>,
+    // pub(super) tip_label_rects: Vec<Rectangle>,
     pub(super) dragging_tl_sep: bool,
     pub(super) drag_start_x: f32,
     pub(super) drag_start_y: f32,
@@ -48,8 +48,8 @@ impl Default for TreeViewState {
             height: 0e0,
             height_prev: 0e0,
             height_win: main_win_settings().size.height,
-            tip_count: Default::default(),
-            tree_height: Default::default(),
+            // tip_count: Default::default(),
+            // tree_height: Default::default(),
             scale_factor_x: Default::default(),
             bounds_global: Default::default(),
             bounds_full: Default::default(),
@@ -57,7 +57,7 @@ impl Default for TreeViewState {
             bounds_tl_sep: Default::default(),
             bounds_tip_labels: Default::default(),
             tip_names: Default::default(),
-            tip_label_rects: Default::default(),
+            // tip_label_rects: Default::default(),
             dragging_tl_sep: Default::default(),
             drag_start_x: Default::default(),
             drag_start_y: Default::default(),
@@ -66,12 +66,24 @@ impl Default for TreeViewState {
 }
 
 impl TreeViewState {
-    pub(super) fn cache_tree_state(&mut self, tree: &Tree, bounds: &Rectangle) {
+    pub(super) fn cache_tree_state(
+        &mut self,
+        tree_view: &TreeView,
+        tree: &Tree,
+        bounds: &Rectangle,
+    ) {
         let offset: f32 = 1e1;
-        self.bounds_global = bounds.shrink(Padding::new(0e0));
-        self.bounds_full = self
-            .bounds_global
-            .shrink(Padding::new(offset).right(offset * 2e0));
+        // self.bounds_global = bounds.shrink(Padding::new(0e0));
+        self.bounds_global = Rectangle::new(
+            Point { x: 0e0, y: 0e0 },
+            Size {
+                width: bounds.width,
+                height: bounds.height,
+            },
+        );
+        // println!("{:?}", self.bounds_global);
+        // self.bounds_full = self.bounds_global;
+        self.bounds_full = self.bounds_global.shrink(Padding::new(offset));
 
         self.bounds_tree = self
             .bounds_full
@@ -87,12 +99,12 @@ impl TreeViewState {
             .bounds_full
             .shrink(Padding::new(0e0).left(self.bounds_tree.width + self.bounds_tl_sep.width));
 
-        self.tree_height = tree.height() as f32;
-        self.tip_count = tree.tip_count_all();
-        self.scale_factor_x = self.bounds_tree.width / self.tree_height;
-        // self.scale_factor_y = self.bounds_tree.height / self.tip_count as f32;
+        // self.tree_height = tree.height() as f32;
+        // self.tip_count = tree.tip_count_all();
+        self.scale_factor_x = self.bounds_tree.width / tree_view.tree_height as f32;
+        // self.scale_factor_y = self.bounds_tree.height / tree_view.tip_count as f32;
         self.scale_factor_y = self.scale_factor_y_min;
-        self.height = offset * 2e0 + self.scale_factor_y * self.tip_count as f32;
+        self.height = offset * 2e0 + self.scale_factor_y * tree_view.tip_count as f32;
         self.tip_names = tree
             .tip_node_ids_all()
             .iter()
@@ -163,14 +175,12 @@ impl TreeViewState {
             y,
         };
 
-        let coords_edge_start: Point = Point { x: bounds.x, y };
-
         if *bounds != self.bounds_tree {
             // Bounds =================================
             // self.draw_bounds(bounds, frame);
             // ========================================
-
             // Edges ==================================
+            let coords_edge_start: Point = Point { x: bounds.x, y };
             let path = Path::new(|p| {
                 p.move_to(coords_node);
                 p.line_to(coords_edge_start);
@@ -275,52 +285,58 @@ impl TreeViewState {
         );
     }
 
-    pub(super) fn prepare_tip_label_rects(&mut self) {
-        self.tip_label_rects = Vec::new();
-        for i in 0..self.tip_count {
-            let label_bounds: Rectangle = Rectangle {
-                x: self.bounds_tip_labels.x,
-                y: self.bounds_tip_labels.y
-                    + self.scale_factor_y / 4e0
-                    + self.scale_factor_y * i as f32,
-                width: self.label_width,
-                height: self.scale_factor_y / 2e0,
-            };
-            self.tip_label_rects.push(label_bounds);
-        }
-    }
+    // pub(super) fn prepare_tip_label_rects(&mut self) {
+    //     self.tip_label_rects = Vec::new();
+    //     for i in 0..self.tip_count {
+    //         let label_bounds: Rectangle = Rectangle {
+    //             x: self.bounds_tip_labels.x,
+    //             y: self.bounds_tip_labels.y
+    //                 + self.scale_factor_y / 4e0
+    //                 + self.scale_factor_y * i as f32,
+    //             width: self.label_width,
+    //             height: self.scale_factor_y / 2e0,
+    //         };
+    //         self.tip_label_rects.push(label_bounds);
+    //     }
+    // }
 
-    fn draw_tip_label(&self, name: &str, bounds: &Rectangle, frame: &mut Frame, cursor: &Cursor) {
+    fn draw_tip_label(&self, name: &str, bounds: &Rectangle, frame: &mut Frame, _cursor: &Cursor) {
         let mut lab = Text::from(name);
         lab.size = Pixels(self.label_height);
-        let mut color = SimpleColor::BLACK;
-        if cursor.is_over(*bounds) {
-            color = SimpleColor::RED;
-        }
-        lab.color = color;
+        // let mut color = SimpleColor::BLACK;
+        // if cursor.is_over(*bounds) {
+        //     color = SimpleColor::RED;
+        // }
+        lab.color = SimpleColor::BLACK;
         lab.align_y = Vertical::Center;
         lab.position = Point::new(bounds.x, bounds.y + bounds.height / 2e0);
         frame.fill_text(lab);
     }
 
-    pub(super) fn draw_tip_labels(&self, frame: &mut Frame, cursor: &Cursor) {
+    pub(super) fn draw_tip_labels(
+        &self,
+        frame: &mut Frame,
+        cursor: &Cursor,
+        tip_label_rects: Vec<Rectangle>,
+    ) {
         for (i, name) in self.tip_names.iter().enumerate() {
-            self.draw_tip_label(name, &self.tip_label_rects[i], frame, cursor);
+            // self.draw_tip_label(name, &self.tip_label_rects[i], frame, cursor);
+            self.draw_tip_label(name, &tip_label_rects[i], frame, cursor);
         }
     }
 
-    fn display(&self) -> String {
-        let mut rv: String = String::new();
-        rv.push_str(&format!(
-            "{:4} {:5.2} | {:5.2} {:5.2}",
-            self.tip_count, self.tree_height, self.scale_factor_x, self.scale_factor_y
-        ));
-        rv
-    }
+    // fn display(&self) -> String {
+    //     let mut rv: String = String::new();
+    //     rv.push_str(&format!(
+    //         "{:4} {:5.2} | {:5.2} {:5.2}",
+    //         self.tip_count, self.tree_height, self.scale_factor_x, self.scale_factor_y
+    //     ));
+    //     rv
+    // }
 }
 
-impl std::fmt::Display for TreeViewState {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.display())
-    }
-}
+// impl std::fmt::Display for TreeViewState {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{}", self.display())
+//     }
+// }

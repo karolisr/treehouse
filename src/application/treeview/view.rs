@@ -14,17 +14,17 @@ pub struct TreeView {
     tree_orig: Tree,
     pub(super) cache: Cache,
     node_sort_selection: Option<NodeSortOptions>,
-    height: f32,
+    canvas_height: f32,
     window_height: f32,
     pub(super) lab_size: f32,
     pub(super) node_size: f32,
-    tree_height: f64,
-    tip_count: usize,
+    pub(super) tree_height: f64,
+    pub(super) tip_count: usize,
     node_count: usize,
 }
 #[derive(Debug, Clone)]
 pub enum TreeViewMsg {
-    RedrawRequested,
+    CacheClearRequested,
     TreeDataUpdated(Tree),
     NodeSortOptionChanged(NodeSortOptions),
     CanvasHeightChanged(f32),
@@ -63,7 +63,7 @@ impl TreeView {
             tree_orig: Tree::default(),
             cache: Cache::new(),
             node_sort_selection: Some(NodeSortOptions::Ascending),
-            height: main_win_settings().size.height - 2e1,
+            canvas_height: main_win_settings().size.height,
             window_height: main_win_settings().size.height - 2e1,
             lab_size: 1e0,
             node_size: 1e0,
@@ -77,39 +77,44 @@ impl TreeView {
 
     pub fn update(&mut self, msg: TreeViewMsg) -> Task<TreeViewMsg> {
         match msg {
+            TreeViewMsg::CacheClearRequested => {
+                self.cache.clear();
+                Task::none()
+            }
             TreeViewMsg::NodeSizeChanged(s) => {
                 self.node_size = s;
-                Task::done(TreeViewMsg::RedrawRequested)
+                Task::none()
             }
             TreeViewMsg::LabelSizeChanged(s) => {
                 self.lab_size = s;
-                Task::done(TreeViewMsg::RedrawRequested)
+                Task::done(TreeViewMsg::CacheClearRequested)
             }
             TreeViewMsg::CanvasHeightChanged(h) => {
-                self.height = h;
-                Task::done(TreeViewMsg::RedrawRequested)
+                self.canvas_height = h;
+                Task::done(TreeViewMsg::CacheClearRequested)
             }
             TreeViewMsg::WindowHeightChanged(h) => {
                 self.window_height = h - 2e1;
                 self.node_size = self.window_height / self.tip_count as f32;
                 self.lab_size = self.node_size;
-                Task::done(TreeViewMsg::RedrawRequested)
+                Task::none()
             }
             TreeViewMsg::TreeDataUpdated(tree) => {
                 self.tree_orig = tree.clone();
                 self.tree = tree;
+
+                match self.node_sort_selection.unwrap() {
+                    NodeSortOptions::Original => self.tree = self.tree_orig.clone(),
+                    NodeSortOptions::Ascending => self.tree.sort(false),
+                    NodeSortOptions::Descending => self.tree.sort(true),
+                };
+
                 self.tree_height = self.tree.height();
                 self.tip_count = self.tree.tip_count_all();
                 self.node_count = self.tree.node_count_all();
                 self.node_size = self.window_height / self.tip_count as f32;
                 self.lab_size = self.node_size;
-                Task::done(TreeViewMsg::NodeSortOptionChanged(
-                    self.node_sort_selection.unwrap(),
-                ))
-            }
-            TreeViewMsg::RedrawRequested => {
-                self.cache.clear();
-                Task::none()
+                Task::done(TreeViewMsg::CacheClearRequested)
             }
             TreeViewMsg::NodeSortOptionChanged(option) => {
                 match option {
@@ -118,14 +123,16 @@ impl TreeView {
                     NodeSortOptions::Descending => self.tree.sort(true),
                 };
                 self.node_sort_selection = Some(option);
-                Task::done(TreeViewMsg::RedrawRequested)
+                Task::done(TreeViewMsg::CacheClearRequested)
             }
         }
     }
 
     pub fn view(&self) -> Element<TreeViewMsg> {
         if self.tree.tip_count_all() > 0 {
-            let cnv = Canvas::new(self).width(Length::Fill).height(self.height);
+            let cnv = Canvas::new(self)
+                .width(Length::Fill)
+                .height(self.canvas_height);
             let text_size = 13;
             let padding: u32 = 10;
             let sidebar_width = 225;

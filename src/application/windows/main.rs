@@ -1,4 +1,4 @@
-use crate::{TreeView, TreeViewMsg};
+use crate::{Phylo, TreeView, TreeViewMsg};
 use iced::widget::{button, container};
 use iced::window::settings::PlatformSpecific;
 use iced::window::{Level, Position, Settings};
@@ -6,6 +6,7 @@ use iced::{Element, Length, Size, Task};
 
 #[derive(Debug, Default)]
 pub struct MainWin {
+    pub phylo: Phylo,
     pub tree_view: TreeView,
     pub title: Option<String>,
 }
@@ -48,6 +49,17 @@ impl MainWin {
                 .center(Length::Fill)
                 .into()
         }
+
+        // container(
+        //     container(self.phylo.view())
+        //         .width(Length::Fixed(4e2))
+        //         .height(Length::Fixed(4e2)),
+        // )
+        // .align_x(Center)
+        // .align_y(Center)
+        // .width(Length::Fill)
+        // .height(Length::Fill)
+        // .into()
     }
 }
 

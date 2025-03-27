@@ -1,9 +1,9 @@
 // #[cfg(not(debug_assertions))]
 use super::{TreeView, TreeViewMsg, TreeViewState};
 use iced::{
-    Color, Event, Point, Rectangle, Renderer, Theme,
+    Event, Rectangle, Renderer, Theme,
     mouse::{Cursor, Interaction},
-    widget::canvas::{Action, Geometry, Path, Program, Stroke},
+    widget::canvas::{Action, Geometry, Program},
 };
 
 impl Program<TreeViewMsg> for TreeView {
@@ -26,29 +26,29 @@ impl Program<TreeViewMsg> for TreeView {
             // state.draw_bg(&state.bounds_tl_sep, &grn, frame);
             // state.draw_bg(&state.bounds_tip_labels, &blu, frame);
 
-            if cursor.is_over(state.bounds_tl_sep) {
-                let x = state.bounds_tl_sep.x + state.bounds_tl_sep.width / 2e0;
-                let path = Path::new(|p| {
-                    p.move_to(Point {
-                        x,
-                        y: state.bounds_tl_sep.y,
-                    });
+            // if cursor.is_over(state.bounds_tl_sep) {
+            //     let x = state.bounds_tl_sep.x + state.bounds_tl_sep.width / 2e0;
+            //     let path = Path::new(|p| {
+            //         p.move_to(Point {
+            //             x,
+            //             y: state.bounds_tl_sep.y,
+            //         });
 
-                    p.line_to(Point {
-                        x,
-                        y: state.bounds_tl_sep.y + state.bounds_tl_sep.height,
-                    });
-                });
-                frame.stroke(
-                    &path,
-                    Stroke::default().with_width(5e0).with_color(Color {
-                        r: 0e0,
-                        g: 0e0,
-                        b: 1e0,
-                        a: 4e-1,
-                    }),
-                );
-            }
+            //         p.line_to(Point {
+            //             x,
+            //             y: state.bounds_tl_sep.y + state.bounds_tl_sep.height,
+            //         });
+            //     });
+            //     frame.stroke(
+            //         &path,
+            //         Stroke::default().with_width(5e0).with_color(Color {
+            //             r: 0e0,
+            //             g: 0e0,
+            //             b: 1e0,
+            //             a: 4e-1,
+            //         }),
+            //     );
+            // }
 
             // #[cfg(debug_assertions)]
             // unsafe {
@@ -68,7 +68,21 @@ impl Program<TreeViewMsg> for TreeView {
             // }
 
             // println!("BEGIN cache.draw draw_tip_labels");
-            state.draw_tip_labels(frame, &cursor);
+            // prepare_tip_label_rects --------------------------
+            let mut tip_label_rects: Vec<Rectangle> = Vec::new();
+            for i in 0..self.tip_count {
+                let label_bounds: Rectangle = Rectangle {
+                    x: state.bounds_tip_labels.x,
+                    y: state.bounds_tip_labels.y
+                        + state.scale_factor_y / 4e0
+                        + state.scale_factor_y * i as f32,
+                    width: state.label_width,
+                    height: state.scale_factor_y / 2e0,
+                };
+                tip_label_rects.push(label_bounds);
+            } // ------------------------------------------------
+
+            state.draw_tip_labels(frame, &cursor, tip_label_rects);
             // println!("  END cache.draw");
         });
         // println!("  END draw");
@@ -82,28 +96,26 @@ impl Program<TreeViewMsg> for TreeView {
         bounds: Rectangle,
         cursor: Cursor,
     ) -> Option<Action<TreeViewMsg>> {
-        if state.height != state.height_prev {
-            state.height_prev = state.height;
-            return Some(Action::publish(TreeViewMsg::CanvasHeightChanged(
-                state.height,
-            )));
-        }
         match event {
             Event::Mouse(e) => match e {
                 iced::mouse::Event::CursorMoved { position } => {
                     if cursor.is_over(state.bounds_full) {
-                        self.cache.clear();
                         if state.dragging_tl_sep {
                             state.label_width =
                                 state.label_width_prev + state.drag_start_x - position.x;
+                            self.cache.clear();
+                            Some(Action::request_redraw())
                         } else {
-                            for &r in &state.tip_label_rects {
-                                if cursor.is_over(r) {
-                                    return Some(Action::request_redraw());
-                                }
-                            }
+                            // if cursor.is_over(state.bounds_tl_sep) {
+                            //     self.cache.clear();
+                            //     return Some(Action::request_redraw());
+                            // }
+                            // if cursor.is_over(state.bounds_tip_labels) {
+                            //     self.cache.clear();
+                            //     return Some(Action::request_redraw());
+                            // }
+                            None
                         }
-                        Some(Action::request_redraw())
                     } else {
                         None
                     }
@@ -119,7 +131,7 @@ impl Program<TreeViewMsg> for TreeView {
                             state.dragging_tl_sep = true;
                             state.drag_start_x = cursor.position().unwrap_or_default().x;
                             state.drag_start_y = cursor.position().unwrap_or_default().y;
-                            None
+                            Some(Action::request_redraw())
                         } else {
                             state.dragging_tl_sep = false;
                             None
@@ -134,11 +146,16 @@ impl Program<TreeViewMsg> for TreeView {
                 },
                 iced::mouse::Event::ButtonReleased(button) => match button {
                     iced::mouse::Button::Left => {
-                        state.dragging_tl_sep = false;
-                        state.drag_start_x = 0e0;
-                        state.drag_start_y = 0e0;
-                        state.label_width_prev = state.label_width;
-                        None
+                        if state.dragging_tl_sep {
+                            state.dragging_tl_sep = false;
+                            state.drag_start_x = 0e0;
+                            state.drag_start_y = 0e0;
+                            state.label_width_prev = state.label_width;
+                            self.cache.clear();
+                            Some(Action::request_redraw())
+                        } else {
+                            None
+                        }
                     }
                     iced::mouse::Button::Right => None,
                     // iced::mouse::Button::Middle => None,
@@ -161,11 +178,19 @@ impl Program<TreeViewMsg> for TreeView {
                         state.height_win,
                     )))
                 }
+
                 iced::window::Event::RedrawRequested(_instant) => {
                     state.label_height = self.lab_size;
                     state.scale_factor_y_min = self.node_size;
-                    state.cache_tree_state(&self.tree, &bounds);
-                    state.prepare_tip_label_rects();
+                    state.cache_tree_state(self, &self.tree, &bounds);
+
+                    if state.height != state.height_prev {
+                        state.height_prev = state.height;
+                        return Some(Action::publish(TreeViewMsg::CanvasHeightChanged(
+                            state.height,
+                        )));
+                    }
+
                     None
                 }
                 // iced::window::Event::CloseRequested => None,

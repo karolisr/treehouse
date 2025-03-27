@@ -186,10 +186,16 @@ impl App {
             }
             AppMsg::WinOpened(id) => match self.windows.get(&id) {
                 Some(AppWin::MainWin(_)) => {
-                    // Task::done(AppMsg::Path(PathBuf::from(
-                    //     "/Users/karolis/Desktop/tmp3.newick",
-                    // )))
-                    Task::none()
+                    #[cfg(not(debug_assertions))]
+                    {
+                        Task::none()
+                    }
+                    #[cfg(debug_assertions)]
+                    {
+                        Task::done(AppMsg::Path(PathBuf::from(
+                            "/Users/karolis/Desktop/tmp3.newick",
+                        )))
+                    }
                 }
                 None => Task::none(),
             },
