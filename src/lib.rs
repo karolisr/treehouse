@@ -1,15 +1,15 @@
-#![allow(clippy::too_many_arguments)]
-#![cfg_attr(
-    debug_assertions,
-    allow(
-        clippy::collapsible_if,
-        dead_code,
-        unused_assignments,
-        unused_imports,
-        unused_mut,
-        unused_variables,
-    )
-)]
+// #![allow(clippy::too_many_arguments)]
+// #![cfg_attr(
+//     debug_assertions,
+//     allow(
+//         dead_code,
+//         unused_imports,
+//         unused_variables,
+//         // unused_assignments,
+//         // unused_mut,
+//         // clippy::collapsible_if,
+//     )
+// )]
 
 mod application;
 mod tree;

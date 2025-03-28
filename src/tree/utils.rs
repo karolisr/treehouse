@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use crate::Tree;
 
@@ -9,30 +9,17 @@ pub type Child = usize;
 pub type BrLen = Float;
 pub type PHeight = Float;
 pub type Height = Float;
-pub type NChld = usize;
-pub type NTip = usize;
 pub type Name = String;
-pub type Tip = usize;
 pub type Y = Float;
 
-pub type Edge = (
-    Parent,
-    Child,
-    Name,
-    // BrLen,
-    PHeight,
-    Height,
-    // NChld,
-    // NTip,
-    // Tip,
-    Y,
-);
+pub type Edge = (Parent, Child, Name, PHeight, Height, Y);
 pub type Edges = Vec<Edge>;
 
 pub fn flatten_tree(tree: &Tree) -> Edges {
     let ntip = tree.tip_count_all();
     let tree_height = tree.height();
     let mut tip_id_counter = ntip;
+
     let mut edges: Edges = flatten(
         tree.first_node_id(),
         0,
@@ -48,28 +35,31 @@ pub fn flatten_tree(tree: &Tree) -> Edges {
     edges.sort_by_key(|x| -(x.0 as i32));
 
     // --------------------------------------------------------------------------------------------
-    if edges.len() > 1 {
+    if !edges.is_empty() {
         let mut p_prev = edges[0].0;
         let mut min_y = edges[0].5;
         let mut max_y = edges[0].5;
 
-        let mut mem: HashMap<usize, Float> = HashMap::new();
-        for mut e in &mut edges[1..] {
+        let mut mem: BTreeMap<usize, Float> = BTreeMap::new();
+
+        for e in &mut edges[1..] {
             let p = e.0;
-            let mut y = e.5;
             let c = e.1;
+            let mut y = e.5;
+
             if p == p_prev {
                 if y.is_nan() {
-                    // if y > 1.5e0 {
                     y = match mem.get(&c) {
                         Some(&y) => y,
-                        None => 3e0,
+                        None => 0e0,
                     };
                     e.5 = y;
                 }
+
                 if y > max_y {
                     max_y = y;
                 }
+
                 if y < min_y {
                     min_y = y;
                 }
@@ -78,7 +68,6 @@ pub fn flatten_tree(tree: &Tree) -> Edges {
                 if c == p_prev {
                     e.5 = y_p;
                     if y.is_nan() {
-                        // if y > 1.5e0 {
                         y = y_p;
                         mem.insert(p, y_p);
                     }
@@ -86,7 +75,6 @@ pub fn flatten_tree(tree: &Tree) -> Edges {
                     mem.insert(p_prev, y_p);
                 }
                 if y.is_nan() {
-                    // if y > 1.5e0 {
                     y = y_p;
                     e.5 = y_p;
                 }
@@ -112,12 +100,9 @@ fn flatten(
     let brlen: Float = tree.branch_length(node_id) as Float / tree_height;
     let name: String = tree.name(node_id);
     let child_node_ids: &[usize] = tree.child_node_ids(node_id);
-    // let child_count: usize = child_node_ids.len();
     let descending_tip_count: usize = tree.tip_count_recursive(node_id);
 
-    // let mut tip_id = 0;
     let mut y = f64::NAN;
-    // let mut y = 2e0;
     if descending_tip_count == 0 {
         *tip_id_counter -= 1;
         let tip_id = ntip - *tip_id_counter;
@@ -126,18 +111,7 @@ fn flatten(
 
     let mut all_edges: Edges = Vec::new();
 
-    let this_edge: Edge = (
-        parent_node_id,
-        node_id,
-        name,
-        // brlen,
-        height,
-        height + brlen,
-        // child_count,
-        // descending_tip_count,
-        // tip_id,
-        y,
-    );
+    let this_edge: Edge = (parent_node_id, node_id, name, height, height + brlen, y);
 
     all_edges.push(this_edge);
 

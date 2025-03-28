@@ -1,4 +1,8 @@
-use crate::{SimpleColor, flatten_tree};
+use crate::Edge;
+use crate::SimpleColor;
+use iced::Color;
+use std::thread;
+use std::thread::ScopedJoinHandle;
 
 // #[cfg(not(debug_assertions))]
 use super::{TreeView1, TreeView1Msg, TreeView1State};
@@ -19,47 +23,42 @@ impl Program<TreeView1Msg> for TreeView1 {
         renderer: &Renderer,
         _theme: &Theme,
         bounds: Rectangle,
-        cursor: Cursor,
+        _cursor: Cursor,
     ) -> Vec<Geometry> {
-        // println!("BEGIN draw");
         let geometry = self.cache.draw(renderer, bounds.size(), |frame| {
-            // println!("BEGIN cache.draw");
-            // state.draw_bg(&state.bounds_global, &blk, frame);
-            // state.draw_bg(&state.bounds_full, &grn, frame);
-            // state.draw_bg(&state.bounds_tree, &red, frame);
-            // state.draw_bg(&state.bounds_tl_sep, &grn, frame);
-            // state.draw_bg(&state.bounds_tip_labels, &blu, frame);
+            // state.draw_bg(&state.bounds_global, &SimpleColor::BLACK, frame);
+            // state.draw_bg(&state.bounds_full, &SimpleColor::GREEN, frame);
+            // state.draw_bg(&state.bounds_tree, &SimpleColor::RED, frame);
+            // state.draw_bg(&state.bounds_tl_sep, &SimpleColor::GREEN, frame);
+            // state.draw_bg(&state.bounds_tip_labels, &SimpleColor::BLUE, frame);
 
-            // if cursor.is_over(state.bounds_tl_sep) {
-            //     let x = state.bounds_tl_sep.x + state.bounds_tl_sep.width / 2e0;
-            //     let path = Path::new(|p| {
-            //         p.move_to(Point {
-            //             x,
-            //             y: state.bounds_tl_sep.y,
-            //         });
+            let x = state.bounds_tl_sep.x + state.bounds_tl_sep.width / 2e0;
+            let path = Path::new(|p| {
+                p.move_to(Point {
+                    x,
+                    y: state.bounds_tl_sep.y,
+                });
 
-            //         p.line_to(Point {
-            //             x,
-            //             y: state.bounds_tl_sep.y + state.bounds_tl_sep.height,
-            //         });
-            //     });
-            //     frame.stroke(
-            //         &path,
-            //         Stroke::default().with_width(5e0).with_color(Color {
-            //             r: 0e0,
-            //             g: 0e0,
-            //             b: 1e0,
-            //             a: 4e-1,
-            //         }),
-            //     );
-            // }
+                p.line_to(Point {
+                    x,
+                    y: state.bounds_tl_sep.y + state.bounds_tl_sep.height,
+                });
+            });
+            frame.stroke(
+                &path,
+                Stroke::default().with_width(5e0).with_color(Color {
+                    r: 0e0,
+                    g: 0e0,
+                    b: 1e0,
+                    a: 4e-1,
+                }),
+            );
 
             // #[cfg(debug_assertions)]
             // unsafe {
             //     COUNTER = 0
             // };
 
-            // println!("BEGIN cache.draw draw_tree");
             // state.draw_tree(
             //     self.tree.first_node_id(),
             //     &self.tree,
@@ -71,7 +70,6 @@ impl Program<TreeView1Msg> for TreeView1 {
             //     state.draw_bounds(b, frame);
             // }
 
-            // println!("BEGIN cache.draw draw_tip_labels");
             // prepare_tip_label_rects --------------------------
             // let mut tip_label_rects: Vec<Rectangle> = Vec::new();
             // for i in 0..self.tip_count {
@@ -94,48 +92,71 @@ impl Program<TreeView1Msg> for TreeView1 {
             //     .collect();
 
             // state.draw_tip_labels(frame, &cursor, tip_label_rects, tip_names);
-            // println!("  END cache.draw");
 
-            // let edges = flatten_tree(&self.tree);
             frame.translate(Vector::new(1e1, 1e1));
-            let mut parent_prev = self.edges[0].0;
-            let mut y_prev = self.edges[0].5;
-            for e in &self.edges {
-                // println!(
-                //     // Prnt Child PHeight  Height    Y
-                //     "{:>5} {:>5} {:>3.5} {:>3.5} {:>3.5}",
-                //     e.0, e.1, e.3, e.4, e.5,
-                // );
 
-                let parent = e.0;
-                let y = e.5;
-                let path = Path::new(|p| {
-                    p.move_to(Point::new(
-                        e.3 as Float * state.bounds_tree.width,
-                        e.5 as Float * state.bounds_tree.height,
-                    ));
-                    p.line_to(Point::new(
-                        e.4 as Float * state.bounds_tree.width,
-                        e.5 as Float * state.bounds_tree.height,
-                    ));
-
-                    if parent == parent_prev {
-                        p.move_to(Point::new(
-                            e.3 as Float * state.bounds_tree.width,
-                            e.5 as Float * state.bounds_tree.height,
-                        ));
-                        p.line_to(Point::new(
-                            e.3 as Float * state.bounds_tree.width,
-                            y_prev as Float * state.bounds_tree.height,
-                        ));
-                    }
-                    parent_prev = parent;
-                });
-                y_prev = y;
-                frame.stroke(&path, Stroke::default().with_color(SimpleColor::BLACK));
+            let n_edge = self.edges.len();
+            let mut n_thread = 8;
+            if self.edges.len() < 2000 {
+                n_thread = 1;
             }
+            let n_edge_per_thread = n_edge / n_thread;
+            let remainder = n_edge % n_thread;
+
+            let mut chunks: Vec<&[Edge]> = Vec::new();
+
+            for t in 0..n_thread {
+                let i1 = n_edge_per_thread * t;
+                let i2 = n_edge_per_thread * (t + 1);
+                let edges = &self.edges[i1..i2];
+                chunks.push(edges);
+            }
+            if remainder > 0 {
+                let edges = &self.edges[n_edge_per_thread * n_thread..];
+                chunks.push(edges);
+            }
+            thread::scope(|s| {
+                let mut joins: Vec<ScopedJoinHandle<'_, Path>> = Vec::new();
+                for chunk in chunks {
+                    let paths_thread = s.spawn(move || {
+                        Path::new(|p| {
+                            let mut parent_prev = chunk[0].0;
+                            let mut y_prev = chunk[0].5;
+                            for e in chunk {
+                                let parent = e.0;
+                                let y = e.5;
+                                p.move_to(Point::new(
+                                    e.3 as Float * state.bounds_tree.width,
+                                    e.5 as Float * state.bounds_tree.height,
+                                ));
+                                p.line_to(Point::new(
+                                    e.4 as Float * state.bounds_tree.width,
+                                    e.5 as Float * state.bounds_tree.height,
+                                ));
+                                if parent == parent_prev {
+                                    p.move_to(Point::new(
+                                        e.3 as Float * state.bounds_tree.width,
+                                        e.5 as Float * state.bounds_tree.height,
+                                    ));
+                                    p.line_to(Point::new(
+                                        e.3 as Float * state.bounds_tree.width,
+                                        y_prev as Float * state.bounds_tree.height,
+                                    ));
+                                } else {
+                                    parent_prev = parent;
+                                }
+                                y_prev = y;
+                            }
+                        })
+                    });
+                    joins.push(paths_thread);
+                }
+                let strk = Stroke::default().with_color(SimpleColor::BLACK);
+                for j in joins {
+                    frame.stroke(&j.join().unwrap(), strk);
+                }
+            });
         });
-        // println!("  END draw");
         vec![geometry]
     }
 
@@ -155,15 +176,10 @@ impl Program<TreeView1Msg> for TreeView1 {
                                 state.label_width_prev + state.drag_start_x - position.x;
                             self.cache.clear();
                             Some(Action::request_redraw())
+                        // } else if cursor.is_over(state.bounds_tl_sep) {
+                        //     self.cache.clear();
+                        //     Some(Action::request_redraw())
                         } else {
-                            // if cursor.is_over(state.bounds_tl_sep) {
-                            //     self.cache.clear();
-                            //     return Some(Action::request_redraw());
-                            // }
-                            // if cursor.is_over(state.bounds_tip_labels) {
-                            //     self.cache.clear();
-                            //     return Some(Action::request_redraw());
-                            // }
                             None
                         }
                     } else {
@@ -172,8 +188,9 @@ impl Program<TreeView1Msg> for TreeView1 {
                 }
                 iced::mouse::Event::CursorEntered => None,
                 iced::mouse::Event::CursorLeft => {
-                    self.cache.clear();
-                    Some(Action::request_redraw())
+                    // self.cache.clear();
+                    // Some(Action::request_redraw())
+                    None
                 }
                 iced::mouse::Event::ButtonPressed(button) => match button {
                     iced::mouse::Button::Left => {
