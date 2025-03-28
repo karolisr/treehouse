@@ -1,6 +1,6 @@
 // #[cfg(not(debug_assertions))]
 use super::super::canvas::Canvas;
-use crate::{Tree, window_settings};
+use crate::{Edges, Tree, flatten_tree, window_settings};
 use iced::{
     Element, Length, Task,
     alignment::{Horizontal, Vertical},
@@ -9,29 +9,32 @@ use iced::{
     },
 };
 
+type Float = f32;
+
 #[derive(Debug, Default)]
 pub struct TreeView1 {
     pub(super) tree: Tree,
     tree_orig: Tree,
     pub(super) cache: Cache,
     node_sort_selection: Option<NodeSortOptions>,
-    canvas_height: f32,
-    window_height: f32,
-    pub(super) lab_size: f32,
-    pub(super) node_size: f32,
-    pub(super) tree_height: f64,
+    canvas_height: Float,
+    window_height: Float,
+    pub(super) lab_size: Float,
+    pub(super) node_size: Float,
+    pub(super) tree_height: Float,
     pub(super) tip_count: usize,
     node_count: usize,
+    pub(super) edges: Edges,
 }
 #[derive(Debug, Clone)]
 pub enum TreeView1Msg {
     CacheClearRequested,
     TreeUpdated(Tree),
     NodeSortOptionChanged(NodeSortOptions),
-    CanvasHeightChanged(f32),
-    WindowHeightChanged(f32),
-    LabelSizeChanged(f32),
-    NodeSizeChanged(f32),
+    CanvasHeightChanged(Float),
+    WindowHeightChanged(Float),
+    LabelSizeChanged(Float),
+    NodeSizeChanged(Float),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -96,7 +99,7 @@ impl TreeView1 {
             }
             TreeView1Msg::WindowHeightChanged(h) => {
                 self.window_height = h - 2e1;
-                self.node_size = self.window_height / self.tip_count as f32;
+                self.node_size = self.window_height / self.tip_count as Float;
                 if self.node_size < 4e0 {
                     self.lab_size = 4e0;
                 } else {
@@ -114,15 +117,16 @@ impl TreeView1 {
                     NodeSortOptions::Descending => self.tree.sort(true),
                 };
 
-                self.tree_height = self.tree.height();
+                self.tree_height = self.tree.height() as Float;
                 self.tip_count = self.tree.tip_count_all();
                 self.node_count = self.tree.node_count_all();
-                self.node_size = self.window_height / self.tip_count as f32;
+                self.node_size = self.window_height / self.tip_count as Float;
                 if self.node_size < 4e0 {
                     self.lab_size = 4e0;
                 } else {
                     self.lab_size = self.node_size;
                 }
+                self.edges = flatten_tree(&self.tree);
                 Task::done(TreeView1Msg::CacheClearRequested)
             }
             TreeView1Msg::NodeSortOptionChanged(option) => {
@@ -132,6 +136,7 @@ impl TreeView1 {
                     NodeSortOptions::Descending => self.tree.sort(true),
                 };
                 self.node_sort_selection = Some(option);
+                self.edges = flatten_tree(&self.tree);
                 Task::done(TreeView1Msg::CacheClearRequested)
             }
         }
@@ -171,37 +176,37 @@ impl TreeView1 {
                             .align_x(Horizontal::Left)
                             .spacing(padding / 2),
                         ]
-                        .padding(padding as f32)
+                        .padding(padding as Float)
                         .spacing(padding / 2)
                         .align_y(Vertical::Center),
                     ]
                     .align_x(Horizontal::Center)
-                    .padding(padding as f32)
+                    .padding(padding as Float)
                     .width(sidebar_width),
                     row![
                         text!("Label Size:").size(text_size),
                         slider(
-                            self.window_height / self.tip_count as f32..=1e1,
+                            self.window_height / self.tip_count as Float..=1e1,
                             self.lab_size,
                             TreeView1Msg::LabelSizeChanged
                         )
                         .height(text_size)
                     ]
                     .spacing(padding / 2)
-                    .padding(padding as f32)
+                    .padding(padding as Float)
                     .align_y(Vertical::Center)
                     .width(sidebar_width),
                     row![
                         text!("Node Size:").size(text_size),
                         slider(
-                            self.window_height / self.tip_count as f32..=2e1,
+                            self.window_height / self.tip_count as Float..=2e1,
                             self.node_size,
                             TreeView1Msg::NodeSizeChanged
                         )
                         .height(text_size)
                     ]
                     .spacing(padding / 2)
-                    .padding(padding as f32)
+                    .padding(padding as Float)
                     .align_y(Vertical::Center)
                     .width(sidebar_width),
                     row![
@@ -215,7 +220,7 @@ impl TreeView1 {
                         .width(sidebar_width)
                     ]
                     .spacing(padding / 2)
-                    .padding(padding as f32)
+                    .padding(padding as Float)
                     .align_y(Vertical::Center)
                     .width(sidebar_width),
                     vertical_space()

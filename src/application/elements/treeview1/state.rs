@@ -7,30 +7,32 @@ use iced::{
     widget::canvas::{Frame, Path, Stroke, Text},
 };
 
+type Float = f32;
+
 #[derive(Debug)]
 pub struct TreeView1State {
     // pub(super) tip_count: usize,
-    // tree_height: f32,
-    pub(super) scale_factor_x: f32,
-    pub(super) scale_factor_y: f32,
+    // tree_height: Float,
+    pub(super) scale_factor_x: Float,
+    pub(super) scale_factor_y: Float,
     bounds_global: Rectangle,
     pub(super) bounds_full: Rectangle,
     pub(super) bounds_tree: Rectangle,
     pub(super) bounds_tl_sep: Rectangle,
     pub(super) bounds_tip_labels: Rectangle,
     // tip_names: Vec<String>,
-    pub(super) label_width: f32,
-    pub(super) label_height: f32,
-    pub(super) scale_factor_y_min: f32,
-    label_offset: f32,
+    pub(super) label_width: Float,
+    pub(super) label_height: Float,
+    pub(super) scale_factor_y_min: Float,
+    label_offset: Float,
     // pub(super) tip_label_rects: Vec<Rectangle>,
     pub(super) dragging_tl_sep: bool,
-    pub(super) drag_start_x: f32,
-    pub(super) drag_start_y: f32,
-    pub(super) label_width_prev: f32,
-    pub(super) height: f32,
-    pub(super) height_prev: f32,
-    pub(super) height_win: f32,
+    pub(super) drag_start_x: Float,
+    pub(super) drag_start_y: Float,
+    pub(super) label_width_prev: Float,
+    pub(super) height: Float,
+    pub(super) height_prev: Float,
+    pub(super) height_win: Float,
 }
 
 // #[cfg(debug_assertions)]
@@ -39,8 +41,8 @@ pub struct TreeView1State {
 impl Default for TreeView1State {
     fn default() -> Self {
         Self {
-            label_width: 1.5e2,
-            label_width_prev: 1.5e2,
+            label_width: 1e1,
+            label_width_prev: 1e1,
             scale_factor_y: 2e-3,
             scale_factor_y_min: 2e-3,
             label_height: 2e-3,
@@ -67,7 +69,7 @@ impl Default for TreeView1State {
 
 impl TreeView1State {
     pub(super) fn cache_tree_state(&mut self, tree_view: &TreeView1, bounds: &Rectangle) {
-        let offset: f32 = 1e1;
+        let offset: Float = 1e1;
         // self.bounds_global = bounds.shrink(Padding::new(0e0));
         self.bounds_global = Rectangle::new(
             Point { x: 0e0, y: 0e0 },
@@ -94,12 +96,12 @@ impl TreeView1State {
             .bounds_full
             .shrink(Padding::new(0e0).left(self.bounds_tree.width + self.bounds_tl_sep.width));
 
-        // self.tree_height = tree.height() as f32;
+        // self.tree_height = tree.height() as Float;
         // self.tip_count = tree.tip_count_all();
-        self.scale_factor_x = self.bounds_tree.width / tree_view.tree_height as f32;
-        // self.scale_factor_y = self.bounds_tree.height / tree_view.tip_count as f32;
+        self.scale_factor_x = self.bounds_tree.width / tree_view.tree_height as Float;
+        // self.scale_factor_y = self.bounds_tree.height / tree_view.tip_count as Float;
         self.scale_factor_y = self.scale_factor_y_min;
-        self.height = offset * 2e0 + self.scale_factor_y * tree_view.tip_count as f32;
+        self.height = offset * 2e0 + self.scale_factor_y * tree_view.tip_count as Float;
         // self.tip_names = tree
         //     .tip_node_ids_all()
         //     .iter()
@@ -107,10 +109,10 @@ impl TreeView1State {
         //     .collect();
     }
 
-    fn child_heights(&self, node_id: usize, tree: &Tree) -> Vec<f32> {
+    fn child_heights(&self, node_id: usize, tree: &Tree) -> Vec<Float> {
         tree.tip_node_counts_for_children(node_id)
             .iter()
-            .map(|&count| count as f32 * self.scale_factor_y)
+            .map(|&count| count as Float * self.scale_factor_y)
             .collect()
     }
 
@@ -119,14 +121,14 @@ impl TreeView1State {
         node_id: usize,
         tree: &Tree,
         parent_bounds: &Rectangle,
-        parent_branch_length: f32,
+        parent_branch_length: Float,
         child_index: usize,
-        child_heights: &[f32],
+        child_heights: &[Float],
     ) -> Rectangle {
         Rectangle {
             x: parent_bounds.x + parent_branch_length * self.scale_factor_x,
-            y: parent_bounds.y + child_heights[..child_index].iter().sum::<f32>(),
-            width: tree.branch_length(node_id) as f32 * self.scale_factor_x,
+            y: parent_bounds.y + child_heights[..child_index].iter().sum::<Float>(),
+            width: tree.branch_length(node_id) as Float * self.scale_factor_x,
             height: child_heights[child_index],
         }
     }
@@ -137,7 +139,7 @@ impl TreeView1State {
         tree: &Tree,
         frame: &mut Frame,
         bounds: &Rectangle,
-        child_heights: &[f32],
+        child_heights: &[Float],
     ) {
         // #[cfg(debug_assertions)]
         // unsafe {
@@ -149,7 +151,7 @@ impl TreeView1State {
         // #[cfg(debug_assertions)]
         // let color = unsafe {
         //     Color {
-        //         r: COUNTER as f32 / self.tip_count as f32,
+        //         r: COUNTER as Float / self.tip_count as Float,
         //         g: 5e-1,
         //         b: 1e-1,
         //         a: 1e0,
@@ -158,8 +160,8 @@ impl TreeView1State {
         let child_count: usize = tree.child_node_count(node_id);
         let is_tip: bool = tree.is_tip(node_id);
 
-        let mut y: f32 = bounds.center_y();
-        let h: f32 = bounds.height;
+        let mut y: Float = bounds.center_y();
+        let h: Float = bounds.height;
 
         if !is_tip {
             y = bounds.center_y();
@@ -212,8 +214,8 @@ impl TreeView1State {
         frame: &mut Frame,
         bounds: &Rectangle,
     ) {
-        let branch_length = tree.branch_length(node_id) as f32;
-        let child_heights: Vec<f32> = self.child_heights(node_id, tree);
+        let branch_length = tree.branch_length(node_id) as Float;
+        let child_heights: Vec<Float> = self.child_heights(node_id, tree);
         let child_node_ids: &[usize] = tree.child_node_ids(node_id);
         let child_bounds_vec: Vec<Rectangle> = child_node_ids
             .iter()
@@ -231,7 +233,7 @@ impl TreeView1State {
 
     #[allow(dead_code)]
     fn draw_bounds(&self, bounds: &Rectangle, frame: &mut Frame) {
-        let offset: f32 = 1e0;
+        let offset: Float = 1e0;
         let path = Path::new(|p| {
             p.rectangle(
                 Point {
@@ -257,7 +259,7 @@ impl TreeView1State {
 
     #[allow(dead_code)]
     fn draw_bg(&self, bounds: &Rectangle, color: &Color, frame: &mut Frame) {
-        let line_width: f32 = 1e0;
+        let line_width: Float = 1e0;
 
         let top_left = Point {
             x: bounds.x + line_width,
@@ -287,7 +289,7 @@ impl TreeView1State {
     //             x: self.bounds_tip_labels.x,
     //             y: self.bounds_tip_labels.y
     //                 + self.scale_factor_y / 4e0
-    //                 + self.scale_factor_y * i as f32,
+    //                 + self.scale_factor_y * i as Float,
     //             width: self.label_width,
     //             height: self.scale_factor_y / 2e0,
     //         };

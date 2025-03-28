@@ -1,2 +1,6 @@
-pub enum TreeView2Msg {}
-pub struct TreeView2 {}
+mod program;
+mod state;
+mod view;
+
+pub use view::TreeView2;
+pub use view::TreeView2Msg;

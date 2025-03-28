@@ -1,10 +1,14 @@
+use crate::{SimpleColor, flatten_tree};
+
 // #[cfg(not(debug_assertions))]
 use super::{TreeView1, TreeView1Msg, TreeView1State};
 use iced::{
-    Event, Rectangle, Renderer, Theme,
+    Event, Point, Rectangle, Renderer, Theme, Vector,
     mouse::{Cursor, Interaction},
-    widget::canvas::{Action, Geometry, Program},
+    widget::canvas::{Action, Geometry, Path, Program, Stroke},
 };
+
+type Float = f32;
 
 impl Program<TreeView1Msg> for TreeView1 {
     type State = TreeView1State;
@@ -56,12 +60,12 @@ impl Program<TreeView1Msg> for TreeView1 {
             // };
 
             // println!("BEGIN cache.draw draw_tree");
-            state.draw_tree(
-                self.tree.first_node_id(),
-                &self.tree,
-                frame,
-                &state.bounds_tree,
-            );
+            // state.draw_tree(
+            //     self.tree.first_node_id(),
+            //     &self.tree,
+            //     frame,
+            //     &state.bounds_tree,
+            // );
 
             // for b in &state.tip_label_rects {
             //     state.draw_bounds(b, frame);
@@ -69,28 +73,67 @@ impl Program<TreeView1Msg> for TreeView1 {
 
             // println!("BEGIN cache.draw draw_tip_labels");
             // prepare_tip_label_rects --------------------------
-            let mut tip_label_rects: Vec<Rectangle> = Vec::new();
-            for i in 0..self.tip_count {
-                let label_bounds: Rectangle = Rectangle {
-                    x: state.bounds_tip_labels.x,
-                    y: state.bounds_tip_labels.y
-                        + state.scale_factor_y / 4e0
-                        + state.scale_factor_y * i as f32,
-                    width: state.label_width,
-                    height: state.scale_factor_y / 2e0,
-                };
-                tip_label_rects.push(label_bounds);
-            } // ------------------------------------------------
+            // let mut tip_label_rects: Vec<Rectangle> = Vec::new();
+            // for i in 0..self.tip_count {
+            //     let label_bounds: Rectangle = Rectangle {
+            //         x: state.bounds_tip_labels.x,
+            //         y: state.bounds_tip_labels.y
+            //             + state.scale_factor_y / 4e0
+            //             + state.scale_factor_y * i as Float,
+            //         width: state.label_width,
+            //         height: state.scale_factor_y / 2e0,
+            //     };
+            //     tip_label_rects.push(label_bounds);
+            // } // ------------------------------------------------
 
-            let tip_names = self
-                .tree
-                .tip_node_ids_all()
-                .iter()
-                .map(|&id| self.tree.name(id))
-                .collect();
+            // let tip_names = self
+            //     .tree
+            //     .tip_node_ids_all()
+            //     .iter()
+            //     .map(|&id| self.tree.name(id))
+            //     .collect();
 
-            state.draw_tip_labels(frame, &cursor, tip_label_rects, tip_names);
+            // state.draw_tip_labels(frame, &cursor, tip_label_rects, tip_names);
             // println!("  END cache.draw");
+
+            // let edges = flatten_tree(&self.tree);
+            frame.translate(Vector::new(1e1, 1e1));
+            let mut parent_prev = self.edges[0].0;
+            let mut y_prev = self.edges[0].5;
+            for e in &self.edges {
+                // println!(
+                //     // Prnt Child PHeight  Height    Y
+                //     "{:>5} {:>5} {:>3.5} {:>3.5} {:>3.5}",
+                //     e.0, e.1, e.3, e.4, e.5,
+                // );
+
+                let parent = e.0;
+                let y = e.5;
+                let path = Path::new(|p| {
+                    p.move_to(Point::new(
+                        e.3 as Float * state.bounds_tree.width,
+                        e.5 as Float * state.bounds_tree.height,
+                    ));
+                    p.line_to(Point::new(
+                        e.4 as Float * state.bounds_tree.width,
+                        e.5 as Float * state.bounds_tree.height,
+                    ));
+
+                    if parent == parent_prev {
+                        p.move_to(Point::new(
+                            e.3 as Float * state.bounds_tree.width,
+                            e.5 as Float * state.bounds_tree.height,
+                        ));
+                        p.line_to(Point::new(
+                            e.3 as Float * state.bounds_tree.width,
+                            y_prev as Float * state.bounds_tree.height,
+                        ));
+                    }
+                    parent_prev = parent;
+                });
+                y_prev = y;
+                frame.stroke(&path, Stroke::default().with_color(SimpleColor::BLACK));
+            }
         });
         // println!("  END draw");
         vec![geometry]

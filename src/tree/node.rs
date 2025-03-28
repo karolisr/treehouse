@@ -91,6 +91,13 @@ impl Tree {
         }
     }
 
+    pub fn parent_node_id(&self, node_id: usize) -> usize {
+        match self.child_parent_map.get(&node_id) {
+            Some(&p) => p,
+            None => 0,
+        }
+    }
+
     pub fn child_node_count(&self, node_id: usize) -> usize {
         self.child_node_ids(node_id).len()
     }
@@ -212,8 +219,8 @@ impl Tree {
         //     self.dist(self.first_node_id(), *b)
         //         .total_cmp(&self.dist(self.first_node_id(), *a))
         // });
-        sorted_ids.sort_by_key(|s| self.name(*s));
-        sorted_ids.sort_by(|a, b| self.branch_length(*a).total_cmp(&self.branch_length(*b)));
+        // sorted_ids.sort_by_key(|s| self.name(*s));
+        // sorted_ids.sort_by(|a, b| self.branch_length(*a).total_cmp(&self.branch_length(*b)));
         sorted_ids.sort_by_key(|c| self.child_node_count_recursive(*c));
         if reverse {
             sorted_ids.reverse();
