@@ -1,6 +1,6 @@
-use std::{collections::HashMap, fmt::Display};
-
-type Float = f64;
+use super::TreeFloat;
+use std::collections::HashMap as Dict;
+use std::fmt::Display;
 
 pub fn node<'a>(name: impl Into<&'a str>) -> Node {
     let (name, branch_length) = parse_name(name);
@@ -21,22 +21,22 @@ pub fn nodes_from_string<'a>(s: impl Into<&'a str>, sep: impl Into<&'a str>) -> 
 #[derive(Debug, Default, Clone)]
 pub struct Node {
     name: Option<String>,
-    branch_length: Option<Float>,
+    branch_length: Option<TreeFloat>,
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct Tree {
     nodes: Vec<Node>,
-    parent_children_map: HashMap<usize, Vec<usize>>,
-    child_parent_map: HashMap<usize, usize>,
+    parent_children_map: Dict<usize, Vec<usize>>,
+    child_parent_map: Dict<usize, usize>,
 }
 
 impl Tree {
     pub fn new() -> Self {
         Self {
             nodes: vec![Node::new(Some(String::from("WRAPPER")), Some(0e0))],
-            parent_children_map: HashMap::new(),
-            child_parent_map: HashMap::new(),
+            parent_children_map: Dict::new(),
+            child_parent_map: Dict::new(),
         }
     }
 
@@ -77,7 +77,7 @@ impl Tree {
         }
     }
 
-    pub fn branch_length(&self, node_id: usize) -> Float {
+    pub fn branch_length(&self, node_id: usize) -> TreeFloat {
         match self.nodes.get(node_id) {
             Some(n) => n.branch_length.unwrap_or(0e0),
             None => 0e0,
@@ -139,8 +139,8 @@ impl Tree {
         self.tip_node_ids(self.first_node_id())
     }
 
-    pub fn dist(&self, left: usize, right: usize) -> Float {
-        let mut h: Float = 0e0;
+    pub fn dist(&self, left: usize, right: usize) -> TreeFloat {
+        let mut h: TreeFloat = 0e0;
         if left != right {
             h += match self.nodes.get(right) {
                 Some(n) => n.branch_length.unwrap_or(0e0),
@@ -159,7 +159,7 @@ impl Tree {
         }
     }
 
-    pub fn height(&self) -> Float {
+    pub fn height(&self) -> TreeFloat {
         let mut h = 0e0;
         let ids = self.child_node_ids(0);
         if ids.len() == 1 {
@@ -220,7 +220,7 @@ impl Tree {
         //         .total_cmp(&self.dist(self.first_node_id(), *a))
         // });
         // sorted_ids.sort_by_key(|s| self.name(*s));
-        // sorted_ids.sort_by(|a, b| self.branch_length(*a).total_cmp(&self.branch_length(*b)));
+        sorted_ids.sort_by(|a, b| self.branch_length(*a).total_cmp(&self.branch_length(*b)));
         sorted_ids.sort_by_key(|c| self.child_node_count_recursive(*c));
         if reverse {
             sorted_ids.reverse();
@@ -276,7 +276,7 @@ fn display(tree: &Tree, node_id: usize, mut level: usize) -> String {
 }
 
 impl Node {
-    pub fn new(name: Option<String>, branch_length: Option<Float>) -> Self {
+    pub fn new(name: Option<String>, branch_length: Option<TreeFloat>) -> Self {
         Self {
             name,
             branch_length,
@@ -289,12 +289,12 @@ impl Node {
     }
 }
 
-pub fn parse_name<'a>(name: impl Into<&'a str>) -> (Option<String>, Option<Float>) {
+pub fn parse_name<'a>(name: impl Into<&'a str>) -> (Option<String>, Option<TreeFloat>) {
     let name: &str = name.into();
     let (name, brln) = match name.rsplit_once(':') {
         Some((name, brln)) => (
             name,
-            match brln.parse::<Float>() {
+            match brln.parse::<TreeFloat>() {
                 Ok(x) => Some(x),
                 Err(_) => Some(1e0),
             },

@@ -1,7 +1,7 @@
 use iced::Color;
-pub struct SimpleColor {}
+pub struct CLR {}
 
-impl SimpleColor {
+impl CLR {
     pub const BLACK: Color = Color {
         r: 0e0,
         g: 0e0,

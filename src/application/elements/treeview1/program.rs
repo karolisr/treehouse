@@ -1,4 +1,4 @@
-use crate::SimpleColor;
+use crate::CLR;
 use iced::Color;
 use std::thread;
 use std::thread::ScopedJoinHandle;
@@ -93,22 +93,24 @@ impl Program<TreeView1Msg> for TreeView1 {
             // state.draw_tip_labels(frame, &cursor, tip_label_rects, tip_names);
 
             frame.translate(Vector::new(1e1, 1e1));
-            let stroke = Stroke::default().with_color(SimpleColor::BLACK);
+            let stroke = Stroke::default().with_color(CLR::BLACK);
             thread::scope(|thread_scope| {
                 let mut handles: Vec<ScopedJoinHandle<'_, Path>> = Vec::new();
                 for chunk in &self.edges_chunks {
                     let path = thread_scope.spawn(move || {
                         Path::new(|p| {
                             for e in chunk {
-                                let e3 = e.3 as Float * state.bounds_tree.width;
-                                let e4 = e.4 as Float * state.bounds_tree.width;
-                                let e5 = e.5 as Float * state.bounds_tree.height;
-                                let e6 = e.6 as Float * state.bounds_tree.height;
-                                p.move_to(Point::new(e4, e5));
-                                p.line_to(Point::new(e3, e5));
-                                if !e6.is_nan() {
-                                    p.line_to(Point::new(e3, e6));
-                                }
+                                let x0 = e.x0 as Float * state.bounds_tree.width;
+                                let x1 = e.x1 as Float * state.bounds_tree.width;
+                                let y = e.y as Float * state.bounds_tree.height;
+                                p.move_to(Point::new(x1, y));
+                                p.line_to(Point::new(x0, y));
+                                if let Some(y_prev) = e.y_prev {
+                                    p.line_to(Point::new(
+                                        x0,
+                                        y_prev as Float * state.bounds_tree.height,
+                                    ))
+                                };
                             }
                         })
                     });

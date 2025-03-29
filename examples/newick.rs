@@ -3,23 +3,32 @@ use treehouse::flatten_tree;
 use treehouse::parse_newick;
 
 fn main() {
-    let data = "(((×Five:0.5,Four:0.4,(Two:0.2,One:0.1)Three:0.3)Six:0.6,Seven:0.7)×Eight×:0.8,×Nine×:0.9)Ten×:1.0;";
+    // let data = "(((пять:0.5,Four:0.4,(Two:0.2,One:0.1)Three:0.3)Six:0.6,Seven:0.7)Aštuoni:0.8,九つ:0.9)十:1.0;";
+    let data = "(((One:0.2,Two:0.3)A:0.3,XXX:0.7,(Three:0.5,Four:0.3)B:0.2)C:0.3,пять:0.7,YšY九Y:0.7)D:0.0;";
     let data = String::from(data);
     println!("{data}");
     let mut tree = match parse_newick(data) {
         Some(t) => t,
         None => Tree::new(),
     };
-    tree.sort(true);
+    tree.sort(false);
     println!("{}", &tree);
-    let chunks = flatten_tree(&tree, 8);
+    let chunks = flatten_tree(&tree, 1);
     for chunk in chunks {
-        println!("------------------------------------------------------");
+        println!("{}", "-".repeat(46));
         for e in chunk {
             println!(
-                //Prnt Child  Name  PHeight Height     Y     Yprev
-                "{:>5} {:>5} {:>10} {:>3.5} {:>3.5} {:>3.5} {:>3.5}",
-                e.0, e.1, e.2, e.3, e.4, e.5, e.6,
+                "{:>3} {:>3} {:<10} {:>.4} {:>.4} {:>.4} {}",
+                e.parent,
+                e.child,
+                e.name,
+                e.x0,
+                e.x1,
+                e.y,
+                match e.y_prev {
+                    Some(y_prev) => format!("{:>.4}", y_prev),
+                    None => format!("{:<}", "-"),
+                },
             );
         }
     }

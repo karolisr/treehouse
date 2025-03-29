@@ -79,7 +79,7 @@ fn parse(s: String, parent_id: usize, mut tree: Tree) -> Tree {
                             rv
                         }
                         None => {
-                            let mut rv = &s[i + 1..];
+                            let rv = &s[i + 1..];
                             i = s.len();
                             rv
                         }
@@ -93,7 +93,7 @@ fn parse(s: String, parent_id: usize, mut tree: Tree) -> Tree {
                 // ((One:0.1,Two:0.2,(Three:0.3,Four:0.4)Five:0.5)Six:0.6,Seven:0.7);
                 //   ||||||||||||||||
                 else if !is_open && !was_open {
-                    if let Some((c_idx, c)) = s_iter.clone().next() {
+                    if let Some((_, c)) = s_iter.clone().next() {
                         if c == '(' {
                             tree.add_child_nodes(parent_id, nodes_from_string(&s[0..i], ","));
                         }

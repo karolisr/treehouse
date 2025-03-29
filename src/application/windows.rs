@@ -20,11 +20,9 @@ pub fn window_settings() -> Settings {
             height: 800.0,
         },
         min_size: Some(Size {
-            width: 100.0,
-            height: 100.0,
+            width: 200.0,
+            height: 200.0,
         }),
-        // position: Position::Specific(Point { x: 10.0, y: 30.0 }),
-        // position: Position::Default,
         position: Position::Centered,
         resizable: true,
         level: Level::Normal,

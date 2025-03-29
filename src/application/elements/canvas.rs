@@ -38,12 +38,11 @@ where
     Renderer: GeometryRenderer,
     P: Program<Message, Theme, Renderer>,
 {
-    const DEFAULT_SIZE: f32 = 100.0;
-
-    pub fn new(program: P) -> Self {
+    pub(super) fn new(program: P) -> Self {
+        let dim = Length::Fill;
         Canvas {
-            width: Length::Fixed(Self::DEFAULT_SIZE),
-            height: Length::Fixed(Self::DEFAULT_SIZE),
+            width: dim,
+            height: dim,
             program,
             message: PhantomData,
             theme: PhantomData,
@@ -52,12 +51,12 @@ where
         }
     }
 
-    pub fn width(mut self, width: impl Into<Length>) -> Self {
+    pub(super) fn width(mut self, width: impl Into<Length>) -> Self {
         self.width = width.into();
         self
     }
 
-    pub fn height(mut self, height: impl Into<Length>) -> Self {
+    pub(super) fn height(mut self, height: impl Into<Length>) -> Self {
         self.height = height.into();
         self
     }
