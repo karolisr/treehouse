@@ -41,12 +41,13 @@ deb_depends = []
 # Code generation options
 #   https://doc.rust-lang.org/rustc/codegen-options/index.html
 
+# ------------------------------------------------------------------------
 [profile.dev]
 debug-assertions = true
 incremental = true      # Compile your binary in smaller steps.
 codegen-units = 6       # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
 lto = false             # Enables link-time-optimizations. Use false for faster compile time.
-opt-level = 3           # "s" prioritizes small binary size. Use 3 for faster compile time.
+opt-level = 2           # "s" prioritizes small binary size. Use 3 for faster compile time.
 panic = "abort"         # Higher performance by disabling panic handlers.
 strip = false           # Ensures debug symbols are removed.
 debug = true
@@ -64,14 +65,15 @@ rpath = false
 # debug = true
 # overflow-checks = true
 # rpath = false
-# -----------------------
+# ------------------------------------------------------------------------
 
+# ------------------------------------------------------------------------
 [profile.release]
 debug-assertions = false
 incremental = true       # Compile your binary in smaller steps.
 codegen-units = 1        # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
 lto = true               # Enables link-time-optimizations. Use false for faster compile time.
-opt-level = 3            # "s" prioritizes small binary size. Use 3 for faster compile time.
+opt-level = 2            # "s" prioritizes small binary size. Use 3 for faster compile time.
 panic = "abort"          # Higher performance by disabling panic handlers.
 strip = true             # Ensures debug symbols are removed.
 debug = false
@@ -89,8 +91,9 @@ rpath = false
 # debug = false
 # overflow-checks = false
 # rpath = false
-# -----------------------
+# ------------------------------------------------------------------------
 
+# ------------------------------------------------------------------------
 [dependencies]
 objc2 = "0.6.0"
 objc2-app-kit = "0.3.0"
@@ -178,3 +181,4 @@ features = [
     ### Enables the "svg" widget
     # "svg",
 ]
+# ------------------------------------------------------------------------
