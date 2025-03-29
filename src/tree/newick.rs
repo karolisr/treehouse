@@ -17,9 +17,8 @@ fn parse(s: String, parent_id: usize, mut tree: Tree) -> Tree {
     let mut n_open: i32 = 0;
     let mut is_open: bool = false;
     let mut was_open: bool = false;
-    let s_len = s.char_indices().count();
     let mut s_iter = s.char_indices();
-    while i < s_len {
+    while i < s.len() {
         let character: char;
         if let Some((c_idx, c)) = s_iter.next() {
             character = c;
@@ -56,9 +55,9 @@ fn parse(s: String, parent_id: usize, mut tree: Tree) -> Tree {
                 }
             }
             ',' => {
-                // ---------------------------------------------------------------------------------
-                // This whole section is here to account for one thing only: nodes not surrounded by
-                // parentheses that occur next to nodes that are and share a parent node.
+                // --------------------------------------------------------------------------------
+                // This whole section is here to account for one thing only: nodes not surrounded
+                // by parentheses that occur next to nodes that are and share a parent node.
                 // (((One:0.2,Two:0.3):0.3,(Three:0.5,Four:0.3):0.2):0.3,Five:0.7):0.0;
                 //                                                      |||||||||
                 if !is_open && was_open {
@@ -67,16 +66,21 @@ fn parse(s: String, parent_id: usize, mut tree: Tree) -> Tree {
                             let mut rv = &s[i + 1..i + 1 + x];
                             // Make sure additional (empty) node is not created when the ",("
                             // pattern is encountered; e.g. "...node1,node2,(..."
-                            if rv.ends_with(",") && &s[i + 1 + x..i + 2 + x] == "(" {
-                                rv = &rv[0..rv.len() - 1];
+                            if rv.ends_with(",") {
+                                let after_rv = &s[i + 1 + x..];
+                                let mut after_rv_iter = after_rv.char_indices();
+                                if let Some((_, c)) = after_rv_iter.next() {
+                                    if c == '(' {
+                                        rv = &rv[0..rv.len() - 1];
+                                    }
+                                }
                             }
                             i += x;
                             rv
                         }
                         None => {
                             let mut rv = &s[i + 1..];
-                            rv = rv.trim_end_matches(';');
-                            i = s_len;
+                            i = s.len();
                             rv
                         }
                     };
@@ -86,19 +90,19 @@ fn parse(s: String, parent_id: usize, mut tree: Tree) -> Tree {
                     }
                 }
                 // --------------------------------------------------------------------------------
-
-                // --------------------------------------------------------------------------------
                 // ((One:0.1,Two:0.2,(Three:0.3,Four:0.4)Five:0.5)Six:0.6,Seven:0.7);
                 //   ||||||||||||||||
-                else if !is_open && !was_open && s.len() >= i + 2 && &s[i + 1..i + 2] == "(" {
-                    tree.add_child_nodes(parent_id, nodes_from_string(&s[0..i], ","));
+                else if !is_open && !was_open {
+                    if let Some((c_idx, c)) = s_iter.clone().next() {
+                        if c == '(' {
+                            tree.add_child_nodes(parent_id, nodes_from_string(&s[0..i], ","));
+                        }
+                    }
                 }
                 // --------------------------------------------------------------------------------
             }
-            // ------------------------------------------------------------------------------------
             _ => (),
         }
-        // i += 1;
     }
     if !was_open {
         tree.add_child_nodes(parent_id, nodes_from_string(s.as_str(), ","));
@@ -117,7 +121,7 @@ fn clean_newick_str(s: &str) -> String {
     let rv = clean_sep(rv.as_str(), ",");
     let rv = clean_sep(rv.as_str(), "(");
     let rv = clean_sep(rv.as_str(), ")");
-    rv
+    rv.trim_end_matches(';').to_string()
 }
 
 fn clean_sep<'a>(s: impl Into<&'a str>, sep: impl Into<&'a str>) -> String {
