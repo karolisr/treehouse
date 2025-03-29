@@ -1,4 +1,3 @@
-use crate::Edge;
 use crate::SimpleColor;
 use iced::Color;
 use std::thread;
@@ -94,66 +93,29 @@ impl Program<TreeView1Msg> for TreeView1 {
             // state.draw_tip_labels(frame, &cursor, tip_label_rects, tip_names);
 
             frame.translate(Vector::new(1e1, 1e1));
-
-            let n_edge = self.edges.len();
-            let mut n_thread = 8;
-            if self.edges.len() < 2000 {
-                n_thread = 1;
-            }
-            let n_edge_per_thread = n_edge / n_thread;
-            let remainder = n_edge % n_thread;
-
-            let mut chunks: Vec<&[Edge]> = Vec::new();
-
-            for t in 0..n_thread {
-                let i1 = n_edge_per_thread * t;
-                let i2 = n_edge_per_thread * (t + 1);
-                let edges = &self.edges[i1..i2];
-                chunks.push(edges);
-            }
-            if remainder > 0 {
-                let edges = &self.edges[n_edge_per_thread * n_thread..];
-                chunks.push(edges);
-            }
-            thread::scope(|s| {
-                let mut joins: Vec<ScopedJoinHandle<'_, Path>> = Vec::new();
-                for chunk in chunks {
-                    let paths_thread = s.spawn(move || {
+            let stroke = Stroke::default().with_color(SimpleColor::BLACK);
+            thread::scope(|thread_scope| {
+                let mut handles: Vec<ScopedJoinHandle<'_, Path>> = Vec::new();
+                for chunk in &self.edges_chunks {
+                    let path = thread_scope.spawn(move || {
                         Path::new(|p| {
-                            let mut parent_prev = chunk[0].0;
-                            let mut y_prev = chunk[0].5;
                             for e in chunk {
-                                let parent = e.0;
-                                let y = e.5;
-                                p.move_to(Point::new(
-                                    e.3 as Float * state.bounds_tree.width,
-                                    e.5 as Float * state.bounds_tree.height,
-                                ));
-                                p.line_to(Point::new(
-                                    e.4 as Float * state.bounds_tree.width,
-                                    e.5 as Float * state.bounds_tree.height,
-                                ));
-                                if parent == parent_prev {
-                                    p.move_to(Point::new(
-                                        e.3 as Float * state.bounds_tree.width,
-                                        e.5 as Float * state.bounds_tree.height,
-                                    ));
-                                    p.line_to(Point::new(
-                                        e.3 as Float * state.bounds_tree.width,
-                                        y_prev as Float * state.bounds_tree.height,
-                                    ));
-                                } else {
-                                    parent_prev = parent;
+                                let e3 = e.3 as Float * state.bounds_tree.width;
+                                let e4 = e.4 as Float * state.bounds_tree.width;
+                                let e5 = e.5 as Float * state.bounds_tree.height;
+                                let e6 = e.6 as Float * state.bounds_tree.height;
+                                p.move_to(Point::new(e4, e5));
+                                p.line_to(Point::new(e3, e5));
+                                if !e6.is_nan() {
+                                    p.line_to(Point::new(e3, e6));
                                 }
-                                y_prev = y;
                             }
                         })
                     });
-                    joins.push(paths_thread);
+                    handles.push(path);
                 }
-                let strk = Stroke::default().with_color(SimpleColor::BLACK);
-                for j in joins {
-                    frame.stroke(&j.join().unwrap(), strk);
+                for j in handles {
+                    frame.stroke(&j.join().unwrap(), stroke);
                 }
             });
         });
@@ -176,9 +138,6 @@ impl Program<TreeView1Msg> for TreeView1 {
                                 state.label_width_prev + state.drag_start_x - position.x;
                             self.cache.clear();
                             Some(Action::request_redraw())
-                        // } else if cursor.is_over(state.bounds_tl_sep) {
-                        //     self.cache.clear();
-                        //     Some(Action::request_redraw())
                         } else {
                             None
                         }
@@ -187,11 +146,7 @@ impl Program<TreeView1Msg> for TreeView1 {
                     }
                 }
                 iced::mouse::Event::CursorEntered => None,
-                iced::mouse::Event::CursorLeft => {
-                    // self.cache.clear();
-                    // Some(Action::request_redraw())
-                    None
-                }
+                iced::mouse::Event::CursorLeft => None,
                 iced::mouse::Event::ButtonPressed(button) => match button {
                     iced::mouse::Button::Left => {
                         if cursor.is_over(state.bounds_tl_sep) {

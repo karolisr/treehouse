@@ -3,5 +3,5 @@ mod node;
 mod utils;
 
 pub use newick::parse_newick;
-pub use node::{Node, Tree, node, nodes, nodes_from_string};
-pub use utils::{BrLen, Child, Edge, Edges, Parent, flatten_tree};
+pub use node::{Tree, node, nodes_from_string};
+pub use utils::{Edges, flatten_tree};

@@ -1,4 +1,4 @@
-use crate::{Tree, node, nodes_from_string};
+use super::{Tree, node, nodes_from_string};
 
 pub fn parse_newick(s: String) -> Option<Tree> {
     let mut tree: Tree = Tree::new();

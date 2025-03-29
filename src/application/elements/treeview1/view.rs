@@ -24,7 +24,7 @@ pub struct TreeView1 {
     pub(super) tree_height: Float,
     pub(super) tip_count: usize,
     node_count: usize,
-    pub(super) edges: Edges,
+    pub(super) edges_chunks: Vec<Edges>,
 }
 #[derive(Debug, Clone)]
 pub enum TreeView1Msg {
@@ -126,7 +126,7 @@ impl TreeView1 {
                 } else {
                     self.lab_size = self.node_size;
                 }
-                self.edges = flatten_tree(&self.tree);
+                self.edges_chunks = flatten_tree(&self.tree, 8);
                 Task::done(TreeView1Msg::CacheClearRequested)
             }
             TreeView1Msg::NodeSortOptionChanged(option) => {
@@ -136,7 +136,7 @@ impl TreeView1 {
                     NodeSortOptions::Descending => self.tree.sort(true),
                 };
                 self.node_sort_selection = Some(option);
-                self.edges = flatten_tree(&self.tree);
+                self.edges_chunks = flatten_tree(&self.tree, 8);
                 Task::done(TreeView1Msg::CacheClearRequested)
             }
         }
