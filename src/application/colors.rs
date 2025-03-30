@@ -1,22 +1,23 @@
 use iced::Color;
-pub struct CLR {}
 
-impl CLR {
-    pub const BLACK: Color = Color {
+pub struct ColorSimple {}
+
+impl ColorSimple {
+    pub const BLK: Color = Color {
         r: 0e0,
         g: 0e0,
         b: 0e0,
         a: 1e0,
     };
 
-    pub const WHITE: Color = Color {
+    pub const WHT: Color = Color {
         r: 1e0,
         g: 1e0,
         b: 1e0,
         a: 1e0,
     };
 
-    pub const TRANSPARENT: Color = Color {
+    pub const TRN: Color = Color {
         r: 0e0,
         g: 0e0,
         b: 0e0,
@@ -30,35 +31,35 @@ impl CLR {
         a: 1e0,
     };
 
-    pub const GREEN: Color = Color {
+    pub const GRN: Color = Color {
         r: 0e0,
         g: 1e0,
         b: 0e0,
         a: 1e0,
     };
 
-    pub const BLUE: Color = Color {
+    pub const BLU: Color = Color {
         r: 0e0,
         g: 0e0,
         b: 1e0,
         a: 1e0,
     };
 
-    pub const YELLOW: Color = Color {
+    pub const YEL: Color = Color {
         r: 1e0,
         g: 1e0,
         b: 0e0,
         a: 1e0,
     };
 
-    pub const MAGENTA: Color = Color {
+    pub const MAG: Color = Color {
         r: 1e0,
         g: 0e0,
         b: 1e0,
         a: 1e0,
     };
 
-    pub const CYAN: Color = Color {
+    pub const CYA: Color = Color {
         r: 0e0,
         g: 1e0,
         b: 1e0,

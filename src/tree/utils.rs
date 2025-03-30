@@ -1,6 +1,8 @@
 use super::{Tree, TreeFloat};
 use std::collections::BTreeMap;
 
+pub type Edges = Vec<Edge>;
+
 #[derive(Clone, Debug)]
 pub struct Edge {
     pub parent: usize,
@@ -11,8 +13,6 @@ pub struct Edge {
     pub y_prev: Option<TreeFloat>,
     pub y: TreeFloat,
 }
-
-pub type Edges = Vec<Edge>;
 
 pub fn flatten_tree(tree: &Tree, chunk_count: usize) -> Vec<Edges> {
     let ntip = tree.tip_count_all();

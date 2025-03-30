@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use iced::{
     Element, Length, Rectangle, Renderer as RendererRenderer, Size, Theme as IcedTheme, Vector,
     advanced::{
@@ -17,6 +15,7 @@ use iced::{
     widget::canvas::Program,
     window::{Event as WindowEvent, RedrawRequest},
 };
+use std::marker::PhantomData;
 
 #[derive(Debug)]
 pub(super) struct Canvas<P, Message, Theme = IcedTheme, Renderer = RendererRenderer>
@@ -51,15 +50,15 @@ where
         }
     }
 
-    pub(super) fn width(mut self, width: impl Into<Length>) -> Self {
-        self.width = width.into();
-        self
-    }
+    // pub(super) fn width(mut self, width: impl Into<Length>) -> Self {
+    //     self.width = width.into();
+    //     self
+    // }
 
-    pub(super) fn height(mut self, height: impl Into<Length>) -> Self {
-        self.height = height.into();
-        self
-    }
+    // pub(super) fn height(mut self, height: impl Into<Length>) -> Self {
+    //     self.height = height.into();
+    //     self
+    // }
 }
 
 impl<P, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
@@ -68,26 +67,6 @@ where
     Renderer: GeometryRenderer,
     P: Program<Message, Theme, Renderer>,
 {
-    fn tag(&self) -> WidgetTreeTag {
-        struct Tag<T>(T);
-        WidgetTreeTag::of::<Tag<P::State>>()
-    }
-
-    fn state(&self) -> WidgetTreeState {
-        WidgetTreeState::new(P::State::default())
-    }
-
-    fn size(&self) -> Size<Length> {
-        Size {
-            width: self.width,
-            height: self.height,
-        }
-    }
-
-    fn layout(&self, _tree: &mut WidgetTree, _renderer: &Renderer, limits: &Limits) -> LayoutNode {
-        layout::atomic(limits, self.width, self.height)
-    }
-
     fn update(
         &mut self,
         tree: &mut WidgetTree,
@@ -100,28 +79,23 @@ where
         viewport: &Rectangle,
     ) {
         let bounds = layout.bounds();
-
         let state = tree.state.downcast_mut::<P::State>();
-        let is_redraw_request = matches!(event, Event::Window(WindowEvent::RedrawRequested(_now)),);
 
         if let Some(action) = self.program.update(state, event, bounds, cursor) {
             let (message, redraw_request, event_status) = action.into_inner();
-
             shell.request_redraw_at(redraw_request);
-
             if let Some(message) = message {
                 shell.publish(message);
             }
-
             if event_status == EventStatus::Captured {
                 shell.capture_event();
             }
         }
 
+        let is_redraw_request = matches!(event, Event::Window(WindowEvent::RedrawRequested(_)));
         if shell.redraw_request() != RedrawRequest::NextFrame {
             let mouse_interaction =
                 self.mouse_interaction(tree, layout, cursor, viewport, renderer);
-
             if is_redraw_request {
                 self.last_mouse_interaction = Some(mouse_interaction);
             } else if self
@@ -157,16 +131,38 @@ where
         _viewport: &Rectangle,
     ) {
         let bounds = layout.bounds();
-        if bounds.width < 1.0 || bounds.height < 1.0 {
+        let state = tree.state.downcast_ref::<P::State>();
+
+        if bounds.width < 1e0 || bounds.height < 1e0 {
             return;
         }
-        let state = tree.state.downcast_ref::<P::State>();
+
         renderer.with_translation(Vector::new(bounds.x, bounds.y), |renderer| {
             let layers = self.program.draw(state, renderer, theme, bounds, cursor);
             for layer in layers {
                 renderer.draw_geometry(layer);
             }
         });
+    }
+
+    fn tag(&self) -> WidgetTreeTag {
+        struct Tag<T>(T);
+        WidgetTreeTag::of::<Tag<P::State>>()
+    }
+
+    fn state(&self) -> WidgetTreeState {
+        WidgetTreeState::new(P::State::default())
+    }
+
+    fn size(&self) -> Size<Length> {
+        Size {
+            width: self.width,
+            height: self.height,
+        }
+    }
+
+    fn layout(&self, _tree: &mut WidgetTree, _renderer: &Renderer, limits: &Limits) -> LayoutNode {
+        layout::atomic(limits, self.width, self.height)
     }
 }
 

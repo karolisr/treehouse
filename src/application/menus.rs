@@ -1,11 +1,10 @@
 mod events;
+
 pub use events::{MenuEvent, MenuEventReplyMsg, menu_events};
-use muda::Menu;
-use muda::MenuItem;
-use muda::Submenu;
-use muda::accelerator::Accelerator;
-use muda::accelerator::Code;
-use muda::accelerator::Modifiers;
+use muda::{
+    Menu, MenuItem, Submenu,
+    accelerator::{Accelerator, Code, Modifiers},
+};
 
 pub fn prepare_app_menu() -> Menu {
     let menu = Menu::default();

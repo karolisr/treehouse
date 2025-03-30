@@ -2,12 +2,11 @@
 // Code adapted from: https://github.com/neovide/neovide/pull/2395
 // https://developer.apple.com/documentation/appkit/nsapplicationdelegate
 
-use objc2::rc::autoreleasepool;
 use objc2::{
     MainThreadMarker,
     declare::ClassBuilder,
     msg_send,
-    rc::Retained,
+    rc::{Retained, autoreleasepool},
     runtime::{AnyClass, AnyObject},
     sel,
 };

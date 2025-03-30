@@ -1,16 +1,19 @@
-mod win1;
-mod win2;
+mod tree_window;
 
-use iced::Size;
-use iced::window::settings::PlatformSpecific;
-use iced::window::{Level, Position, Settings};
+use iced::{
+    Size,
+    window::{Level, Position, Settings, settings::PlatformSpecific},
+};
+pub use tree_window::{TreeWin, TreeWinMsg};
 
-pub use win1::{Win1, Win1Msg};
-pub use win2::{Win2, Win2Msg};
-
+#[derive(Debug)]
 pub enum AppWin {
-    Win1(Box<Win1>),
-    Win2(Box<Win2>),
+    TreeWin(Box<TreeWin>),
+}
+
+#[derive(Debug)]
+pub enum AppWinType {
+    TreeWin,
 }
 
 pub fn window_settings() -> Settings {

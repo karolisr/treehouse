@@ -1,13 +1,13 @@
-use std::fmt::Display;
-
 use crate::AppMsg;
-use iced::Subscription;
-use iced::futures::SinkExt;
-use iced::futures::Stream;
-use iced::futures::StreamExt;
-use iced::futures::channel::mpsc;
-use iced::futures::channel::mpsc::Sender;
-use iced::stream;
+use iced::{
+    Subscription,
+    futures::{
+        SinkExt, Stream, StreamExt,
+        channel::mpsc::{self, Sender},
+    },
+    stream,
+};
+use std::fmt::Display;
 
 #[derive(Debug, Clone)]
 pub enum MenuEvent {

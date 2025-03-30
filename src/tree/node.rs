@@ -1,6 +1,5 @@
 use super::TreeFloat;
-use std::collections::HashMap as Dict;
-use std::fmt::Display;
+use std::{collections::HashMap as Dict, fmt::Display};
 
 pub fn node<'a>(name: impl Into<&'a str>) -> Node {
     let (name, branch_length) = parse_name(name);
@@ -220,7 +219,7 @@ impl Tree {
         //         .total_cmp(&self.dist(self.first_node_id(), *a))
         // });
         // sorted_ids.sort_by_key(|s| self.name(*s));
-        sorted_ids.sort_by(|a, b| self.branch_length(*a).total_cmp(&self.branch_length(*b)));
+        // sorted_ids.sort_by(|a, b| self.branch_length(*a).total_cmp(&self.branch_length(*b)));
         sorted_ids.sort_by_key(|c| self.child_node_count_recursive(*c));
         if reverse {
             sorted_ids.reverse();
