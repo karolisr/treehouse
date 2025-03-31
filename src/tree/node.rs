@@ -66,12 +66,16 @@ impl Tree {
         }
     }
 
-    pub fn name(&self, node_id: usize) -> Arc<str> {
+    pub fn name(&self, node_id: usize) -> Option<Arc<str>> {
         match self.nodes.get(node_id) {
-            Some(n) => match &n.name {
-                Some(name) => name.clone(),
-                None => "".into(),
-            },
+            Some(node) => node.name.clone(),
+            None => None,
+        }
+    }
+
+    pub fn name_empty_if_none(&self, node_id: usize) -> Arc<str> {
+        match self.name(node_id) {
+            Some(name) => name,
             None => "".into(),
         }
     }
@@ -234,7 +238,7 @@ impl Tree {
 fn display(tree: &Tree, node_id: usize, mut level: usize) -> String {
     let mut rv: String = String::new();
     if node_id != 0 {
-        let name = tree.name(node_id);
+        let name = tree.name_empty_if_none(node_id);
         let brln = tree.branch_length(node_id);
 
         rv.push_str(&format!(

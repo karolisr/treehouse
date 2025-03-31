@@ -1,15 +1,19 @@
-use crate::{Edges, PADDING, PADDING_INNER, SF, SPACING, TEXT_SIZE, Tree, flatten_tree};
+use super::Canvas;
+use crate::{
+    Edges, Float, PADDING, PADDING_INNER, S_BAR_W, SF, SPACING, TEXT_SIZE, Tree, flatten_tree,
+    window_settings,
+};
 use iced::{
     Border, Element, Font, Length, Pixels, Task,
     border::Radius,
     widget::{
-        Column, PickList, Row, Rule,
-        canvas::{Cache, Canvas},
+        Column, PickList, Row, Scrollable,
+        canvas::Cache,
         pick_list::{
             Handle as PickListHandle, Status as PickListStatus, Style as PickListStyle,
             default as pick_list_default,
         },
-        rule, vertical_rule,
+        scrollable::{Direction as ScrollableDirection, Scrollbar},
     },
 };
 
@@ -20,10 +24,23 @@ pub struct TreeView {
     selected_node_sorting_option: Option<NodeSortingOption>,
     pub(super) drawing_enabled: bool,
 
+    pub(super) node_count: usize,
+    pub(super) tip_count: usize,
+    pub(super) int_node_count: usize,
+
+    pub(super) canvas_h: Float,
+
+    pub(super) window_w: Float,
+    pub(super) window_h: Float,
+
+    pub(super) tip_label_size: Float,
+    pub(super) int_label_size: Float,
+
     pub(super) bg_geom_cache: Cache,
     pub(super) edge_geom_cache: Cache,
+    pub(super) labels_geom_cache: Cache,
 
-    tree: Tree,
+    pub(super) tree: Tree,
     pub(super) tree_chunked_edges: Vec<Edges>,
     tree_original: Tree,
     tree_original_chunked_edges: Option<Vec<Edges>>,
@@ -41,8 +58,21 @@ impl Default for TreeView {
             drawing_enabled: false,
             selected_node_sorting_option: Some(NodeSortingOption::Unsorted),
 
+            node_count: 0,
+            tip_count: 0,
+            int_node_count: 0,
+
+            canvas_h: 0e0,
+
+            window_w: window_settings().size.width,
+            window_h: window_settings().size.height,
+
+            tip_label_size: SF * 10.0,
+            int_label_size: SF * 8.0,
+
             bg_geom_cache: Default::default(),
             edge_geom_cache: Default::default(),
+            labels_geom_cache: Default::default(),
 
             tree_chunked_edges: Default::default(),
             tree_original: Default::default(),
@@ -59,21 +89,41 @@ impl Default for TreeView {
 pub enum TreeViewMsg {
     TreeUpdated(Tree),
     NodeSortingOptionChanged(NodeSortingOption),
+    WindowResized(Float, Float),
 }
 
 impl TreeView {
+    fn calc_canvas_height(&mut self) {
+        self.canvas_h = self.tip_count as Float * self.tip_label_size;
+        if self.canvas_h < self.window_h {
+            self.canvas_h = self.window_h
+        }
+    }
+
     pub fn update(&mut self, msg: TreeViewMsg) -> Task<TreeViewMsg> {
         match msg {
+            TreeViewMsg::WindowResized(w, h) => {
+                self.window_w = w;
+                self.window_h = h;
+                self.calc_canvas_height();
+                Task::none()
+            }
             TreeViewMsg::TreeUpdated(tree) => {
                 self.drawing_enabled = false;
+                self.bg_geom_cache.clear();
                 self.edge_geom_cache.clear();
+                self.labels_geom_cache.clear();
                 self.tree_original = tree;
                 self.tree_srtd_asc = None;
                 self.tree_srtd_desc = None;
                 self.tree_srtd_asc_chunked_edges = None;
                 self.tree_srtd_desc_chunked_edges = None;
                 self.tree_original_chunked_edges = None;
+                self.node_count = self.tree_original.node_count_all();
+                self.tip_count = self.tree_original.tip_count_all();
+                self.int_node_count = self.node_count - self.tip_count;
                 self.sort();
+                self.calc_canvas_height();
                 self.drawing_enabled = true;
                 Task::none()
             }
@@ -81,7 +131,9 @@ impl TreeView {
             TreeViewMsg::NodeSortingOptionChanged(node_sorting_option) => {
                 self.drawing_enabled = false;
                 if node_sorting_option != self.selected_node_sorting_option.unwrap() {
+                    self.bg_geom_cache.clear();
                     self.edge_geom_cache.clear();
+                    self.labels_geom_cache.clear();
                     self.selected_node_sorting_option = Some(node_sorting_option);
                     self.sort();
                 }
@@ -94,23 +146,29 @@ impl TreeView {
     pub fn view(&self) -> Element<TreeViewMsg> {
         let mut col: Column<TreeViewMsg> = Column::new();
         let mut row: Row<TreeViewMsg> = Row::new();
+
         col = col.push(self.sort_options_pick_list());
-        row = row.push(self.tree_canvas());
-        row = row.push(self.vertical_rule());
+        col = col.spacing(SPACING).padding(PADDING);
+        row = row.push(self.scrollable(self.tree_canvas()));
         row = row.push(col);
-        row = row.spacing(SPACING).padding(PADDING);
+
         row.into()
     }
 
     fn tree_canvas(&self) -> Canvas<&TreeView, TreeViewMsg> {
-        Canvas::new(self).width(Length::Fill).height(Length::Fill)
+        Canvas::new(self).height(Length::Fixed(self.canvas_h))
     }
 
-    fn vertical_rule(&self) -> Rule<'_> {
-        vertical_rule(SF).style(|theme| rule::Style {
-            width: SF as u16,
-            ..rule::default(theme)
-        })
+    fn scrollable<'a>(
+        &'a self,
+        cnv: Canvas<&'a TreeView, TreeViewMsg>,
+    ) -> Scrollable<'a, TreeViewMsg> {
+        let mut s: Scrollable<TreeViewMsg> = Scrollable::new(cnv);
+        let mut s_bar = Scrollbar::new();
+        s_bar = s_bar.width(Pixels(S_BAR_W));
+        s_bar = s_bar.scroller_width(Pixels(S_BAR_W - S_BAR_W / 2e0));
+        s = s.direction(ScrollableDirection::Vertical(s_bar));
+        s
     }
 
     fn sort_options_pick_list(
@@ -167,7 +225,6 @@ impl TreeView {
                     }
                 };
             }
-
             NodeSortingOption::Ascending => match &self.tree_srtd_asc {
                 Some(tree_srtd_asc) => {
                     self.tree = tree_srtd_asc.clone();

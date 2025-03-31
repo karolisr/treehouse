@@ -141,7 +141,7 @@ features = [
     ### Enables the "wgpu" GPU-accelerated renderer backend
     "wgpu",
     ### Enables the advanced module
-    # "advanced",
+    "advanced",
     ### Enables "tokio" as the "executor::Default" on native platforms
     # "tokio",
     ### Enables a debug view in native platforms (press F12)

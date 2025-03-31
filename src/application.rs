@@ -15,3 +15,4 @@ pub const TEXT_SIZE: Float = 14.0 * SF;
 pub const PADDING: Float = 10.0 * SF;
 pub const PADDING_INNER: Float = PADDING / 2e0;
 pub const SPACING: Float = PADDING;
+pub const S_BAR_W: Float = 10.0 * SF;

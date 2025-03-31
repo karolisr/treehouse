@@ -1,11 +1,10 @@
 use super::{TreeView, TreeViewMsg, TreeViewState};
-#[allow(unused_imports)]
 use crate::ColorSimple;
-use crate::{Float, SF};
+use crate::{PADDING, SF};
 use iced::{
     Event, Rectangle, Renderer, Theme,
     mouse::{Cursor, Interaction},
-    widget::canvas::{Action, Geometry, Program},
+    widget::canvas::{Action, Geometry, Program, Text},
     window::Event as WinEvent,
 };
 
@@ -14,17 +13,16 @@ impl Program<TreeViewMsg> for TreeView {
 
     fn update(
         &self,
-        state: &mut Self::State,
+        _state: &mut Self::State,
         event: &Event,
-        bounds: Rectangle,
+        _bounds: Rectangle,
         _cursor: Cursor,
     ) -> Option<Action<TreeViewMsg>> {
         match event {
-            Event::Window(WinEvent::RedrawRequested(_)) => {
-                state.set_tree_bounds(&bounds);
-                Some(Action::capture())
-            }
-            _ => Some(Action::capture()),
+            Event::Window(WinEvent::Resized(size)) => Some(Action::publish(
+                TreeViewMsg::WindowResized(size.width, size.height),
+            )),
+            _ => None,
         }
     }
 
@@ -39,32 +37,56 @@ impl Program<TreeViewMsg> for TreeView {
 
     fn draw(
         &self,
-        state: &Self::State,
+        _state: &Self::State,
         renderer: &Renderer,
         _theme: &Theme,
         bounds: Rectangle,
         _cursor: Cursor,
     ) -> Vec<Geometry> {
-        let mut geometries: Vec<Geometry> = Vec::new();
-        if self.drawing_enabled {
-            let lw: Float = SF;
-            let offset: Float = lw / 2e0;
-            #[allow(unused_variables)]
-            let g_bg = self.bg_geom_cache.draw(renderer, bounds.size(), |f| {
-                // self.draw_bg(
-                //     (0e0, 0e0, f.width(), f.height()),
-                //     lw,
-                //     offset,
-                //     &ColorSimple::BLK,
-                //     f,
-                // );
-            });
-            geometries.push(g_bg);
-            let g_edges = self.edge_geom_cache.draw(renderer, bounds.size(), |f| {
-                self.draw_tree(&state.tree_bounds, lw, offset + lw * 5e0, f);
-            });
-            geometries.push(g_edges);
-        }
-        geometries
+        let mut tip_labels: Vec<Text> = Vec::new();
+        let mut int_labels: Vec<Text> = Vec::new();
+
+        let r: Rectangle = Rectangle {
+            x: 0e0,
+            y: 0e0,
+            width: bounds.width - PADDING,
+            height: self.canvas_h,
+        };
+
+        let g_edges = self.edge_geom_cache.draw(renderer, r.size(), |f| {
+            if self.drawing_enabled {
+                let (edge_paths_l, tip_labels_l, int_labels_l) =
+                    self.generate_drawables(&r, PADDING);
+                self.draw_edges(edge_paths_l, SF, PADDING, f);
+                tip_labels = tip_labels_l;
+                int_labels = int_labels_l;
+            }
+        });
+
+        let g_labels = self.labels_geom_cache.draw(renderer, r.size(), |f| {
+            if self.drawing_enabled {
+                self.draw_labels(
+                    tip_labels,
+                    self.tip_label_size,
+                    &ColorSimple::BLU,
+                    SF * 5e0,
+                    PADDING,
+                    r,
+                    f,
+                );
+
+                self.draw_labels(
+                    int_labels,
+                    self.int_label_size,
+                    &ColorSimple::RED,
+                    SF * 2e0,
+                    PADDING,
+                    r,
+                    f,
+                );
+            }
+        });
+
+        vec![g_edges, g_labels]
     }
 }

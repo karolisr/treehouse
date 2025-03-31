@@ -16,10 +16,14 @@ fn main() {
         println!("{}", "-".repeat(46));
         for e in chunk {
             println!(
-                "{:>3} {:>3} {:<10} {:>.4} {:>.4} {:>.4} {}",
+                "{:>3} {:>3} {:<5} {:<10} {:>.4} {:>.4} {:>.4} {}",
                 e.parent,
                 e.child,
-                e.name,
+                e.is_tip,
+                match e.name {
+                    Some(name) => name,
+                    None => "None".into(),
+                },
                 e.x0,
                 e.x1,
                 e.y,

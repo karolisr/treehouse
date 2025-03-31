@@ -7,11 +7,12 @@ pub type Edges = Vec<Edge>;
 pub struct Edge {
     pub parent: usize,
     pub child: usize,
-    pub name: Arc<str>,
+    pub name: Option<Arc<str>>,
     pub x0: TreeFloat,
     pub x1: TreeFloat,
     pub y_prev: Option<TreeFloat>,
     pub y: TreeFloat,
+    pub is_tip: bool,
 }
 
 pub fn flatten_tree(tree: &Tree, chunk_count: usize) -> Vec<Edges> {
@@ -99,14 +100,17 @@ fn flatten(
         return edges;
     }
     let brlen: TreeFloat = tree.branch_length(node_id) as TreeFloat / tree_height;
-    let name: Arc<str> = tree.name(node_id);
+    let name: Option<Arc<str>> = tree.name(node_id);
     let child_node_ids: &[usize] = tree.child_node_ids(node_id);
     let descending_tip_count: usize = tree.tip_count_recursive(node_id);
+    let mut is_tip: bool = false;
+
     let mut y = TreeFloat::NAN;
     if descending_tip_count == 0 {
         *tip_id_counter -= 1;
         let tip_id = ntip - *tip_id_counter;
         y = (tip_id - 1) as TreeFloat / (ntip - 1) as TreeFloat;
+        is_tip = true;
     }
 
     let this_edge: Edge = Edge {
@@ -117,6 +121,7 @@ fn flatten(
         x1: height + brlen,
         y_prev: None,
         y,
+        is_tip,
     };
 
     edges.push(this_edge);
