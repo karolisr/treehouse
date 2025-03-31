@@ -8,7 +8,7 @@ pub mod windows;
 
 pub type Float = f32;
 
-pub const SF: Float = 8e0;
+pub const SF: Float = 1e0;
 pub const APP_SCALE_FACTOR: f64 = 1e0 / SF as f64;
 
 pub const TEXT_SIZE: Float = 14.0 * SF;

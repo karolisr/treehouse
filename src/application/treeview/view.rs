@@ -3,22 +3,27 @@ use iced::{
     Border, Element, Font, Length, Pixels, Task,
     border::Radius,
     widget::{
-        Column, PickList, Row,
+        Column, PickList, Row, Rule,
         canvas::{Cache, Canvas},
-        pick_list, rule, vertical_rule,
+        pick_list::{
+            Handle as PickListHandle, Status as PickListStatus, Style as PickListStyle,
+            default as pick_list_default,
+        },
+        rule, vertical_rule,
     },
 };
 
 #[derive(Debug)]
+
 pub struct TreeView {
     threads: usize,
-    tree: Tree,
-    pub(super) drawing_enabled: bool,
     selected_node_sorting_option: Option<NodeSortingOption>,
+    pub(super) drawing_enabled: bool,
 
     pub(super) bg_geom_cache: Cache,
     pub(super) edge_geom_cache: Cache,
 
+    tree: Tree,
     pub(super) tree_chunked_edges: Vec<Edges>,
     tree_original: Tree,
     tree_original_chunked_edges: Option<Vec<Edges>>,
@@ -62,8 +67,7 @@ impl TreeView {
             TreeViewMsg::TreeUpdated(tree) => {
                 self.drawing_enabled = false;
                 self.edge_geom_cache.clear();
-                self.tree_original = tree.clone();
-                self.tree = tree;
+                self.tree_original = tree;
                 self.tree_srtd_asc = None;
                 self.tree_srtd_desc = None;
                 self.tree_srtd_asc_chunked_edges = None;
@@ -73,6 +77,7 @@ impl TreeView {
                 self.drawing_enabled = true;
                 Task::none()
             }
+
             TreeViewMsg::NodeSortingOptionChanged(node_sorting_option) => {
                 self.drawing_enabled = false;
                 if node_sorting_option != self.selected_node_sorting_option.unwrap() {
@@ -86,14 +91,32 @@ impl TreeView {
         }
     }
 
+    pub fn view(&self) -> Element<TreeViewMsg> {
+        let mut col: Column<TreeViewMsg> = Column::new();
+        let mut row: Row<TreeViewMsg> = Row::new();
+        col = col.push(self.sort_options_pick_list());
+        row = row.push(self.tree_canvas());
+        row = row.push(self.vertical_rule());
+        row = row.push(col);
+        row = row.spacing(SPACING).padding(PADDING);
+        row.into()
+    }
+
     fn tree_canvas(&self) -> Canvas<&TreeView, TreeViewMsg> {
         Canvas::new(self).width(Length::Fill).height(Length::Fill)
+    }
+
+    fn vertical_rule(&self) -> Rule<'_> {
+        vertical_rule(SF).style(|theme| rule::Style {
+            width: SF as u16,
+            ..rule::default(theme)
+        })
     }
 
     fn sort_options_pick_list(
         &self,
     ) -> PickList<NodeSortingOption, &[NodeSortingOption], NodeSortingOption, TreeViewMsg> {
-        let h: pick_list::Handle<Font> = pick_list::Handle::Arrow {
+        let h: PickListHandle<Font> = PickListHandle::Arrow {
             size: Some(Pixels(TEXT_SIZE)),
         };
 
@@ -115,37 +138,23 @@ impl TreeView {
 
         pl = pl.style(|theme, status| {
             let palette = theme.extended_palette();
-            pick_list::Style {
+            PickListStyle {
                 border: Border {
                     color: match status {
-                        pick_list::Status::Active => palette.background.strong.color,
-                        pick_list::Status::Hovered => palette.primary.strong.color,
-                        pick_list::Status::Opened { .. } => palette.primary.strong.color,
+                        PickListStatus::Active => palette.background.strong.color,
+                        PickListStatus::Hovered => palette.primary.strong.color,
+                        PickListStatus::Opened { .. } => palette.primary.strong.color,
                     },
                     width: SF * 1e0,
                     radius: Radius::new(SF * 2e0),
                 },
-                ..pick_list::default(theme, status)
+                ..pick_list_default(theme, status)
             }
         });
         pl
     }
 
-    pub fn view(&self) -> Element<TreeViewMsg> {
-        let mut col: Column<TreeViewMsg> = Column::new();
-        let mut row: Row<TreeViewMsg> = Row::new();
-        col = col.push(self.sort_options_pick_list());
-        row = row.push(self.tree_canvas());
-        row = row.push(vertical_rule(SF).style(|theme| rule::Style {
-            width: SF as u16,
-            ..rule::default(theme)
-        }));
-        row = row.push(col);
-        row = row.spacing(SPACING).padding(PADDING);
-        row.into()
-    }
-
-    pub fn sort(&mut self) {
+    fn sort(&mut self) {
         match self.selected_node_sorting_option.unwrap() {
             NodeSortingOption::Unsorted => {
                 self.tree = self.tree_original.clone();
