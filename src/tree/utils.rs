@@ -1,5 +1,5 @@
 use super::{Tree, TreeFloat};
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, sync::Arc};
 
 pub type Edges = Vec<Edge>;
 
@@ -7,7 +7,7 @@ pub type Edges = Vec<Edge>;
 pub struct Edge {
     pub parent: usize,
     pub child: usize,
-    pub name: String,
+    pub name: Arc<str>,
     pub x0: TreeFloat,
     pub x1: TreeFloat,
     pub y_prev: Option<TreeFloat>,
@@ -99,7 +99,7 @@ fn flatten(
         return edges;
     }
     let brlen: TreeFloat = tree.branch_length(node_id) as TreeFloat / tree_height;
-    let name: String = tree.name(node_id);
+    let name: Arc<str> = tree.name(node_id);
     let child_node_ids: &[usize] = tree.child_node_ids(node_id);
     let descending_tip_count: usize = tree.tip_count_recursive(node_id);
     let mut y = TreeFloat::NAN;

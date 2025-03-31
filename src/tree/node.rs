@@ -1,5 +1,5 @@
 use super::TreeFloat;
-use std::{collections::HashMap as Dict, fmt::Display};
+use std::{collections::HashMap as Dict, fmt::Display, sync::Arc};
 
 pub fn node<'a>(name: impl Into<&'a str>) -> Node {
     let (name, branch_length) = parse_name(name);
@@ -19,7 +19,7 @@ pub fn nodes_from_string<'a>(s: impl Into<&'a str>, sep: impl Into<&'a str>) -> 
 
 #[derive(Debug, Default, Clone)]
 pub struct Node {
-    name: Option<String>,
+    name: Option<Arc<str>>,
     branch_length: Option<TreeFloat>,
 }
 
@@ -66,13 +66,13 @@ impl Tree {
         }
     }
 
-    pub fn name(&self, node_id: usize) -> String {
+    pub fn name(&self, node_id: usize) -> Arc<str> {
         match self.nodes.get(node_id) {
             Some(n) => match &n.name {
-                Some(n) => n.clone(),
-                None => String::new(),
+                Some(name) => name.clone(),
+                None => "".into(),
             },
-            None => String::new(),
+            None => "".into(),
         }
     }
 
@@ -263,10 +263,6 @@ fn display(tree: &Tree, node_id: usize, mut level: usize) -> String {
         level += 1;
     }
 
-    // if level > 3 {
-    //     return rv;
-    // }
-
     for &child_node_id in tree.child_node_ids(node_id) {
         rv.push_str(&display(tree, child_node_id, level));
     }
@@ -277,7 +273,7 @@ fn display(tree: &Tree, node_id: usize, mut level: usize) -> String {
 impl Node {
     pub fn new(name: Option<String>, branch_length: Option<TreeFloat>) -> Self {
         Self {
-            name,
+            name: name.map(|name| name.into()),
             branch_length,
         }
     }
