@@ -18,7 +18,7 @@ use iced::{
 use std::marker::PhantomData;
 
 #[derive(Debug)]
-pub(super) struct Canvas<P, Message, Theme = IcedTheme, Renderer = RendererRenderer>
+pub struct Canvas<P, Message, Theme = IcedTheme, Renderer = RendererRenderer>
 where
     Renderer: GeometryRenderer,
     P: Program<Message, Theme, Renderer>,

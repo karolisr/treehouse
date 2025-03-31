@@ -1,8 +1,8 @@
-use super::super::canvas::Canvas;
-use crate::{Edges, Tree, flatten_tree};
+use crate::{Canvas, Edges, PADDING, PADDING_INNER, SF, SPACING, TEXT_SIZE, Tree, flatten_tree};
 use iced::{
-    Element, Length, Pixels, Task,
-    widget::{PickList, canvas::Cache, column, container, pick_list::Handle},
+    Border, Element, Font, Pixels, Task,
+    border::Radius,
+    widget::{Column, PickList, Row, canvas::Cache, pick_list, rule, vertical_rule},
 };
 
 #[derive(Debug)]
@@ -30,7 +30,7 @@ impl Default for TreeView {
             threads: 8,
             tree: Default::default(),
             drawing_enabled: false,
-            selected_node_sorting_option: Some(NodeSortingOption::Original),
+            selected_node_sorting_option: Some(NodeSortingOption::Unsorted),
 
             bg_geom_cache: Default::default(),
             edge_geom_cache: Default::default(),
@@ -82,34 +82,68 @@ impl TreeView {
         }
     }
 
-    pub fn view(&self) -> Element<TreeViewMsg> {
-        let canvas = Canvas::new(self);
-        let sortop = PickList::new(
-            NODE_SORTTING_OPTIONS,
+    fn tree_canvas(&self) -> Canvas<&TreeView, TreeViewMsg> {
+        Canvas::new(self)
+    }
+
+    fn sort_options_pick_list(
+        &self,
+    ) -> PickList<NodeSortingOption, &[NodeSortingOption], NodeSortingOption, TreeViewMsg> {
+        let h: pick_list::Handle<Font> = pick_list::Handle::Arrow {
+            size: Some(Pixels(TEXT_SIZE)),
+        };
+
+        let mut pl: PickList<
+            NodeSortingOption,
+            &[NodeSortingOption],
+            NodeSortingOption,
+            TreeViewMsg,
+        > = PickList::new(
+            &NODE_SORTTING_OPTIONS,
             self.selected_node_sorting_option,
             TreeViewMsg::NodeSortingOptionChanged,
         );
-        container(
-            column![
-                sortop
-                    .width(6e2)
-                    .text_size(6e1)
-                    .text_line_height(1e0)
-                    .handle(Handle::Arrow {
-                        size: Some(Pixels(6e1))
-                    })
-                    .padding(6e1),
-                container(canvas).center(Length::Fill)
-            ]
-            .padding(0e1)
-            .spacing(0e1),
-        )
-        .into()
+
+        pl = pl.width(2e2 * SF);
+        pl = pl.text_size(TEXT_SIZE);
+        pl = pl.padding(PADDING_INNER);
+        pl = pl.handle(h);
+
+        pl = pl.style(|theme, status| {
+            let palette = theme.extended_palette();
+            pick_list::Style {
+                border: Border {
+                    color: match status {
+                        pick_list::Status::Active => palette.background.strong.color,
+                        pick_list::Status::Hovered => palette.primary.strong.color,
+                        pick_list::Status::Opened { .. } => palette.primary.strong.color,
+                    },
+                    width: SF * 1e0,
+                    radius: Radius::new(SF * 2e0),
+                },
+                ..pick_list::default(theme, status)
+            }
+        });
+        pl
+    }
+
+    pub fn view(&self) -> Element<TreeViewMsg> {
+        let mut col: Column<TreeViewMsg> = Column::new();
+        let mut row: Row<TreeViewMsg> = Row::new();
+        col = col.push(self.sort_options_pick_list());
+        row = row.push(self.tree_canvas());
+        row = row.push(vertical_rule(SF).style(|theme| rule::Style {
+            width: SF as u16,
+            ..rule::default(theme)
+        }));
+        row = row.push(col);
+        row = row.spacing(SPACING).padding(PADDING);
+        row.into()
     }
 
     pub fn sort(&mut self) {
         match self.selected_node_sorting_option.unwrap() {
-            NodeSortingOption::Original => {
+            NodeSortingOption::Unsorted => {
                 self.tree = self.tree_original.clone();
                 self.tree_chunked_edges = match &self.tree_original_chunked_edges {
                     Some(chunked_edges) => chunked_edges.clone(),
@@ -157,7 +191,7 @@ impl TreeView {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NodeSortingOption {
-    Original,
+    Unsorted,
     Ascending,
     Descending,
 }
@@ -165,7 +199,7 @@ pub enum NodeSortingOption {
 impl std::fmt::Display for NodeSortingOption {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            NodeSortingOption::Original => "Original",
+            NodeSortingOption::Unsorted => "Unsorted",
             NodeSortingOption::Ascending => "Ascending",
             NodeSortingOption::Descending => "Descending",
         })
@@ -173,7 +207,7 @@ impl std::fmt::Display for NodeSortingOption {
 }
 
 const NODE_SORTTING_OPTIONS: [NodeSortingOption; 3] = [
-    NodeSortingOption::Original,
+    NodeSortingOption::Unsorted,
     NodeSortingOption::Ascending,
     NodeSortingOption::Descending,
 ];

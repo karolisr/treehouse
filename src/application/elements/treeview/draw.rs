@@ -1,5 +1,5 @@
-use super::{Float, TreeView};
-use crate::ColorSimple;
+use super::TreeView;
+use crate::{ColorSimple, Float};
 use iced::{
     Color, Point, Rectangle, Size, Vector,
     widget::canvas::{Frame, LineCap, Path, Stroke},
@@ -7,6 +7,7 @@ use iced::{
 use std::thread::{self, ScopedJoinHandle};
 
 impl TreeView {
+    #[allow(dead_code)]
     pub(super) fn draw_bg(
         &self,
         r: (Float, Float, Float, Float),

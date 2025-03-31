@@ -2,8 +2,8 @@
 use super::macos::register_ns_application_delegate_handlers;
 use super::windows::{AppWin, AppWinType, TreeWin, TreeWinMsg};
 use crate::{
-    MenuEvent, MenuEventReplyMsg, Tree, menu_events, parse_newick, prepare_app_menu,
-    window_settings,
+    APP_SCALE_FACTOR, MenuEvent, MenuEventReplyMsg, Tree, menu_events, parse_newick,
+    prepare_app_menu, window_settings,
 };
 use iced::{
     Element, Subscription, Task, exit,
@@ -218,6 +218,10 @@ impl App {
 
     pub fn subscription(&self) -> Subscription<AppMsg> {
         subscriptions()
+    }
+
+    pub fn scale_factor(&self, _: WinId) -> f64 {
+        APP_SCALE_FACTOR
     }
 
     pub fn new() -> (Self, Task<AppMsg>) {

@@ -1,5 +1,7 @@
-use super::{Float, TreeView, TreeViewMsg, TreeViewState};
+use super::{TreeView, TreeViewMsg, TreeViewState};
+#[allow(unused_imports)]
 use crate::ColorSimple;
+use crate::{Float, SF};
 use iced::{
     Event, Rectangle, Renderer, Theme,
     mouse::{Cursor, Interaction},
@@ -45,20 +47,21 @@ impl Program<TreeViewMsg> for TreeView {
     ) -> Vec<Geometry> {
         let mut geometries: Vec<Geometry> = Vec::new();
         if self.drawing_enabled {
-            let lw: Float = 4e0;
+            let lw: Float = SF;
             let offset: Float = lw / 2e0;
+            #[allow(unused_variables)]
             let g_bg = self.bg_geom_cache.draw(renderer, bounds.size(), |f| {
-                self.draw_bg(
-                    (0e0, 0e0, f.width(), f.height()),
-                    lw,
-                    offset,
-                    &ColorSimple::RED,
-                    f,
-                );
+                // self.draw_bg(
+                //     (0e0, 0e0, f.width(), f.height()),
+                //     lw,
+                //     offset,
+                //     &ColorSimple::BLK,
+                //     f,
+                // );
             });
             geometries.push(g_bg);
             let g_edges = self.edge_geom_cache.draw(renderer, bounds.size(), |f| {
-                self.draw_tree(&state.tree_bounds, lw, offset, f);
+                self.draw_tree(&state.tree_bounds, lw, offset + lw * 5e0, f);
             });
             geometries.push(g_edges);
         }

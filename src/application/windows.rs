@@ -23,8 +23,8 @@ pub fn window_settings() -> Settings {
             height: 800.0,
         },
         min_size: Some(Size {
-            width: 200.0,
-            height: 200.0,
+            width: 500.0,
+            height: 500.0,
         }),
         position: Position::Centered,
         resizable: true,

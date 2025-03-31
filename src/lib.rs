@@ -17,9 +17,10 @@ mod application;
 mod tree;
 
 pub use application::{
+    APP_SCALE_FACTOR, Float, PADDING, PADDING_INNER, SF, SPACING, TEXT_SIZE,
     app::{App, AppMsg, read_text_file},
     colors::ColorSimple,
-    elements::{TreeView, TreeViewMsg},
+    elements::{Canvas, TreeView, TreeViewMsg},
     menus::{MenuEvent, MenuEventReplyMsg, menu_events, prepare_app_menu},
     windows::window_settings,
 };
