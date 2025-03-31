@@ -1,9 +1,10 @@
 pub mod app;
+pub mod canvas;
 pub mod colors;
-pub mod elements;
 #[cfg(target_os = "macos")]
 pub mod macos;
 pub mod menus;
+pub mod treeview;
 pub mod windows;
 
 pub type Float = f32;
