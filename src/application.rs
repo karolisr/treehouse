@@ -1,5 +1,5 @@
 pub mod app;
-pub mod canvas;
+// pub mod canvas;
 pub mod colors;
 #[cfg(target_os = "macos")]
 pub mod macos;

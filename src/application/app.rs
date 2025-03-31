@@ -14,8 +14,8 @@ use iced::{
         events, gain_focus, open, open_events,
     },
 };
+use std::fs::read;
 use std::{collections::HashMap, path::PathBuf};
-use tokio::runtime::Runtime as TokioRt;
 
 #[derive(Default)]
 pub struct App {
@@ -94,12 +94,9 @@ impl App {
                     FileType::Other(s) => ParsedData::Other(s),
                     FileType::Exception => ParsedData::Exception,
                     file_type => match file_type {
-                        FileType::Newick => match TokioRt::new() {
-                            Ok(rt) => ParsedData::Tree(parse_newick(
-                                rt.block_on(async { read_text_file(path_buf.clone()).await }),
-                            )),
-                            Err(_) => ParsedData::Exception,
-                        },
+                        FileType::Newick => {
+                            ParsedData::Tree(parse_newick(read_text_file(path_buf.clone())))
+                        }
                         FileType::Nexus => ParsedData::Tree(None),
                         _ => ParsedData::Exception,
                     },
@@ -305,10 +302,8 @@ async fn choose_file(id: WinId) -> AppMsg {
     )
 }
 
-pub async fn read_text_file(path_buf: PathBuf) -> String {
-    use tokio::fs::read;
+pub fn read_text_file(path_buf: PathBuf) -> String {
     let data = read(path_buf)
-        .await
         .map_err(|e| {
             eprintln!("IO error: {:?}", e);
         })

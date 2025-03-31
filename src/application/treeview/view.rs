@@ -1,8 +1,12 @@
-use crate::{Canvas, Edges, PADDING, PADDING_INNER, SF, SPACING, TEXT_SIZE, Tree, flatten_tree};
+use crate::{Edges, PADDING, PADDING_INNER, SF, SPACING, TEXT_SIZE, Tree, flatten_tree};
 use iced::{
-    Border, Element, Font, Pixels, Task,
+    Border, Element, Font, Length, Pixels, Task,
     border::Radius,
-    widget::{Column, PickList, Row, canvas::Cache, pick_list, rule, vertical_rule},
+    widget::{
+        Column, PickList, Row,
+        canvas::{Cache, Canvas},
+        pick_list, rule, vertical_rule,
+    },
 };
 
 #[derive(Debug)]
@@ -83,7 +87,7 @@ impl TreeView {
     }
 
     fn tree_canvas(&self) -> Canvas<&TreeView, TreeViewMsg> {
-        Canvas::new(self)
+        Canvas::new(self).width(Length::Fill).height(Length::Fill)
     }
 
     fn sort_options_pick_list(

@@ -110,13 +110,13 @@ features = [
     # "serde",
 ]
 
-[dependencies.tokio]
-version = "1.44.1"
-default-features = false
-features = [
-    "fs",
-    "rt",
-]
+# [dependencies.tokio]
+# version = "1.44.1"
+# default-features = false
+# features = [
+#     "fs",
+#     "rt",
+# ]
 
 [dependencies.rfd]
 version = "0.15.3"
@@ -140,10 +140,10 @@ features = [
     "canvas",
     ### Enables the "wgpu" GPU-accelerated renderer backend
     "wgpu",
-    ### Enables "tokio" as the "executor::Default" on native platforms
-    "tokio",
     ### Enables the advanced module
-    "advanced",
+    # "advanced",
+    ### Enables "tokio" as the "executor::Default" on native platforms
+    # "tokio",
     ### Enables a debug view in native platforms (press F12)
     # "debug",
     ### Redraws on every runtime event, and not only when a widget requests it
