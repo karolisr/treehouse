@@ -17,15 +17,8 @@ mod application;
 mod tree;
 
 pub use application::{
-    APP_SCALE_FACTOR,
-    Float,
-    PADDING,
-    PADDING_INNER,
-    SF,
-    SPACING,
-    TEXT_SIZE,
+    APP_SCALE_FACTOR, Float, PADDING, PADDING_INNER, SF, SPACING, TEXT_SIZE,
     app::{App, AppMsg, read_text_file},
-    // canvas::Canvas,
     colors::ColorSimple,
     menus::{MenuEvent, MenuEventReplyMsg, menu_events, prepare_app_menu},
     treeview::{TreeView, TreeViewMsg},
