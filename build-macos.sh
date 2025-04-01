@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export RUSTFLAGS='-C target-cpu=native'
+
 cargo fmt && \
 
 cargo check --profile dev && \

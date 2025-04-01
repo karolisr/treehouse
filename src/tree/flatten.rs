@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, sync::Arc};
 
 pub type Edges = Vec<Edge>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Edge {
     pub parent: usize,
     pub child: usize,

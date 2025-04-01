@@ -17,13 +17,13 @@ pub fn nodes_from_string<'a>(s: impl Into<&'a str>, sep: impl Into<&'a str>) -> 
     nodes(nds)
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Node {
     name: Option<Arc<str>>,
     branch_length: Option<TreeFloat>,
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Tree {
     nodes: Vec<Node>,
     parent_children_map: Dict<usize, Vec<usize>>,

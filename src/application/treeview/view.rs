@@ -4,16 +4,17 @@ use crate::{
     max_name_len, window_settings,
 };
 use iced::{
-    Border, Element, Font, Length, Pixels, Task,
-    border::Radius,
+    Border, Color, Element, Font, Length, Pixels, Task,
     widget::{
         Column, PickList, Row, Scrollable, Slider, Toggler,
         canvas::Cache,
-        pick_list::{
-            Handle as PickListHandle, Status as PickListStatus, Style as PickListStyle,
-            default as pick_list_default,
-        },
+        horizontal_space,
+        pick_list::{Handle as PickListHandle, Status as PickListStatus, Style as PickListStyle},
         scrollable::{Direction as ScrollableDirection, Scrollbar},
+        slider::{
+            Handle as SliderHandle, HandleShape as SliderHandleShape, Rail as SliderRail,
+            Status as SliderStatus, Style as SliderStyle,
+        },
     },
 };
 
@@ -46,6 +47,7 @@ pub struct TreeView {
 
     pub(super) tree: Tree,
     pub(super) tree_chunked_edges: Vec<Edges>,
+
     tree_original: Tree,
     tree_original_chunked_edges: Option<Vec<Edges>>,
     tree_srtd_asc: Option<Tree>,
@@ -67,16 +69,15 @@ impl Default for TreeView {
             int_node_count: 0,
             max_name_len: 0,
 
-            canvas_h: 0e0,
+            canvas_h: window_settings().size.height * SF,
+            window_w: window_settings().size.width * SF,
+            window_h: window_settings().size.height * SF,
 
-            window_w: window_settings().size.width,
-            window_h: window_settings().size.height,
-
-            tip_label_size: SF * 10.0,
-            int_label_size: SF * 8.0,
-            node_size: SF * 10.0,
+            node_size: SF * 1e1,
+            tip_label_size: SF * 1e1,
+            int_label_size: SF * 1e1,
             draw_tip_labels: true,
-            draw_int_labels: true,
+            draw_int_labels: false,
 
             edge_geom_cache: Default::default(),
             tip_labels_geom_cache: Default::default(),
@@ -98,63 +99,75 @@ pub enum TreeViewMsg {
     TreeUpdated(Tree),
     NodeSortingOptionChanged(NodeSortingOption),
     WindowResized(Float, Float),
+    NodeSizeChanged(Float),
     TipLabelSizeChanged(Float),
+    IntLabelSizeChanged(Float),
     TipLabelVisibilityChanged(bool),
     IntLabelVisibilityChanged(bool),
 }
 
 impl TreeView {
-    fn calc_canvas_height(&mut self) {
-        self.canvas_h = self.tip_count as Float * self.node_size;
-        if self.canvas_h < self.window_h {
-            self.canvas_h = self.window_h
-        }
-    }
-
     pub fn update(&mut self, msg: TreeViewMsg) -> Task<TreeViewMsg> {
         match msg {
-            TreeViewMsg::TipLabelVisibilityChanged(state) => {
-                self.drawing_enabled = false;
-                self.edge_geom_cache.clear();
-                self.tip_labels_geom_cache.clear();
-                self.int_labels_geom_cache.clear();
-                self.draw_tip_labels = state;
-                self.drawing_enabled = true;
-                Task::none()
-            }
             TreeViewMsg::IntLabelVisibilityChanged(state) => {
-                self.drawing_enabled = false;
-                self.edge_geom_cache.clear();
-                self.tip_labels_geom_cache.clear();
-                self.int_labels_geom_cache.clear();
                 self.draw_int_labels = state;
-                self.drawing_enabled = true;
                 Task::none()
             }
-            TreeViewMsg::TipLabelSizeChanged(s) => {
-                self.drawing_enabled = false;
+
+            TreeViewMsg::TipLabelVisibilityChanged(state) => {
+                self.draw_tip_labels = state;
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
+                Task::none()
+            }
+
+            TreeViewMsg::TipLabelSizeChanged(s) => {
                 self.tip_label_size = s;
-                self.drawing_enabled = true;
+                self.edge_geom_cache.clear();
+                self.tip_labels_geom_cache.clear();
+                self.int_labels_geom_cache.clear();
+                Task::none()
+            }
+
+            TreeViewMsg::IntLabelSizeChanged(s) => {
+                self.int_label_size = s;
+                self.int_labels_geom_cache.clear();
+                Task::none()
+            }
+
+            TreeViewMsg::NodeSizeChanged(s) => {
+                self.node_size = s;
+                self.calc_canvas_height();
+                self.edge_geom_cache.clear();
+                self.tip_labels_geom_cache.clear();
+                self.int_labels_geom_cache.clear();
+                Task::none()
+            }
+
+            TreeViewMsg::NodeSortingOptionChanged(node_sorting_option) => {
+                if node_sorting_option != self.selected_node_sorting_option.unwrap() {
+                    self.selected_node_sorting_option = Some(node_sorting_option);
+                    self.sort();
+                    self.edge_geom_cache.clear();
+                    self.tip_labels_geom_cache.clear();
+                    self.int_labels_geom_cache.clear();
+                }
                 Task::none()
             }
 
             TreeViewMsg::WindowResized(w, h) => {
-                self.drawing_enabled = false;
                 self.window_w = w;
                 self.window_h = h;
                 self.calc_canvas_height();
-                self.drawing_enabled = true;
+                self.edge_geom_cache.clear();
+                self.tip_labels_geom_cache.clear();
+                self.int_labels_geom_cache.clear();
                 Task::none()
             }
 
             TreeViewMsg::TreeUpdated(tree) => {
                 self.drawing_enabled = false;
-                self.edge_geom_cache.clear();
-                self.tip_labels_geom_cache.clear();
-                self.int_labels_geom_cache.clear();
                 self.tree_original = tree;
                 self.tree_srtd_asc = None;
                 self.tree_srtd_desc = None;
@@ -167,19 +180,9 @@ impl TreeView {
                 self.max_name_len = max_name_len(&self.tree_original);
                 self.sort();
                 self.calc_canvas_height();
-                self.drawing_enabled = true;
-                Task::none()
-            }
-
-            TreeViewMsg::NodeSortingOptionChanged(node_sorting_option) => {
-                self.drawing_enabled = false;
-                if node_sorting_option != self.selected_node_sorting_option.unwrap() {
-                    self.edge_geom_cache.clear();
-                    self.tip_labels_geom_cache.clear();
-                    self.int_labels_geom_cache.clear();
-                    self.selected_node_sorting_option = Some(node_sorting_option);
-                    self.sort();
-                }
+                self.edge_geom_cache.clear();
+                self.tip_labels_geom_cache.clear();
+                self.int_labels_geom_cache.clear();
                 self.drawing_enabled = true;
                 Task::none()
             }
@@ -187,51 +190,84 @@ impl TreeView {
     }
 
     pub fn view(&self) -> Element<TreeViewMsg> {
-        let mut col: Column<TreeViewMsg> = Column::new();
-        let mut row: Row<TreeViewMsg> = Row::new();
+        if self.tip_count > 0 {
+            let mut col: Column<TreeViewMsg> = Column::new();
+            let mut row: Row<TreeViewMsg> = Row::new();
 
-        col = col.push(self.sort_options_pick_list());
-        col = col.push(self.draw_tip_labels_toggler());
-        if self.draw_tip_labels {
-            col = col.push(self.label_size_slider());
+            col = col.push(self.sort_options_pick_list());
+            col = col.push(self.draw_tip_labels_toggler());
+            if self.draw_tip_labels {
+                col = col.push(self.tip_label_size_slider());
+            }
+            col = col.push(self.draw_int_labels_toggler());
+            if self.draw_int_labels {
+                col = col.push(self.int_label_size_slider());
+            }
+            col = col.push(self.node_size_slider());
+            col = col.padding(PADDING);
+            col = col.spacing(SPACING);
+            col = col.width(Length::Fixed(SF * 2e2));
+            row = row.push(self.scrollable(self.tree_canvas()));
+            row = row.push(col);
+
+            row.into()
+        } else {
+            horizontal_space().into()
         }
-        col = col.push(self.draw_int_labels_toggler());
-        col = col.padding(PADDING);
-        col = col.spacing(SPACING);
-        col = col.width(Length::Fixed(SF * 2e2));
-        row = row.push(self.scrollable(self.tree_canvas()));
-        row = row.push(col);
+    }
 
-        row.into()
+    fn calc_canvas_height(&mut self) {
+        self.canvas_h = self.tip_count as Float * self.node_size;
+        if self.canvas_h <= self.window_h {
+            self.canvas_h = self.window_h
+        }
     }
 
     fn tree_canvas(&self) -> Canvas<&TreeView, TreeViewMsg> {
         Canvas::new(self).height(Length::Fixed(self.canvas_h))
     }
 
-    fn label_size_slider(&self) -> Slider<Float, TreeViewMsg> {
+    fn tip_label_size_slider(&self) -> Slider<Float, TreeViewMsg> {
         let mut sldr: Slider<Float, TreeViewMsg> = Slider::new(
-            1.0..=14.0,
+            1e0 * SF..=2e1 * SF,
             self.tip_label_size,
             TreeViewMsg::TipLabelSizeChanged,
         );
         sldr = sldr.step(1e0);
         sldr = sldr.shift_step(2e0);
-        sldr
+        self.apply_slider_style(sldr)
+    }
+
+    fn int_label_size_slider(&self) -> Slider<Float, TreeViewMsg> {
+        let mut sldr: Slider<Float, TreeViewMsg> = Slider::new(
+            1e0 * SF..=2e1 * SF,
+            self.int_label_size,
+            TreeViewMsg::IntLabelSizeChanged,
+        );
+        sldr = sldr.step(1e0);
+        sldr = sldr.shift_step(2e0);
+        self.apply_slider_style(sldr)
+    }
+
+    fn node_size_slider(&self) -> Slider<Float, TreeViewMsg> {
+        let mut sldr: Slider<Float, TreeViewMsg> = Slider::new(
+            self.window_h / self.tip_count as Float..=2e1 * SF,
+            self.node_size,
+            TreeViewMsg::NodeSizeChanged,
+        );
+        sldr = sldr.step(1e0);
+        sldr = sldr.shift_step(2e0);
+        self.apply_slider_style(sldr)
     }
 
     fn draw_tip_labels_toggler(&self) -> Toggler<'_, TreeViewMsg> {
-        let mut tglr: Toggler<TreeViewMsg> = Toggler::new(self.draw_tip_labels);
-        tglr = tglr.label("Tip Labels");
-        tglr = tglr.on_toggle(TreeViewMsg::TipLabelVisibilityChanged);
-        tglr
+        self.apply_toggler_settings("Tip Labels", self.draw_tip_labels)
+            .on_toggle(TreeViewMsg::TipLabelVisibilityChanged)
     }
 
     fn draw_int_labels_toggler(&self) -> Toggler<'_, TreeViewMsg> {
-        let mut tglr: Toggler<TreeViewMsg> = Toggler::new(self.draw_int_labels);
-        tglr = tglr.label("Internal Labels");
-        tglr = tglr.on_toggle(TreeViewMsg::IntLabelVisibilityChanged);
-        tglr
+        self.apply_toggler_settings("Internal Labels", self.draw_int_labels)
+            .on_toggle(TreeViewMsg::IntLabelVisibilityChanged)
     }
 
     fn scrollable<'a>(
@@ -271,20 +307,77 @@ impl TreeView {
 
         pl = pl.style(|theme, status| {
             let palette = theme.extended_palette();
-            PickListStyle {
+
+            let active = PickListStyle {
+                text_color: palette.background.weak.text,
+                background: palette.background.weak.color.into(),
+                placeholder_color: palette.background.strong.color,
+                handle_color: palette.background.weak.text,
                 border: Border {
-                    color: match status {
-                        PickListStatus::Active => palette.background.strong.color,
-                        PickListStatus::Hovered => palette.primary.strong.color,
-                        PickListStatus::Opened { .. } => palette.primary.strong.color,
-                    },
-                    width: SF * 1e0,
-                    radius: Radius::new(SF * 2e0),
+                    radius: (2e0 * SF).into(),
+                    width: 1e0 * SF,
+                    color: palette.background.strong.color,
                 },
-                ..pick_list_default(theme, status)
+            };
+
+            match status {
+                PickListStatus::Active => active,
+                PickListStatus::Hovered | PickListStatus::Opened { .. } => PickListStyle {
+                    border: Border {
+                        color: palette.primary.strong.color,
+                        ..active.border
+                    },
+                    ..active
+                },
             }
         });
         pl
+    }
+
+    fn apply_toggler_settings<'a>(&self, label: &'a str, value: bool) -> Toggler<'a, TreeViewMsg> {
+        let mut tglr: Toggler<TreeViewMsg> = Toggler::new(value);
+        tglr = tglr.label(label);
+        tglr = tglr.size(TEXT_SIZE);
+        tglr = tglr.text_size(TEXT_SIZE);
+        tglr
+    }
+
+    fn apply_slider_style<'a, T>(
+        &'a self,
+        sldr: Slider<'a, T, TreeViewMsg>,
+    ) -> Slider<'a, T, TreeViewMsg>
+    where
+        T: std::marker::Copy,
+        T: std::convert::From<u8>,
+        T: std::cmp::PartialOrd,
+    {
+        sldr.style(|theme, status| {
+            let palette = theme.extended_palette();
+
+            let color = match status {
+                SliderStatus::Active => palette.primary.base.color,
+                SliderStatus::Hovered => palette.primary.strong.color,
+                SliderStatus::Dragged => palette.primary.weak.color,
+            };
+
+            SliderStyle {
+                rail: SliderRail {
+                    backgrounds: (color.into(), palette.background.strong.color.into()),
+                    width: 4.0 * SF,
+                    border: Border {
+                        radius: (2.0 * SF).into(),
+                        width: 0.0 * SF,
+                        color: Color::TRANSPARENT,
+                    },
+                },
+                handle: SliderHandle {
+                    shape: SliderHandleShape::Circle { radius: 7.0 * SF },
+                    background: color.into(),
+                    border_color: Color::TRANSPARENT,
+                    border_width: 0.0 * SF,
+                },
+            }
+        })
     }
 
     fn sort(&mut self) {

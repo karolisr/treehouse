@@ -1,5 +1,6 @@
 mod canvas;
 mod draw;
+mod drawables;
 mod program;
 mod state;
 mod view;

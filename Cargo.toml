@@ -16,7 +16,7 @@ categories = [
 
 [lib]
 name = "treehouse"
-crate-type = ["rlib"]
+crate-type = ["lib"]
 
 # cargo-bundle (https://github.com/burtonageo/cargo-bundle) --------------
 [package.metadata.bundle]
@@ -45,9 +45,9 @@ deb_depends = []
 [profile.dev]
 debug-assertions = true
 incremental = true      # Compile your binary in smaller steps.
-codegen-units = 6       # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
+codegen-units = 1       # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
 lto = false             # Enables link-time-optimizations. Use false for faster compile time.
-opt-level = 2           # "s" prioritizes small binary size. Use 3 for faster compile time.
+opt-level = 3           # "s" prioritizes small binary size. Use 3 for faster compile time.
 panic = "abort"         # Higher performance by disabling panic handlers.
 strip = false           # Ensures debug symbols are removed.
 debug = true
@@ -73,7 +73,7 @@ debug-assertions = false
 incremental = true       # Compile your binary in smaller steps.
 codegen-units = 1        # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
 lto = true               # Enables link-time-optimizations. Use false for faster compile time.
-opt-level = 2            # "s" prioritizes small binary size. Use 3 for faster compile time.
+opt-level = 3            # "s" prioritizes small binary size. Use 3 for faster compile time.
 panic = "abort"          # Higher performance by disabling panic handlers.
 strip = true             # Ensures debug symbols are removed.
 debug = false
@@ -94,46 +94,45 @@ rpath = false
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
-[dependencies]
+[target.aarch64-apple-darwin.dependencies]
 objc2 = "0.6.0"
 objc2-app-kit = "0.3.0"
 objc2-foundation = "0.3.0"
 
-[dependencies.muda]
-# version = "0.16.1"
+[target.aarch64-apple-darwin.dependencies.muda]
 git = "https://github.com/karolisr/muda.git"
-# path = "submodules/muda"
 default-features = false
-features = [
-    # "common-controls-v6",
-    # "libxdo",
-    # "serde",
-]
+features = []
 
-# [dependencies.tokio]
-# version = "1.44.1"
+# [target.x86_64-unknown-linux-gnu.dependencies.muda]
+# git = "https://github.com/karolisr/muda.git"
 # default-features = false
 # features = [
-#     "fs",
-#     "rt",
+#     # "common-controls-v6",
+#     "gtk",
+#     # "libxdo",
+#     # "serde",
 # ]
 
-[dependencies.rfd]
+[target.aarch64-apple-darwin.dependencies.rfd]
 version = "0.15.3"
 default-features = false
-features = [
-    ### Uses GTK for dialogs on Linux & BSDs; has no effect on Windows and macOS
-    # "gtk3",
-    ### Uses XDG Desktop Portal instead of GTK on Linux & BSDs
-    # "xdg-portal",
-    ### Use TaskDialogIndirect API from ComCtl32.dll v6 for showing message dialog. This is necessary if you need to customize dialog button texts
-    # "common-controls-v6",
-]
+features = []
+
+# [target.x86_64-unknown-linux-gnu.dependencies.rfd]
+# version = "0.15.3"
+# default-features = false
+# features = [
+#     ### Uses GTK for dialogs on Linux & BSDs; has no effect on Windows and macOS
+#     "gtk3",
+#     ### Uses XDG Desktop Portal instead of GTK on Linux & BSDs
+#     # "xdg-portal",
+#     ### Use TaskDialogIndirect API from ComCtl32.dll v6 for showing message dialog. This is necessary if you need to customize dialog button texts
+#     # "common-controls-v6",
+# ]
 
 [dependencies.iced]
-# version = "0.14.0-dev"
 git = "https://github.com/karolisr/iced.git"
-# path = "submodules/iced"
 default-features = false
 features = [
     ### Enables the "canvas" widget
@@ -182,3 +181,11 @@ features = [
     # "svg",
 ]
 # ------------------------------------------------------------------------
+
+# [dependencies.tokio]
+# version = "1.44.1"
+# default-features = false
+# features = [
+#     "fs",
+#     "rt",
+# ]
