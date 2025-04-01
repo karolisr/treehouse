@@ -133,9 +133,9 @@ impl TreeView {
                         let x1 = edge.x1 as Float * bounds.width;
                         let y = edge.y as Float * bounds.height;
                         let pt_node = Point::new(x1, y);
+
                         path_builder.move_to(pt_node);
                         path_builder.line_to(Point::new(x0, y));
-
                         if let Some(y_prev) = edge.y_prev {
                             path_builder.line_to(Point::new(x0, y_prev as Float * bounds.height))
                         };

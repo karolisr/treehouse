@@ -1,4 +1,4 @@
-use treehouse::{Tree, flatten_tree, parse_newick};
+use treehouse::{Tree, flatten_tree, max_name_len, parse_newick};
 
 fn main() {
     let data = "(((пять:0.5,Four:0.4,(Two:0.2,One:0.1)Three:0.3)Six:0.6,Seven:0.7)Aštuoni:0.8,九つ:0.9)十:1.0;";
@@ -34,4 +34,7 @@ fn main() {
             );
         }
     }
+
+    let ml = max_name_len(&tree);
+    println!("\nmax_name_len = {ml}");
 }

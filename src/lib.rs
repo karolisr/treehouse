@@ -25,4 +25,4 @@ pub use application::{
     treeview::{TreeView, TreeViewMsg},
     windows::window_settings,
 };
-pub use tree::{Edges, Tree, TreeFloat, flatten_tree, parse_newick};
+pub use tree::{Edges, Tree, TreeFloat, flatten_tree, max_name_len, parse_newick};

@@ -1,5 +1,5 @@
 use super::{TreeView, TreeViewMsg, TreeViewState};
-use crate::ColorSimple;
+use crate::{ColorSimple, Float};
 use crate::{PADDING, SF};
 use iced::{
     Event, Rectangle, Renderer, Theme,
@@ -55,16 +55,26 @@ impl Program<TreeViewMsg> for TreeView {
 
         let g_edges = self.edge_geom_cache.draw(renderer, r.size(), |f| {
             if self.drawing_enabled {
+                // Hack for approximating label width ---------------------------------------
+                let mut label_w: Float = self.max_name_len as Float * self.node_size / 2.25;
+                if !self.draw_tip_labels {
+                    label_w = 0e0
+                }
+                let tree_rect = Rectangle {
+                    width: r.width - label_w,
+                    ..r
+                };
+                // --------------------------------------------------------------------------
                 let (edge_paths_l, tip_labels_l, int_labels_l) =
-                    self.generate_drawables(&r, PADDING);
+                    self.generate_drawables(&tree_rect, PADDING);
                 self.draw_edges(edge_paths_l, SF, PADDING, f);
                 tip_labels = tip_labels_l;
                 int_labels = int_labels_l;
             }
         });
 
-        let g_labels = self.labels_geom_cache.draw(renderer, r.size(), |f| {
-            if self.drawing_enabled {
+        let g_tip_labels = self.tip_labels_geom_cache.draw(renderer, r.size(), |f| {
+            if self.drawing_enabled && self.draw_tip_labels {
                 self.draw_labels(
                     tip_labels,
                     self.tip_label_size,
@@ -74,7 +84,11 @@ impl Program<TreeViewMsg> for TreeView {
                     r,
                     f,
                 );
+            }
+        });
 
+        let g_int_labels = self.int_labels_geom_cache.draw(renderer, r.size(), |f| {
+            if self.drawing_enabled && self.draw_int_labels {
                 self.draw_labels(
                     int_labels,
                     self.int_label_size,
@@ -87,6 +101,6 @@ impl Program<TreeViewMsg> for TreeView {
             }
         });
 
-        vec![g_edges, g_labels]
+        vec![g_edges, g_tip_labels, g_int_labels]
     }
 }

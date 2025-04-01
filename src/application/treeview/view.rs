@@ -1,13 +1,13 @@
 use super::Canvas;
 use crate::{
     Edges, Float, PADDING, PADDING_INNER, S_BAR_W, SF, SPACING, TEXT_SIZE, Tree, flatten_tree,
-    window_settings,
+    max_name_len, window_settings,
 };
 use iced::{
     Border, Element, Font, Length, Pixels, Task,
     border::Radius,
     widget::{
-        Column, PickList, Row, Scrollable,
+        Column, PickList, Row, Scrollable, Slider, Toggler,
         canvas::Cache,
         pick_list::{
             Handle as PickListHandle, Status as PickListStatus, Style as PickListStyle,
@@ -27,6 +27,7 @@ pub struct TreeView {
     pub(super) node_count: usize,
     pub(super) tip_count: usize,
     pub(super) int_node_count: usize,
+    pub(super) max_name_len: usize,
 
     pub(super) canvas_h: Float,
 
@@ -35,10 +36,13 @@ pub struct TreeView {
 
     pub(super) tip_label_size: Float,
     pub(super) int_label_size: Float,
+    pub(super) node_size: Float,
+    pub(super) draw_tip_labels: bool,
+    pub(super) draw_int_labels: bool,
 
-    pub(super) bg_geom_cache: Cache,
     pub(super) edge_geom_cache: Cache,
-    pub(super) labels_geom_cache: Cache,
+    pub(super) tip_labels_geom_cache: Cache,
+    pub(super) int_labels_geom_cache: Cache,
 
     pub(super) tree: Tree,
     pub(super) tree_chunked_edges: Vec<Edges>,
@@ -61,6 +65,7 @@ impl Default for TreeView {
             node_count: 0,
             tip_count: 0,
             int_node_count: 0,
+            max_name_len: 0,
 
             canvas_h: 0e0,
 
@@ -69,10 +74,13 @@ impl Default for TreeView {
 
             tip_label_size: SF * 10.0,
             int_label_size: SF * 8.0,
+            node_size: SF * 10.0,
+            draw_tip_labels: true,
+            draw_int_labels: true,
 
-            bg_geom_cache: Default::default(),
             edge_geom_cache: Default::default(),
-            labels_geom_cache: Default::default(),
+            tip_labels_geom_cache: Default::default(),
+            int_labels_geom_cache: Default::default(),
 
             tree_chunked_edges: Default::default(),
             tree_original: Default::default(),
@@ -90,11 +98,14 @@ pub enum TreeViewMsg {
     TreeUpdated(Tree),
     NodeSortingOptionChanged(NodeSortingOption),
     WindowResized(Float, Float),
+    TipLabelSizeChanged(Float),
+    TipLabelVisibilityChanged(bool),
+    IntLabelVisibilityChanged(bool),
 }
 
 impl TreeView {
     fn calc_canvas_height(&mut self) {
-        self.canvas_h = self.tip_count as Float * self.tip_label_size;
+        self.canvas_h = self.tip_count as Float * self.node_size;
         if self.canvas_h < self.window_h {
             self.canvas_h = self.window_h
         }
@@ -102,17 +113,48 @@ impl TreeView {
 
     pub fn update(&mut self, msg: TreeViewMsg) -> Task<TreeViewMsg> {
         match msg {
+            TreeViewMsg::TipLabelVisibilityChanged(state) => {
+                self.drawing_enabled = false;
+                self.edge_geom_cache.clear();
+                self.tip_labels_geom_cache.clear();
+                self.int_labels_geom_cache.clear();
+                self.draw_tip_labels = state;
+                self.drawing_enabled = true;
+                Task::none()
+            }
+            TreeViewMsg::IntLabelVisibilityChanged(state) => {
+                self.drawing_enabled = false;
+                self.edge_geom_cache.clear();
+                self.tip_labels_geom_cache.clear();
+                self.int_labels_geom_cache.clear();
+                self.draw_int_labels = state;
+                self.drawing_enabled = true;
+                Task::none()
+            }
+            TreeViewMsg::TipLabelSizeChanged(s) => {
+                self.drawing_enabled = false;
+                self.edge_geom_cache.clear();
+                self.tip_labels_geom_cache.clear();
+                self.int_labels_geom_cache.clear();
+                self.tip_label_size = s;
+                self.drawing_enabled = true;
+                Task::none()
+            }
+
             TreeViewMsg::WindowResized(w, h) => {
+                self.drawing_enabled = false;
                 self.window_w = w;
                 self.window_h = h;
                 self.calc_canvas_height();
+                self.drawing_enabled = true;
                 Task::none()
             }
+
             TreeViewMsg::TreeUpdated(tree) => {
                 self.drawing_enabled = false;
-                self.bg_geom_cache.clear();
                 self.edge_geom_cache.clear();
-                self.labels_geom_cache.clear();
+                self.tip_labels_geom_cache.clear();
+                self.int_labels_geom_cache.clear();
                 self.tree_original = tree;
                 self.tree_srtd_asc = None;
                 self.tree_srtd_desc = None;
@@ -122,6 +164,7 @@ impl TreeView {
                 self.node_count = self.tree_original.node_count_all();
                 self.tip_count = self.tree_original.tip_count_all();
                 self.int_node_count = self.node_count - self.tip_count;
+                self.max_name_len = max_name_len(&self.tree_original);
                 self.sort();
                 self.calc_canvas_height();
                 self.drawing_enabled = true;
@@ -131,9 +174,9 @@ impl TreeView {
             TreeViewMsg::NodeSortingOptionChanged(node_sorting_option) => {
                 self.drawing_enabled = false;
                 if node_sorting_option != self.selected_node_sorting_option.unwrap() {
-                    self.bg_geom_cache.clear();
                     self.edge_geom_cache.clear();
-                    self.labels_geom_cache.clear();
+                    self.tip_labels_geom_cache.clear();
+                    self.int_labels_geom_cache.clear();
                     self.selected_node_sorting_option = Some(node_sorting_option);
                     self.sort();
                 }
@@ -148,7 +191,14 @@ impl TreeView {
         let mut row: Row<TreeViewMsg> = Row::new();
 
         col = col.push(self.sort_options_pick_list());
-        col = col.spacing(SPACING).padding(PADDING);
+        col = col.push(self.draw_tip_labels_toggler());
+        if self.draw_tip_labels {
+            col = col.push(self.label_size_slider());
+        }
+        col = col.push(self.draw_int_labels_toggler());
+        col = col.padding(PADDING);
+        col = col.spacing(SPACING);
+        col = col.width(Length::Fixed(SF * 2e2));
         row = row.push(self.scrollable(self.tree_canvas()));
         row = row.push(col);
 
@@ -157,6 +207,31 @@ impl TreeView {
 
     fn tree_canvas(&self) -> Canvas<&TreeView, TreeViewMsg> {
         Canvas::new(self).height(Length::Fixed(self.canvas_h))
+    }
+
+    fn label_size_slider(&self) -> Slider<Float, TreeViewMsg> {
+        let mut sldr: Slider<Float, TreeViewMsg> = Slider::new(
+            1.0..=14.0,
+            self.tip_label_size,
+            TreeViewMsg::TipLabelSizeChanged,
+        );
+        sldr = sldr.step(1e0);
+        sldr = sldr.shift_step(2e0);
+        sldr
+    }
+
+    fn draw_tip_labels_toggler(&self) -> Toggler<'_, TreeViewMsg> {
+        let mut tglr: Toggler<TreeViewMsg> = Toggler::new(self.draw_tip_labels);
+        tglr = tglr.label("Tip Labels");
+        tglr = tglr.on_toggle(TreeViewMsg::TipLabelVisibilityChanged);
+        tglr
+    }
+
+    fn draw_int_labels_toggler(&self) -> Toggler<'_, TreeViewMsg> {
+        let mut tglr: Toggler<TreeViewMsg> = Toggler::new(self.draw_int_labels);
+        tglr = tglr.label("Internal Labels");
+        tglr = tglr.on_toggle(TreeViewMsg::IntLabelVisibilityChanged);
+        tglr
     }
 
     fn scrollable<'a>(
@@ -189,9 +264,9 @@ impl TreeView {
             TreeViewMsg::NodeSortingOptionChanged,
         );
 
-        pl = pl.width(2e2 * SF);
         pl = pl.text_size(TEXT_SIZE);
         pl = pl.padding(PADDING_INNER);
+        pl = pl.width(Length::Fill);
         pl = pl.handle(h);
 
         pl = pl.style(|theme, status| {
