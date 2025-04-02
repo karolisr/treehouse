@@ -18,7 +18,7 @@ mod application;
 mod tree;
 
 pub use application::{
-    APP_SCALE_FACTOR, Float, PADDING, PADDING_INNER, S_BAR_W, SF, SPACING, TEXT_SIZE,
+    APP_SCALE_FACTOR, Float, LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, SPACING, TEXT_SIZE,
     app::{App, AppMsg, read_text_file},
     colors::ColorSimple,
     menus::{MenuEvent, MenuEventReplyMsg, menu_events, prepare_app_menu},

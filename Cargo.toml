@@ -1,6 +1,6 @@
 [package]
 name = "treehouse"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 authors = ["Karolis Ramanauskas"]
 repository = "https://github.com/karolisr/treehouse"
@@ -45,9 +45,9 @@ deb_depends = []
 [profile.dev]
 debug-assertions = true
 incremental = true      # Compile your binary in smaller steps.
-codegen-units = 1       # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
+codegen-units = 2       # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
 lto = false             # Enables link-time-optimizations. Use false for faster compile time.
-opt-level = 3           # "s" prioritizes small binary size. Use 3 for faster compile time.
+opt-level = 1           # "s" prioritizes small binary size. Use 3 for faster compile time.
 panic = "abort"         # Higher performance by disabling panic handlers.
 strip = false           # Ensures debug symbols are removed.
 debug = true
@@ -144,7 +144,7 @@ features = [
     ### Enables "tokio" as the "executor::Default" on native platforms
     # "tokio",
     ### Enables a debug view in native platforms (press F12)
-    # "debug",
+    "debug",
     ### Redraws on every runtime event, and not only when a widget requests it
     # "unconditional-rendering",
     ### Enables the "tiny-skia" software renderer backend

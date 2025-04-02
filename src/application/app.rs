@@ -2,7 +2,7 @@
 use super::macos::register_ns_application_delegate_handlers;
 use super::windows::{AppWin, AppWinType, TreeWin, TreeWinMsg};
 use crate::{
-    APP_SCALE_FACTOR, MenuEvent, MenuEventReplyMsg, Tree, menu_events, parse_newick,
+    APP_SCALE_FACTOR, MenuEvent, MenuEventReplyMsg, Tree, TreeViewMsg, menu_events, parse_newick,
     prepare_app_menu, window_settings,
 };
 use iced::{
@@ -19,7 +19,7 @@ use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Default)]
 pub struct App {
-    windows: HashMap<WinId, AppWin>,
+    pub windows: HashMap<WinId, AppWin>,
     menu_events_sender: Option<Sender<MenuEventReplyMsg>>,
     menu: Option<muda::Menu>,
 }
@@ -38,7 +38,6 @@ pub enum AppMsg {
     WinCloseRequested(WinId),
     WinClosed(WinId),
     WinOpened(WinId),
-    Nada,
 }
 
 pub enum FileType {
@@ -64,7 +63,6 @@ impl App {
 
     pub fn update(&mut self, app_msg: AppMsg) -> Task<AppMsg> {
         match app_msg {
-            AppMsg::Nada => Task::none(),
             AppMsg::AppInitialized => {
                 let menu = prepare_app_menu();
                 #[cfg(target_os = "macos")]
@@ -165,6 +163,9 @@ impl App {
             AppMsg::TreeWinMsg(id, msg) => {
                 let app_task = match msg {
                     TreeWinMsg::OpenFile(id) => Task::future(choose_file(id)),
+                    TreeWinMsg::TreeViewMsg(id, TreeViewMsg::OpenFile) => {
+                        Task::future(choose_file(id))
+                    }
                     _ => Task::none(),
                 };
 
