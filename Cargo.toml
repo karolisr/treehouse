@@ -135,16 +135,16 @@ features = []
 git = "https://github.com/karolisr/iced.git"
 default-features = false
 features = [
-    ### Enables the "canvas" widget
-    "canvas",
     ### Enables the "wgpu" GPU-accelerated renderer backend
     "wgpu",
-    ### Enables the advanced module
-    "advanced",
     ### Enables "tokio" as the "executor::Default" on native platforms
-    # "tokio",
+    "tokio",
+    ### Enables the "canvas" widget
+    "canvas",
+    ### Enables the advanced module
+    # "advanced",
     ### Enables a debug view in native platforms (press F12)
-    "debug",
+    # "debug",
     ### Redraws on every runtime event, and not only when a widget requests it
     # "unconditional-rendering",
     ### Enables the "tiny-skia" software renderer backend
