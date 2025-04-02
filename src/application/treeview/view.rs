@@ -1,16 +1,16 @@
 use crate::{
     Edges, Float, LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, TEXT_SIZE, Tree, flatten_tree,
-    max_name_len,
+    lerp, max_name_len,
 };
 use iced::{
     Alignment, Border, Color, Element, Font, Length, Pixels, Task,
     alignment::{Horizontal, Vertical},
     border,
     widget::{
-        Button, Canvas, Column, PickList, Row, Rule, Scrollable, Slider, Theme as WidgetTheme,
-        Toggler,
+        Button, Canvas, Column, PickList, Row, Rule, Scrollable, Slider, Space,
+        Theme as WidgetTheme, Toggler,
         canvas::Cache,
-        container, horizontal_rule, horizontal_space,
+        container, horizontal_space,
         pick_list::{Handle as PickListHandle, Status as PickListStatus, Style as PickListStyle},
         row,
         rule::{FillMode as RuleFillMode, Style as RuleStyle},
@@ -42,19 +42,29 @@ pub struct TreeView {
     pub(super) max_name_len: usize,
 
     pub(super) canvas_h: Float,
-
     pub(super) window_w: Float,
     pub(super) window_h: Float,
-    pub(super) max_available_window_h: Float,
-
-    pub(super) node_size: Float,
-    pub(super) min_node_size: Float,
 
     pub(super) tip_label_size: Float,
     pub(super) int_label_size: Float,
+    pub(super) min_label_size: Float,
     pub(super) max_label_size: Float,
-    pub(super) tip_label_w: Float,
 
+    min_label_size_idx: u8,
+    max_label_size_idx: u8,
+    selected_tip_label_size_idx: u8,
+    selected_int_label_size_idx: u8,
+
+    pub(super) available_vertical_space: Float,
+    pub(super) node_size: Float,
+    pub(super) min_node_size: Float,
+    pub(super) max_node_size: Float,
+
+    min_node_size_idx: u8,
+    max_node_size_idx: u8,
+    selected_node_size_idx: u8,
+
+    pub(super) tip_label_w: Float,
     pub(super) tip_label_offset: Float,
     pub(super) int_label_offset: Float,
 
@@ -90,25 +100,34 @@ impl Default for TreeView {
             int_node_count: 0,
             max_name_len: 0,
 
-            canvas_h: 1e0,
-            window_w: 1e0,
-            window_h: 1e0,
+            canvas_h: SF,
+            window_w: SF,
+            window_h: SF,
 
-            max_available_window_h: 1e0,
+            min_label_size_idx: 1,
+            max_label_size_idx: 24,
+            selected_tip_label_size_idx: 4,
+            selected_int_label_size_idx: 4,
 
-            node_size: SF * 1e0,
-            min_node_size: SF * 1e0,
+            min_label_size: SF * 1e0,
+            max_label_size: SF * 24e0,
+            tip_label_size: SF * 4e0,
+            int_label_size: SF * 4e0,
 
-            tip_label_size: SF * 1e1,
-            int_label_size: SF * 1e1,
-            max_label_size: SF * 3e1,
-            tip_label_w: SF * 1e1,
+            available_vertical_space: SF,
+            node_size: SF,
+            min_node_size: SF,
+            max_node_size: SF,
+            min_node_size_idx: 0,
+            max_node_size_idx: 23,
+            selected_node_size_idx: 0,
 
+            tip_label_w: SF,
             tip_label_offset: SF * 3e0,
             int_label_offset: SF * 3e0,
 
             draw_tip_labels: true,
-            draw_int_labels: false,
+            draw_int_labels: true,
 
             edge_geom_cache: Default::default(),
             tip_labels_geom_cache: Default::default(),
@@ -132,15 +151,45 @@ pub enum TreeViewMsg {
     NodeOrderingOptionChanged(NodeOrderingOption),
     WindowResized(Float, Float),
     UpdateWindowSize,
-    NodeSizeChanged(Float),
-    TipLabelSizeChanged(Float),
-    IntLabelSizeChanged(Float),
+    NodeSizeSelectionChanged(u8),
+    TipLabelSizeSelectionChanged(u8),
+    IntLabelSizeSelectionChanged(u8),
     TipLabelVisibilityChanged(bool),
     IntLabelVisibilityChanged(bool),
     OpenFile,
 }
 
 impl TreeView {
+    fn update_node_size(&mut self) {
+        self.available_vertical_space = self.window_h - PADDING * 2e0 - SF * 2e0;
+        self.min_node_size = self.available_vertical_space / self.tip_count as Float;
+        self.max_node_size = Float::max(self.max_label_size, self.min_node_size);
+
+        if self.min_node_size == self.max_node_size {
+            self.max_node_size_idx = self.min_node_size_idx
+        }
+
+        if self.selected_node_size_idx > self.max_node_size_idx {
+            self.selected_node_size_idx = self.max_node_size_idx
+        }
+
+        if self.max_node_size_idx > 0 {
+            self.node_size = lerp(
+                self.min_node_size,
+                self.max_node_size,
+                self.selected_node_size_idx as Float / self.max_node_size_idx as Float,
+            )
+        } else {
+            self.node_size = self.min_node_size
+        }
+
+        self.update_canvas_h();
+    }
+
+    fn update_canvas_h(&mut self) {
+        self.canvas_h = self.node_size * self.tip_count as Float;
+    }
+
     fn update_tip_label_w(&mut self) {
         if self.draw_tip_labels {
             self.tip_label_w =
@@ -150,57 +199,47 @@ impl TreeView {
         }
     }
 
-    fn update_canvas_h_and_node_size(&mut self) {
-        self.max_available_window_h = self.window_h - PADDING * 2e0 - SF;
-        self.min_node_size = self.max_available_window_h / self.tip_count as Float;
-        if self.node_size < self.min_node_size {
-            self.node_size = self.min_node_size
-        }
-        self.canvas_h = self.node_size * self.tip_count as Float;
-    }
-
     pub fn update(&mut self, msg: TreeViewMsg) -> Task<TreeViewMsg> {
         match msg {
             TreeViewMsg::OpenFile => Task::none(),
-            TreeViewMsg::IntLabelVisibilityChanged(state) => {
-                self.draw_int_labels = state;
-                Task::none()
-            }
 
             TreeViewMsg::TipLabelVisibilityChanged(state) => {
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
-
                 self.draw_tip_labels = state;
                 self.update_tip_label_w();
                 Task::none()
             }
 
-            TreeViewMsg::TipLabelSizeChanged(s) => {
+            TreeViewMsg::IntLabelVisibilityChanged(state) => {
+                self.draw_int_labels = state;
+                Task::none()
+            }
+
+            TreeViewMsg::TipLabelSizeSelectionChanged(idx) => {
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
-
-                self.tip_label_size = s;
+                self.selected_tip_label_size_idx = idx;
+                self.tip_label_size = self.min_label_size * idx as Float;
                 self.update_tip_label_w();
                 Task::none()
             }
 
-            TreeViewMsg::IntLabelSizeChanged(s) => {
+            TreeViewMsg::IntLabelSizeSelectionChanged(idx) => {
                 self.int_labels_geom_cache.clear();
-
-                self.int_label_size = s;
+                self.selected_int_label_size_idx = idx;
+                self.int_label_size = self.min_label_size * idx as Float;
                 Task::none()
             }
 
-            TreeViewMsg::NodeSizeChanged(s) => {
+            TreeViewMsg::NodeSizeSelectionChanged(idx) => {
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
-
-                self.node_size = s;
-                self.update_canvas_h_and_node_size();
+                self.selected_node_size_idx = idx;
+                self.update_node_size();
                 Task::none()
             }
 
@@ -209,7 +248,6 @@ impl TreeView {
                     self.edge_geom_cache.clear();
                     self.tip_labels_geom_cache.clear();
                     self.int_labels_geom_cache.clear();
-
                     self.selected_node_ordering_option = Some(node_ordering_option);
                     self.sort();
                 }
@@ -232,10 +270,9 @@ impl TreeView {
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
-
                 self.window_w = w;
                 self.window_h = h;
-                self.update_canvas_h_and_node_size();
+                self.update_node_size();
                 Task::none()
             }
 
@@ -243,7 +280,6 @@ impl TreeView {
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
-
                 self.drawing_enabled = false;
                 self.tree_original = tree;
                 self.tree_srtd_asc = None;
@@ -255,11 +291,9 @@ impl TreeView {
                 self.tip_count = self.tree_original.tip_count_all();
                 self.int_node_count = self.node_count - self.tip_count;
                 self.max_name_len = max_name_len(&self.tree_original);
-
                 self.sort();
-                self.update_canvas_h_and_node_size();
+                self.update_node_size();
                 self.update_tip_label_w();
-
                 self.drawing_enabled = true;
                 Task::none()
             }
@@ -267,66 +301,63 @@ impl TreeView {
     }
 
     pub fn view(&self) -> Element<TreeViewMsg> {
-        if self.tip_count > 0 {
-            let mut side_col: Column<TreeViewMsg> = Column::new();
-            let mut main_row: Row<TreeViewMsg> = Row::new();
-
-            side_col = side_col.push(horizontal_space().height(Length::Fixed(PADDING)));
+        if self.tip_count == 0 {
+            return container(Button::new("Open a Tree File").on_press(TreeViewMsg::OpenFile))
+                .center(Length::Fill)
+                .into();
+        }
+        let mut side_col: Column<TreeViewMsg> = Column::new();
+        let mut main_row: Row<TreeViewMsg> = Row::new();
+        if self.min_node_size_idx != self.max_node_size_idx {
+            side_col = side_col.push(self.horizontal_space(0, PADDING));
             side_col = side_col.push(
                 container(text!("Edge Spacing").size(TEXT_SIZE))
                     .align_x(Horizontal::Right)
                     .width(Length::Fill),
             );
             side_col = side_col.push(self.node_size_slider());
-
-            side_col = side_col.push(horizontal_space().height(Length::Fixed(PADDING)));
-            side_col = side_col.push(self.tip_labels_toggler());
-            if self.draw_tip_labels {
-                side_col = side_col.push(self.tip_labels_size_slider());
-            }
-
-            side_col = side_col.push(horizontal_space().height(Length::Fixed(PADDING)));
-            side_col = side_col.push(self.int_labels_toggler());
-            if self.draw_int_labels {
-                side_col = side_col.push(self.int_labels_size_slider());
-            }
-
-            side_col = side_col.push(horizontal_space().height(Length::Fixed(PADDING)));
-
-            side_col = side_col.push(horizontal_rule(PADDING));
-            side_col = side_col.push(horizontal_space().height(Length::Fixed(PADDING)));
-
-            side_col = side_col.push(
-                row![
-                    text!("Node Order")
-                        .size(TEXT_SIZE)
-                        .align_x(Alignment::Start),
-                    self.node_ordering_options_pick_list(),
-                ]
-                .align_y(Vertical::Center)
-                .width(Length::Fill)
-                .spacing(PADDING),
-            );
-
-            side_col = side_col.width(Length::Fixed(SF * 2e2));
-
-            if self.canvas_h > self.max_available_window_h {
-                main_row = main_row.push(self.scrollable(self.tree_canvas()));
-                main_row = main_row.push(vertical_space().width(PADDING));
-            } else {
-                main_row = main_row.push(self.tree_canvas());
-                main_row = main_row.push(self.vertical_rule());
-                main_row = main_row.push(vertical_space().width(PADDING + 1e0));
-            }
-
-            main_row = main_row.push(side_col);
-            main_row = main_row.padding(PADDING);
-            main_row.into()
-        } else {
-            container(Button::new("Open a Tree File").on_press(TreeViewMsg::OpenFile))
-                .center(Length::Fill)
-                .into()
         }
+        side_col = side_col.push(self.horizontal_space(0, PADDING));
+        side_col = side_col.push(self.tip_labels_toggler());
+        if self.draw_tip_labels {
+            side_col = side_col.push(self.tip_labels_size_slider());
+        }
+        side_col = side_col.push(self.horizontal_space(0, PADDING));
+        side_col = side_col.push(self.int_labels_toggler());
+        if self.draw_int_labels {
+            side_col = side_col.push(self.int_labels_size_slider());
+        }
+        side_col = side_col.push(self.horizontal_space(0, PADDING));
+        side_col = side_col.push(self.horizontal_rule(SF));
+        side_col = side_col.push(self.horizontal_space(0, PADDING));
+        side_col = side_col.push(
+            row![
+                text!("Node Order")
+                    .size(TEXT_SIZE)
+                    .align_x(Alignment::Start),
+                self.node_ordering_options_pick_list(),
+            ]
+            .align_y(Vertical::Center)
+            .width(Length::Fill)
+            .spacing(PADDING),
+        );
+        side_col = side_col.width(Length::Fixed(SF * 2e2));
+        match self.selected_node_size_idx {
+            idx if idx == self.min_node_size_idx => {
+                main_row = main_row.push(self.tree_canvas());
+                main_row = main_row.push(self.vertical_rule(SF))
+            }
+            _ => {
+                main_row = {
+                    main_row = main_row.push(self.scrollable(self.tree_canvas()));
+                    main_row.push(self.vertical_space(SF, 0))
+                }
+            }
+        }
+        main_row = main_row.push(self.vertical_space(PADDING, 0));
+        main_row = main_row.push(side_col);
+        main_row = main_row.padding(PADDING);
+        main_row.into()
     }
 
     fn tree_canvas(&self) -> Canvas<&TreeView, TreeViewMsg> {
@@ -335,9 +366,65 @@ impl TreeView {
             .width(Length::Fill)
     }
 
-    fn vertical_rule(&self) -> Rule<'_, WidgetTheme> {
-        let rule: Rule<'_, WidgetTheme> = Rule::vertical(1);
+    fn horizontal_space(&self, width: impl Into<Length>, height: impl Into<Length>) -> Space {
+        horizontal_space().width(width).height(height)
+    }
+
+    fn vertical_space(&self, width: impl Into<Length>, height: impl Into<Length>) -> Space {
+        vertical_space().width(width).height(height)
+    }
+
+    fn horizontal_rule(&self, height: impl Into<Pixels>) -> Rule<'_, WidgetTheme> {
+        let rule: Rule<'_, WidgetTheme> = Rule::horizontal(height);
         self.apply_rule_settings(rule)
+    }
+
+    fn vertical_rule(&self, width: impl Into<Pixels>) -> Rule<'_, WidgetTheme> {
+        let rule: Rule<'_, WidgetTheme> = Rule::vertical(width);
+        self.apply_rule_settings(rule)
+    }
+
+    fn tip_labels_toggler(&self) -> Toggler<'_, TreeViewMsg> {
+        self.apply_toggler_settings("Tip Labels", self.draw_tip_labels)
+            .on_toggle(TreeViewMsg::TipLabelVisibilityChanged)
+    }
+
+    fn int_labels_toggler(&self) -> Toggler<'_, TreeViewMsg> {
+        self.apply_toggler_settings("Internal Labels", self.draw_int_labels)
+            .on_toggle(TreeViewMsg::IntLabelVisibilityChanged)
+    }
+
+    fn node_size_slider(&self) -> Slider<u8, TreeViewMsg> {
+        let mut sldr: Slider<u8, TreeViewMsg> = Slider::new(
+            self.min_node_size_idx..=self.max_node_size_idx,
+            self.selected_node_size_idx,
+            TreeViewMsg::NodeSizeSelectionChanged,
+        );
+        sldr = sldr.step(1);
+        sldr = sldr.shift_step(2);
+        self.apply_slider_settings(sldr)
+    }
+
+    fn tip_labels_size_slider(&self) -> Slider<u8, TreeViewMsg> {
+        let mut sldr: Slider<u8, TreeViewMsg> = Slider::new(
+            self.min_label_size_idx..=self.max_label_size_idx,
+            self.selected_tip_label_size_idx,
+            TreeViewMsg::TipLabelSizeSelectionChanged,
+        );
+        sldr = sldr.step(1);
+        sldr = sldr.shift_step(2);
+        self.apply_slider_settings(sldr)
+    }
+
+    fn int_labels_size_slider(&self) -> Slider<u8, TreeViewMsg> {
+        let mut sldr: Slider<u8, TreeViewMsg> = Slider::new(
+            self.min_label_size_idx..=self.max_label_size_idx,
+            self.selected_int_label_size_idx,
+            TreeViewMsg::IntLabelSizeSelectionChanged,
+        );
+        sldr = sldr.step(1);
+        sldr = sldr.shift_step(2);
+        self.apply_slider_settings(sldr)
     }
 
     fn node_ordering_options_pick_list(
@@ -393,55 +480,6 @@ impl TreeView {
         pl
     }
 
-    #[allow(dead_code)]
-    fn horizontal_rule(&self) -> Rule<'_, WidgetTheme> {
-        let rule: Rule<'_, WidgetTheme> = Rule::horizontal(1);
-        self.apply_rule_settings(rule)
-    }
-
-    fn tip_labels_toggler(&self) -> Toggler<'_, TreeViewMsg> {
-        self.apply_toggler_settings("Tip Labels", self.draw_tip_labels)
-            .on_toggle(TreeViewMsg::TipLabelVisibilityChanged)
-    }
-
-    fn tip_labels_size_slider(&self) -> Slider<Float, TreeViewMsg> {
-        let mut sldr: Slider<Float, TreeViewMsg> = Slider::new(
-            3e0 * SF..=self.max_label_size,
-            self.tip_label_size,
-            TreeViewMsg::TipLabelSizeChanged,
-        );
-        sldr = sldr.step(1e0 * SF);
-        sldr = sldr.shift_step(5e0 * SF);
-        self.apply_slider_settings(sldr)
-    }
-
-    fn int_labels_toggler(&self) -> Toggler<'_, TreeViewMsg> {
-        self.apply_toggler_settings("Internal Labels", self.draw_int_labels)
-            .on_toggle(TreeViewMsg::IntLabelVisibilityChanged)
-    }
-
-    fn int_labels_size_slider(&self) -> Slider<Float, TreeViewMsg> {
-        let mut sldr: Slider<Float, TreeViewMsg> = Slider::new(
-            3e0 * SF..=self.max_label_size,
-            self.int_label_size,
-            TreeViewMsg::IntLabelSizeChanged,
-        );
-        sldr = sldr.step(1e0 * SF);
-        sldr = sldr.shift_step(5e0 * SF);
-        self.apply_slider_settings(sldr)
-    }
-
-    fn node_size_slider(&self) -> Slider<Float, TreeViewMsg> {
-        let mut sldr: Slider<Float, TreeViewMsg> = Slider::new(
-            self.min_node_size..=self.max_label_size,
-            self.node_size,
-            TreeViewMsg::NodeSizeChanged,
-        );
-        sldr = sldr.step(1e0 * SF);
-        sldr = sldr.shift_step(5e0 * SF);
-        self.apply_slider_settings(sldr)
-    }
-
     fn scrollable<'a>(
         &'a self,
         cnv: Canvas<&'a TreeView, TreeViewMsg>,
@@ -452,7 +490,7 @@ impl TreeView {
         scrl_bar = scrl_bar.scroller_width(Pixels(SCROLL_BAR_W));
         scrl_bar = scrl_bar.anchor(ScrollBarAnchor::Start);
         scrl = scrl.direction(ScrollableDirection::Vertical(scrl_bar));
-        scrl = scrl.height(self.max_available_window_h + SF);
+        scrl = scrl.height(self.available_vertical_space + SF);
         self.apply_scroller_settings(scrl)
     }
 

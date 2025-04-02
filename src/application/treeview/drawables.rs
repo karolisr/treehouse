@@ -1,5 +1,5 @@
 use super::TreeView;
-use crate::Float;
+use crate::{Float, NodeType};
 use iced::{
     Point,
     alignment::Vertical,
@@ -41,7 +41,12 @@ impl TreeView {
         paths
     }
 
-    pub fn tip_labels_from_chunks(&self, width: Float, height: Float) -> Vec<Text> {
+    pub fn labels_from_chunks(
+        &self,
+        width: Float,
+        height: Float,
+        return_only: NodeType,
+    ) -> Vec<Text> {
         let mut tip_labels: Vec<Text> = Vec::with_capacity(self.tip_count);
         thread::scope(|thread_scope| {
             let mut handles: Vec<ScopedJoinHandle<'_, Vec<Text>>> = Vec::new();
@@ -49,17 +54,22 @@ impl TreeView {
                 let handle = thread_scope.spawn(move || {
                     let mut tip_labels_l: Vec<Text> = Vec::with_capacity(chunk.len());
                     for edge in chunk {
-                        let x1 = edge.x1 as Float * width;
-                        let y = edge.y as Float * height;
-                        let pt_node = Point::new(x1, y);
-                        if let Some(name) = &edge.name {
-                            let label = Text {
-                                content: name.deref().into(),
-                                position: pt_node,
-                                align_y: Vertical::Center,
-                                ..Default::default()
-                            };
-                            if edge.is_tip {
+                        let should_include = match return_only {
+                            NodeType::Tip => edge.is_tip,
+                            NodeType::Internal => !edge.is_tip,
+                            NodeType::Root => todo!(),
+                        };
+                        if should_include {
+                            let x1 = edge.x1 as Float * width;
+                            let y = edge.y as Float * height;
+                            let pt_node = Point::new(x1, y);
+                            if let Some(name) = &edge.name {
+                                let label = Text {
+                                    content: name.deref().into(),
+                                    position: pt_node,
+                                    align_y: Vertical::Center,
+                                    ..Default::default()
+                                };
                                 tip_labels_l.push(label);
                             }
                         }
@@ -74,41 +84,6 @@ impl TreeView {
             }
         });
         tip_labels
-    }
-
-    pub fn int_labels_from_chunks(&self, width: Float, height: Float) -> Vec<Text> {
-        let mut int_labels: Vec<Text> = Vec::with_capacity(self.int_node_count);
-        thread::scope(|thread_scope| {
-            let mut handles: Vec<ScopedJoinHandle<'_, Vec<Text>>> = Vec::new();
-            for chunk in &self.tree_chunked_edges {
-                let handle = thread_scope.spawn(move || {
-                    let mut int_labels_l: Vec<Text> = Vec::with_capacity(chunk.len());
-                    for edge in chunk {
-                        let x1 = edge.x1 as Float * width;
-                        let y = edge.y as Float * height;
-                        let pt_node = Point::new(x1, y);
-                        if let Some(name) = &edge.name {
-                            let label = Text {
-                                content: name.deref().into(),
-                                position: pt_node,
-                                align_y: Vertical::Center,
-                                ..Default::default()
-                            };
-                            if !edge.is_tip {
-                                int_labels_l.push(label);
-                            }
-                        }
-                    }
-                    int_labels_l
-                });
-                handles.push(handle);
-            }
-            for j in handles {
-                let mut int_labels_l = j.join().unwrap();
-                int_labels.append(&mut int_labels_l);
-            }
-        });
-        int_labels
     }
 
     pub fn all_from_chunks(

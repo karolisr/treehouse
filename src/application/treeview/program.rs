@@ -1,5 +1,5 @@
 use super::{TreeView, TreeViewMsg, TreeViewState};
-use crate::{PADDING, SF};
+use crate::{NodeType, PADDING, SF};
 use iced::widget::canvas::stroke;
 use iced::{
     Event, Rectangle, Renderer, Theme,
@@ -77,8 +77,11 @@ impl Program<TreeViewMsg> for TreeView {
                 let g_tip_labels =
                     self.tip_labels_geom_cache
                         .draw(renderer, clipping.size(), |f| {
-                            let labels =
-                                self.tip_labels_from_chunks(tree_rect.width, tree_rect.height);
+                            let labels = self.labels_from_chunks(
+                                tree_rect.width,
+                                tree_rect.height,
+                                NodeType::Tip,
+                            );
                             self.draw_labels(
                                 labels,
                                 self.tip_label_size,
@@ -95,8 +98,11 @@ impl Program<TreeViewMsg> for TreeView {
                 let g_int_labels =
                     self.int_labels_geom_cache
                         .draw(renderer, clipping.size(), |f| {
-                            let labels =
-                                self.int_labels_from_chunks(tree_rect.width, tree_rect.height);
+                            let labels = self.labels_from_chunks(
+                                tree_rect.width,
+                                tree_rect.height,
+                                NodeType::Internal,
+                            );
                             self.draw_labels(
                                 labels,
                                 self.int_label_size,
