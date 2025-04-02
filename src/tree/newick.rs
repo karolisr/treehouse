@@ -5,6 +5,7 @@ pub fn parse_newick(s: String) -> Option<Tree> {
     let sc = clean_newick_str(&s);
     tree = parse(sc, 0, tree);
     if tree.tip_count_all() > 0 {
+        tree.mark_root_node_if_possible();
         Some(tree)
     } else {
         None

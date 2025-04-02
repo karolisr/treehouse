@@ -1,33 +1,26 @@
 use super::TreeFloat;
 use std::{collections::HashMap as Dict, fmt::Display, sync::Arc};
 
-pub fn node<'a>(name: impl Into<&'a str>) -> Node {
-    let (name, branch_length) = parse_name(name);
-    Node::new(name, branch_length)
-}
-
-pub fn nodes<'a>(names: impl Into<Vec<&'a str>>) -> Vec<Node> {
-    names.into().iter().map(|&n| n.into()).collect()
-}
-
-pub fn nodes_from_string<'a>(s: impl Into<&'a str>, sep: impl Into<&'a str>) -> Vec<Node> {
-    let s: &str = s.into();
-    let sep: &str = sep.into();
-    let nds: Vec<&str> = s.split(sep).collect();
-    nodes(nds)
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Tree {
+    nodes: Vec<Node>,
+    parent_children_map: Dict<usize, Vec<usize>>,
+    child_parent_map: Dict<usize, usize>,
+    root_node_id: Option<usize>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Node {
     name: Option<Arc<str>>,
     branch_length: Option<TreeFloat>,
+    node_type: Option<NodeType>,
 }
 
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct Tree {
-    nodes: Vec<Node>,
-    parent_children_map: Dict<usize, Vec<usize>>,
-    child_parent_map: Dict<usize, usize>,
+#[derive(Clone, Debug, PartialEq, PartialOrd, Copy)]
+pub enum NodeType {
+    Tip,
+    Internal,
+    Root,
 }
 
 impl Tree {
@@ -36,6 +29,7 @@ impl Tree {
             nodes: vec![Node::new(Some(String::from("WRAPPER")), Some(0e0))],
             parent_children_map: Dict::new(),
             child_parent_map: Dict::new(),
+            root_node_id: None,
         }
     }
 
@@ -211,6 +205,22 @@ impl Tree {
         }
     }
 
+    pub fn mark_root_node_if_possible(&mut self) -> Option<usize> {
+        let root_node_id = self.first_node_id();
+        if root_node_id != 0 {
+            let root_node = &mut self.nodes[root_node_id];
+            root_node.node_type = Some(NodeType::Root);
+            self.root_node_id = Some(root_node_id);
+            Some(root_node_id)
+        } else {
+            None
+        }
+    }
+
+    pub fn is_rooted(&self) -> bool {
+        self.root_node_id.is_some()
+    }
+
     pub fn sort(&mut self, reverse: bool) {
         self.sort_nodes(0, reverse);
     }
@@ -238,16 +248,18 @@ impl Tree {
 fn display(tree: &Tree, node_id: usize, mut level: usize) -> String {
     let mut rv: String = String::new();
     if node_id != 0 {
+        let is_root = tree.root_node_id == Some(node_id);
         let name = tree.name_empty_if_none(node_id);
         let brln = tree.branch_length(node_id);
 
         rv.push_str(&format!(
-            "{}- {name} {brln:4.2} {} {} {} {}\n",
+            "{}- {name} {brln:4.2} {} {} {} {}{}\n",
             " ".repeat(level * 4),
             tree.child_node_count_recursive(node_id),
             tree.child_node_count(node_id),
             tree.tip_count_recursive(node_id),
-            tree.tip_count(node_id)
+            tree.tip_count(node_id),
+            if is_root { " ROOT" } else { "" }
         ));
 
         if tree.is_tip(node_id) {
@@ -279,6 +291,7 @@ impl Node {
         Self {
             name: name.map(|name| name.into()),
             branch_length,
+            node_type: None,
         }
     }
 
@@ -325,4 +338,20 @@ impl Display for Tree {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "\n{}", display(self, self.first_node_id(), 0))
     }
+}
+
+pub fn node<'a>(name: impl Into<&'a str>) -> Node {
+    let (name, branch_length) = parse_name(name);
+    Node::new(name, branch_length)
+}
+
+pub fn nodes<'a>(names: impl Into<Vec<&'a str>>) -> Vec<Node> {
+    names.into().iter().map(|&n| n.into()).collect()
+}
+
+pub fn nodes_from_string<'a>(s: impl Into<&'a str>, sep: impl Into<&'a str>) -> Vec<Node> {
+    let s: &str = s.into();
+    let sep: &str = sep.into();
+    let nds: Vec<&str> = s.split(sep).collect();
+    nodes(nds)
 }

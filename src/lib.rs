@@ -25,4 +25,11 @@ pub use application::{
     treeview::{TreeView, TreeViewMsg},
     windows::window_settings,
 };
-pub use tree::{Edges, Tree, TreeFloat, flatten_tree, max_name_len, parse_newick};
+pub use tree::{Edges, NodeType, Tree, TreeFloat, flatten_tree, max_name_len, parse_newick};
+
+pub fn lerp(a: impl Into<Float>, b: impl Into<Float>, t: impl Into<Float>) -> Float {
+    let a = a.into();
+    let b = b.into();
+    let t = t.into();
+    a + (b - a) * t
+}
