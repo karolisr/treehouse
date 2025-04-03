@@ -101,6 +101,7 @@ objc2-foundation = "0.3.0"
 
 [target.aarch64-apple-darwin.dependencies.muda]
 git = "https://github.com/karolisr/muda.git"
+branch = "custom"
 default-features = false
 features = []
 
@@ -133,12 +134,11 @@ features = []
 
 [dependencies.iced]
 git = "https://github.com/karolisr/iced.git"
+branch = "custom"
 default-features = false
 features = [
     ### Enables the "wgpu" GPU-accelerated renderer backend
     "wgpu",
-    ### Enables "tokio" as the "executor::Default" on native platforms
-    "tokio",
     ### Enables the "canvas" widget
     "canvas",
     ### Enables the advanced module
@@ -153,6 +153,14 @@ features = [
     # "auto-detect-theme",
     ### Enables querying system information
     # "system",
+    ### Enables the "thread-pool" futures executor as the "executor::Default" on native platforms
+    # "thread-pool",
+    ### Enables "tokio" as the "executor::Default" on native platforms
+    # "tokio",
+    ### Enables "smol" as the "executor::Default" on native platforms
+    # "smol",
+    ### Enables support for the "sipper" library
+    # "sipper",
     ### Enables the "image" widget, without any built-in codecs of the "image" crate
     # "image-without-codecs",
     ### Enables the "qr_code" widget
@@ -161,10 +169,6 @@ features = [
     # "markdown",
     ### Enables lazy widgets
     # "lazy",
-    ### Enables "async-std" as the "executor::Default" on native platforms
-    # "async-std",
-    ### Enables "smol" as the "executor::Default" on native platforms
-    # "smol",
     ### Enables broken "sRGB linear" blending to reproduce color management of the Web
     # "web-colors",
     ### Enables the WebGL backend
