@@ -1,9 +1,27 @@
+#![cfg_attr(
+    debug_assertions,
+    allow(
+        // dead_code,
+        unused_imports,
+        // unused_variables,
+        // unused_assignments,
+        // unused_mut,
+        // clippy::collapsible_if,
+        // clippy::collapsible_match,
+        // clippy::derivable_impls,
+        // clippy::too_many_arguments,
+        // clippy::type_complexity,
+    )
+)]
+
 use treehouse::{Tree, flatten_tree, max_name_len, parse_newick};
 
 fn main() {
     // let data = "(((пять:0.5,Four:0.4,(Two:0.2,One:0.1)Three:0.3)Six:0.6,Seven:0.7)Aštuoni:0.8,九つ:0.9)十:1.0;";
     // let data = "(((One:0.2,Two:0.3)A:0.3,XXX:0.7,(Three:0.5,Four:0.3)B:0.2)C:0.3,пять:0.7,YšY九Y:0.7)D:0.0;";
-    let data = "(((five:0.5,four:0.4,(two:0.2,one:0.1)three:0.3)six:0.6,seven:0.7)eight:0.8,nine:0.9)ten:1.0;";
+    // let data = "(((five:0.5,four:0.4,(two:0.2,one:0.1)three:0.3)six:0.6,seven:0.7)eight:0.8,nine:0.9)root;";
+    // let data = "((Five:0.5,Four:0.4,(Two:0.2,One:0.1)Three:0.3)Six:0.6,Seven:0.7,Nine:1.7)unroot;";
+    let data = "((1:0.1,2:0.1):0.1,(3:0.1,4:0.1):0.1)root;";
     let data = String::from(data);
     println!("{data}");
     let mut tree = match parse_newick(data) {
@@ -11,6 +29,9 @@ fn main() {
         None => Tree::new(),
     };
     tree.sort(false);
+    let ml = max_name_len(&tree);
+    println!("\nmax_name_len = {ml}");
+    println!("Rooted: {} {:?}", &tree.is_rooted(), &tree.root_node_id());
     println!("{}", &tree);
     let chunks = flatten_tree(&tree, 1);
     for chunk in chunks {
@@ -35,7 +56,4 @@ fn main() {
             );
         }
     }
-
-    let ml = max_name_len(&tree);
-    println!("\nmax_name_len = {ml}");
 }

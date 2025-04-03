@@ -33,6 +33,27 @@ impl Tree {
         }
     }
 
+    // -- These methods are potentially fragile as they depend on "magic" node numbers: 0 and 1. --
+    pub fn first_node_id(&self) -> usize {
+        if !self.nodes.is_empty() { 1 } else { 0 }
+    }
+
+    fn first_node_id_for_counting(&self) -> usize {
+        if self.child_node_count(1) == 2 { 1 } else { 0 }
+    }
+
+    pub fn mark_root_node_if_possible(&mut self) -> Option<usize> {
+        if self.child_node_count(1) == 2 {
+            let root_node = &mut self.nodes[1];
+            root_node.node_type = Some(NodeType::Root);
+            self.root_node_id = Some(1);
+            Some(1)
+        } else {
+            None
+        }
+    }
+    // --------------------------------------------------------------------------------------------
+
     pub fn add_child_node(&mut self, parent_id: usize, child_node: Node) -> usize {
         self.nodes.push(child_node);
         let child_id = self.nodes.len() - 1;
@@ -111,14 +132,6 @@ impl Tree {
         self.child_node_count_recursive(0)
     }
 
-    pub fn tip_node_counts_for_children(&self, node_id: usize) -> Vec<usize> {
-        self.child_node_ids(node_id)
-            .iter()
-            .map(|&node_id| self.tip_count_recursive(node_id))
-            .map(|count| if count == 0 { 1 } else { count })
-            .collect()
-    }
-
     pub fn tip_node_ids(&self, node_id: usize) -> Vec<usize> {
         let cs: &[usize] = self.child_node_ids(node_id);
         let mut rv: Vec<usize> = Vec::new();
@@ -133,7 +146,7 @@ impl Tree {
     }
 
     pub fn tip_node_ids_all(&self) -> Vec<usize> {
-        self.tip_node_ids(self.first_node_id())
+        self.tip_node_ids(self.first_node_id_for_counting())
     }
 
     pub fn dist(&self, left: usize, right: usize) -> TreeFloat {
@@ -197,28 +210,20 @@ impl Tree {
         self.tip_count_recursive(0)
     }
 
-    pub fn first_node_id(&self) -> usize {
-        if self.child_node_count(0) == 1 {
-            self.child_node_ids(0)[0]
-        } else {
-            0
-        }
-    }
-
-    pub fn mark_root_node_if_possible(&mut self) -> Option<usize> {
-        let root_node_id = self.first_node_id();
-        if root_node_id != 0 {
-            let root_node = &mut self.nodes[root_node_id];
-            root_node.node_type = Some(NodeType::Root);
-            self.root_node_id = Some(root_node_id);
-            Some(root_node_id)
-        } else {
-            None
-        }
+    pub fn tip_node_counts_for_children(&self, node_id: usize) -> Vec<usize> {
+        self.child_node_ids(node_id)
+            .iter()
+            .map(|&node_id| self.tip_count_recursive(node_id))
+            .map(|count| if count == 0 { 1 } else { count })
+            .collect()
     }
 
     pub fn is_rooted(&self) -> bool {
         self.root_node_id.is_some()
+    }
+
+    pub fn root_node_id(&self) -> Option<usize> {
+        self.root_node_id
     }
 
     pub fn sort(&mut self, reverse: bool) {
@@ -336,7 +341,11 @@ impl<'a> From<&'a str> for Node {
 
 impl Display for Tree {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "\n{}", display(self, self.first_node_id(), 0))
+        write!(
+            f,
+            "\n{}",
+            display(self, self.first_node_id_for_counting(), 0)
+        )
     }
 }
 
