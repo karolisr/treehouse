@@ -47,10 +47,21 @@ impl TreeView {
         height: Float,
         return_only: NodeType,
     ) -> Vec<Text> {
+        // ------------------------------
+        let label_temp = Text {
+            font: iced::Font {
+                family: iced::font::Family::Name("JetBrains Mono"),
+                ..Default::default()
+            },
+            align_y: Vertical::Center,
+            ..Default::default()
+        };
+        // ------------------------------
         let mut tip_labels: Vec<Text> = Vec::with_capacity(self.tip_count);
         thread::scope(|thread_scope| {
             let mut handles: Vec<ScopedJoinHandle<'_, Vec<Text>>> = Vec::new();
             for chunk in &self.tree_chunked_edges {
+                let label_temp_l = label_temp.clone();
                 let handle = thread_scope.spawn(move || {
                     let mut tip_labels_l: Vec<Text> = Vec::with_capacity(chunk.len());
                     for edge in chunk {
@@ -64,12 +75,9 @@ impl TreeView {
                             let y = edge.y as Float * height;
                             let pt_node = Point::new(x1, y);
                             if let Some(name) = &edge.name {
-                                let label = Text {
-                                    content: name.deref().into(),
-                                    position: pt_node,
-                                    align_y: Vertical::Center,
-                                    ..Default::default()
-                                };
+                                let mut label = label_temp_l.clone();
+                                label.content = name.deref().into();
+                                label.position = pt_node;
                                 tip_labels_l.push(label);
                             }
                         }

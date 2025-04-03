@@ -105,32 +105,10 @@ branch = "custom"
 default-features = false
 features = []
 
-# [target.x86_64-unknown-linux-gnu.dependencies.muda]
-# git = "https://github.com/karolisr/muda.git"
-# default-features = false
-# features = [
-#     # "common-controls-v6",
-#     "gtk",
-#     # "libxdo",
-#     # "serde",
-# ]
-
 [target.aarch64-apple-darwin.dependencies.rfd]
 version = "0.15.3"
 default-features = false
 features = []
-
-# [target.x86_64-unknown-linux-gnu.dependencies.rfd]
-# version = "0.15.3"
-# default-features = false
-# features = [
-#     ### Uses GTK for dialogs on Linux & BSDs; has no effect on Windows and macOS
-#     "gtk3",
-#     ### Uses XDG Desktop Portal instead of GTK on Linux & BSDs
-#     # "xdg-portal",
-#     ### Use TaskDialogIndirect API from ComCtl32.dll v6 for showing message dialog. This is necessary if you need to customize dialog button texts
-#     # "common-controls-v6",
-# ]
 
 [dependencies.iced]
 git = "https://github.com/karolisr/iced.git"
@@ -142,7 +120,7 @@ features = [
     ### Enables the "canvas" widget
     "canvas",
     ### Enables the advanced module
-    # "advanced",
+    "advanced",
     ### Enables a debug view in native platforms (press F12)
     # "debug",
     ### Redraws on every runtime event, and not only when a widget requests it
@@ -192,4 +170,54 @@ features = [
 # features = [
 #     "fs",
 #     "rt",
+# ]
+
+# [dependencies.cosmic-text]
+# version = "0.14.0"
+# default-features = false
+# features = [
+#     "std",
+#     "swash",
+#     "fontconfig",
+#     "cosmic_undo_2",
+#     "hashbrown",
+#     "modit",
+#     "monospace_fallback",
+#     "no_std",
+#     "shape-run-cache",
+#     "syntect",
+#     "sys-locale",
+#     "vi",
+#     "warn_on_missing_glyphs",
+#     "wasm-web",
+# ]
+
+# [dependencies.iced_anim]
+# version = "0.2.1"
+# default-features = false
+# features = [
+#     "derive",
+#     "widgets",
+# ]
+
+# [target.x86_64-unknown-linux-gnu.dependencies.rfd]
+# version = "0.15.3"
+# default-features = false
+# features = [
+#     ### Uses GTK for dialogs on Linux & BSDs; has no effect on Windows and macOS
+#     "gtk3",
+#     ### Uses XDG Desktop Portal instead of GTK on Linux & BSDs
+#     # "xdg-portal",
+#     ### Use TaskDialogIndirect API from ComCtl32.dll v6 for showing message dialog. This is necessary if you need to customize dialog button texts
+#     # "common-controls-v6",
+# ]
+
+# [target.x86_64-unknown-linux-gnu.dependencies.muda]
+# git = "https://github.com/karolisr/muda.git"
+# default-features = false
+# features = [
+#     # "common-controls-v6",
+#     "gtk",
+#     # "libxdo",
+#     # "serde",
 # ]

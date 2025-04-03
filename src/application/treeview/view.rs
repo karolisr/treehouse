@@ -1,6 +1,6 @@
 use crate::{
     Edges, Float, LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, TEXT_SIZE, Tree, flatten_tree,
-    lerp, max_name_len,
+    lerp, text_width,
 };
 use iced::{
     Alignment, Border, Color, Element, Font, Length, Pixels, Task,
@@ -39,8 +39,8 @@ pub struct TreeView {
     pub(super) node_count: usize,
     pub(super) tip_count: usize,
     pub(super) int_node_count: usize,
-    pub(super) max_name_len: usize,
 
+    pub(super) tip_labels_w_scale_factor: Float,
     pub(super) canvas_h: Float,
     pub(super) window_w: Float,
     pub(super) window_h: Float,
@@ -98,8 +98,8 @@ impl Default for TreeView {
             node_count: 0,
             tip_count: 0,
             int_node_count: 0,
-            max_name_len: 0,
 
+            tip_labels_w_scale_factor: 1e0,
             canvas_h: SF,
             window_w: SF,
             window_h: SF,
@@ -190,10 +190,30 @@ impl TreeView {
         self.canvas_h = self.node_size * self.tip_count as Float;
     }
 
+    fn calc_tip_labels_w_scale_factor(&mut self) -> Float {
+        let mut max_tip_height: f64 = 0e0;
+        let mut max_tip_height_name: &str = "";
+        let mut max_tip_height_name_len: usize = 0;
+        for chunk in &self.tree_chunked_edges {
+            for edge in chunk {
+                if edge.is_tip && edge.x1 >= max_tip_height - max_tip_height / 1e1 {
+                    max_tip_height = edge.x1;
+                    if let Some(name) = &edge.name {
+                        if name.len() > max_tip_height_name_len {
+                            max_tip_height_name = name;
+                            max_tip_height_name_len = name.len();
+                        }
+                    }
+                }
+            }
+        }
+        text_width(max_tip_height_name, 1e0, 1e0)
+    }
+
     fn update_tip_label_w(&mut self) {
         if self.draw_tip_labels {
             self.tip_label_w =
-                self.tip_label_offset + self.max_name_len as Float * self.tip_label_size / 1.75;
+                self.tip_labels_w_scale_factor * self.tip_label_size + self.tip_label_offset;
         } else {
             self.tip_label_w = 0e0;
         }
@@ -290,9 +310,9 @@ impl TreeView {
                 self.node_count = self.tree_original.node_count_all();
                 self.tip_count = self.tree_original.tip_count_all();
                 self.int_node_count = self.node_count - self.tip_count;
-                self.max_name_len = max_name_len(&self.tree_original);
                 self.sort();
                 self.update_node_size();
+                self.tip_labels_w_scale_factor = self.calc_tip_labels_w_scale_factor();
                 self.update_tip_label_w();
                 self.drawing_enabled = true;
                 Task::none()

@@ -31,6 +31,10 @@
                 {
                     "match": ".*/(examples|tree)/(node|newick|utils).*\\.rs$",
                     "cmd": "echo && cd . &>/dev/null || cd . && cargo run --quiet --example newick && echo"
+                },
+                {
+                    "match": ".*/(examples)/(text_width).*\\.rs$",
+                    "cmd": "echo && cd . &>/dev/null || cd . && cargo run --quiet --example text_width && echo"
                 }
             ]
         },
