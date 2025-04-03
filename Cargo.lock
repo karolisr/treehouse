@@ -969,11 +969,12 @@ checksum = "dfa686283ad6dd069f105e5ab091b04c62850d3e4cf5d67debad1933f55023df"
 [[package]]
 name = "iced"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#5f00aef426a19913cb611aef496905cc15bde6ee"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#cd27dae8abdecc5ff751e1e201ade79bc6b8e23a"
 dependencies = [
  "iced_core",
  "iced_futures",
  "iced_renderer",
+ "iced_runtime",
  "iced_widget",
  "iced_winit",
  "thiserror 1.0.69",
@@ -982,7 +983,7 @@ dependencies = [
 [[package]]
 name = "iced_core"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#5f00aef426a19913cb611aef496905cc15bde6ee"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#cd27dae8abdecc5ff751e1e201ade79bc6b8e23a"
 dependencies = [
  "bitflags 2.9.0",
  "bytes",
@@ -999,7 +1000,7 @@ dependencies = [
 [[package]]
 name = "iced_futures"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#5f00aef426a19913cb611aef496905cc15bde6ee"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#cd27dae8abdecc5ff751e1e201ade79bc6b8e23a"
 dependencies = [
  "futures",
  "iced_core",
@@ -1012,7 +1013,7 @@ dependencies = [
 [[package]]
 name = "iced_graphics"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#5f00aef426a19913cb611aef496905cc15bde6ee"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#cd27dae8abdecc5ff751e1e201ade79bc6b8e23a"
 dependencies = [
  "bitflags 2.9.0",
  "bytemuck",
@@ -1031,7 +1032,7 @@ dependencies = [
 [[package]]
 name = "iced_renderer"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#5f00aef426a19913cb611aef496905cc15bde6ee"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#cd27dae8abdecc5ff751e1e201ade79bc6b8e23a"
 dependencies = [
  "iced_graphics",
  "iced_tiny_skia",
@@ -1043,20 +1044,19 @@ dependencies = [
 [[package]]
 name = "iced_runtime"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#5f00aef426a19913cb611aef496905cc15bde6ee"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#cd27dae8abdecc5ff751e1e201ade79bc6b8e23a"
 dependencies = [
  "bytes",
  "iced_core",
  "iced_futures",
  "raw-window-handle",
- "sipper",
  "thiserror 1.0.69",
 ]
 
 [[package]]
 name = "iced_tiny_skia"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#5f00aef426a19913cb611aef496905cc15bde6ee"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#cd27dae8abdecc5ff751e1e201ade79bc6b8e23a"
 dependencies = [
  "bytemuck",
  "cosmic-text",
@@ -1071,7 +1071,7 @@ dependencies = [
 [[package]]
 name = "iced_wgpu"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#5f00aef426a19913cb611aef496905cc15bde6ee"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#cd27dae8abdecc5ff751e1e201ade79bc6b8e23a"
 dependencies = [
  "bitflags 2.9.0",
  "bytemuck",
@@ -1090,7 +1090,7 @@ dependencies = [
 [[package]]
 name = "iced_widget"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#5f00aef426a19913cb611aef496905cc15bde6ee"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#cd27dae8abdecc5ff751e1e201ade79bc6b8e23a"
 dependencies = [
  "iced_renderer",
  "iced_runtime",
@@ -1104,7 +1104,7 @@ dependencies = [
 [[package]]
 name = "iced_winit"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#5f00aef426a19913cb611aef496905cc15bde6ee"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#cd27dae8abdecc5ff751e1e201ade79bc6b8e23a"
 dependencies = [
  "iced_futures",
  "iced_graphics",
@@ -1384,9 +1384,9 @@ dependencies = [
 
 [[package]]
 name = "miniz_oxide"
-version = "0.8.5"
+version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e3e04debbb59698c15bacbb6d93584a8c0ca9cc3213cb423d31f760d8843ce5"
+checksum = "ff70ce3e48ae43fa075863cef62e8b43b71a4f2382229920e0df362592919430"
 dependencies = [
  "adler2",
  "simd-adler32",
@@ -2227,16 +2227,6 @@ name = "simd-adler32"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d66dc143e6b11c1eddc06d5c423cfc97062865baf299914ab64caa38182078fe"
-
-[[package]]
-name = "sipper"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bccb4192828b3d9a08e0b5a73f17795080dfb278b50190216e3ae2132cf4f95"
-dependencies = [
- "futures",
- "pin-project-lite",
-]
 
 [[package]]
 name = "skrifa"

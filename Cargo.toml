@@ -94,22 +94,6 @@ rpath = false
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
-[target.aarch64-apple-darwin.dependencies]
-objc2 = "0.6.0"
-objc2-app-kit = "0.3.0"
-objc2-foundation = "0.3.0"
-
-[target.aarch64-apple-darwin.dependencies.muda]
-git = "https://github.com/karolisr/muda.git"
-branch = "custom"
-default-features = false
-features = []
-
-[target.aarch64-apple-darwin.dependencies.rfd]
-version = "0.15.3"
-default-features = false
-features = []
-
 [dependencies.iced]
 git = "https://github.com/karolisr/iced.git"
 branch = "custom"
@@ -117,6 +101,8 @@ default-features = false
 features = [
     ### Enables the "wgpu" GPU-accelerated renderer backend
     "wgpu",
+    ### Enables the "thread-pool" futures executor as the "executor::Default" on native platforms
+    "thread-pool",
     ### Enables the "canvas" widget
     "canvas",
     ### Enables the advanced module
@@ -131,8 +117,6 @@ features = [
     # "auto-detect-theme",
     ### Enables querying system information
     # "system",
-    ### Enables the "thread-pool" futures executor as the "executor::Default" on native platforms
-    # "thread-pool",
     ### Enables "tokio" as the "executor::Default" on native platforms
     # "tokio",
     ### Enables "smol" as the "executor::Default" on native platforms
@@ -163,6 +147,22 @@ features = [
     # "svg",
 ]
 # ------------------------------------------------------------------------
+
+[target.aarch64-apple-darwin.dependencies.muda]
+git = "https://github.com/karolisr/muda.git"
+branch = "custom"
+default-features = false
+features = []
+
+[target.aarch64-apple-darwin.dependencies]
+objc2 = "0.6.0"
+objc2-app-kit = "0.3.0"
+objc2-foundation = "0.3.0"
+
+[target.aarch64-apple-darwin.dependencies.rfd]
+version = "0.15.3"
+default-features = false
+features = []
 
 # [dependencies.tokio]
 # version = "1.44.1"
