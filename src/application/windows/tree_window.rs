@@ -24,7 +24,7 @@ impl TreeWin {
                 Task::none()
             }
             TreeWinMsg::TreeUpdated(id, tree) => {
-                self.tv = TreeView::default();
+                // self.tv = TreeView::default();
                 Task::done(TreeWinMsg::TreeViewMsg(id, TreeViewMsg::SetWinId(id))).chain(
                     Task::done(TreeWinMsg::TreeViewMsg(id, TreeViewMsg::TreeUpdated(tree))),
                 )

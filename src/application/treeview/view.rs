@@ -8,7 +8,7 @@ use iced::{
     border,
     widget::{
         Button, Canvas, Column, PickList, Row, Rule, Scrollable, Slider, Space,
-        Theme as WidgetTheme, Toggler,
+        Theme as WidgetTheme, Toggler, button,
         canvas::Cache,
         container, horizontal_space,
         pick_list::{Handle as PickListHandle, Status as PickListStatus, Style as PickListStyle},
@@ -93,7 +93,7 @@ impl Default for TreeView {
             threads: 8,
             tree: Default::default(),
             drawing_enabled: false,
-            selected_node_ordering_option: Some(NodeOrderingOption::Unordered),
+            selected_node_ordering_option: Some(NodeOrderingOption::Ascending),
 
             node_count: 0,
             tip_count: 0,
@@ -106,13 +106,13 @@ impl Default for TreeView {
 
             min_label_size_idx: 1,
             max_label_size_idx: 24,
-            selected_tip_label_size_idx: 4,
-            selected_int_label_size_idx: 4,
+            selected_tip_label_size_idx: 12,
+            selected_int_label_size_idx: 12,
 
             min_label_size: SF * 1e0,
             max_label_size: SF * 24e0,
-            tip_label_size: SF * 4e0,
-            int_label_size: SF * 4e0,
+            tip_label_size: SF * 12e0,
+            int_label_size: SF * 12e0,
 
             available_vertical_space: SF,
             node_size: SF,
@@ -126,8 +126,8 @@ impl Default for TreeView {
             tip_label_offset: SF * 3e0,
             int_label_offset: SF * 3e0,
 
-            draw_tip_labels: true,
-            draw_int_labels: true,
+            draw_tip_labels: false,
+            draw_int_labels: false,
 
             edge_geom_cache: Default::default(),
             tip_labels_geom_cache: Default::default(),
@@ -156,6 +156,7 @@ pub enum TreeViewMsg {
     IntLabelSizeSelectionChanged(u8),
     TipLabelVisibilityChanged(bool),
     IntLabelVisibilityChanged(bool),
+    Unroot,
     OpenFile,
 }
 
@@ -164,6 +165,7 @@ impl TreeView {
         self.available_vertical_space = self.window_h - PADDING * 2e0 - SF * 2e0;
         self.min_node_size = self.available_vertical_space / self.tip_count as Float;
         self.max_node_size = Float::max(self.max_label_size, self.min_node_size);
+        self.max_node_size_idx = self.max_label_size_idx - 1;
 
         if self.min_node_size == self.max_node_size {
             self.max_node_size_idx = self.min_node_size_idx
@@ -296,6 +298,11 @@ impl TreeView {
                 Task::none()
             }
 
+            TreeViewMsg::Unroot => {
+                self.tree_original.unroot();
+                Task::done(TreeViewMsg::TreeUpdated(self.tree_original.clone()))
+            }
+
             TreeViewMsg::TreeUpdated(tree) => {
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
@@ -330,6 +337,8 @@ impl TreeView {
         let mut main_row: Row<TreeViewMsg> = Row::new();
         if self.min_node_size_idx != self.max_node_size_idx {
             side_col = side_col.push(self.horizontal_space(0, PADDING));
+            side_col = side_col.push(self.horizontal_rule(SF));
+            side_col = side_col.push(self.horizontal_space(0, PADDING));
             side_col = side_col.push(
                 container(text!("Edge Spacing").size(TEXT_SIZE))
                     .align_x(Horizontal::Right)
@@ -337,6 +346,8 @@ impl TreeView {
             );
             side_col = side_col.push(self.node_size_slider());
         }
+        side_col = side_col.push(self.horizontal_space(0, PADDING));
+        side_col = side_col.push(self.horizontal_rule(SF));
         side_col = side_col.push(self.horizontal_space(0, PADDING));
         side_col = side_col.push(self.tip_labels_toggler());
         if self.draw_tip_labels {
@@ -361,6 +372,15 @@ impl TreeView {
             .width(Length::Fill)
             .spacing(PADDING),
         );
+        side_col = side_col.push(self.horizontal_space(0, PADDING));
+        side_col = side_col.push(self.horizontal_rule(SF));
+        side_col = side_col.push(self.horizontal_space(0, PADDING));
+        side_col = side_col.push(button("Unroot").on_press_maybe(
+            match self.tree_original.is_rooted() {
+                true => Some(TreeViewMsg::Unroot),
+                false => None,
+            },
+        ));
         side_col = side_col.width(Length::Fixed(SF * 2e2));
         match self.selected_node_size_idx {
             idx if idx == self.min_node_size_idx => {
