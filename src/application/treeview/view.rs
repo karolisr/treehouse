@@ -156,6 +156,7 @@ pub enum TreeViewMsg {
     IntLabelSizeSelectionChanged(u8),
     TipLabelVisibilityChanged(bool),
     IntLabelVisibilityChanged(bool),
+    Root,
     Unroot,
     OpenFile,
 }
@@ -298,6 +299,8 @@ impl TreeView {
                 Task::none()
             }
 
+            TreeViewMsg::Root => Task::none(),
+
             TreeViewMsg::Unroot => {
                 self.tree_original.unroot();
                 Task::done(TreeViewMsg::TreeUpdated(self.tree_original.clone()))
@@ -375,13 +378,22 @@ impl TreeView {
         side_col = side_col.push(self.horizontal_space(0, PADDING));
         side_col = side_col.push(self.horizontal_rule(SF));
         side_col = side_col.push(self.horizontal_space(0, PADDING));
-        side_col = side_col.push(button("Unroot").on_press_maybe(
-            match self.tree_original.is_rooted() {
-                true => Some(TreeViewMsg::Unroot),
-                false => None,
-            },
-        ));
+
+        side_col = side_col.push(
+            row![
+                button("Unroot").on_press_maybe(match self.tree_original.is_rooted() {
+                    true => Some(TreeViewMsg::Unroot),
+                    false => None,
+                }),
+                button("Root").on_press_maybe(None)
+            ]
+            .align_y(Vertical::Center)
+            .width(Length::Fill)
+            .spacing(PADDING),
+        );
+
         side_col = side_col.width(Length::Fixed(SF * 2e2));
+
         match self.selected_node_size_idx {
             idx if idx == self.min_node_size_idx => {
                 main_row = main_row.push(self.tree_canvas());
