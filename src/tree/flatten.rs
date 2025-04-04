@@ -1,3 +1,5 @@
+use slotmap::DefaultKey;
+
 use super::{Tree, TreeFloat};
 use std::{collections::BTreeMap, sync::Arc};
 
@@ -5,8 +7,8 @@ pub type Edges = Vec<Edge>;
 
 #[derive(Clone, Debug, Default, PartialEq, PartialOrd)]
 pub struct Edge {
-    pub parent: usize,
-    pub child: usize,
+    pub parent: Option<DefaultKey>,
+    pub child: DefaultKey,
     pub name: Option<Arc<str>>,
     pub x0: TreeFloat,
     pub x1: TreeFloat,
@@ -17,21 +19,14 @@ pub struct Edge {
 
 pub fn flatten_tree(tree: &Tree, chunk_count: usize) -> Vec<Edges> {
     let ntip = tree.tip_count_all();
-    if ntip == 0 {
-        return Vec::new();
-    }
     let tree_height = tree.height();
     let mut tip_id_counter = ntip;
-    let edges: Edges = flatten(
-        tree.first_node_id(),
-        0,
-        0e0,
-        tree,
-        tree_height,
-        ntip,
-        &mut tip_id_counter,
-    );
-    chunk_edges(calc_verticals(edges), chunk_count)
+    if let Some(id) = tree.first_node_id() {
+        let edges: Edges = flatten(id, None, 0e0, tree, tree_height, ntip, &mut tip_id_counter);
+        chunk_edges(calc_verticals(edges), chunk_count)
+    } else {
+        Vec::new()
+    }
 }
 
 fn calc_verticals(mut edges: Edges) -> Edges {
@@ -39,10 +34,13 @@ fn calc_verticals(mut edges: Edges) -> Edges {
         return edges;
     }
     edges.sort_by(|a, b| a.y.total_cmp(&b.y));
+    // edges.reverse();
     edges.sort_by_key(|x| x.child);
-    edges.sort_by_key(|x| -(x.parent as i32));
+    edges.reverse();
+    edges.sort_by_key(|x| x.parent);
+    edges.reverse();
 
-    let mut mem: BTreeMap<usize, TreeFloat> = BTreeMap::new();
+    let mut mem: BTreeMap<DefaultKey, TreeFloat> = BTreeMap::new();
     let mut parent_prev = edges[0].parent;
     let mut y_min = edges[0].y;
     let mut y_max = edges[0].y;
@@ -68,11 +66,17 @@ fn calc_verticals(mut edges: Edges) -> Edges {
             e.y_prev = Some(y_prev);
         } else {
             let y_parent = (y_max - y_min) / 2e0 + y_min;
-            if child == parent_prev {
-                mem.insert(parent, y_parent);
-            } else {
-                mem.insert(parent_prev, y_parent);
+
+            if let Some(pp) = parent_prev {
+                if child == pp {
+                    if let Some(p) = parent {
+                        mem.insert(p, y_parent);
+                    }
+                } else {
+                    mem.insert(pp, y_parent);
+                }
             }
+
             if y.is_nan() {
                 y = y_parent;
                 e.y = y_parent;
@@ -87,8 +91,8 @@ fn calc_verticals(mut edges: Edges) -> Edges {
 }
 
 fn flatten(
-    node_id: usize,
-    parent_node_id: usize,
+    node_id: DefaultKey,
+    parent_node_id: Option<DefaultKey>,
     height: TreeFloat,
     tree: &Tree,
     tree_height: TreeFloat,
@@ -101,7 +105,7 @@ fn flatten(
     }
     let brlen: TreeFloat = tree.branch_length(node_id) as TreeFloat / tree_height;
     let name: Option<Arc<str>> = tree.name(node_id);
-    let child_node_ids: &[usize] = tree.child_node_ids(node_id);
+    let child_node_ids: &[DefaultKey] = tree.child_node_ids(node_id);
     let descending_tip_count: usize = tree.tip_count_recursive(node_id);
     let mut is_tip: bool = false;
 
@@ -128,7 +132,7 @@ fn flatten(
     for &child_node_id in child_node_ids {
         edges.append(&mut flatten(
             child_node_id,
-            node_id,
+            Some(node_id),
             height + brlen,
             tree,
             tree_height,

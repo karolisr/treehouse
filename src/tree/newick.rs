@@ -1,9 +1,11 @@
+use slotmap::DefaultKey;
+
 use super::{Tree, node, nodes_from_string};
 
 pub fn parse_newick(s: String) -> Option<Tree> {
     let mut tree: Tree = Tree::new();
     let sc = clean_newick_str(&s);
-    tree = parse(sc, 0, tree);
+    tree = parse(sc, None, tree);
     if tree.tip_count_all() > 0 {
         tree.mark_root_node_if_possible();
         Some(tree)
@@ -12,7 +14,7 @@ pub fn parse_newick(s: String) -> Option<Tree> {
     }
 }
 
-fn parse(s: String, parent_id: usize, mut tree: Tree) -> Tree {
+fn parse(s: String, parent_id: Option<DefaultKey>, mut tree: Tree) -> Tree {
     let mut i: usize = 0;
     let mut i0: usize = 0;
     let mut n_open: i32 = 0;
@@ -49,8 +51,8 @@ fn parse(s: String, parent_id: usize, mut tree: Tree) -> Tree {
                         Some(x) => &s[i + 1..i + 1 + x],
                         None => &s[i + 1..],
                     };
-                    let child_id = tree.add_child_node(parent_id, node(label));
-                    tree = parse(s[i0..i].into(), child_id, tree);
+                    let child_id = tree.add_node(parent_id, node(label));
+                    tree = parse(s[i0..i].into(), Some(child_id), tree);
                     i += label.len();
                     i0 = i;
                 }
@@ -87,7 +89,7 @@ fn parse(s: String, parent_id: usize, mut tree: Tree) -> Tree {
                     };
 
                     if !no_parens.is_empty() {
-                        tree.add_child_nodes(parent_id, nodes_from_string(no_parens, ","));
+                        tree.add_nodes(parent_id, nodes_from_string(no_parens, ","));
                     }
                 }
                 // --------------------------------------------------------------------------------
@@ -96,7 +98,7 @@ fn parse(s: String, parent_id: usize, mut tree: Tree) -> Tree {
                 else if !is_open && !was_open {
                     if let Some((_, c)) = s_iter.clone().next() {
                         if c == '(' {
-                            tree.add_child_nodes(parent_id, nodes_from_string(&s[0..i], ","));
+                            tree.add_nodes(parent_id, nodes_from_string(&s[0..i], ","));
                         }
                     }
                 }
@@ -106,7 +108,7 @@ fn parse(s: String, parent_id: usize, mut tree: Tree) -> Tree {
         }
     }
     if !was_open {
-        tree.add_child_nodes(parent_id, nodes_from_string(s.as_str(), ","));
+        tree.add_nodes(parent_id, nodes_from_string(s.as_str(), ","));
     }
     tree
 }

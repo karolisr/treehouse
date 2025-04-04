@@ -154,6 +154,11 @@ branch = "custom"
 default-features = false
 features = []
 
+[dependencies.slotmap]
+version = "1.0.7"
+default-features = false
+features = ["std"]
+
 [target.aarch64-apple-darwin.dependencies]
 objc2 = "0.6.0"
 objc2-app-kit = "0.3.0"

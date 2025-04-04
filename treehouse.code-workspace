@@ -29,7 +29,7 @@
             "autoClearConsole": true,
             "commands": [
                 {
-                    "match": ".*/(examples|tree)/(node|newick|utils).*\\.rs$",
+                    "match": ".*/(examples|tree)/(node|newick|flatten).*\\.rs$",
                     "cmd": "echo && cd . &>/dev/null || cd . && cargo run --quiet --example newick && echo"
                 },
                 {
