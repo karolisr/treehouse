@@ -36,6 +36,75 @@ impl Tree {
         }
     }
 
+    pub fn unroot(&mut self) -> Option<DefaultKey> {
+        if let Some(root_node_id) = self.mark_root_node_if_possible() {
+            let child_node_ids = self.child_node_ids(root_node_id);
+
+            assert_eq!(child_node_ids.len(), 2);
+
+            let c1 = child_node_ids[0];
+            let c2 = child_node_ids[1];
+
+            if self.is_tip(c1) && self.is_tip(c2) {
+                return None;
+            }
+
+            // At this point we know that at most one of c1 and c2 could still be a tip.
+            let node_id_to_drop;
+            let node_id_to_retain;
+            if self.is_tip(c1) || self.is_tip(c2) {
+                if self.is_tip(c1) {
+                    // c1 is a tip
+                    node_id_to_drop = c2;
+                    node_id_to_retain = c1;
+                } else {
+                    // c2 must be a tip a this point
+                    node_id_to_drop = c1;
+                    node_id_to_retain = c2
+                }
+            } else {
+                // The only possible state at this point is that neither c1 or c2 are tips.
+                // Arbitrarily choose c1 to drop.
+                node_id_to_drop = c1;
+                node_id_to_retain = c2;
+            }
+
+            let node_to_drop_clone = self.nodes[node_id_to_drop].clone();
+            let node_to_retain = &mut self.nodes[node_id_to_retain];
+
+            if let Some(brlen_flatten) = node_to_drop_clone.branch_length {
+                if let Some(brlen_retain) = node_to_retain.branch_length {
+                    node_to_retain.branch_length = Some(brlen_retain + brlen_flatten)
+                } else {
+                    node_to_retain.branch_length = Some(brlen_flatten)
+                }
+            }
+
+            let child_node_ids: Vec<DefaultKey> = self.child_node_ids(node_id_to_drop).to_vec();
+            let mut new_child_node_ids: Vec<DefaultKey> = vec![node_id_to_retain];
+
+            for child_node_id in child_node_ids {
+                self.child_parent_map
+                    .insert(child_node_id, Some(root_node_id));
+                new_child_node_ids.push(child_node_id);
+            }
+
+            self.parent_children_map.remove(&node_id_to_drop);
+            self.parent_children_map
+                .insert(root_node_id, new_child_node_ids);
+            self.nodes.remove(node_id_to_drop);
+            self.nodes[root_node_id].node_type = None;
+            self.first_node_id = Some(root_node_id);
+            self.root_node_id = None;
+
+            assert_eq!(self.mark_root_node_if_possible(), None);
+
+            self.first_node_id
+        } else {
+            None
+        }
+    }
+
     pub fn first_node_id(&self) -> Option<DefaultKey> {
         self.first_node_id
     }
