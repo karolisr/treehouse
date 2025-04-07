@@ -2,6 +2,7 @@ use crate::{
     Edges, Float, LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, TEXT_SIZE, Tree, flatten_tree,
     lerp, text_width,
 };
+use dendros::Edge;
 use iced::{
     Alignment, Border, Color, Element, Font, Length, Pixels, Task,
     alignment::{Horizontal, Vertical},
@@ -17,6 +18,7 @@ use iced::{
         scrollable::{
             Anchor as ScrollBarAnchor, Direction as ScrollableDirection, Rail as ScrollBarRail,
             Scrollbar, Scroller, Status as ScrollBarStatus, Style as ScrollBarStyle,
+            Viewport as ScrollableViewport,
         },
         slider::{
             Handle as SliderHandle, HandleShape as SliderHandleShape, Rail as SliderRail,
@@ -40,15 +42,19 @@ pub struct TreeView {
     pub(super) tip_count: usize,
     pub(super) int_node_count: usize,
 
-    pub(super) tip_labels_w_scale_factor: Float,
     pub(super) canvas_h: Float,
+    pub(super) cnv_y0: Float,
+    pub(super) cnv_y1: Float,
+
     pub(super) window_w: Float,
     pub(super) window_h: Float,
 
-    pub(super) tip_label_size: Float,
-    pub(super) int_label_size: Float,
     pub(super) min_label_size: Float,
     pub(super) max_label_size: Float,
+    pub(super) tip_label_size: Float,
+    pub(super) int_label_size: Float,
+
+    pub(super) max_tip_labels_at_once: usize,
 
     min_label_size_idx: u8,
     max_label_size_idx: u8,
@@ -64,6 +70,7 @@ pub struct TreeView {
     max_node_size_idx: u8,
     selected_node_size_idx: u8,
 
+    pub(super) tip_labels_w_scale_factor: Float,
     pub(super) tip_label_w: Float,
     pub(super) tip_label_offset: Float,
     pub(super) int_label_offset: Float,
@@ -71,11 +78,13 @@ pub struct TreeView {
     pub(super) draw_tip_labels: bool,
     pub(super) draw_int_labels: bool,
 
+    pub(super) pointer_geom_cache: Cache,
     pub(super) edge_geom_cache: Cache,
     pub(super) tip_labels_geom_cache: Cache,
     pub(super) int_labels_geom_cache: Cache,
 
     pub(super) tree: Tree,
+    pub(super) tree_chunked_edges_tips_merged: Vec<Edge>,
     pub(super) tree_chunked_edges: Vec<Edges>,
 
     tree_original: Tree,
@@ -90,7 +99,7 @@ impl Default for TreeView {
     fn default() -> Self {
         Self {
             win_id: None,
-            threads: 8,
+            threads: 1,
             tree: Default::default(),
             drawing_enabled: false,
             selected_node_ordering_option: Some(NodeOrderingOption::Ascending),
@@ -99,20 +108,24 @@ impl Default for TreeView {
             tip_count: 0,
             int_node_count: 0,
 
-            tip_labels_w_scale_factor: 1e0,
             canvas_h: SF,
+            cnv_y0: 0e0,
+            cnv_y1: SF,
+
             window_w: SF,
             window_h: SF,
 
             min_label_size_idx: 1,
             max_label_size_idx: 24,
-            selected_tip_label_size_idx: 12,
+            selected_tip_label_size_idx: 8,
             selected_int_label_size_idx: 12,
 
             min_label_size: SF * 1e0,
             max_label_size: SF * 24e0,
-            tip_label_size: SF * 12e0,
+            tip_label_size: SF * 8e0,
             int_label_size: SF * 12e0,
+
+            max_tip_labels_at_once: 120,
 
             available_vertical_space: SF,
             node_size: SF,
@@ -122,17 +135,20 @@ impl Default for TreeView {
             max_node_size_idx: 23,
             selected_node_size_idx: 0,
 
+            tip_labels_w_scale_factor: 1e0,
             tip_label_w: SF,
             tip_label_offset: SF * 3e0,
             int_label_offset: SF * 3e0,
 
-            draw_tip_labels: false,
+            draw_tip_labels: true,
             draw_int_labels: false,
 
+            pointer_geom_cache: Default::default(),
             edge_geom_cache: Default::default(),
             tip_labels_geom_cache: Default::default(),
             int_labels_geom_cache: Default::default(),
 
+            tree_chunked_edges_tips_merged: Default::default(),
             tree_chunked_edges: Default::default(),
             tree_original: Default::default(),
             tree_original_chunked_edges: Default::default(),
@@ -156,6 +172,7 @@ pub enum TreeViewMsg {
     IntLabelSizeSelectionChanged(u8),
     TipLabelVisibilityChanged(bool),
     IntLabelVisibilityChanged(bool),
+    TreeViewScrolled(ScrollableViewport),
     Root,
     Unroot,
     OpenFile,
@@ -184,6 +201,14 @@ impl TreeView {
             )
         } else {
             self.node_size = self.min_node_size
+        }
+
+        if (self.window_h / self.node_size) as usize > self.max_tip_labels_at_once {
+            self.draw_tip_labels = false;
+            self.update_tip_label_w();
+        } else {
+            self.draw_tip_labels = true;
+            self.update_tip_label_w();
         }
 
         self.update_canvas_h();
@@ -222,9 +247,27 @@ impl TreeView {
         }
     }
 
+    fn merge_tip_chunks(&mut self) {
+        self.tree_chunked_edges_tips_merged = Vec::new();
+        for chunk in &self.tree_chunked_edges {
+            for edge in chunk {
+                if edge.is_tip {
+                    self.tree_chunked_edges_tips_merged.push(edge.clone());
+                }
+            }
+        }
+    }
+
     pub fn update(&mut self, msg: TreeViewMsg) -> Task<TreeViewMsg> {
         match msg {
             TreeViewMsg::OpenFile => Task::none(),
+
+            TreeViewMsg::TreeViewScrolled(vp) => {
+                self.cnv_y0 = vp.absolute_offset().y;
+                self.cnv_y1 = self.cnv_y0 + vp.bounds().height;
+                self.tip_labels_geom_cache.clear();
+                Task::none()
+            }
 
             TreeViewMsg::TipLabelVisibilityChanged(state) => {
                 self.edge_geom_cache.clear();
@@ -273,6 +316,7 @@ impl TreeView {
                     self.int_labels_geom_cache.clear();
                     self.selected_node_ordering_option = Some(node_ordering_option);
                     self.sort();
+                    self.merge_tip_chunks();
                 }
                 Task::none()
             }
@@ -295,6 +339,7 @@ impl TreeView {
                 self.int_labels_geom_cache.clear();
                 self.window_w = w;
                 self.window_h = h;
+                self.cnv_y1 = self.cnv_y0 + h;
                 self.update_node_size();
                 Task::none()
             }
@@ -324,6 +369,7 @@ impl TreeView {
                 self.update_node_size();
                 self.tip_labels_w_scale_factor = self.calc_tip_labels_w_scale_factor();
                 self.update_tip_label_w();
+                self.merge_tip_chunks();
                 self.drawing_enabled = true;
                 Task::none()
             }
@@ -349,18 +395,24 @@ impl TreeView {
             );
             side_col = side_col.push(self.node_size_slider());
         }
+
         side_col = side_col.push(self.horizontal_space(0, PADDING));
         side_col = side_col.push(self.horizontal_rule(SF));
         side_col = side_col.push(self.horizontal_space(0, PADDING));
-        side_col = side_col.push(self.tip_labels_toggler());
-        if self.draw_tip_labels {
-            side_col = side_col.push(self.tip_labels_size_slider());
+
+        if (self.window_h / self.node_size) as usize <= self.max_tip_labels_at_once {
+            side_col = side_col.push(self.tip_labels_toggler());
+            if self.draw_tip_labels {
+                side_col = side_col.push(self.tip_labels_size_slider());
+            }
         }
+
         side_col = side_col.push(self.horizontal_space(0, PADDING));
         side_col = side_col.push(self.int_labels_toggler());
         if self.draw_int_labels {
             side_col = side_col.push(self.int_labels_size_slider());
         }
+
         side_col = side_col.push(self.horizontal_space(0, PADDING));
         side_col = side_col.push(self.horizontal_rule(SF));
         side_col = side_col.push(self.horizontal_space(0, PADDING));
@@ -543,6 +595,7 @@ impl TreeView {
         scrl_bar = scrl_bar.anchor(ScrollBarAnchor::Start);
         scrl = scrl.direction(ScrollableDirection::Vertical(scrl_bar));
         scrl = scrl.height(self.available_vertical_space + SF);
+        scrl = scrl.on_scroll(TreeViewMsg::TreeViewScrolled);
         self.apply_scroller_settings(scrl)
     }
 

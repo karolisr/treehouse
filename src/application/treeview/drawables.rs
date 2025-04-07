@@ -41,6 +41,39 @@ impl TreeView {
         paths
     }
 
+    pub fn tip_labels_in_range(
+        &self,
+        width: Float,
+        height: Float,
+        idx_0: usize,
+        idx_1: usize,
+    ) -> Vec<Text> {
+        // ------------------------------
+        let label_temp = Text {
+            font: iced::Font {
+                family: iced::font::Family::Name("JetBrains Mono"),
+                ..Default::default()
+            },
+            align_y: Vertical::Center,
+            ..Default::default()
+        };
+        // ------------------------------
+        let label_temp_l = label_temp.clone();
+        let mut labels: Vec<Text> = Vec::with_capacity(idx_1 - idx_0);
+        for edge in &self.tree_chunked_edges_tips_merged[idx_0..idx_1] {
+            let x1 = edge.x1 as Float * width;
+            let y = edge.y as Float * height;
+            let pt_node = Point::new(x1, y);
+            if let Some(name) = &edge.name {
+                let mut label = label_temp_l.clone();
+                label.content = name.deref().into();
+                label.position = pt_node;
+                labels.push(label);
+            }
+        }
+        labels
+    }
+
     pub fn labels_from_chunks(
         &self,
         width: Float,
@@ -57,20 +90,20 @@ impl TreeView {
             ..Default::default()
         };
         // ------------------------------
-        let mut tip_labels: Vec<Text> = Vec::with_capacity(self.tip_count);
+        let mut labels: Vec<Text> = Vec::with_capacity(self.tip_count);
         thread::scope(|thread_scope| {
             let mut handles: Vec<ScopedJoinHandle<'_, Vec<Text>>> = Vec::new();
             for chunk in &self.tree_chunked_edges {
                 let label_temp_l = label_temp.clone();
                 let handle = thread_scope.spawn(move || {
-                    let mut tip_labels_l: Vec<Text> = Vec::with_capacity(chunk.len());
+                    let mut labels_l: Vec<Text> = Vec::with_capacity(chunk.len());
                     for edge in chunk {
                         let should_include = match return_only {
                             NodeType::Tip => edge.is_tip,
                             NodeType::Internal => !edge.is_tip,
                             NodeType::FirstNode => !edge.is_tip,
                             NodeType::Root => !edge.is_tip,
-                            NodeType::Unset => todo!(),
+                            NodeType::Unset => !edge.is_tip,
                         };
                         if should_include {
                             let x1 = edge.x1 as Float * width;
@@ -80,20 +113,20 @@ impl TreeView {
                                 let mut label = label_temp_l.clone();
                                 label.content = name.deref().into();
                                 label.position = pt_node;
-                                tip_labels_l.push(label);
+                                labels_l.push(label);
                             }
                         }
                     }
-                    tip_labels_l
+                    labels_l
                 });
                 handles.push(handle);
             }
             for j in handles {
-                let mut tip_labels_l = j.join().unwrap();
-                tip_labels.append(&mut tip_labels_l);
+                let mut labels_l = j.join().unwrap();
+                labels.append(&mut labels_l);
             }
         });
-        tip_labels
+        labels
     }
 
     pub fn all_from_chunks(

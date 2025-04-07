@@ -1,12 +1,14 @@
 use super::{TreeView, TreeViewMsg, TreeViewState};
-use crate::{NodeType, PADDING, SF};
-use iced::widget::canvas::stroke;
+use crate::{ColorSimple, NodeType, PADDING, SF};
+use iced::border::Radius;
+use iced::widget::canvas::{Path, stroke};
 use iced::{
     Event, Rectangle, Renderer, Theme,
-    mouse::{Cursor, Interaction},
+    mouse::{Cursor, Event as MouseEvent, Interaction},
     widget::canvas::{Action, Geometry, Program, Stroke},
     window::Event as WinEvent,
 };
+use iced::{Point, Size};
 
 impl Program<TreeViewMsg> for TreeView {
     type State = TreeViewState;
@@ -15,13 +17,21 @@ impl Program<TreeViewMsg> for TreeView {
         &self,
         _state: &mut Self::State,
         event: &Event,
-        _bounds: Rectangle,
-        _cursor: Cursor,
+        bounds: Rectangle,
+        cursor: Cursor,
     ) -> Option<Action<TreeViewMsg>> {
         match event {
             Event::Window(WinEvent::Resized(size)) => Some(Action::publish(
                 TreeViewMsg::WindowResized(size.width, size.height),
             )),
+            Event::Mouse(MouseEvent::CursorMoved { position: _ }) => {
+                if cursor.is_over(bounds) {
+                    self.pointer_geom_cache.clear();
+                    Some(Action::request_redraw())
+                } else {
+                    None
+                }
+            }
             _ => None,
         }
     }
@@ -41,7 +51,7 @@ impl Program<TreeViewMsg> for TreeView {
         renderer: &Renderer,
         _theme: &Theme,
         bounds: Rectangle,
-        _cursor: Cursor,
+        cursor: Cursor,
     ) -> Vec<Geometry> {
         if self.drawing_enabled {
             let mut geoms: Vec<Geometry> = Vec::new();
@@ -70,27 +80,35 @@ impl Program<TreeViewMsg> for TreeView {
                 let paths = self.paths_from_chunks(tree_rect.width, tree_rect.height);
                 self.draw_edges(paths, stroke, f);
             });
-
             geoms.push(g_edges);
 
             if self.draw_tip_labels {
                 let g_tip_labels =
                     self.tip_labels_geom_cache
                         .draw(renderer, clipping.size(), |f| {
-                            let labels = self.labels_from_chunks(
-                                tree_rect.width,
-                                tree_rect.height,
-                                NodeType::Tip,
-                            );
-                            self.draw_labels(
-                                labels,
-                                self.tip_label_size,
-                                self.tip_label_offset,
-                                clipping,
-                                f,
-                            );
-                        });
+                            let tip_idx_0: i32 = (self.cnv_y0 / self.node_size) as i32 - 3;
+                            let tip_idx_1: i32 = (self.cnv_y1 / self.node_size) as i32 + 3;
+                            let tip_idx_0: usize = tip_idx_0.max(0) as usize;
+                            let tip_idx_1: usize = tip_idx_1.min(self.tip_count as i32) as usize;
 
+                            if tip_idx_0 < tip_idx_1
+                                && tip_idx_1 - tip_idx_0 <= self.max_tip_labels_at_once
+                            {
+                                let labels = self.tip_labels_in_range(
+                                    tree_rect.width,
+                                    tree_rect.height,
+                                    tip_idx_0,
+                                    tip_idx_1,
+                                );
+                                self.draw_labels(
+                                    labels,
+                                    self.tip_label_size,
+                                    self.tip_label_offset,
+                                    clipping,
+                                    f,
+                                );
+                            }
+                        });
                 geoms.push(g_tip_labels);
             }
 
@@ -111,9 +129,25 @@ impl Program<TreeViewMsg> for TreeView {
                                 f,
                             );
                         });
-
                 geoms.push(g_int_labels);
             }
+
+            let g_pointer = self
+                .pointer_geom_cache
+                .draw(renderer, clipping.size(), |f| {
+                    if let Some(mouse_point) = cursor.position_in(clipping) {
+                        let ps = SF * 2e1;
+                        let mx = mouse_point.x;
+                        let my = mouse_point.y;
+                        let pnt = Point::new(mx - ps, my - ps);
+                        let path = Path::new(|p| {
+                            // p.rectangle(pnt, Size::new(ps, ps));
+                            p.rounded_rectangle(pnt, Size::new(ps, ps), Radius::new(ps));
+                        });
+                        f.fill(&path, ColorSimple::RED);
+                    }
+                });
+            geoms.push(g_pointer);
 
             geoms
         } else {
