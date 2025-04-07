@@ -15,7 +15,6 @@
 // )]
 
 mod application;
-mod tree;
 
 pub use application::{
     APP_SCALE_FACTOR, Float, LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, SPACING, TEXT_SIZE,
@@ -25,7 +24,8 @@ pub use application::{
     treeview::{TreeView, TreeViewMsg},
     windows::window_settings,
 };
-pub use tree::{Edges, NodeType, Tree, TreeFloat, flatten_tree, max_name_len, parse_newick};
+
+pub use dendros::{Edges, NodeType, Tree, TreeFloat, flatten_tree, parse_newick};
 
 pub fn lerp(a: impl Into<Float>, b: impl Into<Float>, t: impl Into<Float>) -> Float {
     let a = a.into();

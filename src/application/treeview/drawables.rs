@@ -68,7 +68,9 @@ impl TreeView {
                         let should_include = match return_only {
                             NodeType::Tip => edge.is_tip,
                             NodeType::Internal => !edge.is_tip,
-                            NodeType::Root => todo!(),
+                            NodeType::FirstNode => !edge.is_tip,
+                            NodeType::Root => !edge.is_tip,
+                            NodeType::Unset => todo!(),
                         };
                         if should_include {
                             let x1 = edge.x1 as Float * width;

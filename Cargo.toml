@@ -154,10 +154,16 @@ branch = "custom"
 default-features = false
 features = []
 
-[dependencies.slotmap]
-version = "1.0.7"
+[dependencies.dendros]
+git = "https://github.com/karolisr/dendros.git"
+branch = "main"
 default-features = false
-features = ["std"]
+features = []
+
+# [dependencies.slotmap]
+# version = "1.0.7"
+# default-features = false
+# features = ["std"]
 
 [target.aarch64-apple-darwin.dependencies]
 objc2 = "0.6.0"

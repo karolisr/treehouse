@@ -319,7 +319,7 @@ impl TreeView {
                 self.tree_original_chunked_edges = None;
                 self.node_count = self.tree_original.node_count_all();
                 self.tip_count = self.tree_original.tip_count_all();
-                self.int_node_count = self.node_count - self.tip_count;
+                self.int_node_count = self.tree_original.internal_node_count_all();
                 self.sort();
                 self.update_node_size();
                 self.tip_labels_w_scale_factor = self.calc_tip_labels_w_scale_factor();
