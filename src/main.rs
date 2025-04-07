@@ -48,3 +48,11 @@ pub fn text_width(s: &str, font_size: f32, line_height: f32) -> f32 {
     buffer.set_text(s, attrs, Shaping::Basic);
     buffer.line_layout(0).unwrap().first().unwrap().w
 }
+
+fn main() -> iced::Result {
+    iced::daemon(App::title, App::update, App::view)
+        .subscription(App::subscription)
+        .antialiasing(false)
+        .scale_factor(App::scale_factor)
+        .run_with(App::new)
+}

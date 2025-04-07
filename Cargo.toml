@@ -14,10 +14,6 @@ categories = [
     "gui",
 ]
 
-[lib]
-name = "treehouse"
-crate-type = ["lib"]
-
 # cargo-bundle (https://github.com/burtonageo/cargo-bundle) --------------
 [package.metadata.bundle]
 name = "TreeHouse"
@@ -226,6 +222,7 @@ features = []
 
 # [target.x86_64-unknown-linux-gnu.dependencies.muda]
 # git = "https://github.com/karolisr/muda.git"
+# branch = "custom"
 # default-features = false
 # features = [
 #     # "common-controls-v6",
