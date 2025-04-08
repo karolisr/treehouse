@@ -47,25 +47,15 @@ impl TreeView {
         height: Float,
         idx_0: usize,
         idx_1: usize,
+        label_template: &Text,
     ) -> Vec<Text> {
-        // ------------------------------
-        let label_temp = Text {
-            font: iced::Font {
-                family: iced::font::Family::Name("JetBrains Mono"),
-                ..Default::default()
-            },
-            align_y: Vertical::Center,
-            ..Default::default()
-        };
-        // ------------------------------
-        let label_temp_l = label_temp.clone();
         let mut labels: Vec<Text> = Vec::with_capacity(idx_1 - idx_0);
-        for edge in &self.tree_chunked_edges_tips_merged[idx_0..idx_1] {
+        for edge in &self.tree_tip_edges[idx_0..idx_1] {
             let x1 = edge.x1 as Float * width;
             let y = edge.y as Float * height;
             let pt_node = Point::new(x1, y);
             if let Some(name) = &edge.name {
-                let mut label = label_temp_l.clone();
+                let mut label = label_template.clone();
                 label.content = name.deref().into();
                 label.position = pt_node;
                 labels.push(label);
@@ -79,22 +69,12 @@ impl TreeView {
         width: Float,
         height: Float,
         return_only: NodeType,
+        label_template: &Text,
     ) -> Vec<Text> {
-        // ------------------------------
-        let label_temp = Text {
-            font: iced::Font {
-                family: iced::font::Family::Name("JetBrains Mono"),
-                ..Default::default()
-            },
-            align_y: Vertical::Center,
-            ..Default::default()
-        };
-        // ------------------------------
         let mut labels: Vec<Text> = Vec::with_capacity(self.tip_count);
         thread::scope(|thread_scope| {
             let mut handles: Vec<ScopedJoinHandle<'_, Vec<Text>>> = Vec::new();
             for chunk in &self.tree_chunked_edges {
-                let label_temp_l = label_temp.clone();
                 let handle = thread_scope.spawn(move || {
                     let mut labels_l: Vec<Text> = Vec::with_capacity(chunk.len());
                     for edge in chunk {
@@ -110,7 +90,7 @@ impl TreeView {
                             let y = edge.y as Float * height;
                             let pt_node = Point::new(x1, y);
                             if let Some(name) = &edge.name {
-                                let mut label = label_temp_l.clone();
+                                let mut label = label_template.clone();
                                 label.content = name.deref().into();
                                 label.position = pt_node;
                                 labels_l.push(label);

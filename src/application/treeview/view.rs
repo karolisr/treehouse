@@ -85,7 +85,7 @@ pub struct TreeView {
     pub(super) int_labels_geom_cache: Cache,
 
     pub(super) tree: Tree,
-    pub(super) tree_chunked_edges_tips_merged: Vec<Edge>,
+    pub(super) tree_tip_edges: Vec<Edge>,
     pub(super) tree_chunked_edges: Vec<Edges>,
 
     tree_original: Tree,
@@ -153,7 +153,7 @@ impl Default for TreeView {
             tip_labels_geom_cache: Default::default(),
             int_labels_geom_cache: Default::default(),
 
-            tree_chunked_edges_tips_merged: Default::default(),
+            tree_tip_edges: Default::default(),
             tree_chunked_edges: Default::default(),
             tree_original: Default::default(),
             tree_original_chunked_edges: Default::default(),
@@ -228,7 +228,7 @@ impl TreeView {
         let mut max_tip_height: f64 = 0e0;
         let mut max_tip_height_name: &str = "";
         let mut max_tip_height_name_len: usize = 0;
-        for edge in &self.tree_chunked_edges_tips_merged {
+        for edge in &self.tree_tip_edges {
             if edge.x1 >= max_tip_height - max_tip_height / 1e1 {
                 max_tip_height = edge.x1;
                 if let Some(name) = &edge.name {
@@ -252,11 +252,11 @@ impl TreeView {
     }
 
     fn merge_tip_chunks(&mut self) {
-        self.tree_chunked_edges_tips_merged = Vec::new();
+        self.tree_tip_edges = Vec::new();
         for chunk in &self.tree_chunked_edges {
             for edge in chunk {
                 if edge.is_tip {
-                    self.tree_chunked_edges_tips_merged.push(edge.clone());
+                    self.tree_tip_edges.push(edge.clone());
                 }
             }
         }

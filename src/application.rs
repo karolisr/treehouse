@@ -19,3 +19,4 @@ pub const PADDING: Float = 1e1 * SF;
 pub const PADDING_INNER: Float = PADDING / 1.5;
 pub const SPACING: Float = 1e1 * SF;
 pub const SCROLL_BAR_W: Float = PADDING;
+pub const TREE_LAB_FONT_NAME: &str = "JetBrains Mono";

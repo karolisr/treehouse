@@ -47,7 +47,7 @@ impl Program<TreeViewMsg> for TreeView {
 
     fn draw(
         &self,
-        _state: &Self::State,
+        state: &Self::State,
         renderer: &Renderer,
         _theme: &Theme,
         bounds: Rectangle,
@@ -97,6 +97,7 @@ impl Program<TreeViewMsg> for TreeView {
                                     tree_rect.height,
                                     tip_idx_0,
                                     tip_idx_1,
+                                    &state.tree_label_template,
                                 );
                                 self.draw_labels(
                                     labels,
@@ -118,6 +119,7 @@ impl Program<TreeViewMsg> for TreeView {
                                 tree_rect.width,
                                 tree_rect.height,
                                 NodeType::Internal,
+                                &state.tree_label_template,
                             );
                             self.draw_labels(
                                 labels,

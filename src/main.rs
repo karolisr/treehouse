@@ -18,6 +18,7 @@ mod application;
 
 pub use application::{
     APP_SCALE_FACTOR, Float, LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, SPACING, TEXT_SIZE,
+    TREE_LAB_FONT_NAME,
     app::{App, AppMsg, read_text_file},
     colors::ColorSimple,
     menus::{MenuEvent, MenuEventReplyMsg, menu_events, prepare_app_menu},
@@ -44,7 +45,7 @@ pub fn text_width(s: &str, font_size: f32, line_height: f32) -> f32 {
     let mut buffer = Buffer::new(&mut font_system, metrics);
     let mut buffer = buffer.borrow_with(&mut font_system);
     let mut attrs = Attrs::new();
-    attrs.family = Family::Name("JetBrains Mono");
+    attrs.family = Family::Name(TREE_LAB_FONT_NAME);
     buffer.set_text(s, attrs, Shaping::Basic);
     buffer.line_layout(0).unwrap().first().unwrap().w
 }
