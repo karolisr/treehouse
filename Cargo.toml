@@ -153,7 +153,6 @@ features = []
 [dependencies.dendros]
 git = "https://github.com/karolisr/dendros.git"
 branch = "main"
-# path = "../dendros"
 default-features = false
 features = []
 
