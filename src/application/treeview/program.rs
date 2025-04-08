@@ -82,18 +82,16 @@ impl Program<TreeViewMsg> for TreeView {
             });
             geoms.push(g_edges);
 
-            if self.draw_tip_labels {
+            if self.draw_tip_labels_allowed && self.draw_tip_labels_selection {
                 let g_tip_labels =
                     self.tip_labels_geom_cache
                         .draw(renderer, clipping.size(), |f| {
-                            let tip_idx_0: i32 = (self.cnv_y0 / self.node_size) as i32 - 3;
-                            let tip_idx_1: i32 = (self.cnv_y1 / self.node_size) as i32 + 3;
+                            let tip_idx_0: i64 = (self.cnv_y0 / self.node_size) as i64 - 3;
+                            let tip_idx_1: i64 = (self.cnv_y1 / self.node_size) as i64 + 3;
                             let tip_idx_0: usize = tip_idx_0.max(0) as usize;
-                            let tip_idx_1: usize = tip_idx_1.min(self.tip_count as i32) as usize;
+                            let tip_idx_1: usize = tip_idx_1.min(self.tip_count as i64) as usize;
 
-                            if tip_idx_0 < tip_idx_1
-                                && tip_idx_1 - tip_idx_0 <= self.max_tip_labels_at_once
-                            {
+                            if tip_idx_0 < tip_idx_1 {
                                 let labels = self.tip_labels_in_range(
                                     tree_rect.width,
                                     tree_rect.height,
@@ -112,7 +110,7 @@ impl Program<TreeViewMsg> for TreeView {
                 geoms.push(g_tip_labels);
             }
 
-            if self.draw_int_labels {
+            if self.draw_int_labels_selection {
                 let g_int_labels =
                     self.int_labels_geom_cache
                         .draw(renderer, clipping.size(), |f| {
@@ -141,7 +139,6 @@ impl Program<TreeViewMsg> for TreeView {
                         let my = mouse_point.y;
                         let pnt = Point::new(mx - ps, my - ps);
                         let path = Path::new(|p| {
-                            // p.rectangle(pnt, Size::new(ps, ps));
                             p.rounded_rectangle(pnt, Size::new(ps, ps), Radius::new(ps));
                         });
                         f.fill(&path, ColorSimple::RED);

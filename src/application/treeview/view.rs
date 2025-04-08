@@ -54,7 +54,7 @@ pub struct TreeView {
     pub(super) tip_label_size: Float,
     pub(super) int_label_size: Float,
 
-    pub(super) max_tip_labels_at_once: usize,
+    pub(super) max_count_of_tip_labels_to_draw: usize,
 
     min_label_size_idx: u8,
     max_label_size_idx: u8,
@@ -75,8 +75,9 @@ pub struct TreeView {
     pub(super) tip_label_offset: Float,
     pub(super) int_label_offset: Float,
 
-    pub(super) draw_tip_labels: bool,
-    pub(super) draw_int_labels: bool,
+    pub(super) draw_tip_labels_allowed: bool,
+    pub(super) draw_tip_labels_selection: bool,
+    pub(super) draw_int_labels_selection: bool,
 
     pub(super) pointer_geom_cache: Cache,
     pub(super) edge_geom_cache: Cache,
@@ -109,39 +110,43 @@ impl Default for TreeView {
             int_node_count: 0,
 
             canvas_h: SF,
-            cnv_y0: 0e0,
+            cnv_y0: SF,
             cnv_y1: SF,
 
             window_w: SF,
             window_h: SF,
 
+            min_node_size_idx: 1,
             min_label_size_idx: 1,
+            max_node_size_idx: 24,
             max_label_size_idx: 24,
-            selected_tip_label_size_idx: 8,
-            selected_int_label_size_idx: 12,
 
-            min_label_size: SF * 1e0,
-            max_label_size: SF * 24e0,
-            tip_label_size: SF * 8e0,
-            int_label_size: SF * 12e0,
+            selected_node_size_idx: 1,
 
-            max_tip_labels_at_once: 120,
+            tip_label_size: SF * 5e0,
+            selected_tip_label_size_idx: 5,
 
-            available_vertical_space: SF,
+            int_label_size: SF * 8e0,
+            selected_int_label_size_idx: 8,
+
             node_size: SF,
             min_node_size: SF,
             max_node_size: SF,
-            min_node_size_idx: 0,
-            max_node_size_idx: 23,
-            selected_node_size_idx: 0,
+            min_label_size: SF * 1e0,
+            max_label_size: SF * 24e0,
+
+            max_count_of_tip_labels_to_draw: 200,
+
+            available_vertical_space: SF,
 
             tip_labels_w_scale_factor: 1e0,
             tip_label_w: SF,
             tip_label_offset: SF * 3e0,
             int_label_offset: SF * 3e0,
 
-            draw_tip_labels: true,
-            draw_int_labels: false,
+            draw_tip_labels_allowed: false,
+            draw_tip_labels_selection: true,
+            draw_int_labels_selection: false,
 
             pointer_geom_cache: Default::default(),
             edge_geom_cache: Default::default(),
@@ -183,7 +188,7 @@ impl TreeView {
         self.available_vertical_space = self.window_h - PADDING * 2e0 - SF * 2e0;
         self.min_node_size = self.available_vertical_space / self.tip_count as Float;
         self.max_node_size = Float::max(self.max_label_size, self.min_node_size);
-        self.max_node_size_idx = self.max_label_size_idx - 1;
+        self.max_node_size_idx = self.max_label_size_idx;
 
         if self.min_node_size == self.max_node_size {
             self.max_node_size_idx = self.min_node_size_idx
@@ -193,24 +198,20 @@ impl TreeView {
             self.selected_node_size_idx = self.max_node_size_idx
         }
 
-        if self.max_node_size_idx > 0 {
+        if self.max_node_size_idx > 1 {
             self.node_size = lerp(
                 self.min_node_size,
                 self.max_node_size,
-                self.selected_node_size_idx as Float / self.max_node_size_idx as Float,
+                (self.selected_node_size_idx - 1) as Float / self.max_node_size_idx as Float,
             )
         } else {
             self.node_size = self.min_node_size
         }
 
-        if (self.window_h / self.node_size) as usize > self.max_tip_labels_at_once {
-            self.draw_tip_labels = false;
-            self.update_tip_label_w();
-        } else {
-            self.draw_tip_labels = true;
-            self.update_tip_label_w();
-        }
+        self.draw_tip_labels_allowed = (self.available_vertical_space / self.node_size) as usize
+            <= self.max_count_of_tip_labels_to_draw;
 
+        self.update_tip_label_w();
         self.update_canvas_h();
     }
 
@@ -239,7 +240,7 @@ impl TreeView {
     }
 
     fn update_tip_label_w(&mut self) {
-        if self.draw_tip_labels {
+        if self.draw_tip_labels_allowed && self.draw_tip_labels_selection {
             self.tip_label_w =
                 self.tip_labels_w_scale_factor * self.tip_label_size + self.tip_label_offset;
         } else {
@@ -273,13 +274,13 @@ impl TreeView {
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
-                self.draw_tip_labels = state;
-                self.update_tip_label_w();
+                self.draw_tip_labels_selection = state;
+                self.update_node_size();
                 Task::none()
             }
 
             TreeViewMsg::IntLabelVisibilityChanged(state) => {
-                self.draw_int_labels = state;
+                self.draw_int_labels_selection = state;
                 Task::none()
             }
 
@@ -289,7 +290,7 @@ impl TreeView {
                 self.int_labels_geom_cache.clear();
                 self.selected_tip_label_size_idx = idx;
                 self.tip_label_size = self.min_label_size * idx as Float;
-                self.update_tip_label_w();
+                self.update_node_size();
                 Task::none()
             }
 
@@ -339,8 +340,8 @@ impl TreeView {
                 self.int_labels_geom_cache.clear();
                 self.window_w = w;
                 self.window_h = h;
-                self.cnv_y1 = self.cnv_y0 + h;
                 self.update_node_size();
+                self.cnv_y1 = self.cnv_y0 + self.available_vertical_space;
                 Task::none()
             }
 
@@ -365,11 +366,11 @@ impl TreeView {
                 self.node_count = self.tree_original.node_count_all();
                 self.tip_count = self.tree_original.tip_count_all();
                 self.int_node_count = self.tree_original.internal_node_count_all();
+                self.cnv_y0 = 0e0;
                 self.sort();
-                self.update_node_size();
-                self.tip_labels_w_scale_factor = self.calc_tip_labels_w_scale_factor();
-                self.update_tip_label_w();
                 self.merge_tip_chunks();
+                self.tip_labels_w_scale_factor = self.calc_tip_labels_w_scale_factor();
+                self.update_node_size();
                 self.drawing_enabled = true;
                 Task::none()
             }
@@ -400,16 +401,14 @@ impl TreeView {
         side_col = side_col.push(self.horizontal_rule(SF));
         side_col = side_col.push(self.horizontal_space(0, PADDING));
 
-        if (self.window_h / self.node_size) as usize <= self.max_tip_labels_at_once {
-            side_col = side_col.push(self.tip_labels_toggler());
-            if self.draw_tip_labels {
-                side_col = side_col.push(self.tip_labels_size_slider());
-            }
+        side_col = side_col.push(self.tip_labels_toggler(self.draw_tip_labels_allowed));
+        if self.draw_tip_labels_allowed && self.draw_tip_labels_selection {
+            side_col = side_col.push(self.tip_labels_size_slider());
         }
 
         side_col = side_col.push(self.horizontal_space(0, PADDING));
-        side_col = side_col.push(self.int_labels_toggler());
-        if self.draw_int_labels {
+        side_col = side_col.push(self.int_labels_toggler(true));
+        if self.draw_int_labels_selection {
             side_col = side_col.push(self.int_labels_size_slider());
         }
 
@@ -488,14 +487,21 @@ impl TreeView {
         self.apply_rule_settings(rule)
     }
 
-    fn tip_labels_toggler(&self) -> Toggler<'_, TreeViewMsg> {
-        self.apply_toggler_settings("Tip Labels", self.draw_tip_labels)
-            .on_toggle(TreeViewMsg::TipLabelVisibilityChanged)
+    fn tip_labels_toggler(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
+        let mut tgl = self.apply_toggler_settings("Tip Labels", self.draw_tip_labels_selection);
+        if enabled {
+            tgl = tgl.on_toggle(TreeViewMsg::TipLabelVisibilityChanged);
+        }
+        tgl
     }
 
-    fn int_labels_toggler(&self) -> Toggler<'_, TreeViewMsg> {
-        self.apply_toggler_settings("Internal Labels", self.draw_int_labels)
-            .on_toggle(TreeViewMsg::IntLabelVisibilityChanged)
+    fn int_labels_toggler(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
+        let mut tgl =
+            self.apply_toggler_settings("Internal Labels", self.draw_int_labels_selection);
+        if enabled {
+            tgl = tgl.on_toggle(TreeViewMsg::IntLabelVisibilityChanged);
+        }
+        tgl
     }
 
     fn node_size_slider(&self) -> Slider<u8, TreeViewMsg> {
