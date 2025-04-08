@@ -198,6 +198,11 @@ impl TreeView {
             self.selected_node_size_idx = self.max_node_size_idx
         }
 
+        if self.selected_node_size_idx == self.min_node_size_idx {
+            self.cnv_y0 = 0e0;
+            self.cnv_y1 = self.cnv_y0 + self.available_vertical_space;
+        }
+
         if self.max_node_size_idx > 1 {
             self.node_size = lerp(
                 self.min_node_size,
@@ -223,15 +228,13 @@ impl TreeView {
         let mut max_tip_height: f64 = 0e0;
         let mut max_tip_height_name: &str = "";
         let mut max_tip_height_name_len: usize = 0;
-        for chunk in &self.tree_chunked_edges {
-            for edge in chunk {
-                if edge.is_tip && edge.x1 >= max_tip_height - max_tip_height / 1e1 {
-                    max_tip_height = edge.x1;
-                    if let Some(name) = &edge.name {
-                        if name.len() > max_tip_height_name_len {
-                            max_tip_height_name = name;
-                            max_tip_height_name_len = name.len();
-                        }
+        for edge in &self.tree_chunked_edges_tips_merged {
+            if edge.x1 >= max_tip_height - max_tip_height / 1e1 {
+                max_tip_height = edge.x1;
+                if let Some(name) = &edge.name {
+                    if name.len() > max_tip_height_name_len {
+                        max_tip_height_name = name;
+                        max_tip_height_name_len = name.len();
                     }
                 }
             }
@@ -341,7 +344,6 @@ impl TreeView {
                 self.window_w = w;
                 self.window_h = h;
                 self.update_node_size();
-                self.cnv_y1 = self.cnv_y0 + self.available_vertical_space;
                 Task::none()
             }
 
@@ -366,7 +368,6 @@ impl TreeView {
                 self.node_count = self.tree_original.node_count_all();
                 self.tip_count = self.tree_original.tip_count_all();
                 self.int_node_count = self.tree_original.internal_node_count_all();
-                self.cnv_y0 = 0e0;
                 self.sort();
                 self.merge_tip_chunks();
                 self.tip_labels_w_scale_factor = self.calc_tip_labels_w_scale_factor();
