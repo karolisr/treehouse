@@ -82,16 +82,26 @@ impl Program<TreeViewMsg> for TreeView {
             });
             geoms.push(g_edges);
 
-            if self.draw_tip_labels_allowed && self.draw_tip_labels_selection {
-                let g_tip_labels =
-                    self.tip_labels_geom_cache
-                        .draw(renderer, clipping.size(), |f| {
-                            let tip_idx_0: i64 = (self.cnv_y0 / self.node_size) as i64 - 3;
-                            let tip_idx_1: i64 = (self.cnv_y1 / self.node_size) as i64 + 3;
-                            let tip_idx_0: usize = tip_idx_0.max(0) as usize;
-                            let tip_idx_1: usize = tip_idx_1.min(self.tip_count as i64) as usize;
+            let tip_idx_0: i64 = (self.cnv_y0 / self.node_size) as i64 - 3;
+            let tip_idx_1: i64 = (self.cnv_y1 / self.node_size) as i64 + 3;
+            let tip_idx_0: usize = tip_idx_0.max(0) as usize;
+            let tip_idx_1: usize = tip_idx_1.min(self.tree_tip_edges.len() as i64 - 1) as usize;
 
-                            if tip_idx_0 < tip_idx_1 {
+            if tip_idx_0 < tip_idx_1 {
+                let chnk_idx_0 = self.tree_tip_edges[tip_idx_0].chunk_idx;
+                let chnk_idx_1 = self.tree_tip_edges[tip_idx_1].chunk_idx;
+                let edge_idx_0 = self.tree_tip_edges[tip_idx_0].edge_idx;
+                let edge_idx_1 = self.tree_tip_edges[tip_idx_1].edge_idx;
+
+                println!(
+                    "{:9}:{:9} | {:9}:{:9}",
+                    chnk_idx_0, edge_idx_0, chnk_idx_1, edge_idx_1
+                );
+
+                if self.draw_tip_labels_allowed && self.draw_tip_labels_selection {
+                    let g_tip_labels =
+                        self.tip_labels_geom_cache
+                            .draw(renderer, clipping.size(), |f| {
                                 let labels = self.tip_labels_in_range(
                                     tree_rect.width,
                                     tree_rect.height,
@@ -106,9 +116,9 @@ impl Program<TreeViewMsg> for TreeView {
                                     clipping,
                                     f,
                                 );
-                            }
-                        });
-                geoms.push(g_tip_labels);
+                            });
+                    geoms.push(g_tip_labels);
+                }
             }
 
             if self.draw_int_labels_selection {

@@ -100,7 +100,7 @@ impl Default for TreeView {
     fn default() -> Self {
         Self {
             win_id: None,
-            threads: 1,
+            threads: 8,
             tree: Default::default(),
             drawing_enabled: false,
             selected_node_ordering_option: Some(NodeOrderingOption::Ascending),
@@ -253,10 +253,13 @@ impl TreeView {
 
     fn merge_tip_chunks(&mut self) {
         self.tree_tip_edges = Vec::new();
-        for chunk in &self.tree_chunked_edges {
-            for edge in chunk {
+        for (i_c, chunk) in self.tree_chunked_edges.iter().enumerate() {
+            for (i_e, edge) in chunk.iter().enumerate() {
                 if edge.is_tip {
-                    self.tree_tip_edges.push(edge.clone());
+                    let mut e = edge.clone();
+                    e.chunk_idx = i_c;
+                    e.edge_idx = i_e;
+                    self.tree_tip_edges.push(e);
                 }
             }
         }

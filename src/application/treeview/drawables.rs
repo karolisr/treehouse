@@ -50,7 +50,7 @@ impl TreeView {
         label_template: &Text,
     ) -> Vec<Text> {
         let mut labels: Vec<Text> = Vec::with_capacity(idx_1 - idx_0);
-        for edge in &self.tree_tip_edges[idx_0..idx_1] {
+        for edge in &self.tree_tip_edges[idx_0..=idx_1] {
             let x1 = edge.x1 as Float * width;
             let y = edge.y as Float * height;
             let pt_node = Point::new(x1, y);
