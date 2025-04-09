@@ -2,7 +2,7 @@ use crate::{
     Edges, Float, LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, TEXT_SIZE, Tree, flatten_tree,
     lerp, text_width,
 };
-use dendros::Edge;
+use dendros::{Edge, NodeId, parse_newick, write_newick};
 use iced::{
     Alignment, Border, Color, Element, Font, Length, Pixels, Task,
     alignment::{Horizontal, Vertical},
@@ -100,10 +100,10 @@ impl Default for TreeView {
     fn default() -> Self {
         Self {
             win_id: None,
-            threads: 8,
+            threads: 1,
             tree: Default::default(),
             drawing_enabled: false,
-            selected_node_ordering_option: Some(NodeOrderingOption::Ascending),
+            selected_node_ordering_option: Some(NodeOrderingOption::Unordered),
 
             node_count: 0,
             tip_count: 0,
@@ -178,7 +178,7 @@ pub enum TreeViewMsg {
     TipLabelVisibilityChanged(bool),
     IntLabelVisibilityChanged(bool),
     TreeViewScrolled(ScrollableViewport),
-    Root,
+    Root(NodeId),
     Unroot,
     OpenFile,
 }
@@ -273,12 +273,14 @@ impl TreeView {
                 self.cnv_y0 = vp.absolute_offset().y;
                 self.cnv_y1 = self.cnv_y0 + vp.bounds().height;
                 self.tip_labels_geom_cache.clear();
+                self.pointer_geom_cache.clear();
                 Task::none()
             }
 
             TreeViewMsg::TipLabelVisibilityChanged(state) => {
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
+                self.pointer_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
                 self.draw_tip_labels_selection = state;
                 self.update_node_size();
@@ -293,6 +295,7 @@ impl TreeView {
             TreeViewMsg::TipLabelSizeSelectionChanged(idx) => {
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
+                self.pointer_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
                 self.selected_tip_label_size_idx = idx;
                 self.tip_label_size = self.min_label_size * idx as Float;
@@ -310,6 +313,7 @@ impl TreeView {
             TreeViewMsg::NodeSizeSelectionChanged(idx) => {
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
+                self.pointer_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
                 self.selected_node_size_idx = idx;
                 self.update_node_size();
@@ -320,6 +324,7 @@ impl TreeView {
                 if node_ordering_option != self.selected_node_ordering_option.unwrap() {
                     self.edge_geom_cache.clear();
                     self.tip_labels_geom_cache.clear();
+                    self.pointer_geom_cache.clear();
                     self.int_labels_geom_cache.clear();
                     self.selected_node_ordering_option = Some(node_ordering_option);
                     self.sort();
@@ -343,6 +348,7 @@ impl TreeView {
             TreeViewMsg::WindowResized(w, h) => {
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
+                self.pointer_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
                 self.window_w = w;
                 self.window_h = h;
@@ -350,7 +356,14 @@ impl TreeView {
                 Task::none()
             }
 
-            TreeViewMsg::Root => Task::none(),
+            TreeViewMsg::Root(node_id) => {
+                let mut tree = self.tree.clone();
+                let _ = tree.root(node_id);
+                if let Some(tree_rooted) = parse_newick(write_newick(&tree)) {
+                    tree = tree_rooted;
+                }
+                Task::done(TreeViewMsg::TreeUpdated(tree))
+            }
 
             TreeViewMsg::Unroot => {
                 self.tree_original.unroot();
@@ -358,10 +371,11 @@ impl TreeView {
             }
 
             TreeViewMsg::TreeUpdated(tree) => {
+                self.drawing_enabled = false;
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
+                self.pointer_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
-                self.drawing_enabled = false;
                 self.tree_original = tree;
                 self.tree_srtd_asc = None;
                 self.tree_srtd_desc = None;
