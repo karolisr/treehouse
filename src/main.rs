@@ -16,12 +16,15 @@
 
 mod application;
 
+#[cfg(target_os = "macos")]
+pub use application::menus::prepare_app_menu;
+
 pub use application::{
     APP_SCALE_FACTOR, Float, LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, SPACING, TEXT_SIZE,
     TREE_LAB_FONT_NAME,
     app::{App, AppMsg, read_text_file},
     colors::ColorSimple,
-    menus::{MenuEvent, MenuEventReplyMsg, menu_events, prepare_app_menu},
+    menus::{MenuEvent, MenuEventReplyMsg, menu_events},
     treeview::{TreeView, TreeViewMsg},
     windows::window_settings,
 };

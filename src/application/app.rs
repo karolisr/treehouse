@@ -1,9 +1,12 @@
 #[cfg(target_os = "macos")]
 use super::macos::register_ns_application_delegate_handlers;
+#[cfg(target_os = "macos")]
+use crate::prepare_app_menu;
+
 use super::windows::{AppWin, AppWinType, TreeWin, TreeWinMsg};
 use crate::{
     APP_SCALE_FACTOR, MenuEvent, MenuEventReplyMsg, Tree, TreeViewMsg, menu_events, parse_newick,
-    prepare_app_menu, window_settings,
+    window_settings,
 };
 use iced::{
     Element, Subscription, Task, exit,
@@ -21,6 +24,7 @@ use std::{collections::HashMap, path::PathBuf};
 pub struct App {
     pub windows: HashMap<WinId, AppWin>,
     menu_events_sender: Option<Sender<MenuEventReplyMsg>>,
+    #[cfg(target_os = "macos")]
     menu: Option<muda::Menu>,
 }
 
@@ -64,10 +68,12 @@ impl App {
     pub fn update(&mut self, app_msg: AppMsg) -> Task<AppMsg> {
         match app_msg {
             AppMsg::AppInitialized => {
-                let menu = prepare_app_menu();
                 #[cfg(target_os = "macos")]
-                menu.init_for_nsapp();
-                self.menu = Some(menu);
+                {
+                    let menu = prepare_app_menu();
+                    menu.init_for_nsapp();
+                    self.menu = Some(menu);
+                }
                 Task::done(AppMsg::OpenWin(AppWinType::TreeWin))
             }
             AppMsg::OpenWin(win) => open_window(self, win),
@@ -193,9 +199,12 @@ impl App {
             },
             AppMsg::WinCloseRequested(id) => match self.windows.get(&id) {
                 Some(AppWin::TreeWin(_)) => {
-                    muda::MenuEvent::send(muda::MenuEvent {
-                        id: muda::MenuId(MenuEvent::QuitInternal.to_string()),
-                    });
+                    #[cfg(target_os = "macos")]
+                    {
+                        muda::MenuEvent::send(muda::MenuEvent {
+                            id: muda::MenuId(MenuEvent::QuitInternal.to_string()),
+                        });
+                    }
                     close_window(id)
                 }
                 None => Task::none(),

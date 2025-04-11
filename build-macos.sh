@@ -2,6 +2,8 @@
 
 export RUSTFLAGS='-C target-cpu=native'
 
+cargo install cargo-bundle
+
 cargo fmt && \
 
 cargo check --profile dev && \
@@ -21,5 +23,6 @@ head -n $((TOTAL_LINES - 2)) "${FILE}" > "Info.plist.tmp" && mv "Info.plist.tmp"
 cat "./resources/macos/info_plist_tail.txt" >> "${FILE}"
 cp "./resources/macos/"*".icns" "${BUNDLE_PATH}/Resources/"
 
-xattr -rc "./target/release/bundle/osx/TreeHouse.app" && \
-codesign --deep --force --sign - "./target/release/bundle/osx/TreeHouse.app"
+# xattr -rc "./target/release/bundle/osx/TreeHouse.app" && \
+# codesign --deep --force --sign "Karolis Ramanauskas" "./target/release/bundle/osx/TreeHouse.app"
+codesign --sign "Karolis Ramanauskas" "./target/release/bundle/osx/TreeHouse.app"
