@@ -357,12 +357,22 @@ impl TreeView {
             }
 
             TreeViewMsg::Root(node_id) => {
-                let mut tree = self.tree.clone();
-                let _ = tree.root(node_id);
-                if let Some(tree_rooted) = parse_newick(write_newick(&tree)) {
-                    tree = tree_rooted;
+                let mut tree_to_root = self.tree.clone();
+                let rslt = tree_to_root.root(node_id);
+
+                match rslt {
+                    Ok(_) => {
+                        if let Some(tree_rooted) = parse_newick(write_newick(&tree_to_root)) {
+                            Task::done(TreeViewMsg::TreeUpdated(tree_rooted))
+                        } else {
+                            Task::none()
+                        }
+                    }
+                    Err(err) => {
+                        println!("{err}");
+                        Task::none()
+                    }
                 }
-                Task::done(TreeViewMsg::TreeUpdated(tree))
             }
 
             TreeViewMsg::Unroot => {
