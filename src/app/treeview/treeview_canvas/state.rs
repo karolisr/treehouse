@@ -1,16 +1,19 @@
 use super::drawables::{IndexRange, NodePoint};
-use crate::{Float, SF, TREE_LAB_FONT_NAME};
+use crate::{
+    Float,
+    app::{SF, TREE_LAB_FONT_NAME},
+};
 use iced::{Rectangle, alignment::Vertical, widget::canvas::Text};
 
 pub struct TreeViewState {
-    pub(super) tree_label_template: Text,
-    pub(super) tip_idx_range: Option<IndexRange>,
-    pub(super) visible_nodes: Vec<NodePoint>,
-    pub(super) ps: Float,
-    pub(super) closest_node_point: Option<NodePoint>,
-    pub(super) mouse_hovering_node: bool,
-    pub(super) clip_rect: Rectangle,
-    pub(super) tree_rect: Rectangle,
+    pub tree_label_template: Text,
+    pub tip_idx_range: Option<IndexRange>,
+    pub visible_nodes: Vec<NodePoint>,
+    pub ps: Float,
+    pub closest_node_point: Option<NodePoint>,
+    pub mouse_hovering_node: bool,
+    pub clip_rect: Rectangle,
+    pub tree_rect: Rectangle,
 }
 
 impl Default for TreeViewState {
@@ -34,5 +37,3 @@ impl Default for TreeViewState {
         }
     }
 }
-
-impl TreeViewState {}

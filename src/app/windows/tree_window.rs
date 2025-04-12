@@ -1,4 +1,5 @@
-use crate::{Tree, TreeView, TreeViewMsg};
+use super::super::{TreeView, TreeViewMsg};
+use crate::Tree;
 use iced::{Element, Task, window::Id as WinId};
 
 #[derive(Default, Debug)]
@@ -9,8 +10,7 @@ pub struct TreeWin {
 
 #[derive(Debug, Clone)]
 pub enum TreeWinMsg {
-    OpenFile(WinId),
-    SetTitle(WinId, String),
+    SetTitle(String),
     TreeUpdated(WinId, Tree),
     TreeViewMsg(WinId, TreeViewMsg),
 }
@@ -18,13 +18,11 @@ pub enum TreeWinMsg {
 impl TreeWin {
     pub fn update(&mut self, main_win_msg: TreeWinMsg) -> Task<TreeWinMsg> {
         match main_win_msg {
-            TreeWinMsg::OpenFile(_) => Task::none(),
-            TreeWinMsg::SetTitle(_, title) => {
+            TreeWinMsg::SetTitle(title) => {
                 self.title = Some(title);
                 Task::none()
             }
             TreeWinMsg::TreeUpdated(id, tree) => {
-                // self.tv = TreeView::default();
                 Task::done(TreeWinMsg::TreeViewMsg(id, TreeViewMsg::SetWinId(id))).chain(
                     Task::done(TreeWinMsg::TreeViewMsg(id, TreeViewMsg::TreeUpdated(tree))),
                 )
@@ -51,6 +49,7 @@ impl TreeWin {
 
     pub fn new() -> Self {
         Self {
+            tv: TreeView::new(),
             ..Default::default()
         }
     }

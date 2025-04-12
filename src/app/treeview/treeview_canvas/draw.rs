@@ -1,5 +1,5 @@
-use super::TreeView;
-use crate::{Float, SF};
+use super::super::TreeView;
+use crate::{Float, app::SF};
 use iced::{
     Pixels, Rectangle, Vector,
     widget::canvas::{Frame, Path, Stroke, Text},

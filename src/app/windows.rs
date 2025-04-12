@@ -1,5 +1,7 @@
 mod tree_window;
 
+#[cfg(target_os = "linux")]
+pub use crate::app::APP_ID;
 use iced::{
     Size,
     window::{Level, Position, Settings, settings::PlatformSpecific},
@@ -37,7 +39,7 @@ pub fn window_settings() -> Settings {
         },
         #[cfg(target_os = "linux")]
         platform_specific: PlatformSpecific {
-            application_id: String::from("APP_ID"),
+            application_id: String::from(APP_ID),
             override_redirect: true,
         },
         exit_on_close_request: false,

@@ -1,13 +1,14 @@
 #[cfg(target_os = "macos")]
 use super::macos::register_ns_application_delegate_handlers;
 #[cfg(target_os = "macos")]
-use crate::prepare_app_menu;
-
-use super::windows::{AppWin, AppWinType, TreeWin, TreeWinMsg};
-use crate::{
-    APP_SCALE_FACTOR, MenuEvent, MenuEventReplyMsg, Tree, TreeViewMsg, menu_events, parse_newick,
-    window_settings,
+use super::menus::prepare_app_menu;
+use super::{
+    APP_SCALE_FACTOR,
+    menus::{MenuEvent, MenuEventReplyMsg, menu_events},
+    treeview::TreeViewMsg,
+    windows::{AppWin, AppWinType, TreeWin, TreeWinMsg, window_settings},
 };
+use crate::{Tree, parse_newick};
 use iced::{
     Element, Subscription, Task, exit,
     futures::channel::mpsc::Sender,
@@ -17,8 +18,7 @@ use iced::{
         events, gain_focus, open, open_events,
     },
 };
-use std::fs::read;
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, fs::read, path::PathBuf};
 
 #[derive(Default)]
 pub struct App {
@@ -115,16 +115,13 @@ impl App {
                             ))
                             .chain(Task::done(AppMsg::TreeWinMsg(
                                 id,
-                                TreeWinMsg::SetTitle(
-                                    id,
-                                    String::from(
-                                        path_buf
-                                            .file_name()
-                                            .unwrap_or_default()
-                                            .to_str()
-                                            .unwrap_or_default(),
-                                    ),
-                                ),
+                                TreeWinMsg::SetTitle(String::from(
+                                    path_buf
+                                        .file_name()
+                                        .unwrap_or_default()
+                                        .to_str()
+                                        .unwrap_or_default(),
+                                )),
                             ))),
                             None => Task::none(),
                         },
@@ -168,7 +165,6 @@ impl App {
             },
             AppMsg::TreeWinMsg(id, msg) => {
                 let app_task = match msg {
-                    TreeWinMsg::OpenFile(id) => Task::future(choose_file(id)),
                     TreeWinMsg::TreeViewMsg(id, TreeViewMsg::OpenFile) => {
                         Task::future(choose_file(id))
                     }

@@ -1,5 +1,4 @@
 #![allow(unused_imports, unused_mut, unused_variables)]
-
 use super::super::{MenuEvent, MenuEventReplyMsg};
 use crate::AppMsg;
 

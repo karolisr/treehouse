@@ -1,9 +1,8 @@
-use super::TreeView;
+use super::super::TreeView;
 use crate::{Float, NodeType};
 use dendros::Edge;
 use iced::{
     Point,
-    alignment::Vertical,
     widget::canvas::{Path, Text, path::Builder as PathBuilder},
 };
 use std::{
@@ -11,17 +10,19 @@ use std::{
     thread::{self, ScopedJoinHandle},
 };
 
+#[derive(Debug, Clone, Copy, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IndexRange {
     pub b: usize,
     pub e: usize,
 }
 
+#[derive(Debug, Clone, Copy, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ChunkEdgeRange {
     pub chnk: IndexRange,
     pub edge: IndexRange,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct NodePoint {
     pub point: Point,
     pub edge: Edge,
@@ -227,63 +228,5 @@ impl TreeView {
             }
         });
         labels
-    }
-
-    pub fn all_from_chunks(
-        &self,
-        width: Float,
-        height: Float,
-    ) -> (Vec<Path>, Vec<Text>, Vec<Text>) {
-        let mut edge_paths: Vec<Path> = Vec::with_capacity(self.node_count);
-        let mut tip_labels: Vec<Text> = Vec::with_capacity(self.tip_count);
-        let mut int_labels: Vec<Text> = Vec::with_capacity(self.int_node_count);
-        thread::scope(|thread_scope| {
-            #[allow(clippy::type_complexity)]
-            let mut handles: Vec<ScopedJoinHandle<'_, (Path, Vec<Text>, Vec<Text>)>> = Vec::new();
-            for chunk in &self.tree_chunked_edges {
-                let handle = thread_scope.spawn(move || {
-                    let mut path_builder = PathBuilder::new();
-                    let mut tip_labels_l: Vec<Text> = Vec::with_capacity(chunk.len());
-                    let mut int_labels_l: Vec<Text> = Vec::with_capacity(chunk.len());
-                    for edge in chunk {
-                        let x0 = edge.x0 as Float * width;
-                        let x1 = edge.x1 as Float * width;
-                        let y = edge.y as Float * height;
-                        let pt_node = Point::new(x1, y);
-
-                        path_builder.move_to(pt_node);
-                        path_builder.line_to(Point::new(x0, y));
-                        if let Some(y_parent) = edge.y_parent {
-                            path_builder.line_to(Point::new(x0, y_parent as Float * height))
-                        };
-
-                        if let Some(name) = &edge.name {
-                            let label = Text {
-                                content: name.deref().into(),
-                                position: pt_node,
-                                align_y: Vertical::Center,
-                                ..Default::default()
-                            };
-                            if edge.is_tip {
-                                tip_labels_l.push(label);
-                            } else {
-                                int_labels_l.push(label);
-                            }
-                        }
-                    }
-                    (path_builder.build(), tip_labels_l, int_labels_l)
-                });
-                handles.push(handle);
-            }
-
-            for j in handles {
-                let (path, mut tip_labels_l, mut int_labels_l) = j.join().unwrap();
-                edge_paths.push(path);
-                tip_labels.append(&mut tip_labels_l);
-                int_labels.append(&mut int_labels_l);
-            }
-        });
-
-        (edge_paths, tip_labels, int_labels)
     }
 }

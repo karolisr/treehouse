@@ -1,5 +1,11 @@
-use super::{TreeView, TreeViewMsg, TreeViewState, drawables::NodePoint};
-use crate::{ColorSimple, NodeType, PADDING, SF};
+use super::{
+    super::{TreeView, TreeViewMsg},
+    NodePoint, TreeViewState,
+};
+use crate::{
+    ColorSimple, NodeType,
+    app::{PADDING, SF},
+};
 use iced::{
     Event, Rectangle, Renderer, Size, Theme, Vector,
     border::Radius,

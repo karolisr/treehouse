@@ -1,5 +1,5 @@
 use super::super::{MenuEvent, MenuEventReplyMsg};
-use crate::AppMsg;
+use crate::app::AppMsg;
 use iced::{
     Subscription,
     futures::{
