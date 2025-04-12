@@ -133,8 +133,8 @@ impl TreeView {
                         let pt_node = Point::new(x1, y);
                         path_builder.move_to(pt_node);
                         path_builder.line_to(Point::new(x0, y));
-                        if let Some(y_prev) = edge.y_prev {
-                            path_builder.line_to(Point::new(x0, y_prev as Float * height))
+                        if let Some(y_parent) = edge.y_parent {
+                            path_builder.line_to(Point::new(x0, y_parent as Float * height))
                         };
                     }
                     path_builder.build()
@@ -241,8 +241,8 @@ impl TreeView {
 
                         path_builder.move_to(pt_node);
                         path_builder.line_to(Point::new(x0, y));
-                        if let Some(y_prev) = edge.y_prev {
-                            path_builder.line_to(Point::new(x0, y_prev as Float * height))
+                        if let Some(y_parent) = edge.y_parent {
+                            path_builder.line_to(Point::new(x0, y_parent as Float * height))
                         };
 
                         if let Some(name) = &edge.name {

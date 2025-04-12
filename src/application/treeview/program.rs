@@ -58,7 +58,9 @@ impl Program<TreeViewMsg> for TreeView {
                 iced::mouse::Button::Left => {
                     if state.mouse_hovering_node {
                         if let Some(hovered_node) = &state.closest_node_point {
-                            return Some(Action::publish(TreeViewMsg::Root(hovered_node.1.child)));
+                            return Some(Action::publish(TreeViewMsg::Root(
+                                hovered_node.1.node_id,
+                            )));
                         }
                     }
                     None
@@ -94,7 +96,8 @@ impl Program<TreeViewMsg> for TreeView {
                         if mouse_pt.distance(*pnt) <= SF * 9e0 {
                             state.mouse_hovering_node = true;
                             if state.closest_node_point.is_none()
-                                || state.closest_node_point.clone().unwrap().1.child != edge.child
+                                || state.closest_node_point.clone().unwrap().1.node_id
+                                    != edge.node_id
                             {
                                 // println!("{}", edge.name.clone().unwrap_or_default());
                                 self.pointer_geom_cache.clear();

@@ -2,7 +2,7 @@ use crate::{
     Edges, Float, LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, TEXT_SIZE, Tree, flatten_tree,
     lerp, text_width,
 };
-use dendros::{Edge, NodeId, parse_newick, write_newick};
+use dendros::{Edge, NodeId};
 use iced::{
     Alignment, Border, Color, Element, Font, Length, Pixels, Task,
     alignment::{Horizontal, Vertical},
@@ -361,13 +361,7 @@ impl TreeView {
                 let rslt = tree_to_root.root(node_id);
 
                 match rslt {
-                    Ok(_) => {
-                        if let Some(tree_rooted) = parse_newick(write_newick(&tree_to_root)) {
-                            Task::done(TreeViewMsg::TreeUpdated(tree_rooted))
-                        } else {
-                            Task::none()
-                        }
-                    }
+                    Ok(_) => Task::done(TreeViewMsg::TreeUpdated(tree_to_root)),
                     Err(err) => {
                         println!("{err}");
                         Task::none()
