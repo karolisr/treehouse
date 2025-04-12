@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
-export RUSTFLAGS='-C target-cpu=native'
+# rustc --print=target-cpus
+# rustc --print cfg
+# rustc -Ctarget-cpu=generic --print cfg
+# rustc -Ctarget-cpu=native --print cfg
+
+# RUSTFLAGS="-Ctarget-cpu=generic"
+RUSTFLAGS="-Ctarget-cpu=native"
+export RUSTFLAGS
 
 # cargo install --locked cargo-zigbuild
 cargo install cargo-bundle

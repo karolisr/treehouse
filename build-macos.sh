@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
-export RUSTFLAGS='-C target-cpu=native'
+# rustc --print=target-cpus
+# rustc --print cfg
+# rustc -Ctarget-cpu=generic --print cfg
+# rustc -Ctarget-cpu=native --print cfg
+
+# RUSTFLAGS="-Ctarget-cpu=generic"
+RUSTFLAGS="-Ctarget-cpu=native"
+export RUSTFLAGS
 
 cargo install cargo-bundle
 
@@ -23,6 +30,11 @@ head -n $((TOTAL_LINES - 2)) "${FILE}" > "Info.plist.tmp" && mv "Info.plist.tmp"
 cat "./resources/macos/info_plist_tail.txt" >> "${FILE}"
 cp "./resources/macos/"*".icns" "${BUNDLE_PATH}/Resources/"
 
-# xattr -rc "./target/release/bundle/osx/TreeHouse.app" && \
-# codesign --deep --force --sign "Karolis Ramanauskas" "./target/release/bundle/osx/TreeHouse.app"
-codesign --sign "Karolis Ramanauskas" "./target/release/bundle/osx/TreeHouse.app"
+xattr -rc "./target/release/bundle/osx/TreeHouse.app" && \
+
+if [[ -n "${SIGNING_IDENTITY}" ]]; then
+    echo -e "\nSigning identity: ${SIGNING_IDENTITY}"
+    codesign --sign "${SIGNING_IDENTITY}" "./target/release/bundle/osx/TreeHouse.app"
+else
+    codesign --deep --force --sign - "./target/release/bundle/osx/TreeHouse.app"
+fi

@@ -172,8 +172,11 @@ default-features = false
 features = [
     ### Uses GTK for dialogs on Linux & BSDs; has no effect on Windows and macOS
     "gtk3",
+
     ### Uses XDG Desktop Portal instead of GTK on Linux & BSDs
     # "xdg-portal",
+
+    # For "xdg-portal" enable one of:
     # "async-std",
     # "tokio",
 ]
