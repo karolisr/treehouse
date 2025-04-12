@@ -1,6 +1,5 @@
 use super::super::TreeView;
-use crate::{Float, NodeType};
-use dendros::Edge;
+use crate::{Edge, Float, NodeType};
 use iced::{
     Point,
     widget::canvas::{Path, Text, path::Builder as PathBuilder},
