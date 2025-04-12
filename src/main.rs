@@ -57,7 +57,7 @@ fn main() -> iced::Result {
     iced::daemon(App::new, App::update, App::view)
         .title(App::title)
         .subscription(App::subscription)
-        .antialiasing(false)
+        .antialiasing(true)
         .scale_factor(App::scale_factor)
         .run()
 }

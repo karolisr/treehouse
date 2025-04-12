@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::{
     Edges, Float, LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, TEXT_SIZE, Tree, flatten_tree,
     lerp, text_width,
@@ -80,6 +82,7 @@ pub struct TreeView {
     pub(super) draw_int_labels_selection: bool,
 
     pub(super) pointer_geom_cache: Cache,
+    pub(super) selected_nodes_geom_cache: Cache,
     pub(super) edge_geom_cache: Cache,
     pub(super) tip_labels_geom_cache: Cache,
     pub(super) int_labels_geom_cache: Cache,
@@ -94,6 +97,8 @@ pub struct TreeView {
     tree_srtd_asc_chunked_edges: Option<Vec<Edges>>,
     tree_srtd_desc: Option<Tree>,
     tree_srtd_desc_chunked_edges: Option<Vec<Edges>>,
+
+    pub(super) selected_node_ids: HashSet<NodeId>,
 }
 
 impl Default for TreeView {
@@ -149,6 +154,7 @@ impl Default for TreeView {
             draw_int_labels_selection: false,
 
             pointer_geom_cache: Default::default(),
+            selected_nodes_geom_cache: Default::default(),
             edge_geom_cache: Default::default(),
             tip_labels_geom_cache: Default::default(),
             int_labels_geom_cache: Default::default(),
@@ -161,6 +167,8 @@ impl Default for TreeView {
             tree_srtd_asc_chunked_edges: Default::default(),
             tree_srtd_desc: Default::default(),
             tree_srtd_desc_chunked_edges: Default::default(),
+
+            selected_node_ids: Default::default(),
         }
     }
 }
@@ -178,6 +186,9 @@ pub enum TreeViewMsg {
     TipLabelVisibilityChanged(bool),
     IntLabelVisibilityChanged(bool),
     TreeViewScrolled(ScrollableViewport),
+    SelectDeselectNode(NodeId),
+    SelectNode(NodeId),
+    DeselectNode(NodeId),
     Root(NodeId),
     Unroot,
     OpenFile,
@@ -273,6 +284,7 @@ impl TreeView {
                 self.cnv_y0 = vp.absolute_offset().y;
                 self.cnv_y1 = self.cnv_y0 + vp.bounds().height;
                 self.tip_labels_geom_cache.clear();
+                self.selected_nodes_geom_cache.clear();
                 self.pointer_geom_cache.clear();
                 Task::none()
             }
@@ -280,6 +292,7 @@ impl TreeView {
             TreeViewMsg::TipLabelVisibilityChanged(state) => {
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
+                self.selected_nodes_geom_cache.clear();
                 self.pointer_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
                 self.draw_tip_labels_selection = state;
@@ -295,6 +308,7 @@ impl TreeView {
             TreeViewMsg::TipLabelSizeSelectionChanged(idx) => {
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
+                self.selected_nodes_geom_cache.clear();
                 self.pointer_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
                 self.selected_tip_label_size_idx = idx;
@@ -311,10 +325,6 @@ impl TreeView {
             }
 
             TreeViewMsg::NodeSizeSelectionChanged(idx) => {
-                self.edge_geom_cache.clear();
-                self.tip_labels_geom_cache.clear();
-                self.pointer_geom_cache.clear();
-                self.int_labels_geom_cache.clear();
                 self.selected_node_size_idx = idx;
                 self.update_node_size();
                 Task::none()
@@ -324,6 +334,7 @@ impl TreeView {
                 if node_ordering_option != self.selected_node_ordering_option.unwrap() {
                     self.edge_geom_cache.clear();
                     self.tip_labels_geom_cache.clear();
+                    self.selected_nodes_geom_cache.clear();
                     self.pointer_geom_cache.clear();
                     self.int_labels_geom_cache.clear();
                     self.selected_node_ordering_option = Some(node_ordering_option);
@@ -346,22 +357,37 @@ impl TreeView {
             },
 
             TreeViewMsg::WindowResized(w, h) => {
-                self.edge_geom_cache.clear();
-                self.tip_labels_geom_cache.clear();
-                self.pointer_geom_cache.clear();
-                self.int_labels_geom_cache.clear();
                 self.window_w = w;
                 self.window_h = h;
                 self.update_node_size();
                 Task::none()
             }
 
-            TreeViewMsg::Root(node_id) => {
-                let mut tree_to_root = self.tree.clone();
-                let rslt = tree_to_root.root(node_id);
+            TreeViewMsg::SelectDeselectNode(node_id) => {
+                if self.selected_node_ids.contains(&node_id) {
+                    Task::done(TreeViewMsg::DeselectNode(node_id))
+                } else {
+                    Task::done(TreeViewMsg::SelectNode(node_id))
+                }
+            }
 
+            TreeViewMsg::SelectNode(node_id) => {
+                self.selected_node_ids.insert(node_id);
+                self.selected_nodes_geom_cache.clear();
+                Task::none()
+            }
+
+            TreeViewMsg::DeselectNode(node_id) => {
+                self.selected_node_ids.remove(&node_id);
+                self.selected_nodes_geom_cache.clear();
+                Task::none()
+            }
+
+            TreeViewMsg::Root(node_id) => {
+                let mut tree = self.tree.clone();
+                let rslt = tree.root(node_id);
                 match rslt {
-                    Ok(_) => Task::done(TreeViewMsg::TreeUpdated(tree_to_root)),
+                    Ok(_) => Task::done(TreeViewMsg::TreeUpdated(tree)),
                     Err(err) => {
                         println!("{err}");
                         Task::none()
@@ -376,9 +402,11 @@ impl TreeView {
 
             TreeViewMsg::TreeUpdated(tree) => {
                 self.drawing_enabled = false;
+                self.selected_node_ids.clear();
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
                 self.pointer_geom_cache.clear();
+                self.selected_nodes_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
                 self.tree_original = tree;
                 self.tree_srtd_asc = None;
@@ -458,7 +486,17 @@ impl TreeView {
                     true => Some(TreeViewMsg::Unroot),
                     false => None,
                 }),
-                button("Root").on_press_maybe(None)
+                button("Root").on_press_maybe({
+                    if self.selected_node_ids.len() == 1 {
+                        let node_id = *self.selected_node_ids.iter().last().unwrap();
+                        match self.tree.can_root(node_id) {
+                            true => Some(TreeViewMsg::Root(node_id)),
+                            false => None,
+                        }
+                    } else {
+                        None
+                    }
+                }),
             ]
             .align_y(Vertical::Center)
             .width(Length::Fill)

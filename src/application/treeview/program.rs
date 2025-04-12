@@ -1,15 +1,12 @@
-use super::{TreeView, TreeViewMsg, TreeViewState};
+use super::{TreeView, TreeViewMsg, TreeViewState, drawables::NodePoint};
 use crate::{ColorSimple, NodeType, PADDING, SF};
-use dendros::Edge;
-use iced::border::Radius;
-use iced::widget::canvas::{Path, stroke};
 use iced::{
-    Event, Rectangle, Renderer, Theme,
+    Event, Rectangle, Renderer, Size, Theme, Vector,
+    border::Radius,
     mouse::{Cursor, Event as MouseEvent, Interaction},
-    widget::canvas::{Action, Geometry, Program, Stroke},
+    widget::canvas::{Action, Geometry, Path, Program, Stroke, stroke},
     window::Event as WinEvent,
 };
-use iced::{Point, Size, Vector};
 
 impl Program<TreeViewMsg> for TreeView {
     type State = TreeViewState;
@@ -58,8 +55,8 @@ impl Program<TreeViewMsg> for TreeView {
                 iced::mouse::Button::Left => {
                     if state.mouse_hovering_node {
                         if let Some(hovered_node) = &state.closest_node_point {
-                            return Some(Action::publish(TreeViewMsg::Root(
-                                hovered_node.1.node_id,
+                            return Some(Action::publish(TreeViewMsg::SelectDeselectNode(
+                                hovered_node.edge.node_id,
                             )));
                         }
                     }
@@ -87,24 +84,31 @@ impl Program<TreeViewMsg> for TreeView {
                     mouse_pt.x -= state.ps;
                     mouse_pt.y -= self.max_label_size;
 
-                    let closest_pt: Option<&(Point, Edge)> = state
-                        .visible_nodes
-                        .iter()
-                        .min_by(|&a, &b| mouse_pt.distance(a.0).total_cmp(&mouse_pt.distance(b.0)));
+                    let closest_pt: Option<&NodePoint> =
+                        state.visible_nodes.iter().min_by(|&a, &b| {
+                            mouse_pt
+                                .distance(a.point)
+                                .total_cmp(&mouse_pt.distance(b.point))
+                        });
 
-                    if let Some((pnt, edge)) = closest_pt {
-                        if mouse_pt.distance(*pnt) <= SF * 9e0 {
+                    if let Some(NodePoint { point, edge }) = closest_pt {
+                        if mouse_pt.distance(*point) <= SF * 9e0 {
                             state.mouse_hovering_node = true;
                             if state.closest_node_point.is_none()
-                                || state.closest_node_point.clone().unwrap().1.node_id
+                                || state.closest_node_point.clone().unwrap().edge.node_id
                                     != edge.node_id
                             {
-                                // println!("{}", edge.name.clone().unwrap_or_default());
                                 self.pointer_geom_cache.clear();
-                                state.closest_node_point = Some((*pnt, edge.clone()));
+                                state.closest_node_point = Some(NodePoint {
+                                    point: *point,
+                                    edge: edge.clone(),
+                                });
                                 Some(Action::request_redraw())
                             } else {
-                                state.closest_node_point = Some((*pnt, edge.clone()));
+                                state.closest_node_point = Some(NodePoint {
+                                    point: *point,
+                                    edge: edge.clone(),
+                                });
                                 None
                             }
                         } else {
@@ -118,6 +122,9 @@ impl Program<TreeViewMsg> for TreeView {
                         None
                     }
                 } else {
+                    state.mouse_hovering_node = false;
+                    state.closest_node_point = None;
+                    self.pointer_geom_cache.clear();
                     None
                 }
             }
@@ -185,10 +192,45 @@ impl Program<TreeViewMsg> for TreeView {
                             });
                     geoms.push(g_tip_labels);
                 }
+
+                let g_selected_nodes =
+                    self.selected_nodes_geom_cache
+                        .draw(renderer, state.clip_rect.size(), |f| {
+                            let stroke = Stroke {
+                                width: SF,
+                                line_cap: stroke::LineCap::Square,
+                                line_join: stroke::LineJoin::Round,
+                                style: ColorSimple::RED.into(),
+                                ..Default::default()
+                            };
+                            f.with_save(|f| {
+                                f.translate(Vector {
+                                    x: SF - state.ps / 2e0,
+                                    y: SF + self.max_label_size / 2e0 - state.ps / 2e0,
+                                });
+                                let path = Path::new(|p| {
+                                    for NodePoint { point, edge } in &state.visible_nodes {
+                                        for node_id in &self.selected_node_ids {
+                                            if edge.node_id == *node_id {
+                                                p.rounded_rectangle(
+                                                    *point,
+                                                    Size::new(state.ps, state.ps),
+                                                    Radius::new(state.ps),
+                                                );
+                                            }
+                                        }
+                                    }
+                                });
+                                f.fill(&path, ColorSimple::YEL.scale_alpha(0.75));
+                                f.stroke(&path, stroke);
+                            });
+                        });
+                geoms.push(g_selected_nodes);
+
                 let g_pointer =
                     self.pointer_geom_cache
                         .draw(renderer, state.clip_rect.size(), |f| {
-                            if let Some((pnt, _)) = &state.closest_node_point {
+                            if let Some(NodePoint { point, edge: _ }) = &state.closest_node_point {
                                 f.with_save(|f| {
                                     f.translate(Vector {
                                         x: SF - state.ps / 2e0,
@@ -196,7 +238,7 @@ impl Program<TreeViewMsg> for TreeView {
                                     });
                                     let path = Path::new(|p| {
                                         p.rounded_rectangle(
-                                            *pnt,
+                                            *point,
                                             Size::new(state.ps, state.ps),
                                             Radius::new(state.ps),
                                         );

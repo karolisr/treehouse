@@ -1,14 +1,13 @@
-use super::drawables::IndexRange;
+use super::drawables::{IndexRange, NodePoint};
 use crate::{Float, SF, TREE_LAB_FONT_NAME};
-use dendros::Edge;
-use iced::{Point, Rectangle, alignment::Vertical, widget::canvas::Text};
+use iced::{Rectangle, alignment::Vertical, widget::canvas::Text};
 
 pub struct TreeViewState {
     pub(super) tree_label_template: Text,
     pub(super) tip_idx_range: Option<IndexRange>,
-    pub(super) visible_nodes: Vec<(Point, Edge)>,
+    pub(super) visible_nodes: Vec<NodePoint>,
     pub(super) ps: Float,
-    pub(super) closest_node_point: Option<(Point, Edge)>,
+    pub(super) closest_node_point: Option<NodePoint>,
     pub(super) mouse_hovering_node: bool,
     pub(super) clip_rect: Rectangle,
     pub(super) tree_rect: Rectangle,
