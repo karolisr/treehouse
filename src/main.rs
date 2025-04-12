@@ -49,14 +49,15 @@ pub fn text_width(s: &str, font_size: f32, line_height: f32) -> f32 {
     let mut buffer = buffer.borrow_with(&mut font_system);
     let mut attrs = Attrs::new();
     attrs.family = Family::Name(TREE_LAB_FONT_NAME);
-    buffer.set_text(s, attrs, Shaping::Basic);
+    buffer.set_text(s, &attrs, Shaping::Basic);
     buffer.line_layout(0).unwrap().first().unwrap().w
 }
 
 fn main() -> iced::Result {
-    iced::daemon(App::title, App::update, App::view)
+    iced::daemon(App::new, App::update, App::view)
+        .title(App::title)
         .subscription(App::subscription)
         .antialiasing(false)
         .scale_factor(App::scale_factor)
-        .run_with(App::new)
+        .run()
 }
