@@ -1,5 +1,8 @@
 use super::NodeOrderingOption;
-use crate::{Edge, Edges, Float, NodeId, Tree, app::SF};
+use crate::{
+    Edge, Edges, Float, NodeId, Tree,
+    app::{PADDING, SCROLL_BAR_W, SF, SIDE_COL_W},
+};
 use iced::{
     widget::{canvas::Cache, scrollable::Viewport as ScrollableViewport},
     window::Id as WinId,
@@ -14,20 +17,25 @@ pub struct TreeView {
     pub selected_node_ordering_option: Option<NodeOrderingOption>,
     pub drawing_enabled: bool,
 
+    pub has_brlen: bool,
     pub node_count: usize,
     pub tip_count: usize,
     pub int_node_count: usize,
 
+    pub window_w: Float,
+    pub window_h: Float,
+
+    pub canvas_w: Float,
     pub canvas_h: Float,
     pub cnv_y0: Float,
     pub cnv_y1: Float,
 
-    pub window_w: Float,
-    pub window_h: Float,
+    pub not_canvas_w: Float,
 
     pub min_label_size: Float,
     pub max_label_size: Float,
     pub tip_label_size: Float,
+    pub branch_label_size: Float,
     pub int_label_size: Float,
 
     pub max_count_of_tip_labels_to_draw: usize,
@@ -35,6 +43,7 @@ pub struct TreeView {
     pub min_label_size_idx: u8,
     pub max_label_size_idx: u8,
     pub selected_tip_label_size_idx: u8,
+    pub selected_branch_label_size_idx: u8,
     pub selected_int_label_size_idx: u8,
 
     pub available_vertical_space: Float,
@@ -46,19 +55,22 @@ pub struct TreeView {
     pub max_node_size_idx: u8,
     pub selected_node_size_idx: u8,
 
-    pub tip_labels_w_scale_factor: Float,
+    pub extra_space_for_labels: Float,
     pub tip_label_w: Float,
-    pub tip_label_offset: Float,
-    pub int_label_offset: Float,
+    pub tip_label_offset_x: Float,
+    pub branch_label_offset_y: Float,
+    pub int_label_offset_x: Float,
 
-    pub draw_tip_labels_allowed: bool,
-    pub draw_tip_labels_selection: bool,
-    pub draw_int_labels_selection: bool,
+    pub draw_tip_branch_labels_allowed: bool,
+    pub draw_tip_labels: bool,
+    pub draw_int_labels: bool,
+    pub draw_branch_labels: bool,
 
     pub pointer_geom_cache: Cache,
     pub selected_nodes_geom_cache: Cache,
     pub edge_geom_cache: Cache,
     pub tip_labels_geom_cache: Cache,
+    pub branch_labels_geom_cache: Cache,
     pub int_labels_geom_cache: Cache,
 
     pub tree: Tree,
@@ -73,6 +85,7 @@ pub struct TreeView {
     pub tree_srtd_desc_chunked_edges: Option<Vec<Edges>>,
 
     pub selected_node_ids: HashSet<NodeId>,
+    pub tallest_tips: Vec<Edge>,
 }
 
 impl TreeView {
@@ -81,44 +94,49 @@ impl TreeView {
             threads: 1,
             selected_node_ordering_option: Some(NodeOrderingOption::Unordered),
 
-            canvas_h: SF,
-            cnv_y0: SF,
-            cnv_y1: SF,
-
             window_w: SF,
             window_h: SF,
 
-            min_node_size_idx: 1,
-            min_label_size_idx: 1,
-            max_node_size_idx: 24,
-            max_label_size_idx: 24,
-
-            selected_node_size_idx: 1,
-
-            tip_label_size: SF * 5e0,
-            selected_tip_label_size_idx: 5,
-
-            int_label_size: SF * 8e0,
-            selected_int_label_size_idx: 8,
+            canvas_w: SF,
+            not_canvas_w: SIDE_COL_W + SCROLL_BAR_W + PADDING * 2e0 + SF,
+            canvas_h: SF,
+            cnv_y0: SF,
+            cnv_y1: SF,
+            available_vertical_space: SF,
 
             node_size: SF,
             min_node_size: SF,
             max_node_size: SF,
+
+            min_node_size_idx: 1,
+            max_node_size_idx: 24,
+            min_label_size_idx: 1,
+            max_label_size_idx: 24,
+            selected_node_size_idx: 1,
+
+            draw_tip_branch_labels_allowed: false,
+            draw_tip_labels: true,
+            draw_branch_labels: false,
+            draw_int_labels: false,
+
+            tip_label_size: SF * 12e0,
+            selected_tip_label_size_idx: 12,
+            tip_label_offset_x: SF * 3e0,
+            extra_space_for_labels: SF,
+            tip_label_w: SF,
+
+            branch_label_size: SF * 8e0,
+            selected_branch_label_size_idx: 8,
+            branch_label_offset_y: SF * -1e0,
+
+            int_label_size: SF * 1e1,
+            selected_int_label_size_idx: 10,
+            int_label_offset_x: SF * 3e0,
+
             min_label_size: SF * 1e0,
             max_label_size: SF * 24e0,
 
             max_count_of_tip_labels_to_draw: 200,
-
-            available_vertical_space: SF,
-
-            tip_labels_w_scale_factor: 1e0,
-            tip_label_w: SF,
-            tip_label_offset: SF * 3e0,
-            int_label_offset: SF * 3e0,
-
-            draw_tip_labels_allowed: false,
-            draw_tip_labels_selection: true,
-            draw_int_labels_selection: false,
 
             ..Default::default()
         }
@@ -132,10 +150,12 @@ pub enum TreeViewMsg {
     NodeOrderingOptionChanged(NodeOrderingOption),
     WindowResized(Float, Float),
     NodeSizeSelectionChanged(u8),
-    TipLabelSizeSelectionChanged(u8),
-    IntLabelSizeSelectionChanged(u8),
     TipLabelVisibilityChanged(bool),
+    TipLabelSizeSelectionChanged(u8),
+    BranchLabelVisibilityChanged(bool),
+    BranchLabelSizeSelectionChanged(u8),
     IntLabelVisibilityChanged(bool),
+    IntLabelSizeSelectionChanged(u8),
     TreeViewScrolled(ScrollableViewport),
     SelectDeselectNode(NodeId),
     SelectNode(NodeId),

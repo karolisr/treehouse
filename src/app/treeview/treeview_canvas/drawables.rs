@@ -1,7 +1,8 @@
 use super::super::TreeView;
-use crate::{Edge, Float, NodeType};
+use crate::{Edge, Float};
 use iced::{
     Point,
+    alignment::{Horizontal, Vertical},
     widget::canvas::{Path, Text, path::Builder as PathBuilder},
 };
 use std::{
@@ -28,7 +29,107 @@ pub struct NodePoint {
 }
 
 impl TreeView {
-    pub fn visible_tip_range(&self) -> Option<IndexRange> {
+    pub fn paths_from_chunks(&self, tree_rect_width: Float, tree_rect_height: Float) -> Vec<Path> {
+        let mut paths: Vec<Path> = Vec::with_capacity(self.node_count);
+        thread::scope(|thread_scope| {
+            let mut handles: Vec<ScopedJoinHandle<'_, Path>> = Vec::new();
+            for chunk in &self.tree_chunked_edges {
+                let handle = thread_scope.spawn(move || {
+                    let mut path_builder = PathBuilder::new();
+                    for edge in chunk {
+                        let x0 = edge.x0 as Float * tree_rect_width;
+                        let x1 = edge.x1 as Float * tree_rect_width;
+                        let y = edge.y as Float * tree_rect_height;
+                        let pt_node = Point::new(x1, y);
+                        path_builder.move_to(pt_node);
+                        path_builder.line_to(Point::new(x0, y));
+                        if let Some(y_parent) = edge.y_parent {
+                            path_builder
+                                .line_to(Point::new(x0, y_parent as Float * tree_rect_height))
+                        };
+                    }
+                    path_builder.build()
+                });
+                handles.push(handle);
+            }
+            for j in handles {
+                let path = j.join().unwrap();
+                paths.push(path);
+            }
+        });
+        paths
+    }
+
+    pub fn tip_labels_in_range(
+        &self,
+        tree_rect_width: Float,
+        tree_rect_height: Float,
+        idx_0: usize,
+        idx_1: usize,
+        label_template: &Text,
+    ) -> Vec<Text> {
+        let mut labels: Vec<Text> = Vec::with_capacity(idx_1 - idx_0);
+        for edge in &self.tree_tip_edges[idx_0..=idx_1] {
+            let x1 = edge.x1 as Float * tree_rect_width;
+            let y = edge.y as Float * tree_rect_height;
+            let pt_node = Point::new(x1, y);
+            if let Some(name) = &edge.name {
+                let mut label = label_template.clone();
+                label.content = name.deref().into();
+                label.position = pt_node;
+                labels.push(label);
+            }
+        }
+        labels
+    }
+
+    pub fn visible_int_node_labels(
+        &self,
+        _tree_rect_width: Float,
+        _tree_rect_height: Float,
+        visible_nodes: &Vec<NodePoint>,
+        label_template: &Text,
+    ) -> Vec<Text> {
+        let mut labels: Vec<Text> = Vec::with_capacity(visible_nodes.len());
+        for NodePoint { point, edge } in visible_nodes {
+            if edge.is_tip {
+                continue;
+            }
+            if let Some(name) = &edge.name {
+                let mut label = label_template.clone();
+                label.content = name.deref().into();
+                label.position = *point;
+                labels.push(label);
+            }
+        }
+        labels
+    }
+
+    pub fn visible_branch_labels(
+        &self,
+        tree_rect_width: Float,
+        _tree_rect_height: Float,
+        visible_nodes: &Vec<NodePoint>,
+        label_template: &Text,
+    ) -> Vec<Text> {
+        let mut labels: Vec<Text> = Vec::with_capacity(visible_nodes.len());
+        for NodePoint { point, edge } in visible_nodes {
+            if edge.parent_node_id.is_none() {
+                continue;
+            }
+            let mut pt_node = *point;
+            pt_node.x -= edge.brlen_normalized as Float * tree_rect_width / 2e0;
+            let mut label = label_template.clone();
+            label.content = format!("{:.3}", edge.brlen);
+            label.position = pt_node;
+            label.align_x = Horizontal::Center;
+            label.align_y = Vertical::Bottom;
+            labels.push(label);
+        }
+        labels
+    }
+
+    pub fn visible_tip_idx_range(&self) -> Option<IndexRange> {
         let tip_idx_0: i64 = (self.cnv_y0 / self.node_size) as i64 - 3;
         let tip_idx_1: i64 = (self.cnv_y1 / self.node_size) as i64 + 3;
         let tip_idx_0: usize = tip_idx_0.max(0) as usize;
@@ -41,6 +142,28 @@ impl TreeView {
             })
         } else {
             None
+        }
+    }
+
+    pub fn visible_node_ranges(&self, tip_idx_range: &IndexRange) -> ChunkEdgeRange {
+        let idx_0 = &self.tree_tip_edges[tip_idx_range.b];
+        let idx_1 = &self.tree_tip_edges[tip_idx_range.e];
+
+        let chnk_idx_0 = idx_0.chunk_idx;
+        let edge_idx_0 = idx_0.edge_idx;
+
+        let chnk_idx_1 = idx_1.chunk_idx;
+        let edge_idx_1 = idx_1.edge_idx;
+
+        ChunkEdgeRange {
+            chnk: IndexRange {
+                b: chnk_idx_0,
+                e: chnk_idx_1,
+            },
+            edge: IndexRange {
+                b: edge_idx_0,
+                e: edge_idx_1,
+            },
         }
     }
 
@@ -102,130 +225,5 @@ impl TreeView {
             }
         }
         points
-    }
-
-    pub fn visible_node_ranges(&self, tip_idx_range: &IndexRange) -> ChunkEdgeRange {
-        let idx_0 = &self.tree_tip_edges[tip_idx_range.b];
-        let idx_1 = &self.tree_tip_edges[tip_idx_range.e];
-
-        let chnk_idx_0 = idx_0.chunk_idx;
-        let edge_idx_0 = idx_0.edge_idx;
-
-        let chnk_idx_1 = idx_1.chunk_idx;
-        let edge_idx_1 = idx_1.edge_idx;
-
-        // println!(
-        //     "({:6}:{:6}|{:6}:{:6})",
-        //     chnk_idx_0, edge_idx_0, chnk_idx_1, edge_idx_1
-        // );
-
-        ChunkEdgeRange {
-            chnk: IndexRange {
-                b: chnk_idx_0,
-                e: chnk_idx_1,
-            },
-            edge: IndexRange {
-                b: edge_idx_0,
-                e: edge_idx_1,
-            },
-        }
-    }
-
-    pub fn paths_from_chunks(&self, width: Float, height: Float) -> Vec<Path> {
-        let mut paths: Vec<Path> = Vec::with_capacity(self.node_count);
-        thread::scope(|thread_scope| {
-            let mut handles: Vec<ScopedJoinHandle<'_, Path>> = Vec::new();
-            for chunk in &self.tree_chunked_edges {
-                let handle = thread_scope.spawn(move || {
-                    let mut path_builder = PathBuilder::new();
-                    for edge in chunk {
-                        let x0 = edge.x0 as Float * width;
-                        let x1 = edge.x1 as Float * width;
-                        let y = edge.y as Float * height;
-                        let pt_node = Point::new(x1, y);
-                        path_builder.move_to(pt_node);
-                        path_builder.line_to(Point::new(x0, y));
-                        if let Some(y_parent) = edge.y_parent {
-                            path_builder.line_to(Point::new(x0, y_parent as Float * height))
-                        };
-                    }
-                    path_builder.build()
-                });
-                handles.push(handle);
-            }
-            for j in handles {
-                let path = j.join().unwrap();
-                paths.push(path);
-            }
-        });
-        paths
-    }
-
-    pub fn tip_labels_in_range(
-        &self,
-        width: Float,
-        height: Float,
-        idx_0: usize,
-        idx_1: usize,
-        label_template: &Text,
-    ) -> Vec<Text> {
-        let mut labels: Vec<Text> = Vec::with_capacity(idx_1 - idx_0);
-        for edge in &self.tree_tip_edges[idx_0..=idx_1] {
-            let x1 = edge.x1 as Float * width;
-            let y = edge.y as Float * height;
-            let pt_node = Point::new(x1, y);
-            if let Some(name) = &edge.name {
-                let mut label = label_template.clone();
-                label.content = name.deref().into();
-                label.position = pt_node;
-                labels.push(label);
-            }
-        }
-        labels
-    }
-
-    pub fn labels_from_chunks(
-        &self,
-        width: Float,
-        height: Float,
-        return_only: NodeType,
-        label_template: &Text,
-    ) -> Vec<Text> {
-        let mut labels: Vec<Text> = Vec::with_capacity(self.tip_count);
-        thread::scope(|thread_scope| {
-            let mut handles: Vec<ScopedJoinHandle<'_, Vec<Text>>> = Vec::new();
-            for chunk in &self.tree_chunked_edges {
-                let handle = thread_scope.spawn(move || {
-                    let mut labels_l: Vec<Text> = Vec::with_capacity(chunk.len());
-                    for edge in chunk {
-                        let should_include = match return_only {
-                            NodeType::Tip => edge.is_tip,
-                            NodeType::Internal => !edge.is_tip,
-                            NodeType::FirstNode => !edge.is_tip,
-                            NodeType::Root => !edge.is_tip,
-                            NodeType::Unset => !edge.is_tip,
-                        };
-                        if should_include {
-                            let x1 = edge.x1 as Float * width;
-                            let y = edge.y as Float * height;
-                            let pt_node = Point::new(x1, y);
-                            if let Some(name) = &edge.name {
-                                let mut label = label_template.clone();
-                                label.content = name.deref().into();
-                                label.position = pt_node;
-                                labels_l.push(label);
-                            }
-                        }
-                    }
-                    labels_l
-                });
-                handles.push(handle);
-            }
-            for j in handles {
-                let mut labels_l = j.join().unwrap();
-                labels.append(&mut labels_l);
-            }
-        });
-        labels
     }
 }

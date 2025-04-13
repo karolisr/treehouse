@@ -7,9 +7,8 @@ use crate::{
 
 impl TreeView {
     fn update_tip_label_w(&mut self) {
-        if self.draw_tip_labels_allowed && self.draw_tip_labels_selection {
-            self.tip_label_w =
-                self.tip_labels_w_scale_factor * self.tip_label_size + self.tip_label_offset;
+        if self.draw_tip_branch_labels_allowed && self.draw_tip_labels {
+            self.tip_label_w = self.extra_space_for_labels + self.tip_label_offset_x;
         } else {
             self.tip_label_w = 0e0;
         }
@@ -48,29 +47,48 @@ impl TreeView {
             self.node_size = self.min_node_size
         }
 
-        self.draw_tip_labels_allowed = (self.available_vertical_space / self.node_size) as usize
+        self.draw_tip_branch_labels_allowed = (self.available_vertical_space / self.node_size)
+            as usize
             <= self.max_count_of_tip_labels_to_draw;
 
         self.update_tip_label_w();
         self.update_canvas_h();
     }
 
-    pub fn calc_tip_labels_w_scale_factor(&mut self) -> Float {
-        let mut max_tip_height: f64 = 0e0;
-        let mut max_tip_height_name: &str = "";
-        let mut max_tip_height_name_len: usize = 0;
-        for edge in &self.tree_tip_edges {
-            if edge.x1 >= max_tip_height - max_tip_height / 1e1 {
-                max_tip_height = edge.x1;
-                if let Some(name) = &edge.name {
-                    if name.len() > max_tip_height_name_len {
-                        max_tip_height_name = name;
-                        max_tip_height_name_len = name.len();
-                    }
+    pub fn update_tallest_tips(&mut self) {
+        let n = 1;
+        let mut tmp = self.tree_tip_edges.clone();
+        tmp.sort_by(|a, b| a.x1.total_cmp(&b.x1));
+        self.tallest_tips = tmp[tmp.len() - n..tmp.len()].to_vec();
+        tmp.sort_by(|a, b| {
+            a.name
+                .clone()
+                .map(|n| n.len())
+                .cmp(&b.name.clone().map(|n| n.len()))
+        });
+        self.tallest_tips
+            .append(&mut tmp[tmp.len() - n..tmp.len()].to_vec());
+    }
+
+    pub fn update_extra_space_for_labels(&mut self) {
+        let mut w: Float = 0e0;
+        let avail = self.canvas_w;
+        for edge in &self.tallest_tips {
+            if let Some(name) = &edge.name {
+                let x_offset = edge.x1 as Float * avail;
+                let tip_name_w = text_width(
+                    name,
+                    self.tip_label_size,
+                    self.tip_label_size,
+                    TREE_LAB_FONT_NAME,
+                );
+                let new = (tip_name_w + x_offset) - avail;
+                if new >= w {
+                    w = new;
                 }
             }
         }
-        text_width(max_tip_height_name, 1e0, 1e0, TREE_LAB_FONT_NAME)
+        self.extra_space_for_labels = w;
     }
 
     pub fn merge_tip_chunks(&mut self) {
@@ -100,6 +118,7 @@ impl TreeView {
                     }
                 };
             }
+
             NodeOrderingOption::Ascending => match &self.tree_srtd_asc {
                 Some(tree_srtd_asc) => {
                     self.tree = tree_srtd_asc.clone();

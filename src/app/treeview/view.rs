@@ -1,5 +1,5 @@
 use super::{TreeView, TreeViewMsg};
-use crate::app::{LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, TEXT_SIZE};
+use crate::app::{LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, SIDE_COL_W, TEXT_SIZE};
 use iced::{
     Alignment, Border, Color, Element, Font, Length, Pixels,
     alignment::{Horizontal, Vertical},
@@ -70,14 +70,22 @@ impl TreeView {
         side_col = side_col.push(self.horizontal_rule(SF));
         side_col = side_col.push(self.horizontal_space(0, PADDING));
 
-        side_col = side_col.push(self.tip_labels_toggler(self.draw_tip_labels_allowed));
-        if self.draw_tip_labels_allowed && self.draw_tip_labels_selection {
+        side_col = side_col.push(self.tip_labels_toggler(self.draw_tip_branch_labels_allowed));
+        if self.draw_tip_branch_labels_allowed && self.draw_tip_labels {
             side_col = side_col.push(self.tip_labels_size_slider());
         }
 
         side_col = side_col.push(self.horizontal_space(0, PADDING));
+        side_col = side_col.push(
+            self.branch_labels_toggler(self.has_brlen && self.draw_tip_branch_labels_allowed),
+        );
+        if self.has_brlen && self.draw_tip_branch_labels_allowed && self.draw_branch_labels {
+            side_col = side_col.push(self.branch_labels_size_slider());
+        }
+
+        side_col = side_col.push(self.horizontal_space(0, PADDING));
         side_col = side_col.push(self.int_labels_toggler(true));
-        if self.draw_int_labels_selection {
+        if self.draw_int_labels {
             side_col = side_col.push(self.int_labels_size_slider());
         }
 
@@ -122,7 +130,7 @@ impl TreeView {
             .spacing(PADDING),
         );
 
-        side_col = side_col.width(Length::Fixed(SF * 2e2));
+        side_col = side_col.width(Length::Fixed(SIDE_COL_W));
 
         match self.selected_node_size_idx {
             idx if idx == self.min_node_size_idx => {
@@ -167,16 +175,23 @@ impl TreeView {
     }
 
     fn tip_labels_toggler(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
-        let mut tgl = self.apply_toggler_settings("Tip Labels", self.draw_tip_labels_selection);
+        let mut tgl = self.apply_toggler_settings("Tip Labels", self.draw_tip_labels);
         if enabled {
             tgl = tgl.on_toggle(TreeViewMsg::TipLabelVisibilityChanged);
         }
         tgl
     }
 
+    fn branch_labels_toggler(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
+        let mut tgl = self.apply_toggler_settings("Branch Lengths", self.draw_branch_labels);
+        if enabled {
+            tgl = tgl.on_toggle(TreeViewMsg::BranchLabelVisibilityChanged);
+        }
+        tgl
+    }
+
     fn int_labels_toggler(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
-        let mut tgl =
-            self.apply_toggler_settings("Internal Labels", self.draw_int_labels_selection);
+        let mut tgl = self.apply_toggler_settings("Internal Labels", self.draw_int_labels);
         if enabled {
             tgl = tgl.on_toggle(TreeViewMsg::IntLabelVisibilityChanged);
         }
@@ -199,6 +214,17 @@ impl TreeView {
             self.min_label_size_idx..=self.max_label_size_idx,
             self.selected_tip_label_size_idx,
             TreeViewMsg::TipLabelSizeSelectionChanged,
+        );
+        sldr = sldr.step(1);
+        sldr = sldr.shift_step(2);
+        self.apply_slider_settings(sldr)
+    }
+
+    fn branch_labels_size_slider(&self) -> Slider<u8, TreeViewMsg> {
+        let mut sldr: Slider<u8, TreeViewMsg> = Slider::new(
+            self.min_label_size_idx..=self.max_label_size_idx,
+            self.selected_branch_label_size_idx,
+            TreeViewMsg::BranchLabelSizeSelectionChanged,
         );
         sldr = sldr.step(1);
         sldr = sldr.shift_step(2);

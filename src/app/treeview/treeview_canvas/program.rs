@@ -3,7 +3,7 @@ use super::{
     NodePoint, TreeViewState,
 };
 use crate::{
-    ColorSimple, NodeType,
+    ColorSimple,
     app::{PADDING, SF},
 };
 use iced::{
@@ -36,12 +36,18 @@ impl Program<TreeViewMsg> for TreeView {
 
                     state.tree_rect = Rectangle {
                         x: state.clip_rect.x + SF,
-                        y: state.clip_rect.y + SF + self.max_label_size / 2e0,
+                        y: state.clip_rect.y
+                            + SF
+                            + self.max_label_size
+                            + self.branch_label_offset_y,
                         width: state.clip_rect.width - SF * 2e0 - self.tip_label_w,
-                        height: state.clip_rect.height - SF * 2e0 - self.max_label_size,
+                        height: state.clip_rect.height
+                            - SF * 2e0
+                            - self.max_label_size * 2e0
+                            - self.branch_label_offset_y * 2e0,
                     };
 
-                    state.tip_idx_range = self.visible_tip_range();
+                    state.tip_idx_range = self.visible_tip_idx_range();
                     if let Some(tip_idx_range) = &state.tip_idx_range {
                         state.visible_nodes = self.visible_nodes(
                             state.tree_rect.width,
@@ -87,8 +93,8 @@ impl Program<TreeViewMsg> for TreeView {
                         return None;
                     }
 
-                    mouse_pt.x -= state.ps;
-                    mouse_pt.y -= self.max_label_size;
+                    mouse_pt.x += state.tree_rect.x - state.ps;
+                    mouse_pt.y -= state.tree_rect.y + state.ps;
 
                     let closest_pt: Option<&NodePoint> =
                         state.visible_nodes.iter().min_by(|&a, &b| {
@@ -98,7 +104,7 @@ impl Program<TreeViewMsg> for TreeView {
                         });
 
                     if let Some(NodePoint { point, edge }) = closest_pt {
-                        if mouse_pt.distance(*point) <= SF * 9e0 {
+                        if mouse_pt.distance(*point) <= state.ps {
                             state.mouse_hovering_node = true;
                             if state.closest_node_point.is_none()
                                 || state.closest_node_point.clone().unwrap().edge.node_id
@@ -172,12 +178,12 @@ impl Program<TreeViewMsg> for TreeView {
                     };
                     let paths =
                         self.paths_from_chunks(state.tree_rect.width, state.tree_rect.height);
-                    self.draw_edges(paths, stroke, f);
+                    self.draw_edges(paths, stroke, &state.tree_rect, f);
                 });
             geoms.push(g_edges);
 
             if let Some(tip_idx_range) = &state.tip_idx_range {
-                if self.draw_tip_labels_allowed && self.draw_tip_labels_selection {
+                if self.draw_tip_branch_labels_allowed && self.draw_tip_labels {
                     let g_tip_labels =
                         self.tip_labels_geom_cache
                             .draw(renderer, state.clip_rect.size(), |f| {
@@ -191,28 +197,78 @@ impl Program<TreeViewMsg> for TreeView {
                                 self.draw_labels(
                                     labels,
                                     self.tip_label_size,
-                                    self.tip_label_offset,
-                                    state.clip_rect,
+                                    self.tip_label_offset_x,
+                                    0e0,
+                                    &state.tree_rect,
+                                    &state.clip_rect,
                                     f,
                                 );
                             });
                     geoms.push(g_tip_labels);
                 }
 
+                if self.draw_int_labels {
+                    let g_int_labels =
+                        self.int_labels_geom_cache
+                            .draw(renderer, state.clip_rect.size(), |f| {
+                                let labels = self.visible_int_node_labels(
+                                    state.tree_rect.width,
+                                    state.tree_rect.height,
+                                    &state.visible_nodes,
+                                    &state.tree_label_template,
+                                );
+                                self.draw_labels(
+                                    labels,
+                                    self.int_label_size,
+                                    self.int_label_offset_x,
+                                    0e0,
+                                    &state.tree_rect,
+                                    &state.clip_rect,
+                                    f,
+                                );
+                            });
+                    geoms.push(g_int_labels);
+                }
+
+                if self.has_brlen && self.draw_tip_branch_labels_allowed && self.draw_branch_labels
+                {
+                    let g_branch_labels =
+                        self.branch_labels_geom_cache
+                            .draw(renderer, state.clip_rect.size(), |f| {
+                                let labels = self.visible_branch_labels(
+                                    state.tree_rect.width,
+                                    state.tree_rect.height,
+                                    &state.visible_nodes,
+                                    &state.tree_label_template,
+                                );
+                                self.draw_labels(
+                                    labels,
+                                    self.branch_label_size,
+                                    0e0,
+                                    self.branch_label_offset_y,
+                                    &state.tree_rect,
+                                    &state.clip_rect,
+                                    f,
+                                );
+                            });
+                    geoms.push(g_branch_labels);
+                }
+
                 let g_selected_nodes =
                     self.selected_nodes_geom_cache
                         .draw(renderer, state.clip_rect.size(), |f| {
                             let stroke = Stroke {
-                                width: SF,
+                                width: SF * 2e0,
                                 line_cap: stroke::LineCap::Square,
                                 line_join: stroke::LineJoin::Round,
                                 style: ColorSimple::RED.into(),
                                 ..Default::default()
                             };
+                            let ps = state.ps * 0.75;
                             f.with_save(|f| {
                                 f.translate(Vector {
-                                    x: SF - state.ps / 2e0,
-                                    y: SF + self.max_label_size / 2e0 - state.ps / 2e0,
+                                    x: state.tree_rect.x - ps / 2e0,
+                                    y: state.tree_rect.y - ps / 2e0,
                                 });
                                 let path = Path::new(|p| {
                                     for NodePoint { point, edge } in &state.visible_nodes {
@@ -220,8 +276,8 @@ impl Program<TreeViewMsg> for TreeView {
                                             if edge.node_id == *node_id {
                                                 p.rounded_rectangle(
                                                     *point,
-                                                    Size::new(state.ps, state.ps),
-                                                    Radius::new(state.ps),
+                                                    Size::new(ps, ps),
+                                                    Radius::new(ps),
                                                 );
                                             }
                                         }
@@ -237,10 +293,17 @@ impl Program<TreeViewMsg> for TreeView {
                     self.pointer_geom_cache
                         .draw(renderer, state.clip_rect.size(), |f| {
                             if let Some(NodePoint { point, edge: _ }) = &state.closest_node_point {
+                                let stroke = Stroke {
+                                    width: SF,
+                                    line_cap: stroke::LineCap::Square,
+                                    line_join: stroke::LineJoin::Round,
+                                    style: ColorSimple::BLK.scale_alpha(0.65).into(),
+                                    ..Default::default()
+                                };
                                 f.with_save(|f| {
                                     f.translate(Vector {
-                                        x: SF - state.ps / 2e0,
-                                        y: SF + self.max_label_size / 2e0 - state.ps / 2e0,
+                                        x: state.tree_rect.x - state.ps / 2e0,
+                                        y: state.tree_rect.y - state.ps / 2e0,
                                     });
                                     let path = Path::new(|p| {
                                         p.rounded_rectangle(
@@ -249,32 +312,12 @@ impl Program<TreeViewMsg> for TreeView {
                                             Radius::new(state.ps),
                                         );
                                     });
-                                    f.fill(&path, ColorSimple::RED.scale_alpha(0.75));
+                                    f.fill(&path, ColorSimple::BLU.scale_alpha(0.75));
+                                    f.stroke(&path, stroke);
                                 });
                             }
                         });
                 geoms.push(g_pointer);
-            }
-
-            if self.draw_int_labels_selection {
-                let g_int_labels =
-                    self.int_labels_geom_cache
-                        .draw(renderer, state.clip_rect.size(), |f| {
-                            let labels = self.labels_from_chunks(
-                                state.tree_rect.width,
-                                state.tree_rect.height,
-                                NodeType::Internal,
-                                &state.tree_label_template,
-                            );
-                            self.draw_labels(
-                                labels,
-                                self.int_label_size,
-                                self.int_label_offset,
-                                state.clip_rect,
-                                f,
-                            );
-                        });
-                geoms.push(g_int_labels);
             }
 
             geoms

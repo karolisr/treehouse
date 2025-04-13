@@ -28,7 +28,7 @@ impl Default for TreeViewState {
                 ..Default::default()
             },
             tip_idx_range: None,
-            ps: SF * 12e0,
+            ps: SF * 1e1,
             visible_nodes: Vec::new(),
             closest_node_point: None,
             mouse_hovering_node: false,
