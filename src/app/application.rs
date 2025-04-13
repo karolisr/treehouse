@@ -18,7 +18,11 @@ use iced::{
         events, gain_focus, open, open_events,
     },
 };
-use std::{collections::HashMap, fs::read, path::PathBuf};
+use std::{
+    collections::HashMap,
+    fs::read,
+    path::{Path, PathBuf},
+};
 
 #[derive(Default)]
 pub struct App {
@@ -188,7 +192,13 @@ impl App {
                     }
                     #[cfg(debug_assertions)]
                     {
-                        Task::done(AppMsg::Path(id, PathBuf::from("tests/data/tree01.newick")))
+                        let path_buf = PathBuf::from("tests/data/tree01.newick");
+                        let path: &Path = &path_buf.clone().into_boxed_path();
+                        if path.exists() {
+                            Task::done(AppMsg::Path(id, path_buf))
+                        } else {
+                            Task::none()
+                        }
                     }
                 }
                 None => Task::none(),
@@ -228,9 +238,7 @@ impl App {
     }
 
     pub fn new() -> (Self, Task<AppMsg>) {
-        let app = Self {
-            ..Default::default()
-        };
+        let app = Self { ..Default::default() };
         #[cfg(target_os = "macos")]
         register_ns_application_delegate_handlers();
         (app, Task::done(AppMsg::AppInitialized))

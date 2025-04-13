@@ -48,9 +48,6 @@ impl TreeWin {
     }
 
     pub fn new() -> Self {
-        Self {
-            tv: TreeView::new(),
-            ..Default::default()
-        }
+        Self { tv: TreeView::new(), ..Default::default() }
     }
 }

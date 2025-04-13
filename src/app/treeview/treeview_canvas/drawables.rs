@@ -135,14 +135,7 @@ impl TreeView {
         let tip_idx_0: usize = tip_idx_0.max(0) as usize;
         let tip_idx_1: usize = tip_idx_1.min(self.tree_tip_edges.len() as i64 - 1) as usize;
 
-        if tip_idx_0 < tip_idx_1 {
-            Some(IndexRange {
-                b: tip_idx_0,
-                e: tip_idx_1,
-            })
-        } else {
-            None
-        }
+        if tip_idx_0 < tip_idx_1 { Some(IndexRange { b: tip_idx_0, e: tip_idx_1 }) } else { None }
     }
 
     pub fn visible_node_ranges(&self, tip_idx_range: &IndexRange) -> ChunkEdgeRange {
@@ -156,14 +149,8 @@ impl TreeView {
         let edge_idx_1 = idx_1.edge_idx;
 
         ChunkEdgeRange {
-            chnk: IndexRange {
-                b: chnk_idx_0,
-                e: chnk_idx_1,
-            },
-            edge: IndexRange {
-                b: edge_idx_0,
-                e: edge_idx_1,
-            },
+            chnk: IndexRange { b: chnk_idx_0, e: chnk_idx_1 },
+            edge: IndexRange { b: edge_idx_0, e: edge_idx_1 },
         }
     }
 
@@ -174,30 +161,16 @@ impl TreeView {
         tip_idx_range: &IndexRange,
     ) -> Vec<NodePoint> {
         let ChunkEdgeRange {
-            chnk:
-                IndexRange {
-                    b: chnk_idx_0,
-                    e: chnk_idx_1,
-                },
-            edge:
-                IndexRange {
-                    b: edge_idx_0,
-                    e: edge_idx_1,
-                },
+            chnk: IndexRange { b: chnk_idx_0, e: chnk_idx_1 },
+            edge: IndexRange { b: edge_idx_0, e: edge_idx_1 },
         } = self.visible_node_ranges(tip_idx_range);
 
         let mut points: Vec<NodePoint> = Vec::new();
         if chnk_idx_0 == chnk_idx_1 {
             let chunk = &self.tree_chunked_edges[chnk_idx_0];
             for e in &chunk[edge_idx_0..=edge_idx_1] {
-                let point = Point {
-                    x: e.x1 as Float * width,
-                    y: e.y as Float * height,
-                };
-                points.push(NodePoint {
-                    point,
-                    edge: e.clone(),
-                });
+                let point = Point { x: e.x1 as Float * width, y: e.y as Float * height };
+                points.push(NodePoint { point, edge: e.clone() });
             }
         } else {
             for chnk_idx in chnk_idx_0..=chnk_idx_1 {
@@ -213,14 +186,8 @@ impl TreeView {
                 let chunk = &self.tree_chunked_edges[chnk_idx];
 
                 for e in &chunk[edge_range] {
-                    let point = Point {
-                        x: e.x1 as Float * width,
-                        y: e.y as Float * height,
-                    };
-                    points.push(NodePoint {
-                        point,
-                        edge: e.clone(),
-                    });
+                    let point = Point { x: e.x1 as Float * width, y: e.y as Float * height };
+                    points.push(NodePoint { point, edge: e.clone() });
                 }
             }
         }

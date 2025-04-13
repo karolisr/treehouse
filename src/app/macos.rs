@@ -26,9 +26,7 @@ pub fn register_ns_application_delegate_handlers() {
                 let path = unsafe { file.to_str(pool).to_owned() };
                 // -------------------------------------
                 // piggybacking on muda::MenuEvent::send
-                muda::MenuEvent::send(muda::MenuEvent {
-                    id: muda::MenuId(path),
-                });
+                muda::MenuEvent::send(muda::MenuEvent { id: muda::MenuId(path) });
                 // -------------------------------------
             }
         });

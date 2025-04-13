@@ -1,0 +1,16 @@
+edition = "2024"
+
+max_width = 100
+
+struct_lit_width = 60
+array_width = 60
+
+single_line_if_else_max_width = 100
+single_line_let_else_max_width = 100
+
+use_field_init_shorthand = true
+
+remove_nested_parens = true
+
+reorder_modules = true
+reorder_imports = true

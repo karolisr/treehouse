@@ -1,7 +1,7 @@
 use super::super::TreeView;
 use crate::Float;
 use iced::{
-    Pixels, Rectangle, Vector,
+    Pixels, Point, Rectangle, Vector,
     widget::canvas::{Frame, Path, Stroke, Text},
 };
 
@@ -14,33 +14,25 @@ impl TreeView {
         frame: &mut Frame,
     ) {
         frame.with_save(|f| {
-            f.translate(Vector {
-                x: tree_rect.x,
-                y: tree_rect.y,
-            });
+            f.translate(Vector { x: tree_rect.x, y: tree_rect.y });
             for p in paths {
                 f.stroke(&p, stroke);
             }
         })
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub fn draw_labels(
         &self,
         labels: Vec<Text>,
         size: Float,
-        offset_x: Float,
-        offset_y: Float,
+        offset: Point,
         tree_rect: &Rectangle,
         clip: &Rectangle,
         frame: &mut Frame,
     ) {
         let size_pix: Pixels = size.into();
         frame.with_clip(*clip, |f| {
-            f.translate(Vector {
-                x: tree_rect.x + offset_x,
-                y: tree_rect.y + offset_y,
-            });
+            f.translate(Vector { x: tree_rect.x + offset.x, y: tree_rect.y + offset.y });
             for mut l in labels {
                 l.size = size_pix;
                 f.fill_text(l);

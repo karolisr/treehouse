@@ -245,9 +245,7 @@ impl TreeView {
     fn node_ordering_options_pick_list(
         &self,
     ) -> PickList<NodeOrderingOption, &[NodeOrderingOption], NodeOrderingOption, TreeViewMsg> {
-        let h: PickListHandle<Font> = PickListHandle::Arrow {
-            size: Some(Pixels(TEXT_SIZE)),
-        };
+        let h: PickListHandle<Font> = PickListHandle::Arrow { size: Some(Pixels(TEXT_SIZE)) };
 
         let mut pl: PickList<
             NodeOrderingOption,
@@ -284,10 +282,7 @@ impl TreeView {
             match status {
                 PickListStatus::Active => active,
                 PickListStatus::Hovered | PickListStatus::Opened { .. } => PickListStyle {
-                    border: Border {
-                        color: palette.primary.strong.color,
-                        ..active.border
-                    },
+                    border: Border { color: palette.primary.strong.color, ..active.border },
                     ..active
                 },
             }
@@ -448,9 +443,7 @@ impl TreeView {
                     },
                 },
                 handle: SliderHandle {
-                    shape: SliderHandleShape::Circle {
-                        radius: TEXT_SIZE / 1.75,
-                    },
+                    shape: SliderHandleShape::Circle { radius: TEXT_SIZE / 1.75 },
                     background: color.into(),
                     border_color: Color::TRANSPARENT,
                     border_width: 0e0 * SF,
