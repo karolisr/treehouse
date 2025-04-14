@@ -36,18 +36,18 @@ pub fn prepare_app_menu() -> Menu {
         Some(Accelerator::new(Some(Modifiers::META), Code::KeyO)),
     );
 
-    // let menu_item_save = MenuItem::with_id(
-    //     MenuEvent::Save,
-    //     "Save",
-    //     true,
-    //     Some(Accelerator::new(Some(Modifiers::META), Code::KeyS)),
-    // );
+    let menu_item_save = MenuItem::with_id(
+        MenuEvent::SaveAs,
+        "Save As...",
+        true,
+        Some(Accelerator::new(Some(Modifiers::META), Code::KeyS)),
+    );
 
     // submenu_app.append(&menu_item_about).ok();
     submenu_app.append(&menu_item_quit).ok();
 
     submenu_file.append(&menu_item_open).ok();
-    // submenu_file.append(&menu_item_save).ok();
+    submenu_file.append(&menu_item_save).ok();
     submenu_file.append(&menu_item_close_win).ok();
 
     menu.append(&submenu_app).ok();

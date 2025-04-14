@@ -3,7 +3,7 @@ use std::fmt::Display;
 #[derive(Debug, Clone)]
 pub enum MenuEvent {
     OpenFile,
-    Save,
+    SaveAs,
     Quit,
     CloseWindow,
     QuitInternal,
@@ -20,7 +20,7 @@ impl From<String> for MenuEvent {
     fn from(value: String) -> Self {
         match value.as_str() {
             "OpenFile" => MenuEvent::OpenFile,
-            "Save" => MenuEvent::Save,
+            "SaveAs" => MenuEvent::SaveAs,
             "CloseWindow" => MenuEvent::CloseWindow,
             "Quit" => MenuEvent::Quit,
             "QuitInternal" => MenuEvent::QuitInternal,

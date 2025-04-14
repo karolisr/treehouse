@@ -20,7 +20,11 @@ use iced::{
 };
 #[cfg(debug_assertions)]
 use std::path::Path;
-use std::{collections::HashMap, fs::read, path::PathBuf};
+use std::{
+    collections::HashMap,
+    fs::{read, write},
+    path::PathBuf,
+};
 
 #[derive(Default)]
 pub struct App {
@@ -37,7 +41,8 @@ pub enum AppMsg {
     MenuEvent(MenuEvent),
     MenuEventsSender(Sender<MenuEventReplyMsg>),
     OpenWin(AppWinType),
-    Path(WinId, PathBuf),
+    PathToOpen(WinId, PathBuf),
+    PathToSave(WinId, PathBuf),
     TerminateApp,
     TerminationConfirmed,
     Win(WinId, WinEvent),
@@ -80,10 +85,35 @@ impl App {
             }
             AppMsg::OpenWin(win) => open_window(self, win),
             AppMsg::Win(id, e) => match e {
-                WinEvent::FileDropped(path_buf) => Task::done(AppMsg::Path(id, path_buf)),
+                WinEvent::FileDropped(path_buf) => Task::done(AppMsg::PathToOpen(id, path_buf)),
                 _ => Task::none(),
             },
-            AppMsg::Path(id, path_buf) => {
+            AppMsg::PathToSave(id, path_buf) => {
+                let file_type: FileType = match path_buf.extension() {
+                    Some(ext_os_str) => match ext_os_str.to_str() {
+                        Some(ext) => match ext {
+                            "newick" | "tre" => FileType::Newick,
+                            "tree" | "trees" | "nexus" | "nex" => FileType::Nexus,
+                            ext => FileType::Other(ext.to_string()),
+                        },
+                        None => FileType::Exception,
+                    },
+                    None => FileType::Exception,
+                };
+
+                match file_type {
+                    FileType::Other(_) => Task::none(),
+                    FileType::Exception => Task::none(),
+                    file_type => match file_type {
+                        FileType::Newick => {
+                            Task::done(AppMsg::TreeWinMsg(id, TreeWinMsg::SaveNewick(id, path_buf)))
+                        }
+                        FileType::Nexus => Task::none(),
+                        _ => Task::none(),
+                    },
+                }
+            }
+            AppMsg::PathToOpen(id, path_buf) => {
                 let file_type: FileType = match path_buf.extension() {
                     Some(ext_os_str) => match ext_os_str.to_str() {
                         Some(ext) => match ext {
@@ -151,13 +181,13 @@ impl App {
                 let id = iced::window::get_latest();
 
                 match menu_event {
-                    MenuEvent::OpenFile => id.and_then(|id| Task::future(choose_file(id))),
-                    MenuEvent::Save => Task::none(),
+                    MenuEvent::OpenFile => id.and_then(|id| Task::future(choose_file_to_open(id))),
+                    MenuEvent::SaveAs => id.and_then(|id| Task::future(choose_file_to_save(id))),
                     MenuEvent::CloseWindow => close_last_window(self),
                     MenuEvent::Quit => close_last_window(self),
                     MenuEvent::QuitInternal => Task::none(),
                     MenuEvent::Undefined(s) => {
-                        id.and_then(move |id| Task::done(AppMsg::Path(id, s.clone().into())))
+                        id.and_then(move |id| Task::done(AppMsg::PathToOpen(id, s.clone().into())))
                     }
                 }
             }
@@ -168,7 +198,11 @@ impl App {
             AppMsg::TreeWinMsg(id, msg) => {
                 let app_task = match msg {
                     TreeWinMsg::TreeViewMsg(id, TreeViewMsg::OpenFile) => {
-                        Task::future(choose_file(id))
+                        Task::future(choose_file_to_open(id))
+                    }
+                    TreeWinMsg::SaveNewickAck(_id, ref newick_str, ref path_buf) => {
+                        write_text_file(path_buf, newick_str);
+                        Task::none()
                     }
                     _ => Task::none(),
                 };
@@ -193,7 +227,7 @@ impl App {
                         let path_buf = PathBuf::from("tests/data/tree01.newick");
                         let path: &Path = &path_buf.clone().into_boxed_path();
                         if path.exists() {
-                            Task::done(AppMsg::Path(id, path_buf))
+                            Task::done(AppMsg::PathToOpen(id, path_buf))
                         } else {
                             Task::none()
                         }
@@ -299,13 +333,27 @@ fn close_last_window(app: &App) -> Task<AppMsg> {
     }
 }
 
-async fn choose_file(id: WinId) -> AppMsg {
+async fn choose_file_to_open(id: WinId) -> AppMsg {
     let chosen = rfd::AsyncFileDialog::new()
         .add_filter("newick", &["newick", "tre"])
         .add_filter("nexus", &["tree", "trees", "nex", "nexus"])
         .pick_file()
         .await;
-    AppMsg::Path(
+    AppMsg::PathToOpen(
+        id,
+        match chosen {
+            Some(pb) => pb.path().into(),
+            None => PathBuf::new(),
+        },
+    )
+}
+
+async fn choose_file_to_save(id: WinId) -> AppMsg {
+    let chosen = rfd::AsyncFileDialog::new()
+        .add_filter("newick", &["newick", "tre"])
+        .save_file()
+        .await;
+    AppMsg::PathToSave(
         id,
         match chosen {
             Some(pb) => pb.path().into(),
@@ -321,4 +369,12 @@ pub fn read_text_file(path_buf: PathBuf) -> String {
         })
         .unwrap();
     String::from_utf8(data).unwrap()
+}
+
+pub fn write_text_file(path_buf: &PathBuf, s: &str) {
+    write(path_buf, s)
+        .map_err(|e| {
+            eprintln!("IO error: {:?}", e);
+        })
+        .unwrap();
 }
