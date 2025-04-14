@@ -37,6 +37,8 @@ impl TreeView {
             }
 
             TreeViewMsg::TipLabelVisibilityChanged(state) => {
+                #[cfg(debug_assertions)]
+                self.debug_geom_cache.clear();
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
@@ -44,11 +46,19 @@ impl TreeView {
                 self.selected_nodes_geom_cache.clear();
                 self.pointer_geom_cache.clear();
                 self.draw_tip_labels = state;
+                if self.drawing_enabled
+                    && self.draw_tip_branch_labels_allowed
+                    && self.draw_tip_labels
+                {
+                    self.update_extra_space_for_labels();
+                }
                 self.update_node_size();
                 Task::none()
             }
 
             TreeViewMsg::TipLabelSizeSelectionChanged(idx) => {
+                #[cfg(debug_assertions)]
+                self.debug_geom_cache.clear();
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
@@ -96,6 +106,8 @@ impl TreeView {
             }
 
             TreeViewMsg::WindowResized(w, h) => {
+                #[cfg(debug_assertions)]
+                self.debug_geom_cache.clear();
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
@@ -105,7 +117,12 @@ impl TreeView {
                 self.window_w = w;
                 self.window_h = h;
                 self.canvas_w = self.window_w - self.not_canvas_w;
-                self.update_extra_space_for_labels();
+                if self.drawing_enabled
+                    && self.draw_tip_branch_labels_allowed
+                    && self.draw_tip_labels
+                {
+                    self.update_extra_space_for_labels();
+                }
                 self.update_node_size();
                 Task::none()
             }
@@ -149,6 +166,8 @@ impl TreeView {
 
             TreeViewMsg::TreeUpdated(tree) => {
                 self.drawing_enabled = false;
+                #[cfg(debug_assertions)]
+                self.debug_geom_cache.clear();
                 self.selected_node_ids.clear();
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();

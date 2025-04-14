@@ -16,12 +16,14 @@
 
 mod app;
 mod colors;
+mod text_width;
 mod utils;
 
 use app::App;
 pub use colors::ColorSimple;
 pub use dendros::{Edge, Edges, NodeId, NodeType, Tree, TreeFloat, flatten_tree, parse_newick};
-pub use utils::{lerp, text_width};
+pub use text_width::text_width;
+pub use utils::lerp;
 
 pub type Float = f32;
 

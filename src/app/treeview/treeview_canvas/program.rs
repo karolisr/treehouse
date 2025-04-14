@@ -41,10 +41,7 @@ impl Program<TreeViewMsg> for TreeView {
                             + self.max_label_size
                             + self.branch_label_offset_y,
                         width: state.clip_rect.width - SF * 2e0 - self.tip_label_w,
-                        height: state.clip_rect.height
-                            - SF * 2e0
-                            - self.max_label_size * 2e0
-                            - self.branch_label_offset_y * 2e0,
+                        height: state.clip_rect.height - SF * 2e0 - self.max_label_size * 1.5,
                     };
 
                     state.tip_idx_range = self.visible_tip_idx_range();
@@ -156,13 +153,33 @@ impl Program<TreeViewMsg> for TreeView {
         state: &Self::State,
         renderer: &Renderer,
         _theme: &Theme,
-        _bounds: Rectangle,
+        #[cfg(not(debug_assertions))] _bounds: Rectangle,
+        #[cfg(debug_assertions)] bounds: Rectangle,
         _cursor: Cursor,
     ) -> Vec<Geometry> {
         if !self.drawing_enabled {
             return vec![];
         }
+
         let mut geoms: Vec<Geometry> = Vec::new();
+
+        #[cfg(debug_assertions)]
+        {
+            let g_bounds = self.debug_geom_cache.draw(renderer, bounds.size(), |f| {
+                f.fill_rectangle(
+                    Point { x: state.clip_rect.x, y: state.clip_rect.y },
+                    state.clip_rect.size(),
+                    ColorSimple::CYA.scale_alpha(0.125),
+                );
+                f.fill_rectangle(
+                    Point { x: state.tree_rect.x, y: state.tree_rect.y },
+                    state.tree_rect.size(),
+                    ColorSimple::MAG.scale_alpha(0.125),
+                );
+            });
+            geoms.push(g_bounds);
+        }
+
         let g_edges = self
             .edge_geom_cache
             .draw(renderer, state.clip_rect.size(), |f| {

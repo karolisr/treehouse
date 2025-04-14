@@ -56,39 +56,43 @@ impl TreeView {
     }
 
     pub fn update_tallest_tips(&mut self) {
-        let n = 1;
+        let n: i32 = 10;
         let mut tmp = self.tree_tip_edges.clone();
+        let tmp_len_min: usize = 0.max(tmp.len() as i32 - n) as usize;
         tmp.sort_by(|a, b| a.x1.total_cmp(&b.x1));
-        self.tallest_tips = tmp[tmp.len() - n..tmp.len()].to_vec();
+        self.tallest_tips = tmp[tmp_len_min..tmp.len()].to_vec();
         tmp.sort_by(|a, b| {
             a.name
                 .clone()
-                .map(|n| n.len())
-                .cmp(&b.name.clone().map(|n| n.len()))
+                .map(|name| name.len())
+                .cmp(&b.name.clone().map(|name| name.len()))
         });
         self.tallest_tips
-            .append(&mut tmp[tmp.len() - n..tmp.len()].to_vec());
+            .append(&mut tmp[tmp_len_min..tmp.len()].to_vec());
     }
 
     pub fn update_extra_space_for_labels(&mut self) {
-        let mut w: Float = 0e0;
-        let avail = self.canvas_w;
+        let mut text_w = text_width(self.tip_label_size, self.tip_label_size, TREE_LAB_FONT_NAME);
+        let mut max_w: Float = 0e0;
+        let mut _max_n: &str = "";
+        let mut max_offset: Float = 0e0;
         for edge in &self.tallest_tips {
             if let Some(name) = &edge.name {
-                let x_offset = edge.x1 as Float * avail;
-                let tip_name_w = text_width(
-                    name,
-                    self.tip_label_size,
-                    self.tip_label_size,
-                    TREE_LAB_FONT_NAME,
-                );
-                let new = (tip_name_w + x_offset) - avail;
-                if new >= w {
-                    w = new;
+                let offset = edge.x1 as Float * self.canvas_w;
+                if offset >= max_offset {
+                    max_offset = offset;
+                }
+                let tip_name_w = text_w.width(name);
+                let curr_max_w = tip_name_w + (max_offset + offset) / 2e0 - self.canvas_w;
+                if curr_max_w >= max_w {
+                    max_w = curr_max_w;
+                    _max_n = name;
                 }
             }
         }
-        self.extra_space_for_labels = w;
+        self.extra_space_for_labels = max_w;
+        #[cfg(debug_assertions)]
+        println!("{max_w:>7.3}, {max_offset:>7.3}, {_max_n}");
     }
 
     pub fn merge_tip_chunks(&mut self) {

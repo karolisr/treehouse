@@ -18,11 +18,9 @@ use iced::{
         events, gain_focus, open, open_events,
     },
 };
-use std::{
-    collections::HashMap,
-    fs::read,
-    path::{Path, PathBuf},
-};
+#[cfg(debug_assertions)]
+use std::path::Path;
+use std::{collections::HashMap, fs::read, path::PathBuf};
 
 #[derive(Default)]
 pub struct App {

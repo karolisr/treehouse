@@ -72,6 +72,8 @@ pub struct TreeView {
     pub tip_labels_geom_cache: Cache,
     pub branch_labels_geom_cache: Cache,
     pub int_labels_geom_cache: Cache,
+    #[cfg(debug_assertions)]
+    pub debug_geom_cache: Cache,
 
     pub tree: Tree,
     pub tree_tip_edges: Vec<Edge>,
