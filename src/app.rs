@@ -23,3 +23,4 @@ pub const PADDING_INNER: Float = PADDING / 1.5;
 pub const SCROLL_BAR_W: Float = PADDING;
 pub const TREE_LAB_FONT_NAME: &str = "JetBrains Mono";
 pub const SIDE_COL_W: Float = SF * 2e2;
+pub const SCROLL_TOOL_W: Float = SCROLL_BAR_W + PADDING * 2e0 + SF;

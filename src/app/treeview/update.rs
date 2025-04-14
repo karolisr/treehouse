@@ -7,6 +7,18 @@ impl TreeView {
         match msg {
             TreeViewMsg::OpenFile => Task::none(),
 
+            TreeViewMsg::Init => Task::batch([
+                Task::done(TreeViewMsg::TipLabelSizeSelectionChanged(
+                    self.selected_tip_label_size_idx,
+                )),
+                Task::done(TreeViewMsg::IntLabelSizeSelectionChanged(
+                    self.selected_int_label_size_idx,
+                )),
+                Task::done(TreeViewMsg::BranchLabelSizeSelectionChanged(
+                    self.selected_branch_label_size_idx,
+                )),
+            ]),
+
             TreeViewMsg::TreeViewScrolled(vp) => {
                 self.cnv_y0 = vp.absolute_offset().y;
                 self.cnv_y1 = self.cnv_y0 + vp.bounds().height;
@@ -21,6 +33,8 @@ impl TreeView {
             TreeViewMsg::NodeSizeSelectionChanged(idx) => {
                 self.selected_node_size_idx = idx;
                 self.update_node_size();
+                self.update_tip_label_w();
+                self.update_canvas_h();
                 Task::none()
             }
 
@@ -53,6 +67,8 @@ impl TreeView {
                     self.update_extra_space_for_labels();
                 }
                 self.update_node_size();
+                self.update_tip_label_w();
+                self.update_canvas_h();
                 Task::none()
             }
 
@@ -69,6 +85,8 @@ impl TreeView {
                 self.tip_label_size = self.min_label_size * idx as Float;
                 self.update_extra_space_for_labels();
                 self.update_node_size();
+                self.update_tip_label_w();
+                self.update_canvas_h();
                 Task::none()
             }
 
@@ -116,14 +134,27 @@ impl TreeView {
                 self.pointer_geom_cache.clear();
                 self.window_w = w;
                 self.window_h = h;
-                self.canvas_w = self.window_w - self.not_canvas_w;
-                if self.drawing_enabled
-                    && self.draw_tip_branch_labels_allowed
-                    && self.draw_tip_labels
-                {
+                self.scroll_w = self.window_w - self.not_scroll_w;
+                self.update_canvas_w();
+                if self.draw_tip_branch_labels_allowed && self.draw_tip_labels {
                     self.update_extra_space_for_labels();
                 }
                 self.update_node_size();
+                self.update_tip_label_w();
+                self.update_canvas_h();
+                Task::none()
+            }
+
+            TreeViewMsg::CanvasWidthSelectionChanged(idx) => {
+                self.selected_canvas_w_idx = idx;
+                self.update_canvas_w();
+
+                if self.draw_tip_branch_labels_allowed && self.draw_tip_labels {
+                    self.update_extra_space_for_labels();
+                }
+
+                self.update_tip_label_w();
+
                 Task::none()
             }
 
@@ -190,6 +221,8 @@ impl TreeView {
                 self.update_tallest_tips();
                 self.update_extra_space_for_labels();
                 self.update_node_size();
+                self.update_tip_label_w();
+                self.update_canvas_h();
                 self.drawing_enabled = true;
                 Task::none()
             }

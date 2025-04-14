@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     ColorSimple,
-    app::{PADDING, SF},
+    app::{PADDING, SCROLL_TOOL_W, SF},
 };
 use iced::{
     Event, Point, Rectangle, Renderer, Size, Theme, Vector,
@@ -41,7 +41,11 @@ impl Program<TreeViewMsg> for TreeView {
                             + self.max_label_size
                             + self.branch_label_offset_y,
                         width: state.clip_rect.width - SF * 2e0 - self.tip_label_w,
-                        height: state.clip_rect.height - SF * 2e0 - self.max_label_size * 1.5,
+                        height: state.clip_rect.height
+                            - SF * 2e0
+                            - self.max_label_size * 1.5
+                            - SCROLL_TOOL_W
+                            + PADDING,
                     };
 
                     state.tip_idx_range = self.visible_tip_idx_range();

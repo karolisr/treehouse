@@ -1,7 +1,7 @@
 use super::NodeOrderingOption;
 use crate::{
     Edge, Edges, Float, NodeId, Tree,
-    app::{PADDING, SCROLL_BAR_W, SF, SIDE_COL_W},
+    app::{SCROLL_TOOL_W, SF, SIDE_COL_W},
 };
 use iced::{
     widget::{canvas::Cache, scrollable::Viewport as ScrollableViewport},
@@ -25,12 +25,25 @@ pub struct TreeView {
     pub window_w: Float,
     pub window_h: Float,
 
+    pub scroll_w: Float,
+    pub not_scroll_w: Float,
+
     pub canvas_w: Float,
+    pub min_canvas_w: Float,
+    pub min_canvas_w_idx: u8,
+    pub max_canvas_w_idx: u8,
+    pub selected_canvas_w_idx: u8,
+
     pub canvas_h: Float,
     pub cnv_y0: Float,
     pub cnv_y1: Float,
-
-    pub not_canvas_w: Float,
+    pub available_vertical_space: Float,
+    pub node_size: Float,
+    pub min_node_size: Float,
+    pub max_node_size: Float,
+    pub min_node_size_idx: u8,
+    pub max_node_size_idx: u8,
+    pub selected_node_size_idx: u8,
 
     pub min_label_size: Float,
     pub max_label_size: Float,
@@ -46,16 +59,7 @@ pub struct TreeView {
     pub selected_branch_label_size_idx: u8,
     pub selected_int_label_size_idx: u8,
 
-    pub available_vertical_space: Float,
-    pub node_size: Float,
-    pub min_node_size: Float,
-    pub max_node_size: Float,
-
-    pub min_node_size_idx: u8,
-    pub max_node_size_idx: u8,
-    pub selected_node_size_idx: u8,
-
-    pub extra_space_for_labels: Float,
+    pub extra_space_for_tip_labels: Float,
     pub tip_label_w: Float,
     pub tip_label_offset_x: Float,
     pub branch_label_offset_y: Float,
@@ -99,8 +103,14 @@ impl TreeView {
             window_w: SF,
             window_h: SF,
 
+            scroll_w: SF,
+            not_scroll_w: SIDE_COL_W + SCROLL_TOOL_W,
+
             canvas_w: SF,
-            not_canvas_w: SIDE_COL_W + SCROLL_BAR_W + PADDING * 2e0 + SF,
+            min_canvas_w: SF,
+            min_canvas_w_idx: 1,
+            max_canvas_w_idx: 24,
+
             canvas_h: SF,
             cnv_y0: SF,
             cnv_y1: SF,
@@ -114,26 +124,28 @@ impl TreeView {
             max_node_size_idx: 24,
             min_label_size_idx: 1,
             max_label_size_idx: 24,
-            selected_node_size_idx: 1,
 
             draw_tip_branch_labels_allowed: false,
             draw_tip_labels: true,
             draw_branch_labels: false,
             draw_int_labels: false,
 
-            tip_label_size: SF * 12e0,
-            selected_tip_label_size_idx: 12,
+            selected_node_size_idx: 1,
+            selected_canvas_w_idx: 1,
+            selected_tip_label_size_idx: 4,
+            selected_branch_label_size_idx: 5,
+            selected_int_label_size_idx: 5,
+
+            tip_label_size: SF,
+            branch_label_size: SF,
+            int_label_size: SF,
+
             tip_label_offset_x: SF * 3e0,
-            extra_space_for_labels: SF,
-            tip_label_w: SF,
-
-            branch_label_size: SF * 8e0,
-            selected_branch_label_size_idx: 8,
             branch_label_offset_y: SF * -1e0,
-
-            int_label_size: SF * 1e1,
-            selected_int_label_size_idx: 10,
             int_label_offset_x: SF * 3e0,
+
+            tip_label_w: SF,
+            extra_space_for_tip_labels: SF,
 
             min_label_size: SF * 1e0,
             max_label_size: SF * 24e0,
@@ -147,22 +159,24 @@ impl TreeView {
 
 #[derive(Debug, Clone)]
 pub enum TreeViewMsg {
-    SetWinId(WinId),
-    TreeUpdated(Tree),
-    NodeOrderingOptionChanged(NodeOrderingOption),
-    WindowResized(Float, Float),
-    NodeSizeSelectionChanged(u8),
-    TipLabelVisibilityChanged(bool),
-    TipLabelSizeSelectionChanged(u8),
-    BranchLabelVisibilityChanged(bool),
     BranchLabelSizeSelectionChanged(u8),
-    IntLabelVisibilityChanged(bool),
+    BranchLabelVisibilityChanged(bool),
+    CanvasWidthSelectionChanged(u8),
+    DeselectNode(NodeId),
+    Init,
     IntLabelSizeSelectionChanged(u8),
-    TreeViewScrolled(ScrollableViewport),
+    IntLabelVisibilityChanged(bool),
+    NodeOrderingOptionChanged(NodeOrderingOption),
+    NodeSizeSelectionChanged(u8),
+    OpenFile,
+    Root(NodeId),
     SelectDeselectNode(NodeId),
     SelectNode(NodeId),
-    DeselectNode(NodeId),
-    Root(NodeId),
+    SetWinId(WinId),
+    TipLabelSizeSelectionChanged(u8),
+    TipLabelVisibilityChanged(bool),
+    TreeUpdated(Tree),
+    TreeViewScrolled(ScrollableViewport),
     Unroot,
-    OpenFile,
+    WindowResized(Float, Float),
 }

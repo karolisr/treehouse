@@ -11,8 +11,8 @@ use iced::{
         row,
         rule::{FillMode as RuleFillMode, Style as RuleStyle},
         scrollable::{
-            Anchor as ScrollBarAnchor, Direction as ScrollableDirection, Rail as ScrollBarRail,
-            Scrollbar, Scroller, Status as ScrollBarStatus, Style as ScrollBarStyle,
+            Direction as ScrollableDirection, Rail as ScrollBarRail, Scrollbar, Scroller,
+            Status as ScrollBarStatus, Style as ScrollBarStyle,
         },
         slider::{
             Handle as SliderHandle, HandleShape as SliderHandleShape, Rail as SliderRail,
@@ -54,10 +54,12 @@ impl TreeView {
         }
         let mut side_col: Column<TreeViewMsg> = Column::new();
         let mut main_row: Row<TreeViewMsg> = Row::new();
+
+        side_col = side_col.push(self.horizontal_space(0, PADDING));
+        side_col = side_col.push(self.horizontal_rule(SF));
+        side_col = side_col.push(self.horizontal_space(0, PADDING));
+
         if self.min_node_size_idx != self.max_node_size_idx {
-            side_col = side_col.push(self.horizontal_space(0, PADDING));
-            side_col = side_col.push(self.horizontal_rule(SF));
-            side_col = side_col.push(self.horizontal_space(0, PADDING));
             side_col = side_col.push(
                 container(text!("Edge Spacing").size(TEXT_SIZE))
                     .align_x(Horizontal::Right)
@@ -65,6 +67,13 @@ impl TreeView {
             );
             side_col = side_col.push(self.node_size_slider());
         }
+
+        side_col = side_col.push(
+            container(text!("Tree Width").size(TEXT_SIZE))
+                .align_x(Horizontal::Right)
+                .width(Length::Fill),
+        );
+        side_col = side_col.push(self.canvas_width_slider());
 
         side_col = side_col.push(self.horizontal_space(0, PADDING));
         side_col = side_col.push(self.horizontal_rule(SF));
@@ -132,18 +141,20 @@ impl TreeView {
 
         side_col = side_col.width(Length::Fixed(SIDE_COL_W));
 
-        match self.selected_node_size_idx {
-            idx if idx == self.min_node_size_idx => {
-                main_row = main_row.push(self.tree_canvas());
-                main_row = main_row.push(self.vertical_rule(SF))
-            }
-            _ => {
-                main_row = {
-                    main_row = main_row.push(self.scrollable(self.tree_canvas()));
-                    main_row.push(self.vertical_space(SF, 0))
-                }
-            }
+        if self.selected_node_size_idx != self.min_node_size_idx
+            || self.selected_canvas_w_idx != self.min_canvas_w_idx
+        {
+            main_row = main_row.push(self.scrollable(self.tree_canvas()));
+        } else {
+            main_row = main_row.push(self.tree_canvas());
         }
+
+        if self.selected_node_size_idx == self.min_node_size_idx {
+            main_row = main_row.push(self.vertical_rule(SF));
+        } else {
+            main_row = main_row.push(self.vertical_space(SF, 0));
+        }
+
         main_row = main_row.push(self.vertical_space(PADDING, 0));
         main_row = main_row.push(side_col);
         main_row = main_row.padding(PADDING);
@@ -152,8 +163,8 @@ impl TreeView {
 
     fn tree_canvas(&self) -> Canvas<&TreeView, TreeViewMsg> {
         Canvas::new(self)
+            .width(Length::Fixed(self.canvas_w))
             .height(Length::Fixed(self.canvas_h))
-            .width(Length::Fill)
     }
 
     fn horizontal_space(&self, width: impl Into<Length>, height: impl Into<Length>) -> Space {
@@ -203,6 +214,17 @@ impl TreeView {
             self.min_node_size_idx..=self.max_node_size_idx,
             self.selected_node_size_idx,
             TreeViewMsg::NodeSizeSelectionChanged,
+        );
+        sldr = sldr.step(1);
+        sldr = sldr.shift_step(2);
+        self.apply_slider_settings(sldr)
+    }
+
+    fn canvas_width_slider(&self) -> Slider<u8, TreeViewMsg> {
+        let mut sldr: Slider<u8, TreeViewMsg> = Slider::new(
+            self.min_canvas_w_idx..=self.max_canvas_w_idx,
+            self.selected_canvas_w_idx,
+            TreeViewMsg::CanvasWidthSelectionChanged,
         );
         sldr = sldr.step(1);
         sldr = sldr.shift_step(2);
@@ -295,11 +317,18 @@ impl TreeView {
         cnv: Canvas<&'a TreeView, TreeViewMsg>,
     ) -> Scrollable<'a, TreeViewMsg> {
         let mut scrl: Scrollable<TreeViewMsg> = Scrollable::new(cnv);
-        let mut scrl_bar = Scrollbar::new();
-        scrl_bar = scrl_bar.width(Pixels(SCROLL_BAR_W));
-        scrl_bar = scrl_bar.scroller_width(Pixels(SCROLL_BAR_W));
-        scrl_bar = scrl_bar.anchor(ScrollBarAnchor::Start);
-        scrl = scrl.direction(ScrollableDirection::Vertical(scrl_bar));
+
+        let mut scrl_bar_h = Scrollbar::new();
+        scrl_bar_h = scrl_bar_h.width(Pixels(SCROLL_BAR_W));
+        scrl_bar_h = scrl_bar_h.scroller_width(Pixels(SCROLL_BAR_W));
+
+        let mut scrl_bar_v = Scrollbar::new();
+        scrl_bar_v = scrl_bar_v.width(Pixels(SCROLL_BAR_W));
+        scrl_bar_v = scrl_bar_v.scroller_width(Pixels(SCROLL_BAR_W));
+
+        scrl = scrl
+            .direction(ScrollableDirection::Both { horizontal: scrl_bar_h, vertical: scrl_bar_v });
+        scrl = scrl.width(self.scroll_w);
         scrl = scrl.height(self.available_vertical_space + SF);
         scrl = scrl.on_scroll(TreeViewMsg::TreeViewScrolled);
         self.apply_scroller_settings(scrl)

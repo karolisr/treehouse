@@ -1,27 +1,40 @@
 use super::{NodeOrderingOption, TreeView};
 use crate::{
     Float,
-    app::{PADDING, SF, TREE_LAB_FONT_NAME},
+    app::{PADDING, SCROLL_TOOL_W, SF, TREE_LAB_FONT_NAME},
     flatten_tree, lerp, text_width,
 };
 
 impl TreeView {
-    fn update_tip_label_w(&mut self) {
+    pub fn update_canvas_w(&mut self) {
+        if self.selected_canvas_w_idx == self.min_canvas_w_idx {
+            self.min_canvas_w = self.scroll_w
+        } else {
+            self.min_canvas_w = self.scroll_w - SCROLL_TOOL_W;
+        }
+        self.canvas_w = self.min_canvas_w + (self.selected_canvas_w_idx - 1) as Float * 1e2 * SF;
+    }
+
+    pub fn update_tip_label_w(&mut self) {
         if self.draw_tip_branch_labels_allowed && self.draw_tip_labels {
-            self.tip_label_w = self.extra_space_for_labels + self.tip_label_offset_x;
+            self.tip_label_w = self.extra_space_for_tip_labels + self.tip_label_offset_x;
+            let max_tip_label_w = self.canvas_w / 1.5;
+            if self.tip_label_w > max_tip_label_w {
+                self.tip_label_w = max_tip_label_w;
+            }
         } else {
             self.tip_label_w = 0e0;
         }
     }
 
-    fn update_canvas_h(&mut self) {
+    pub fn update_canvas_h(&mut self) {
         self.canvas_h = self.node_size * self.tip_count as Float;
     }
 
     pub fn update_node_size(&mut self) {
         self.available_vertical_space = self.window_h - PADDING * 2e0 - SF * 2e0;
         self.min_node_size = self.available_vertical_space / self.tip_count as Float;
-        self.max_node_size = Float::max(self.max_label_size, self.min_node_size);
+        self.max_node_size = Float::max(self.max_label_size * 3e0, self.min_node_size);
         self.max_node_size_idx = self.max_label_size_idx;
 
         if self.min_node_size == self.max_node_size {
@@ -50,9 +63,6 @@ impl TreeView {
         self.draw_tip_branch_labels_allowed = (self.available_vertical_space / self.node_size)
             as usize
             <= self.max_count_of_tip_labels_to_draw;
-
-        self.update_tip_label_w();
-        self.update_canvas_h();
     }
 
     pub fn update_tallest_tips(&mut self) {
@@ -74,7 +84,6 @@ impl TreeView {
     pub fn update_extra_space_for_labels(&mut self) {
         let mut text_w = text_width(self.tip_label_size, self.tip_label_size, TREE_LAB_FONT_NAME);
         let mut max_w: Float = 0e0;
-        let mut _max_n: &str = "";
         let mut max_offset: Float = 0e0;
         for edge in &self.tallest_tips {
             if let Some(name) = &edge.name {
@@ -86,13 +95,10 @@ impl TreeView {
                 let curr_max_w = tip_name_w + (max_offset + offset) / 2e0 - self.canvas_w;
                 if curr_max_w >= max_w {
                     max_w = curr_max_w;
-                    _max_n = name;
                 }
             }
         }
-        self.extra_space_for_labels = max_w;
-        #[cfg(debug_assertions)]
-        println!("{max_w:>7.3}, {max_offset:>7.3}, {_max_n}");
+        self.extra_space_for_tip_labels = max_w;
     }
 
     pub fn merge_tip_chunks(&mut self) {
