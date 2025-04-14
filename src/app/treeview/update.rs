@@ -216,6 +216,10 @@ impl TreeView {
                 self.tip_count = self.tree_original.tip_count_all();
                 self.int_node_count = self.tree_original.internal_node_count_all();
                 self.has_brlen = self.tree_original.has_branch_lengths();
+                self.tree_height = self.tree_original.height() as Float;
+                self.is_rooted = self.tree_original.is_rooted();
+                let epsilon = self.tree_original.height() / 1e2;
+                self.is_ultrametric = self.tree_original.is_ultrametric(epsilon);
                 self.sort();
                 self.merge_tip_chunks();
                 self.update_tallest_tips();

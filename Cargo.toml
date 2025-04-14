@@ -144,6 +144,9 @@ features = [
 ]
 # ------------------------------------------------------------------------
 
+[dependencies]
+numfmt = "1"
+
 [dependencies.dendros]
 git = "https://github.com/karolisr/dendros.git"
 branch = "main"

@@ -1,12 +1,17 @@
 use super::{TreeView, TreeViewMsg};
-use crate::app::{LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, SIDE_COL_W, TEXT_SIZE};
+use crate::{
+    Float,
+    app::{
+        LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, SIDE_COL_W, TEXT_SIZE, TREE_LAB_FONT_NAME,
+    },
+};
 use iced::{
     Alignment, Border, Color, Element, Font, Length, Pixels,
     alignment::{Horizontal, Vertical},
     border,
     widget::{
-        Button, Canvas, Column, PickList, Row, Rule, Scrollable, Slider, Space,
-        Theme as WidgetTheme, Toggler, button, container, horizontal_space,
+        Button, Canvas, Column, PickList, Row, Rule, Scrollable, Slider, Space, Text,
+        Theme as WidgetTheme, Toggler, button, column, container, horizontal_space,
         pick_list::{Handle as PickListHandle, Status as PickListStatus, Style as PickListStyle},
         row,
         rule::{FillMode as RuleFillMode, Style as RuleStyle},
@@ -21,6 +26,7 @@ use iced::{
         text, vertical_space,
     },
 };
+use numfmt::Formatter as NumFmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NodeOrderingOption {
@@ -54,6 +60,42 @@ impl TreeView {
         }
         let mut side_col: Column<TreeViewMsg> = Column::new();
         let mut main_row: Row<TreeViewMsg> = Row::new();
+
+        //
+        side_col = side_col.push(
+            container(
+                row![
+                    column![
+                        self.txt("Tips"),
+                        self.txt("Nodes"),
+                        self.txt("Height"),
+                        self.txt("Rooted"),
+                        self.txt("Branch Lengths"),
+                        self.txt("Ultrametric")
+                    ]
+                    .align_x(Horizontal::Left)
+                    .width(Length::Fill),
+                    column![
+                        self.usize_txt(self.tip_count),
+                        self.usize_txt(self.node_count),
+                        match self.has_brlen {
+                            true => self.float_txt(self.tree_height),
+                            false => self.usize_txt(self.tree_height as usize),
+                        },
+                        self.bool_txt(self.is_rooted),
+                        self.bool_txt(self.has_brlen),
+                        self.bool_option_txt(self.is_ultrametric),
+                    ]
+                    .align_x(Horizontal::Right)
+                    .width(Length::Shrink)
+                ]
+                .spacing(SF * 1e1)
+                .align_y(Vertical::Center),
+            )
+            .center_x(Length::Fill)
+            .width(Length::Fill),
+        );
+        //
 
         side_col = side_col.push(self.horizontal_space(0, PADDING));
         side_col = side_col.push(self.horizontal_rule(SF));
@@ -159,6 +201,46 @@ impl TreeView {
         main_row = main_row.push(side_col);
         main_row = main_row.padding(PADDING);
         main_row.into()
+    }
+
+    fn usize_txt(&self, n: impl Into<usize>) -> Text {
+        let mut num_fmt = NumFmt::new();
+        num_fmt = num_fmt.precision(numfmt::Precision::Decimals(0));
+        num_fmt = num_fmt.separator(',').unwrap();
+        let s = num_fmt.fmt2(n.into());
+        self.txt(s)
+    }
+
+    fn float_txt(&self, n: impl Into<Float>) -> Text {
+        let mut num_fmt = NumFmt::new();
+        num_fmt = num_fmt.precision(numfmt::Precision::Decimals(3));
+        num_fmt = num_fmt.separator(',').unwrap();
+        let s = num_fmt.fmt2(n.into());
+        self.txt(s)
+    }
+
+    fn bool_txt(&self, b: bool) -> Text {
+        let s = match b {
+            true => "Yes",
+            false => "No",
+        };
+        self.txt(s)
+    }
+
+    fn bool_option_txt(&self, ob: Option<bool>) -> Text {
+        match ob {
+            Some(b) => self.bool_txt(b),
+            None => self.txt("N/A"),
+        }
+    }
+
+    fn txt(&self, s: impl Into<String>) -> Text {
+        Text::new(s.into())
+            .align_x(Horizontal::Right)
+            .align_y(Vertical::Center)
+            .width(Length::Shrink)
+            .size(TEXT_SIZE)
+            .font(Font::with_name(TREE_LAB_FONT_NAME))
     }
 
     fn tree_canvas(&self) -> Canvas<&TreeView, TreeViewMsg> {

@@ -18,9 +18,12 @@ pub struct TreeView {
     pub drawing_enabled: bool,
 
     pub has_brlen: bool,
+    pub is_rooted: bool,
+    pub is_ultrametric: Option<bool>,
     pub node_count: usize,
     pub tip_count: usize,
     pub int_node_count: usize,
+    pub tree_height: Float,
 
     pub window_w: Float,
     pub window_h: Float,
