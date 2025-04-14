@@ -29,14 +29,3 @@ pub fn text_width(font_size: f32, line_height: f32, font_name: &str) -> TextWidt
     attrs.family = Family::Name(font_name);
     TextWidth { attrs, buffer, font_system }
 }
-
-// pub fn text_width(s: &str, font_size: f32, line_height: f32, font_name: &str) -> f32 {
-//     let mut font_system = FontSystem::new();
-//     let metrics = Metrics::new(font_size, line_height);
-//     let mut buffer = Buffer::new(&mut font_system, metrics);
-//     let mut buffer = buffer.borrow_with(&mut font_system);
-//     let mut attrs = Attrs::new();
-//     attrs.family = Family::Name(font_name);
-//     buffer.set_text(s, &attrs, Shaping::Basic);
-//     buffer.line_layout(0).unwrap().first().unwrap().w
-// }
