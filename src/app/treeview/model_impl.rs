@@ -16,7 +16,7 @@ impl TreeView {
     }
 
     pub fn update_tip_label_w(&mut self) {
-        if self.draw_tip_branch_labels_allowed && self.draw_tip_labels {
+        if self.draw_tip_branch_labels_allowed && self.has_tip_labels && self.draw_tip_labels {
             self.tip_label_w = self.extra_space_for_tip_labels + self.tip_label_offset_x;
             let max_tip_label_w = self.canvas_w / 1.5;
             if self.tip_label_w > max_tip_label_w {

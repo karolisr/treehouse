@@ -22,6 +22,7 @@ impl TreeView {
             TreeViewMsg::TreeViewScrolled(vp) => {
                 self.cnv_y0 = vp.absolute_offset().y;
                 self.cnv_y1 = self.cnv_y0 + vp.bounds().height;
+                self.legend_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
                 self.branch_labels_geom_cache.clear();
@@ -53,6 +54,7 @@ impl TreeView {
             TreeViewMsg::TipLabelVisibilityChanged(state) => {
                 #[cfg(debug_assertions)]
                 self.debug_geom_cache.clear();
+                self.legend_geom_cache.clear();
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
@@ -75,6 +77,7 @@ impl TreeView {
             TreeViewMsg::TipLabelSizeSelectionChanged(idx) => {
                 #[cfg(debug_assertions)]
                 self.debug_geom_cache.clear();
+                self.legend_geom_cache.clear();
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
@@ -117,6 +120,11 @@ impl TreeView {
                 Task::none()
             }
 
+            TreeViewMsg::LegendVisibilityChanged(state) => {
+                self.draw_legend = state;
+                Task::none()
+            }
+
             TreeViewMsg::SetWinId(id) => {
                 self.win_id = Some(id);
                 iced::window::get_size(id)
@@ -126,6 +134,7 @@ impl TreeView {
             TreeViewMsg::WindowResized(w, h) => {
                 #[cfg(debug_assertions)]
                 self.debug_geom_cache.clear();
+                self.legend_geom_cache.clear();
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
@@ -200,6 +209,7 @@ impl TreeView {
                 #[cfg(debug_assertions)]
                 self.debug_geom_cache.clear();
                 self.selected_node_ids.clear();
+                self.legend_geom_cache.clear();
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
                 self.int_labels_geom_cache.clear();
@@ -216,6 +226,8 @@ impl TreeView {
                 self.tip_count = self.tree_original.tip_count_all();
                 self.int_node_count = self.tree_original.internal_node_count_all();
                 self.has_brlen = self.tree_original.has_branch_lengths();
+                self.has_int_labels = self.tree_original.has_int_labels();
+                self.has_tip_labels = self.tree_original.has_tip_labels();
                 self.tree_height = self.tree_original.height() as Float;
                 self.is_rooted = self.tree_original.is_rooted();
                 let epsilon = self.tree_original.height() / 1e2;

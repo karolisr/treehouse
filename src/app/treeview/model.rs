@@ -1,7 +1,7 @@
 use super::NodeOrderingOption;
 use crate::{
     Edge, Edges, Float, NodeId, Tree,
-    app::{SCROLL_TOOL_W, SF, SIDE_COL_W},
+    app::{SCROLL_TOOL_W, SF, SIDE_COL_W, windows::window_settings},
 };
 use iced::{
     widget::{canvas::Cache, scrollable::Viewport as ScrollableViewport},
@@ -18,6 +18,8 @@ pub struct TreeView {
     pub drawing_enabled: bool,
 
     pub has_brlen: bool,
+    pub has_int_labels: bool,
+    pub has_tip_labels: bool,
     pub is_rooted: bool,
     pub is_ultrametric: Option<bool>,
     pub node_count: usize,
@@ -72,10 +74,12 @@ pub struct TreeView {
     pub draw_tip_labels: bool,
     pub draw_int_labels: bool,
     pub draw_branch_labels: bool,
+    pub draw_legend: bool,
 
     pub pointer_geom_cache: Cache,
     pub selected_nodes_geom_cache: Cache,
     pub edge_geom_cache: Cache,
+    pub legend_geom_cache: Cache,
     pub tip_labels_geom_cache: Cache,
     pub branch_labels_geom_cache: Cache,
     pub int_labels_geom_cache: Cache,
@@ -103,13 +107,13 @@ impl TreeView {
             threads: 1,
             selected_node_ordering_option: Some(NodeOrderingOption::Unordered),
 
-            window_w: SF,
+            window_w: window_settings().size.width,
             window_h: SF,
 
             scroll_w: SF,
             not_scroll_w: SIDE_COL_W + SCROLL_TOOL_W,
 
-            canvas_w: SF,
+            canvas_w: window_settings().size.width - SIDE_COL_W - SCROLL_TOOL_W,
             min_canvas_w: SF,
             min_canvas_w_idx: 1,
             max_canvas_w_idx: 24,
@@ -132,6 +136,7 @@ impl TreeView {
             draw_tip_labels: true,
             draw_branch_labels: false,
             draw_int_labels: false,
+            draw_legend: true,
 
             selected_node_size_idx: 1,
             selected_canvas_w_idx: 1,
@@ -169,6 +174,7 @@ pub enum TreeViewMsg {
     Init,
     IntLabelSizeSelectionChanged(u8),
     IntLabelVisibilityChanged(bool),
+    LegendVisibilityChanged(bool),
     NodeOrderingOptionChanged(NodeOrderingOption),
     NodeSizeSelectionChanged(u8),
     OpenFile,

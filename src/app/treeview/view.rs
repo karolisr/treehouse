@@ -1,17 +1,17 @@
 use super::{TreeView, TreeViewMsg};
 use crate::{
     Float,
-    app::{
-        LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, SIDE_COL_W, TEXT_SIZE, TREE_LAB_FONT_NAME,
-    },
+    app::{BUTTON_W, LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, SIDE_COL_W, TEXT_SIZE},
 };
 use iced::{
-    Alignment, Border, Color, Element, Font, Length, Pixels,
+    Alignment, Background, Border, Color, Element, Font, Length, Pixels,
     alignment::{Horizontal, Vertical},
     border,
     widget::{
-        Button, Canvas, Column, PickList, Row, Rule, Scrollable, Slider, Space, Text,
-        Theme as WidgetTheme, Toggler, button, column, container, horizontal_space,
+        Canvas, Column, PickList, Row, Rule, Scrollable, Slider, Space, Text, Theme as WidgetTheme,
+        Toggler,
+        button::{Button, Status as ButtonStatus, Style as ButtonStyle},
+        column, container, horizontal_space,
         pick_list::{Handle as PickListHandle, Status as PickListStatus, Style as PickListStyle},
         row,
         rule::{FillMode as RuleFillMode, Style as RuleStyle},
@@ -54,48 +54,41 @@ const NODE_ORDERING_OPTIONS: [NodeOrderingOption; 3] = [
 impl TreeView {
     pub fn view(&self) -> Element<TreeViewMsg> {
         if self.tip_count == 0 {
-            return container(Button::new("Open a Tree File").on_press(TreeViewMsg::OpenFile))
-                .center(Length::Fill)
-                .into();
+            return container(
+                self.btn("Open a Tree File", Some(TreeViewMsg::OpenFile))
+                    .width(SF * 2e2),
+            )
+            .center(Length::Fill)
+            .into();
         }
+
         let mut side_col: Column<TreeViewMsg> = Column::new();
         let mut main_row: Row<TreeViewMsg> = Row::new();
 
-        //
-        side_col = side_col.push(
-            container(
-                row![
-                    column![
-                        self.txt("Tips"),
-                        self.txt("Nodes"),
-                        self.txt("Height"),
-                        self.txt("Rooted"),
-                        self.txt("Branch Lengths"),
-                        self.txt("Ultrametric")
-                    ]
-                    .align_x(Horizontal::Left)
-                    .width(Length::Fill),
-                    column![
-                        self.usize_txt(self.tip_count),
-                        self.usize_txt(self.node_count),
-                        match self.has_brlen {
-                            true => self.float_txt(self.tree_height),
-                            false => self.usize_txt(self.tree_height as usize),
-                        },
-                        self.bool_txt(self.is_rooted),
-                        self.bool_txt(self.has_brlen),
-                        self.bool_option_txt(self.is_ultrametric),
-                    ]
-                    .align_x(Horizontal::Right)
-                    .width(Length::Shrink)
-                ]
-                .spacing(SF * 1e1)
-                .align_y(Vertical::Center),
-            )
-            .center_x(Length::Fill)
+        side_col = side_col.push(row![
+            column![
+                self.txt("Tips"),
+                self.txt("Nodes"),
+                self.txt("Height"),
+                self.txt("Rooted"),
+                self.txt("Branch Lengths"),
+                self.txt("Ultrametric")
+            ]
+            .align_x(Horizontal::Left)
             .width(Length::Fill),
-        );
-        //
+            column![
+                self.usize_txt(self.tip_count),
+                self.usize_txt(self.node_count),
+                match self.has_brlen {
+                    true => self.float_txt(self.tree_height),
+                    false => self.usize_txt(self.tree_height as usize),
+                },
+                self.bool_txt(self.is_rooted),
+                self.bool_txt(self.has_brlen),
+                self.bool_option_txt(self.is_ultrametric),
+            ]
+            .align_x(Horizontal::Right)
+        ]);
 
         side_col = side_col.push(self.horizontal_space(0, PADDING));
         side_col = side_col.push(self.horizontal_rule(SF));
@@ -121,8 +114,10 @@ impl TreeView {
         side_col = side_col.push(self.horizontal_rule(SF));
         side_col = side_col.push(self.horizontal_space(0, PADDING));
 
-        side_col = side_col.push(self.tip_labels_toggler(self.draw_tip_branch_labels_allowed));
-        if self.draw_tip_branch_labels_allowed && self.draw_tip_labels {
+        side_col = side_col.push(
+            self.tip_labels_toggler(self.draw_tip_branch_labels_allowed && self.has_tip_labels),
+        );
+        if self.draw_tip_branch_labels_allowed && self.has_tip_labels && self.draw_tip_labels {
             side_col = side_col.push(self.tip_labels_size_slider());
         }
 
@@ -135,10 +130,13 @@ impl TreeView {
         }
 
         side_col = side_col.push(self.horizontal_space(0, PADDING));
-        side_col = side_col.push(self.int_labels_toggler(true));
-        if self.draw_int_labels {
+        side_col = side_col.push(self.int_labels_toggler(self.has_int_labels));
+        if self.has_int_labels && self.draw_int_labels {
             side_col = side_col.push(self.int_labels_size_slider());
         }
+
+        side_col = side_col.push(self.horizontal_space(0, PADDING));
+        side_col = side_col.push(self.legend_toggler(self.has_brlen));
 
         side_col = side_col.push(self.horizontal_space(0, PADDING));
         side_col = side_col.push(self.horizontal_rule(SF));
@@ -154,34 +152,22 @@ impl TreeView {
             .width(Length::Fill)
             .spacing(PADDING),
         );
+
         side_col = side_col.push(self.horizontal_space(0, PADDING));
         side_col = side_col.push(self.horizontal_rule(SF));
         side_col = side_col.push(self.horizontal_space(0, PADDING));
 
         side_col = side_col.push(
-            row![
-                button("Unroot").on_press_maybe(match self.tree_original.is_rooted() {
-                    true => Some(TreeViewMsg::Unroot),
-                    false => None,
-                }),
-                button("Root").on_press_maybe({
-                    if self.selected_node_ids.len() == 1 {
-                        let node_id = *self.selected_node_ids.iter().last().unwrap();
-                        match self.tree.can_root(node_id) {
-                            true => Some(TreeViewMsg::Root(node_id)),
-                            false => None,
-                        }
-                    } else {
-                        None
-                    }
-                }),
-            ]
-            .align_y(Vertical::Center)
+            container(
+                row![self.root_btn(), self.unroot_btn()]
+                    .align_y(Vertical::Center)
+                    .spacing(PADDING),
+            )
             .width(Length::Fill)
-            .spacing(PADDING),
+            .align_x(Horizontal::Center),
         );
 
-        side_col = side_col.width(Length::Fixed(SIDE_COL_W));
+        side_col = side_col.width(SIDE_COL_W);
 
         if self.selected_node_size_idx != self.min_node_size_idx
             || self.selected_canvas_w_idx != self.min_canvas_w_idx
@@ -198,9 +184,46 @@ impl TreeView {
         }
 
         main_row = main_row.push(self.vertical_space(PADDING, 0));
+
         main_row = main_row.push(side_col);
         main_row = main_row.padding(PADDING);
+
         main_row.into()
+    }
+
+    fn unroot_btn(&self) -> Button<TreeViewMsg> {
+        self.btn(
+            "Unroot",
+            match self.tree_original.is_rooted() {
+                true => Some(TreeViewMsg::Unroot),
+                false => None,
+            },
+        )
+    }
+
+    fn root_btn(&self) -> Button<TreeViewMsg> {
+        self.btn("Root", {
+            if self.selected_node_ids.len() == 1 {
+                let node_id = *self.selected_node_ids.iter().last().unwrap();
+                match self.tree.can_root(node_id) {
+                    true => Some(TreeViewMsg::Root(node_id)),
+                    false => None,
+                }
+            } else {
+                None
+            }
+        })
+    }
+
+    fn btn<'a>(&'a self, lab: &'a str, msg: Option<TreeViewMsg>) -> Button<'a, TreeViewMsg> {
+        let txt = Text::new(lab)
+            .align_x(Horizontal::Center)
+            .align_y(Vertical::Center)
+            .size(TEXT_SIZE);
+        let mut btn = Button::new(txt);
+        btn = btn.on_press_maybe(msg);
+        btn = self.apply_btn_settings(btn);
+        btn
     }
 
     fn usize_txt(&self, n: impl Into<usize>) -> Text {
@@ -240,7 +263,7 @@ impl TreeView {
             .align_y(Vertical::Center)
             .width(Length::Shrink)
             .size(TEXT_SIZE)
-            .font(Font::with_name(TREE_LAB_FONT_NAME))
+        // .font(Font::with_name(TREE_LAB_FONT_NAME))
     }
 
     fn tree_canvas(&self) -> Canvas<&TreeView, TreeViewMsg> {
@@ -268,7 +291,8 @@ impl TreeView {
     }
 
     fn tip_labels_toggler(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
-        let mut tgl = self.apply_toggler_settings("Tip Labels", self.draw_tip_labels);
+        let mut tgl =
+            self.apply_toggler_settings("Tip Labels", self.has_tip_labels && self.draw_tip_labels);
         if enabled {
             tgl = tgl.on_toggle(TreeViewMsg::TipLabelVisibilityChanged);
         }
@@ -276,7 +300,8 @@ impl TreeView {
     }
 
     fn branch_labels_toggler(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
-        let mut tgl = self.apply_toggler_settings("Branch Lengths", self.draw_branch_labels);
+        let mut tgl = self
+            .apply_toggler_settings("Branch Lengths", self.has_brlen && self.draw_branch_labels);
         if enabled {
             tgl = tgl.on_toggle(TreeViewMsg::BranchLabelVisibilityChanged);
         }
@@ -284,9 +309,20 @@ impl TreeView {
     }
 
     fn int_labels_toggler(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
-        let mut tgl = self.apply_toggler_settings("Internal Labels", self.draw_int_labels);
+        let mut tgl = self.apply_toggler_settings(
+            "Internal Labels",
+            self.has_int_labels && self.draw_int_labels,
+        );
         if enabled {
             tgl = tgl.on_toggle(TreeViewMsg::IntLabelVisibilityChanged);
+        }
+        tgl
+    }
+
+    fn legend_toggler(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
+        let mut tgl = self.apply_toggler_settings("Legend", self.has_brlen && self.draw_legend);
+        if enabled {
+            tgl = tgl.on_toggle(TreeViewMsg::LegendVisibilityChanged);
         }
         tgl
     }
@@ -344,6 +380,42 @@ impl TreeView {
         sldr = sldr.step(1);
         sldr = sldr.shift_step(2);
         self.apply_slider_settings(sldr)
+    }
+
+    fn apply_btn_settings<'a>(
+        &'a self,
+        mut btn: Button<'a, TreeViewMsg>,
+    ) -> Button<'a, TreeViewMsg> {
+        btn = btn.width(BUTTON_W);
+        btn = btn.height(TEXT_SIZE * 1.5 + PADDING_INNER * 2e0);
+        btn = btn.style(|theme, status| {
+            let palette = theme.extended_palette();
+            let base = ButtonStyle {
+                background: Some(Background::Color(palette.primary.base.color)),
+                text_color: palette.primary.base.text,
+                border: Border {
+                    radius: (SF * 3e0).into(),
+                    width: 1e0 * SF,
+                    ..Default::default()
+                },
+                ..ButtonStyle::default()
+            };
+            match status {
+                ButtonStatus::Active | ButtonStatus::Pressed => base,
+                ButtonStatus::Hovered => ButtonStyle {
+                    background: Some(Background::Color(palette.primary.strong.color)),
+                    ..base
+                },
+                ButtonStatus::Disabled => ButtonStyle {
+                    background: base
+                        .background
+                        .map(|background| background.scale_alpha(0.5)),
+                    text_color: base.text_color.scale_alpha(0.5),
+                    ..base
+                },
+            }
+        });
+        btn
     }
 
     fn node_ordering_options_pick_list(

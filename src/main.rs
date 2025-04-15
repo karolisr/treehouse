@@ -19,7 +19,7 @@ mod colors;
 mod text_width;
 mod utils;
 
-use app::App;
+use app::{ANTIALIASING, App};
 pub use colors::ColorSimple;
 pub use dendros::{Edge, Edges, NodeId, NodeType, Tree, TreeFloat, flatten_tree, parse_newick};
 pub use text_width::text_width;
@@ -31,7 +31,7 @@ fn main() -> iced::Result {
     iced::daemon(App::new, App::update, App::view)
         .title(App::title)
         .subscription(App::subscription)
-        .antialiasing(true)
+        .antialiasing(ANTIALIASING)
         .scale_factor(App::scale_factor)
         .run()
 }

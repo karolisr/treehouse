@@ -30,7 +30,7 @@ impl Program<TreeViewMsg> for TreeView {
                     state.clip_rect = Rectangle {
                         x: 0e0,
                         y: 0e0,
-                        width: bounds.width - PADDING * 2e0,
+                        width: bounds.width - SCROLL_TOOL_W + PADDING,
                         height: self.canvas_h,
                     };
 
@@ -44,8 +44,7 @@ impl Program<TreeViewMsg> for TreeView {
                         height: state.clip_rect.height
                             - SF * 2e0
                             - self.max_label_size * 1.5
-                            - SCROLL_TOOL_W
-                            + PADDING,
+                            - SCROLL_TOOL_W,
                     };
 
                     state.tip_idx_range = self.visible_tip_idx_range();
@@ -184,6 +183,22 @@ impl Program<TreeViewMsg> for TreeView {
             geoms.push(g_bounds);
         }
 
+        if self.has_brlen && self.draw_legend {
+            let g_legend = self
+                .legend_geom_cache
+                .draw(renderer, state.clip_rect.size(), |f| {
+                    let stroke = Stroke {
+                        width: SF,
+                        line_cap: stroke::LineCap::Square,
+                        line_join: stroke::LineJoin::Round,
+                        // style: ColorSimple::BLU.into(),
+                        ..Default::default()
+                    };
+                    self.draw_scale_bar(stroke, &state.tree_label_template, &state.tree_rect, f);
+                });
+            geoms.push(g_legend);
+        }
+
         let g_edges = self
             .edge_geom_cache
             .draw(renderer, state.clip_rect.size(), |f| {
@@ -199,7 +214,7 @@ impl Program<TreeViewMsg> for TreeView {
         geoms.push(g_edges);
 
         if let Some(tip_idx_range) = &state.tip_idx_range {
-            if self.draw_tip_branch_labels_allowed && self.draw_tip_labels {
+            if self.draw_tip_branch_labels_allowed && self.has_tip_labels && self.draw_tip_labels {
                 let g_tip_labels =
                     self.tip_labels_geom_cache
                         .draw(renderer, state.clip_rect.size(), |f| {
@@ -222,7 +237,7 @@ impl Program<TreeViewMsg> for TreeView {
                 geoms.push(g_tip_labels);
             }
 
-            if self.draw_int_labels {
+            if self.has_int_labels && self.draw_int_labels {
                 let g_int_labels =
                     self.int_labels_geom_cache
                         .draw(renderer, state.clip_rect.size(), |f| {
