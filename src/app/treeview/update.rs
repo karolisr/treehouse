@@ -1,3 +1,5 @@
+use std::f64::consts::PI;
+
 use super::{TreeView, TreeViewMsg};
 use crate::{Float, app::SF};
 use iced::Task;
@@ -17,7 +19,60 @@ impl TreeView {
                 Task::done(TreeViewMsg::BranchLabelSizeSelectionChanged(
                     self.selected_branch_label_size_idx,
                 )),
+                Task::done(TreeViewMsg::OpnAngleSelectionChanged(
+                    self.selected_opn_angle_idx,
+                )),
+                Task::done(TreeViewMsg::RotAngleSelectionChanged(
+                    self.selected_rot_angle_idx,
+                )),
             ]),
+
+            TreeViewMsg::TreeReprOptionChanged(tree_repr_option) => {
+                #[cfg(debug_assertions)]
+                self.debug_geom_cache.clear();
+                self.selected_node_ids.clear();
+                self.legend_geom_cache.clear();
+                self.edge_geom_cache.clear();
+                self.tip_labels_geom_cache.clear();
+                self.int_labels_geom_cache.clear();
+                self.branch_labels_geom_cache.clear();
+                self.selected_nodes_geom_cache.clear();
+                self.pointer_geom_cache.clear();
+                self.selected_tree_repr_option = Some(tree_repr_option);
+                Task::none()
+            }
+
+            TreeViewMsg::OpnAngleSelectionChanged(idx) => {
+                #[cfg(debug_assertions)]
+                self.debug_geom_cache.clear();
+                self.selected_node_ids.clear();
+                self.legend_geom_cache.clear();
+                self.edge_geom_cache.clear();
+                self.tip_labels_geom_cache.clear();
+                self.int_labels_geom_cache.clear();
+                self.branch_labels_geom_cache.clear();
+                self.selected_nodes_geom_cache.clear();
+                self.pointer_geom_cache.clear();
+                self.selected_opn_angle_idx = idx;
+                self.opn_angle = idx as f64 / 360e0 * 2e0 * PI;
+                Task::none()
+            }
+
+            TreeViewMsg::RotAngleSelectionChanged(idx) => {
+                #[cfg(debug_assertions)]
+                self.debug_geom_cache.clear();
+                self.selected_node_ids.clear();
+                self.legend_geom_cache.clear();
+                self.edge_geom_cache.clear();
+                self.tip_labels_geom_cache.clear();
+                self.int_labels_geom_cache.clear();
+                self.branch_labels_geom_cache.clear();
+                self.selected_nodes_geom_cache.clear();
+                self.pointer_geom_cache.clear();
+                self.selected_rot_angle_idx = idx;
+                self.rot_angle = idx as f64 / 360e0 * 2e0 * PI;
+                Task::none()
+            }
 
             TreeViewMsg::TreeViewScrolled(vp) => {
                 self.cnv_y0 = vp.absolute_offset().y;

@@ -51,6 +51,23 @@ const NODE_ORDERING_OPTIONS: [NodeOrderingOption; 3] = [
     NodeOrderingOption::Descending,
 ];
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TreeReprOption {
+    Phylogram,
+    Fan,
+}
+
+impl std::fmt::Display for TreeReprOption {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            TreeReprOption::Phylogram => "Phylogram",
+            TreeReprOption::Fan => "Fan",
+        })
+    }
+}
+
+const TREE_REPR_OPTIONS: [TreeReprOption; 2] = [TreeReprOption::Phylogram, TreeReprOption::Fan];
+
 impl TreeView {
     pub fn view(&self) -> Element<TreeViewMsg> {
         if self.tip_count == 0 {
@@ -94,21 +111,47 @@ impl TreeView {
         side_col = side_col.push(self.horizontal_rule(SF));
         side_col = side_col.push(self.horizontal_space(0, PADDING));
 
-        if self.min_node_size_idx != self.max_node_size_idx {
-            side_col = side_col.push(
-                container(text!("Edge Spacing").size(TEXT_SIZE))
-                    .align_x(Horizontal::Right)
-                    .width(Length::Fill),
-            );
-            side_col = side_col.push(self.node_size_slider());
-        }
+        side_col = side_col.push(
+            row![
+                text!("Style").size(TEXT_SIZE).align_x(Alignment::Start),
+                self.tree_repr_options_pick_list(),
+            ]
+            .align_y(Vertical::Center)
+            .width(Length::Fill)
+            .spacing(PADDING),
+        );
+
+        side_col = side_col.push(self.horizontal_space(0, PADDING));
 
         side_col = side_col.push(
-            container(text!("Tree Width").size(TEXT_SIZE))
-                .align_x(Horizontal::Right)
-                .width(Length::Fill),
+            row![
+                text!("Node Order")
+                    .size(TEXT_SIZE)
+                    .align_x(Alignment::Start),
+                self.node_ordering_options_pick_list(),
+            ]
+            .align_y(Vertical::Center)
+            .width(Length::Fill)
+            .spacing(PADDING),
         );
-        side_col = side_col.push(self.canvas_width_slider());
+
+        side_col = side_col.push(self.horizontal_space(0, PADDING));
+        side_col = side_col.push(self.horizontal_rule(SF));
+        side_col = side_col.push(self.horizontal_space(0, PADDING));
+
+        match self.selected_tree_repr_option {
+            Some(TreeReprOption::Phylogram) => {
+                if self.min_node_size_idx != self.max_node_size_idx {
+                    side_col = side_col.push(self.slider("Edge Spacing", self.node_size_slider()));
+                }
+                side_col = side_col.push(self.slider("Tree Width", self.canvas_width_slider()));
+            }
+            Some(TreeReprOption::Fan) => {
+                side_col = side_col.push(self.slider("Opening Angle", self.opn_angle_slider()));
+                side_col = side_col.push(self.slider("Rotation Angle", self.rot_angle_slider()));
+            }
+            None => {}
+        }
 
         side_col = side_col.push(self.horizontal_space(0, PADDING));
         side_col = side_col.push(self.horizontal_rule(SF));
@@ -137,21 +180,6 @@ impl TreeView {
 
         side_col = side_col.push(self.horizontal_space(0, PADDING));
         side_col = side_col.push(self.legend_toggler(self.has_brlen));
-
-        side_col = side_col.push(self.horizontal_space(0, PADDING));
-        side_col = side_col.push(self.horizontal_rule(SF));
-        side_col = side_col.push(self.horizontal_space(0, PADDING));
-        side_col = side_col.push(
-            row![
-                text!("Node Order")
-                    .size(TEXT_SIZE)
-                    .align_x(Alignment::Start),
-                self.node_ordering_options_pick_list(),
-            ]
-            .align_y(Vertical::Center)
-            .width(Length::Fill)
-            .spacing(PADDING),
-        );
 
         side_col = side_col.push(self.horizontal_space(0, PADDING));
         side_col = side_col.push(self.horizontal_rule(SF));
@@ -327,58 +355,93 @@ impl TreeView {
         tgl
     }
 
-    fn node_size_slider(&self) -> Slider<u8, TreeViewMsg> {
-        let mut sldr: Slider<u8, TreeViewMsg> = Slider::new(
+    fn slider<'a>(
+        &self,
+        lab: &str,
+        slider: Slider<'a, u16, TreeViewMsg>,
+    ) -> Column<'a, TreeViewMsg> {
+        column![
+            container(text!("{lab}").size(TEXT_SIZE))
+                .align_x(Horizontal::Right)
+                .width(Length::Fill),
+            slider
+        ]
+    }
+
+    fn rot_angle_slider(&self) -> Slider<u16, TreeViewMsg> {
+        let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
+            self.min_rot_angle_idx..=self.max_rot_angle_idx,
+            self.selected_rot_angle_idx,
+            TreeViewMsg::RotAngleSelectionChanged,
+        );
+        sldr = sldr.step(1_u16);
+        sldr = sldr.shift_step(2_u16);
+        self.apply_slider_settings(sldr)
+    }
+
+    fn opn_angle_slider(&self) -> Slider<u16, TreeViewMsg> {
+        let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
+            self.min_opn_angle_idx..=self.max_opn_angle_idx,
+            self.selected_opn_angle_idx,
+            TreeViewMsg::OpnAngleSelectionChanged,
+        );
+        sldr = sldr.step(1_u16);
+        sldr = sldr.shift_step(2_u16);
+        self.apply_slider_settings(sldr)
+    }
+
+    fn node_size_slider(&self) -> Slider<u16, TreeViewMsg> {
+        let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
             self.min_node_size_idx..=self.max_node_size_idx,
             self.selected_node_size_idx,
             TreeViewMsg::NodeSizeSelectionChanged,
         );
-        sldr = sldr.step(1);
-        sldr = sldr.shift_step(2);
+        sldr = sldr.step(1_u16);
+        sldr = sldr.shift_step(2_u16);
         self.apply_slider_settings(sldr)
     }
 
-    fn canvas_width_slider(&self) -> Slider<u8, TreeViewMsg> {
-        let mut sldr: Slider<u8, TreeViewMsg> = Slider::new(
+    fn canvas_width_slider(&self) -> Slider<u16, TreeViewMsg> {
+        let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
             self.min_canvas_w_idx..=self.max_canvas_w_idx,
             self.selected_canvas_w_idx,
             TreeViewMsg::CanvasWidthSelectionChanged,
         );
-        sldr = sldr.step(1);
-        sldr = sldr.shift_step(2);
+        sldr = sldr.step(1_u16);
+        sldr = sldr.shift_step(2_u16);
         self.apply_slider_settings(sldr)
     }
 
-    fn tip_labels_size_slider(&self) -> Slider<u8, TreeViewMsg> {
-        let mut sldr: Slider<u8, TreeViewMsg> = Slider::new(
+    fn tip_labels_size_slider(&self) -> Slider<u16, TreeViewMsg> {
+        let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
             self.min_label_size_idx..=self.max_label_size_idx,
             self.selected_tip_label_size_idx,
             TreeViewMsg::TipLabelSizeSelectionChanged,
         );
-        sldr = sldr.step(1);
-        sldr = sldr.shift_step(2);
+        sldr = sldr.step(1_u16);
+        sldr = sldr.shift_step(2_u16);
         self.apply_slider_settings(sldr)
     }
 
-    fn branch_labels_size_slider(&self) -> Slider<u8, TreeViewMsg> {
-        let mut sldr: Slider<u8, TreeViewMsg> = Slider::new(
+    fn branch_labels_size_slider(&self) -> Slider<u16, TreeViewMsg> {
+        let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
             self.min_label_size_idx..=self.max_label_size_idx,
             self.selected_branch_label_size_idx,
             TreeViewMsg::BranchLabelSizeSelectionChanged,
         );
-        sldr = sldr.step(1);
-        sldr = sldr.shift_step(2);
+        sldr = sldr.step(1_u16);
+        sldr = sldr.shift_step(2_u16);
         self.apply_slider_settings(sldr)
     }
 
-    fn int_labels_size_slider(&self) -> Slider<u8, TreeViewMsg> {
-        let mut sldr: Slider<u8, TreeViewMsg> = Slider::new(
+    fn int_labels_size_slider(&self) -> Slider<u16, TreeViewMsg> {
+        let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
             self.min_label_size_idx..=self.max_label_size_idx,
             self.selected_int_label_size_idx,
             TreeViewMsg::IntLabelSizeSelectionChanged,
         );
-        sldr = sldr.step(1);
-        sldr = sldr.shift_step(2);
+        sldr = sldr.step(1_u16);
+        sldr = sldr.shift_step(2_u16);
         self.apply_slider_settings(sldr)
     }
 
@@ -418,12 +481,22 @@ impl TreeView {
         btn
     }
 
+    fn tree_repr_options_pick_list(
+        &self,
+    ) -> PickList<TreeReprOption, &[TreeReprOption], TreeReprOption, TreeViewMsg> {
+        let pl: PickList<TreeReprOption, &[TreeReprOption], TreeReprOption, TreeViewMsg> =
+            PickList::new(
+                &TREE_REPR_OPTIONS,
+                self.selected_tree_repr_option,
+                TreeViewMsg::TreeReprOptionChanged,
+            );
+        self.apply_pick_list_settings(pl)
+    }
+
     fn node_ordering_options_pick_list(
         &self,
     ) -> PickList<NodeOrderingOption, &[NodeOrderingOption], NodeOrderingOption, TreeViewMsg> {
-        let h: PickListHandle<Font> = PickListHandle::Arrow { size: Some(Pixels(TEXT_SIZE)) };
-
-        let mut pl: PickList<
+        let pl: PickList<
             NodeOrderingOption,
             &[NodeOrderingOption],
             NodeOrderingOption,
@@ -433,7 +506,17 @@ impl TreeView {
             self.selected_node_ordering_option,
             TreeViewMsg::NodeOrderingOptionChanged,
         );
+        self.apply_pick_list_settings(pl)
+    }
 
+    fn apply_pick_list_settings<
+        'a,
+        T: std::cmp::PartialEq + std::fmt::Display + std::clone::Clone,
+    >(
+        &'a self,
+        mut pl: PickList<'a, T, &[T], T, TreeViewMsg>,
+    ) -> PickList<'a, T, &'a [T], T, TreeViewMsg> {
+        let h: PickListHandle<Font> = PickListHandle::Arrow { size: Some(Pixels(TEXT_SIZE)) };
         pl = pl.text_size(TEXT_SIZE);
         pl = pl.padding(PADDING_INNER);
         pl = pl.width(Length::Fill);
@@ -463,6 +546,7 @@ impl TreeView {
                 },
             }
         });
+
         pl
     }
 

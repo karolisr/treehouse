@@ -146,6 +146,7 @@ features = [
 
 [dependencies]
 numfmt = "1"
+# roarsvg = "0"
 
 [dependencies.dendros]
 git = "https://github.com/karolisr/dendros.git"

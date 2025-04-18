@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     ColorSimple,
-    app::{PADDING, SCROLL_TOOL_W, SF},
+    app::{PADDING, SCROLL_TOOL_W, SF, treeview::TreeReprOption},
 };
 use iced::{
     Event, Point, Rectangle, Renderer, Size, Theme, Vector,
@@ -164,6 +164,18 @@ impl Program<TreeViewMsg> for TreeView {
             return vec![];
         }
 
+        if self.selected_tree_repr_option.is_none() {
+            return vec![];
+        }
+
+        let tree_repr = self.selected_tree_repr_option.unwrap();
+
+        let fan_size = state.tree_rect.width.min(state.tree_rect.height) as f64 / 2e0;
+        let fan_center = Point {
+            x: state.tree_rect.width as f64 / 2e0,
+            y: state.tree_rect.height as f64 / 2e0,
+        };
+
         let mut geoms: Vec<Geometry> = Vec::new();
 
         #[cfg(debug_assertions)]
@@ -208,7 +220,13 @@ impl Program<TreeViewMsg> for TreeView {
                     line_join: stroke::LineJoin::Round,
                     ..Default::default()
                 };
-                let paths = self.paths_from_chunks(state.tree_rect.width, state.tree_rect.height);
+                let paths = match tree_repr {
+                    TreeReprOption::Phylogram => {
+                        self.paths_from_chunks(state.tree_rect.width, state.tree_rect.height)
+                    }
+                    TreeReprOption::Fan => self.paths_from_chunks_fan(fan_size, fan_center),
+                };
+
                 self.draw_edges(paths, stroke, &state.tree_rect, f);
             });
         geoms.push(g_edges);
@@ -217,44 +235,83 @@ impl Program<TreeViewMsg> for TreeView {
             if self.draw_tip_branch_labels_allowed && self.has_tip_labels && self.draw_tip_labels {
                 let g_tip_labels =
                     self.tip_labels_geom_cache
-                        .draw(renderer, state.clip_rect.size(), |f| {
-                            let labels = self.tip_labels_in_range(
-                                state.tree_rect.width,
-                                state.tree_rect.height,
-                                tip_idx_range.b,
-                                tip_idx_range.e,
-                                &state.tree_label_template,
-                            );
-                            self.draw_labels(
-                                labels,
-                                self.tip_label_size,
-                                Point { x: self.tip_label_offset_x, y: 0e0 },
-                                &state.tree_rect,
-                                &state.clip_rect,
-                                f,
-                            );
+                        .draw(renderer, state.clip_rect.size(), |f| match tree_repr {
+                            TreeReprOption::Phylogram => {
+                                let labels = self.tip_labels_in_range(
+                                    state.tree_rect.width,
+                                    state.tree_rect.height,
+                                    tip_idx_range.b,
+                                    tip_idx_range.e,
+                                    &state.tree_label_template,
+                                );
+                                self.draw_labels(
+                                    labels,
+                                    self.tip_label_size,
+                                    Point { x: self.tip_label_offset_x, y: 0e0 },
+                                    &state.tree_rect,
+                                    &state.clip_rect,
+                                    f,
+                                );
+                            }
+                            TreeReprOption::Fan => {
+                                let labels = self.tip_labels_in_range_fan(
+                                    fan_size,
+                                    fan_center,
+                                    tip_idx_range.b,
+                                    tip_idx_range.e,
+                                    &state.tree_label_template,
+                                );
+                                self.draw_labels_fan(
+                                    labels,
+                                    self.tip_label_size,
+                                    Point { x: self.tip_label_offset_x, y: 0e0 },
+                                    &state.tree_rect,
+                                    &state.clip_rect,
+                                    f,
+                                )
+                            }
                         });
+
                 geoms.push(g_tip_labels);
             }
 
             if self.has_int_labels && self.draw_int_labels {
                 let g_int_labels =
                     self.int_labels_geom_cache
-                        .draw(renderer, state.clip_rect.size(), |f| {
-                            let labels = self.visible_int_node_labels(
-                                state.tree_rect.width,
-                                state.tree_rect.height,
-                                &state.visible_nodes,
-                                &state.tree_label_template,
-                            );
-                            self.draw_labels(
-                                labels,
-                                self.int_label_size,
-                                Point { x: self.int_label_offset_x, y: 0e0 },
-                                &state.tree_rect,
-                                &state.clip_rect,
-                                f,
-                            );
+                        .draw(renderer, state.clip_rect.size(), |f| match tree_repr {
+                            TreeReprOption::Phylogram => {
+                                let labels = self.visible_int_node_labels(
+                                    state.tree_rect.width,
+                                    state.tree_rect.height,
+                                    &state.visible_nodes,
+                                    &state.tree_label_template,
+                                );
+                                self.draw_labels(
+                                    labels,
+                                    self.int_label_size,
+                                    Point { x: self.int_label_offset_x, y: 0e0 },
+                                    &state.tree_rect,
+                                    &state.clip_rect,
+                                    f,
+                                );
+                            }
+                            TreeReprOption::Fan => {
+                                let labels = self.visible_int_node_labels_fan(
+                                    fan_size,
+                                    fan_center,
+                                    &state.visible_nodes,
+                                    &state.tree_label_template,
+                                );
+
+                                self.draw_labels_fan(
+                                    labels,
+                                    self.int_label_size,
+                                    Point { x: self.int_label_offset_x, y: 0e0 },
+                                    &state.tree_rect,
+                                    &state.clip_rect,
+                                    f,
+                                )
+                            }
                         });
                 geoms.push(g_int_labels);
             }

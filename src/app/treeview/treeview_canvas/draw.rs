@@ -4,7 +4,7 @@ use crate::{
     app::{PADDING, SF, TEXT_SIZE},
 };
 use iced::{
-    Pixels, Point, Rectangle, Vector,
+    Pixels, Point, Radians, Rectangle, Vector,
     alignment::{Horizontal, Vertical},
     widget::canvas::{Frame, Path, Stroke, Text},
 };
@@ -84,6 +84,35 @@ impl TreeView {
             for mut l in labels {
                 l.size = size_pix;
                 f.fill_text(l);
+            }
+        });
+    }
+
+    pub fn draw_labels_fan(
+        &self,
+        labels: Vec<(Text, Radians)>,
+        size: Float,
+        offset: Point,
+        tree_rect: &Rectangle,
+        clip: &Rectangle,
+        frame: &mut Frame,
+    ) {
+        let size_pix: Pixels = size.into();
+        let pos = Point { x: 0e0, y: 0e0 };
+        frame.with_clip(*clip, |f| {
+            f.translate(Vector { x: tree_rect.x, y: tree_rect.y });
+            for (mut l, a) in labels {
+                f.push_transform();
+                l.size = size_pix;
+                let af = a.0;
+                f.translate(Vector {
+                    x: l.position.x + af.cos() * (offset.x),
+                    y: l.position.y + af.sin() * (offset.x),
+                });
+                f.rotate(a);
+                l.position = pos;
+                f.fill_text(l);
+                f.pop_transform();
             }
         });
     }
