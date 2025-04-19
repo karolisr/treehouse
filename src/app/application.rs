@@ -1,6 +1,6 @@
 #[cfg(target_os = "macos")]
 use super::macos::register_ns_application_delegate_handlers;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 use super::menus::prepare_app_menu;
 use super::{
     APP_SCALE_FACTOR,
@@ -30,7 +30,7 @@ use std::{
 pub struct App {
     pub windows: HashMap<WinId, AppWin>,
     menu_events_sender: Option<Sender<MenuEventReplyMsg>>,
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     menu: Option<muda::Menu>,
 }
 

@@ -154,34 +154,36 @@ branch = "main"
 default-features = false
 features = []
 
-[target.aarch64-apple-darwin.dependencies]
+[target.macos]
+
+[target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6.0"
 objc2-app-kit = "0.3.0"
 objc2-foundation = "0.3.0"
 
-[target.aarch64-apple-darwin.dependencies.muda]
+[target.'cfg(target_os = "macos")'.dependencies.muda]
 git = "https://github.com/karolisr/muda.git"
 branch = "custom"
 default-features = false
 features = []
 
-[target.x86_64-pc-windows-gnullvm.dependencies.muda]
+[target.'cfg(target_os = "windows")'.dependencies.muda]
 git = "https://github.com/karolisr/muda.git"
 branch = "custom"
 default-features = false
 features = []
 
-[target.aarch64-apple-darwin.dependencies.rfd]
+[target.'cfg(target_os = "macos")'.dependencies.rfd]
 version = "0.15"
 default-features = false
 features = []
 
-[target.x86_64-pc-windows-gnullvm.dependencies.rfd]
+[target.'cfg(target_os = "windows")'.dependencies.rfd]
 version = "0.15"
 default-features = false
 features = []
 
-[target.x86_64-unknown-linux-gnu.dependencies.rfd]
+[target.'cfg(target_os = "linux")'.dependencies.rfd]
 version = "0.15"
 default-features = false
 features = [
