@@ -165,13 +165,24 @@ branch = "custom"
 default-features = false
 features = []
 
+[target.x86_64-pc-windows-gnullvm.dependencies.muda]
+git = "https://github.com/karolisr/muda.git"
+branch = "custom"
+default-features = false
+features = []
+
 [target.aarch64-apple-darwin.dependencies.rfd]
-version = "0.15.3"
+version = "0.15"
+default-features = false
+features = []
+
+[target.x86_64-pc-windows-gnullvm.dependencies.rfd]
+version = "0.15"
 default-features = false
 features = []
 
 [target.x86_64-unknown-linux-gnu.dependencies.rfd]
-version = "0.15.3"
+version = "0.15"
 default-features = false
 features = [
     ### Uses GTK for dialogs on Linux & BSDs; has no effect on Windows and macOS

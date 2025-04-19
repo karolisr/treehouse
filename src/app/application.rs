@@ -75,12 +75,17 @@ impl App {
     pub fn update(&mut self, app_msg: AppMsg) -> Task<AppMsg> {
         match app_msg {
             AppMsg::AppInitialized => {
+                #[cfg(any(target_os = "windows", target_os = "macos"))]
+                let menu = prepare_app_menu();
+
                 #[cfg(target_os = "macos")]
+                menu.init_for_nsapp();
+
+                #[cfg(any(target_os = "windows", target_os = "macos"))]
                 {
-                    let menu = prepare_app_menu();
-                    menu.init_for_nsapp();
                     self.menu = Some(menu);
                 }
+
                 Task::done(AppMsg::OpenWin(AppWinType::TreeWin))
             }
             AppMsg::OpenWin(win) => open_window(self, win),
@@ -218,6 +223,14 @@ impl App {
             }
             AppMsg::WinOpened(id) => match self.windows.get(&id) {
                 Some(AppWin::TreeWin(_)) => {
+                    // #[cfg(target_os = "windows")]
+                    // unsafe {
+                    //     if let Some(menu) = &self.menu {
+                    //         iced::window::run_with_handle(id, |handle| {
+                    //             menu.init_for_hwnd(handle.as_raw());
+                    //         });
+                    //     }
+                    // };
                     #[cfg(not(debug_assertions))]
                     {
                         Task::none()
