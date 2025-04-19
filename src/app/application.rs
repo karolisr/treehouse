@@ -25,6 +25,11 @@ use std::{
     fs::{read, write},
     path::PathBuf,
 };
+#[allow(unused_imports)]
+#[cfg(target_os = "windows")]
+use windows_sys::Win32::UI::WindowsAndMessaging::{
+    DispatchMessageW, GetMessageW, MSG, TranslateAcceleratorW, TranslateMessage,
+};
 
 #[derive(Default)]
 pub struct App {
@@ -49,6 +54,8 @@ pub enum AppMsg {
     WinCloseRequested(WinId),
     WinClosed(WinId),
     WinOpened(WinId),
+    #[cfg(target_os = "windows")]
+    AddMenuForHwnd(u64),
 }
 
 pub enum FileType {
@@ -77,15 +84,12 @@ impl App {
             AppMsg::AppInitialized => {
                 #[cfg(any(target_os = "windows", target_os = "macos"))]
                 let menu = prepare_app_menu();
-
                 #[cfg(target_os = "macos")]
                 menu.init_for_nsapp();
-
                 #[cfg(any(target_os = "windows", target_os = "macos"))]
                 {
                     self.menu = Some(menu);
                 }
-
                 Task::done(AppMsg::OpenWin(AppWinType::TreeWin))
             }
             AppMsg::OpenWin(win) => open_window(self, win),
@@ -221,36 +225,64 @@ impl App {
 
                 app_task.chain(win_task)
             }
-            AppMsg::WinOpened(id) => match self.windows.get(&id) {
-                Some(AppWin::TreeWin(_)) => {
-                    // #[cfg(target_os = "windows")]
-                    // unsafe {
-                    //     if let Some(menu) = &self.menu {
-                    //         iced::window::run_with_handle(id, |handle| {
-                    //             menu.init_for_hwnd(handle.as_raw());
-                    //         });
-                    //     }
-                    // };
-                    #[cfg(not(debug_assertions))]
-                    {
-                        Task::none()
+            #[cfg(target_os = "windows")]
+            AppMsg::AddMenuForHwnd(hwnd) => {
+                unsafe {
+                    if let Some(menu) = &self.menu {
+                        let _rslt = menu.init_for_hwnd(hwnd as isize);
+                        // let mut msg: MSG = std::mem::zeroed();
+                        // while GetMessageW(&mut msg, std::ptr::null_mut(), 0, 0) == 1 {
+                        //     let translated = TranslateAcceleratorW(
+                        //         msg.hwnd,
+                        //         menu.haccel() as _,
+                        //         &msg as *const _,
+                        //     );
+                        //     if translated != 1 {
+                        //         TranslateMessage(&msg);
+                        //         DispatchMessageW(&msg);
+                        //     }
+                        // }
                     }
-                    #[cfg(debug_assertions)]
-                    {
-                        let path_buf = PathBuf::from("tests/data/tree01.newick");
-                        let path: &Path = &path_buf.clone().into_boxed_path();
-                        if path.exists() {
-                            Task::done(AppMsg::PathToOpen(id, path_buf))
-                        } else {
+                };
+                Task::none()
+            }
+            AppMsg::WinOpened(id) => match self.windows.get(&id) {
+                Some(AppWin::TreeWin(_)) => Task::none()
+                    .chain({
+                        #[cfg(target_os = "windows")]
+                        {
+                            iced::window::get_raw_id::<AppMsg>(id).map(AppMsg::AddMenuForHwnd)
+                        }
+                        #[cfg(target_os = "macos")]
+                        {
                             Task::none()
                         }
-                    }
-                }
+                        #[cfg(target_os = "linux")]
+                        {
+                            Task::none()
+                        }
+                    })
+                    .chain({
+                        #[cfg(not(debug_assertions))]
+                        {
+                            Task::none()
+                        }
+                        #[cfg(debug_assertions)]
+                        {
+                            let path_buf = PathBuf::from("tests/data/tree01.newick");
+                            let path: &Path = &path_buf.clone().into_boxed_path();
+                            if path.exists() {
+                                Task::done(AppMsg::PathToOpen(id, path_buf))
+                            } else {
+                                Task::none()
+                            }
+                        }
+                    }),
                 None => Task::none(),
             },
             AppMsg::WinCloseRequested(id) => match self.windows.get(&id) {
                 Some(AppWin::TreeWin(_)) => {
-                    #[cfg(target_os = "macos")]
+                    #[cfg(any(target_os = "macos", target_os = "windows"))]
                     {
                         muda::MenuEvent::send(muda::MenuEvent {
                             id: muda::MenuId(MenuEvent::QuitInternal.to_string()),

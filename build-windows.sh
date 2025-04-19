@@ -19,10 +19,6 @@ cargo build --profile dev && \
 
 cargo check --profile release && \
 cargo clippy --profile release && \
-cargo build --profile release && \
+cargo build --profile release
 
-# x86_64-pc-windows-gnu
-# x86_64-pc-windows-gnullvm
-# x86_64-pc-windows-msvc
-
-cargo-bundle bundle --profile release
+# cargo-bundle bundle --profile release

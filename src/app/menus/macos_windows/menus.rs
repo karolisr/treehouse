@@ -7,6 +7,11 @@ use muda::{
 pub fn prepare_app_menu() -> Menu {
     let menu = Menu::default();
 
+    #[cfg(target_os = "windows")]
+    let modifier = Modifiers::CONTROL;
+    #[cfg(target_os = "macos")]
+    let modifier = Modifiers::META;
+
     let submenu_app = Submenu::with_id("submenu_app", "App", true);
     let submenu_file = Submenu::with_id("submenu_file", "File", true);
 
@@ -18,7 +23,7 @@ pub fn prepare_app_menu() -> Menu {
         MenuEvent::CloseWindow,
         "Close Window",
         true,
-        Some(Accelerator::new(Some(Modifiers::META), Code::KeyW)),
+        Some(Accelerator::new(Some(modifier), Code::KeyW)),
     );
 
     // let menu_item_quit = muda::PredefinedMenuItem::quit(None);
@@ -26,21 +31,21 @@ pub fn prepare_app_menu() -> Menu {
         MenuEvent::Quit,
         "Quit",
         true,
-        Some(Accelerator::new(Some(Modifiers::META), Code::KeyQ)),
+        Some(Accelerator::new(Some(modifier), Code::KeyQ)),
     );
 
     let menu_item_open = MenuItem::with_id(
         MenuEvent::OpenFile,
         "Open File",
         true,
-        Some(Accelerator::new(Some(Modifiers::META), Code::KeyO)),
+        Some(Accelerator::new(Some(modifier), Code::KeyO)),
     );
 
     let menu_item_save = MenuItem::with_id(
         MenuEvent::SaveAs,
         "Save As...",
         true,
-        Some(Accelerator::new(Some(Modifiers::META), Code::KeyS)),
+        Some(Accelerator::new(Some(modifier), Code::KeyS)),
     );
 
     // submenu_app.append(&menu_item_about).ok();
@@ -50,6 +55,7 @@ pub fn prepare_app_menu() -> Menu {
     submenu_file.append(&menu_item_save).ok();
     submenu_file.append(&menu_item_close_win).ok();
 
+    #[cfg(target_os = "macos")]
     menu.append(&submenu_app).ok();
     menu.append(&submenu_file).ok();
 

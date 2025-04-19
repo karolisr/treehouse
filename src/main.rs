@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 // #![cfg_attr(
 //     debug_assertions,
 //     allow(
