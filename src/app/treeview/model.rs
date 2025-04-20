@@ -115,10 +115,10 @@ pub struct TreeView {
 impl TreeView {
     pub fn new() -> Self {
         Self {
-            threads: 8,
+            threads: 6,
 
             selected_node_ordering_option: Some(NodeOrderingOption::Ascending),
-            selected_tree_repr_option: Some(TreeReprOption::Fan),
+            selected_tree_repr_option: Some(TreeReprOption::Phylogram),
 
             window_w: window_settings().size.width,
             window_h: SF,
