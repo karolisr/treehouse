@@ -154,7 +154,7 @@ default-features = false
 features = []
 
 [target.aarch64-apple-darwin.dependencies]
-objc2 = "0.6.0"
+objc2 = "0.6.1"
 objc2-app-kit = "0.3.0"
 objc2-foundation = "0.3.0"
 
