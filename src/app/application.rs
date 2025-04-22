@@ -26,11 +26,6 @@ use std::{
     fs::{read, write},
     path::PathBuf,
 };
-// #[allow(unused_imports)]
-// #[cfg(target_os = "windows")]
-// use windows_sys::Win32::UI::WindowsAndMessaging::{
-//     DispatchMessageW, GetMessageW, MSG, TranslateAcceleratorW, TranslateMessage,
-// };
 
 #[derive(Default)]
 pub struct App {
@@ -93,6 +88,7 @@ impl App {
                                 "o" => Task::done(AppMsg::MenuEvent(false, MenuEvent::OpenFile)),
                                 "s" => Task::done(AppMsg::MenuEvent(false, MenuEvent::SaveAs)),
                                 "w" => Task::done(AppMsg::MenuEvent(false, MenuEvent::CloseWindow)),
+                                "q" => Task::done(AppMsg::MenuEvent(false, MenuEvent::Quit)),
                                 _ => Task::none(),
                             }
                         }
@@ -257,18 +253,6 @@ impl App {
                 unsafe {
                     if let Some(menu) = &self.menu {
                         let _rslt = menu.init_for_hwnd(hwnd as isize);
-                        // let mut msg: MSG = std::mem::zeroed();
-                        // while GetMessageW(&mut msg, std::ptr::null_mut(), 0, 0) == 1 {
-                        //     let translated = TranslateAcceleratorW(
-                        //         msg.hwnd,
-                        //         menu.haccel() as _,
-                        //         &msg as *const _,
-                        //     );
-                        //     if translated != 1 {
-                        //         TranslateMessage(&msg);
-                        //         DispatchMessageW(&msg);
-                        //     }
-                        // }
                     }
                 };
                 Task::none()
@@ -289,6 +273,10 @@ impl App {
                             Task::none()
                         }
                     })
+                    .chain(Task::done(AppMsg::TreeWinMsg(
+                        id,
+                        TreeWinMsg::TreeViewMsg(id, TreeViewMsg::SetWinId(id)),
+                    )))
                     .chain({
                         #[cfg(not(debug_assertions))]
                         {
@@ -365,11 +353,11 @@ fn subscriptions() -> Subscription<AppMsg> {
     let close_requests = close_requests().map(AppMsg::WinCloseRequested);
     let close_events = close_events().map(AppMsg::WinClosed);
     let all_window_events = events().map(|(id, e)| AppMsg::Win(id, e));
+    let menu_events = menu_events();
+    let keyboard_events = on_key_press(|key, modifiers| Some(AppMsg::KeysPressed(key, modifiers)));
     // let url_events = listen_url().map(AppMsg::Url);
     // let runtime_events = listen().map(AppMsg::RuntimeEvent);
     // let raw_events = listen_raw(|e, status, id| Some(AppMsg::RawEvent(e, status, id)));
-    let menu_events = menu_events();
-    let keyboard_events = on_key_press(|key, modifiers| Some(AppMsg::KeysPressed(key, modifiers)));
 
     Subscription::batch([
         open_events,
