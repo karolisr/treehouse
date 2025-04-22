@@ -146,6 +146,7 @@ features = [
 
 [dependencies]
 numfmt = "1"
+# roarsvg = "0"
 
 [dependencies.dendros]
 git = "https://github.com/karolisr/dendros.git"
@@ -153,24 +154,40 @@ branch = "main"
 default-features = false
 features = []
 
-[target.aarch64-apple-darwin.dependencies]
-objc2 = "0.6.0"
-objc2-app-kit = "0.3.0"
-objc2-foundation = "0.3.0"
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-app-kit = "0.3"
+objc2-foundation = "0.3"
 
-[target.aarch64-apple-darwin.dependencies.muda]
+# [target.'cfg(target_os = "windows")'.dependencies]
+# windows-sys = "0.59"
+
+[target.'cfg(target_os = "macos")'.dependencies.muda]
 git = "https://github.com/karolisr/muda.git"
 branch = "custom"
 default-features = false
 features = []
 
-[target.aarch64-apple-darwin.dependencies.rfd]
-version = "0.15.3"
+[target.'cfg(target_os = "windows")'.dependencies.muda]
+git = "https://github.com/karolisr/muda.git"
+branch = "custom"
+default-features = false
+features = [
+    # "common-controls-v6"
+]
+
+[target.'cfg(target_os = "macos")'.dependencies.rfd]
+version = "0.15"
 default-features = false
 features = []
 
-[target.x86_64-unknown-linux-gnu.dependencies.rfd]
-version = "0.15.3"
+[target.'cfg(target_os = "windows")'.dependencies.rfd]
+version = "0.15"
+default-features = false
+features = []
+
+[target.'cfg(target_os = "linux")'.dependencies.rfd]
+version = "0.15"
 default-features = false
 features = [
     ### Uses GTK for dialogs on Linux & BSDs; has no effect on Windows and macOS

@@ -1,9 +1,12 @@
 use super::super::TreeView;
 use crate::{Edge, Float};
 use iced::{
-    Point,
+    Point, Radians,
     alignment::{Horizontal, Vertical},
-    widget::canvas::{Path, Text, path::Builder as PathBuilder},
+    widget::canvas::{
+        Path, Text,
+        path::{Arc, Builder as PathBuilder},
+    },
 };
 use std::{
     ops::{Deref, RangeInclusive},
@@ -35,20 +38,64 @@ impl TreeView {
             let mut handles: Vec<ScopedJoinHandle<'_, Path>> = Vec::new();
             for chunk in &self.tree_chunked_edges {
                 let handle = thread_scope.spawn(move || {
-                    let mut path_builder = PathBuilder::new();
+                    let mut pb = PathBuilder::new();
                     for edge in chunk {
                         let x0 = edge.x0 as Float * tree_rect_width;
                         let x1 = edge.x1 as Float * tree_rect_width;
                         let y = edge.y as Float * tree_rect_height;
                         let pt_node = Point::new(x1, y);
-                        path_builder.move_to(pt_node);
-                        path_builder.line_to(Point::new(x0, y));
+                        pb.move_to(pt_node);
+                        pb.line_to(Point::new(x0, y));
                         if let Some(y_parent) = edge.y_parent {
-                            path_builder
-                                .line_to(Point::new(x0, y_parent as Float * tree_rect_height))
+                            pb.line_to(Point::new(x0, y_parent as Float * tree_rect_height))
                         };
                     }
-                    path_builder.build()
+                    pb.build()
+                });
+                handles.push(handle);
+            }
+            for j in handles {
+                let path = j.join().unwrap();
+                paths.push(path);
+            }
+        });
+        paths
+    }
+
+    pub fn paths_from_chunks_fan(&self, size: f64, center: Point<f64>) -> Vec<Path> {
+        let mut paths: Vec<Path> = Vec::with_capacity(self.node_count);
+        let c_x = center.x;
+        let c_y = center.y;
+        let center_f32 = Point { x: c_x as Float, y: c_y as Float };
+        let rot_angle = self.rot_angle;
+        let max_angle = self.opn_angle;
+        thread::scope(|thread_scope| {
+            let mut handles: Vec<ScopedJoinHandle<'_, Path>> = Vec::new();
+            for chunk in &self.tree_chunked_edges {
+                let handle = thread_scope.spawn(move || {
+                    let mut pb = PathBuilder::new();
+                    for edge in chunk {
+                        let angle = rot_angle + edge.y * max_angle;
+                        let x0 = edge.x0 * angle.cos() * size;
+                        let y0 = edge.x0 * angle.sin() * size;
+                        let x1 = edge.x1 * angle.cos() * size;
+                        let y1 = edge.x1 * angle.sin() * size;
+                        let pt_node = Point { x: (c_x + x1) as Float, y: (c_y + y1) as Float };
+                        let pt_0 = Point { x: (c_x + x0) as Float, y: (c_y + y0) as Float };
+                        pb.move_to(pt_node);
+                        pb.line_to(pt_0);
+                        if let Some(y_parent) = edge.y_parent {
+                            let angle_parent = rot_angle + y_parent * max_angle;
+                            let p_arc = Arc {
+                                center: center_f32,
+                                radius: center_f32.distance(pt_0),
+                                start_angle: Radians(angle as f32),
+                                end_angle: Radians(angle_parent as f32),
+                            };
+                            pb.arc(p_arc);
+                        };
+                    }
+                    pb.build()
                 });
                 handles.push(handle);
             }
@@ -70,14 +117,40 @@ impl TreeView {
     ) -> Vec<Text> {
         let mut labels: Vec<Text> = Vec::with_capacity(idx_1 - idx_0);
         for edge in &self.tree_tip_edges[idx_0..=idx_1] {
-            let x1 = edge.x1 as Float * tree_rect_width;
-            let y = edge.y as Float * tree_rect_height;
-            let pt_node = Point::new(x1, y);
             if let Some(name) = &edge.name {
+                let x1 = edge.x1 as Float * tree_rect_width;
+                let y = edge.y as Float * tree_rect_height;
+                let pt_node = Point::new(x1, y);
                 let mut label = label_template.clone();
                 label.content = name.deref().into();
                 label.position = pt_node;
                 labels.push(label);
+            }
+        }
+        labels
+    }
+
+    pub fn tip_labels_in_range_fan(
+        &self,
+        size: f64,
+        center: Point<f64>,
+        idx_0: usize,
+        idx_1: usize,
+        label_template: &Text,
+    ) -> Vec<(Text, Radians)> {
+        let mut labels: Vec<(Text, Radians)> = Vec::with_capacity(idx_1 - idx_0);
+        let c_x = center.x;
+        let c_y = center.y;
+        for edge in &self.tree_tip_edges[idx_0..=idx_1] {
+            if let Some(name) = &edge.name {
+                let angle = self.rot_angle + edge.y * self.opn_angle;
+                let x1 = edge.x1 * angle.cos() * size;
+                let y1 = edge.x1 * angle.sin() * size;
+                let pt_node = Point { x: (c_x + x1) as Float, y: (c_y + y1) as Float };
+                let mut label = label_template.clone();
+                label.content = name.deref().into();
+                label.position = pt_node;
+                labels.push((label, Radians(angle as f32)));
             }
         }
         labels
@@ -100,6 +173,34 @@ impl TreeView {
                 label.content = name.deref().into();
                 label.position = *point;
                 labels.push(label);
+            }
+        }
+        labels
+    }
+
+    pub fn visible_int_node_labels_fan(
+        &self,
+        size: f64,
+        center: Point<f64>,
+        visible_nodes: &Vec<NodePoint>,
+        label_template: &Text,
+    ) -> Vec<(Text, Radians)> {
+        let mut labels: Vec<(Text, Radians)> = Vec::with_capacity(visible_nodes.len());
+        let c_x = center.x;
+        let c_y = center.y;
+        for NodePoint { point: _, edge } in visible_nodes {
+            if edge.is_tip {
+                continue;
+            }
+            if let Some(name) = &edge.name {
+                let angle = self.rot_angle + edge.y * self.opn_angle;
+                let x1 = edge.x1 * angle.cos() * size;
+                let y1 = edge.x1 * angle.sin() * size;
+                let pt_node = Point { x: (c_x + x1) as Float, y: (c_y + y1) as Float };
+                let mut label = label_template.clone();
+                label.content = name.deref().into();
+                label.position = pt_node;
+                labels.push((label, Radians(angle as f32)));
             }
         }
         labels

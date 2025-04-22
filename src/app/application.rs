@@ -1,6 +1,6 @@
 #[cfg(target_os = "macos")]
 use super::macos::register_ns_application_delegate_handlers;
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 use super::menus::prepare_app_menu;
 use super::{
     APP_SCALE_FACTOR,
@@ -12,6 +12,7 @@ use crate::{Tree, parse_newick};
 use iced::{
     Element, Subscription, Task, exit,
     futures::channel::mpsc::Sender,
+    keyboard::{Key, Modifiers, on_key_press},
     widget,
     window::{
         Event as WinEvent, Id as WinId, close as close_window, close_events, close_requests,
@@ -25,12 +26,17 @@ use std::{
     fs::{read, write},
     path::PathBuf,
 };
+// #[allow(unused_imports)]
+// #[cfg(target_os = "windows")]
+// use windows_sys::Win32::UI::WindowsAndMessaging::{
+//     DispatchMessageW, GetMessageW, MSG, TranslateAcceleratorW, TranslateMessage,
+// };
 
 #[derive(Default)]
 pub struct App {
     pub windows: HashMap<WinId, AppWin>,
     menu_events_sender: Option<Sender<MenuEventReplyMsg>>,
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     menu: Option<muda::Menu>,
 }
 
@@ -38,7 +44,7 @@ pub struct App {
 pub enum AppMsg {
     AppInitialized,
     TreeWinMsg(WinId, TreeWinMsg),
-    MenuEvent(MenuEvent),
+    MenuEvent(bool, MenuEvent),
     MenuEventsSender(Sender<MenuEventReplyMsg>),
     OpenWin(AppWinType),
     PathToOpen(WinId, PathBuf),
@@ -49,6 +55,9 @@ pub enum AppMsg {
     WinCloseRequested(WinId),
     WinClosed(WinId),
     WinOpened(WinId),
+    #[cfg(target_os = "windows")]
+    AddMenuForHwnd(u64),
+    KeysPressed(Key, Modifiers),
 }
 
 pub enum FileType {
@@ -74,11 +83,33 @@ impl App {
 
     pub fn update(&mut self, app_msg: AppMsg) -> Task<AppMsg> {
         match app_msg {
+            AppMsg::KeysPressed(key, modifiers) => match modifiers {
+                Modifiers::CTRL => match key {
+                    Key::Character(k) => {
+                        #[cfg(any(target_os = "windows", target_os = "linux"))]
+                        {
+                            let k: &str = k.as_str();
+                            match k {
+                                "o" => Task::done(AppMsg::MenuEvent(false, MenuEvent::OpenFile)),
+                                "s" => Task::done(AppMsg::MenuEvent(false, MenuEvent::SaveAs)),
+                                "w" => Task::done(AppMsg::MenuEvent(false, MenuEvent::CloseWindow)),
+                                _ => Task::none(),
+                            }
+                        }
+                        #[cfg(target_os = "macos")]
+                        Task::none()
+                    }
+                    _ => Task::none(),
+                },
+                _ => Task::none(),
+            },
             AppMsg::AppInitialized => {
+                #[cfg(any(target_os = "windows", target_os = "macos"))]
+                let menu = prepare_app_menu();
                 #[cfg(target_os = "macos")]
+                menu.init_for_nsapp();
+                #[cfg(any(target_os = "windows", target_os = "macos"))]
                 {
-                    let menu = prepare_app_menu();
-                    menu.init_for_nsapp();
                     self.menu = Some(menu);
                 }
                 Task::done(AppMsg::OpenWin(AppWinType::TreeWin))
@@ -176,8 +207,10 @@ impl App {
                 self.menu_events_sender = Some(sender);
                 Task::none()
             }
-            AppMsg::MenuEvent(menu_event) => {
-                let _ = menu_event_reply(self, MenuEventReplyMsg::Ack);
+            AppMsg::MenuEvent(is_real, menu_event) => {
+                if is_real {
+                    let _ = menu_event_reply(self, MenuEventReplyMsg::Ack);
+                }
                 let id = iced::window::get_latest();
 
                 match menu_event {
@@ -216,28 +249,64 @@ impl App {
 
                 app_task.chain(win_task)
             }
-            AppMsg::WinOpened(id) => match self.windows.get(&id) {
-                Some(AppWin::TreeWin(_)) => {
-                    #[cfg(not(debug_assertions))]
-                    {
-                        Task::none()
+            #[cfg(target_os = "windows")]
+            AppMsg::AddMenuForHwnd(hwnd) => {
+                unsafe {
+                    if let Some(menu) = &self.menu {
+                        let _rslt = menu.init_for_hwnd(hwnd as isize);
+                        // let mut msg: MSG = std::mem::zeroed();
+                        // while GetMessageW(&mut msg, std::ptr::null_mut(), 0, 0) == 1 {
+                        //     let translated = TranslateAcceleratorW(
+                        //         msg.hwnd,
+                        //         menu.haccel() as _,
+                        //         &msg as *const _,
+                        //     );
+                        //     if translated != 1 {
+                        //         TranslateMessage(&msg);
+                        //         DispatchMessageW(&msg);
+                        //     }
+                        // }
                     }
-                    #[cfg(debug_assertions)]
-                    {
-                        let path_buf = PathBuf::from("tests/data/tree01.newick");
-                        let path: &Path = &path_buf.clone().into_boxed_path();
-                        if path.exists() {
-                            Task::done(AppMsg::PathToOpen(id, path_buf))
-                        } else {
+                };
+                Task::none()
+            }
+            AppMsg::WinOpened(id) => match self.windows.get(&id) {
+                Some(AppWin::TreeWin(_)) => Task::none()
+                    .chain({
+                        #[cfg(target_os = "windows")]
+                        {
+                            iced::window::get_raw_id::<AppMsg>(id).map(AppMsg::AddMenuForHwnd)
+                        }
+                        #[cfg(target_os = "macos")]
+                        {
                             Task::none()
                         }
-                    }
-                }
+                        #[cfg(target_os = "linux")]
+                        {
+                            Task::none()
+                        }
+                    })
+                    .chain({
+                        #[cfg(not(debug_assertions))]
+                        {
+                            Task::none()
+                        }
+                        #[cfg(debug_assertions)]
+                        {
+                            let path_buf = PathBuf::from("tests/data/tree01.newick");
+                            let path: &Path = &path_buf.clone().into_boxed_path();
+                            if path.exists() {
+                                Task::done(AppMsg::PathToOpen(id, path_buf))
+                            } else {
+                                Task::none()
+                            }
+                        }
+                    }),
                 None => Task::none(),
             },
             AppMsg::WinCloseRequested(id) => match self.windows.get(&id) {
                 Some(AppWin::TreeWin(_)) => {
-                    #[cfg(target_os = "macos")]
+                    #[cfg(any(target_os = "macos", target_os = "windows"))]
                     {
                         muda::MenuEvent::send(muda::MenuEvent {
                             id: muda::MenuId(MenuEvent::QuitInternal.to_string()),
@@ -297,6 +366,7 @@ fn subscriptions() -> Subscription<AppMsg> {
     // let runtime_events = listen().map(AppMsg::RuntimeEvent);
     // let raw_events = listen_raw(|e, status, id| Some(AppMsg::RawEvent(e, status, id)));
     let menu_events = menu_events();
+    let keyboard_events = on_key_press(|key, modifiers| Some(AppMsg::KeysPressed(key, modifiers)));
 
     Subscription::batch([
         open_events,
@@ -304,6 +374,7 @@ fn subscriptions() -> Subscription<AppMsg> {
         close_events,
         menu_events,
         all_window_events,
+        keyboard_events,
         // url_events,
         // runtime_events,
         // raw_events,

@@ -31,6 +31,12 @@ pub fn window_settings() -> Settings {
             titlebar_transparent: false,
             fullsize_content_view: false,
         },
+        #[cfg(target_os = "windows")]
+        platform_specific: PlatformSpecific {
+            drag_and_drop: true,
+            skip_taskbar: false,
+            undecorated_shadow: true,
+        },
         #[cfg(target_os = "linux")]
         platform_specific: PlatformSpecific {
             application_id: String::from(APP_ID),
