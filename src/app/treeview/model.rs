@@ -160,9 +160,9 @@ impl TreeView {
 
             selected_node_size_idx: 1,
             selected_canvas_w_idx: 1,
-            selected_tip_label_size_idx: 10,
-            selected_branch_label_size_idx: 10,
-            selected_int_label_size_idx: 10,
+            selected_tip_label_size_idx: 12,
+            selected_branch_label_size_idx: 12,
+            selected_int_label_size_idx: 12,
 
             tip_label_size: SF,
             branch_label_size: SF,

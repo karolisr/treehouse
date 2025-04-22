@@ -5,9 +5,8 @@ use crate::{
     text_width,
 };
 use iced::{
-    Pixels, Point, Rectangle, Size, Vector,
+    Pixels, Point, Rectangle, Vector,
     alignment::{Horizontal, Vertical},
-    border::Radius,
     widget::canvas::{Fill, Frame, Path, Stroke, Text},
 };
 
@@ -81,9 +80,9 @@ impl TreeView {
         frame: &mut Frame,
     ) {
         frame.with_save(|f| {
-            f.translate(Vector { x: tree_rect.x - ps / 2e0, y: tree_rect.y - ps / 2e0 });
+            f.translate(Vector { x: tree_rect.x, y: tree_rect.y });
             let path = Path::new(|p| {
-                p.rounded_rectangle(*point, Size::new(ps, ps), Radius::new(ps));
+                p.circle(*point, ps);
             });
             f.fill(&path, fill);
             f.stroke(&path, stroke);

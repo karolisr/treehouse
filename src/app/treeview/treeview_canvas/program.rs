@@ -94,20 +94,19 @@ impl Program<TreeViewMsg> for TreeView {
                 iced::mouse::Button::Other(_) => None,
             },
             Event::Mouse(MouseEvent::CursorMoved { position: _ }) => {
-                let pointer_rect = Rectangle {
-                    width: state.clip_rect.width + PADDING * 2e0,
-                    ..state.clip_rect
-                };
                 if cursor.is_over(bounds) && self.drawing_enabled {
+                    #[cfg(debug_assertions)]
+                    self.debug_geom_cache.clear();
+
                     let mut mouse_pt;
-                    if let Some(x) = cursor.position_in(pointer_rect) {
+                    if let Some(x) = cursor.position_over(bounds) {
                         mouse_pt = x;
                     } else {
                         return None;
                     }
 
-                    mouse_pt.x += state.tree_rect.x - state.ps;
-                    mouse_pt.y -= state.tree_rect.y + state.ps;
+                    mouse_pt.x -= PADDING + state.tree_rect.x;
+                    mouse_pt.y -= PADDING + state.tree_rect.y;
 
                     let closest_pt: Option<&NodePoint> =
                         state.visible_nodes.iter().min_by(|&a, &b| {
@@ -117,7 +116,7 @@ impl Program<TreeViewMsg> for TreeView {
                         });
 
                     if let Some(NodePoint { point, edge, angle }) = closest_pt {
-                        if mouse_pt.distance(*point) <= state.ps {
+                        if mouse_pt.distance(*point) <= state.node_radius {
                             state.mouse_hovering_node = true;
                             if state.closest_node_point.is_none()
                                 || state.closest_node_point.clone().unwrap().edge.node_id
@@ -177,7 +176,8 @@ impl Program<TreeViewMsg> for TreeView {
         _theme: &Theme,
         #[cfg(not(debug_assertions))] _bounds: Rectangle,
         #[cfg(debug_assertions)] bounds: Rectangle,
-        _cursor: Cursor,
+        #[cfg(not(debug_assertions))] _cursor: Cursor,
+        #[cfg(debug_assertions)] cursor: Cursor,
     ) -> Vec<Geometry> {
         if !self.drawing_enabled {
             return vec![];
@@ -193,11 +193,22 @@ impl Program<TreeViewMsg> for TreeView {
                     state.clip_rect.size(),
                     ColorSimple::CYA.scale_alpha(0.125),
                 );
+
                 f.fill_rectangle(
                     Point { x: state.tree_rect.x, y: state.tree_rect.y },
                     state.tree_rect.size(),
                     ColorSimple::MAG.scale_alpha(0.125),
                 );
+
+                if let Some(pt) = cursor.position_over(state.clip_rect) {
+                    let path = iced::widget::canvas::Path::new(|p| {
+                        p.circle(
+                            Point { x: pt.x - PADDING, y: pt.y - PADDING },
+                            state.node_radius + SF * 2e0,
+                        );
+                    });
+                    f.stroke(&path, state.stroke.with_color(ColorSimple::RED));
+                }
             });
             geoms.push(g_bounds);
         }
@@ -296,7 +307,7 @@ impl Program<TreeViewMsg> for TreeView {
         let g_selected_nodes =
             self.selected_nodes_geom_cache
                 .draw(renderer, state.clip_rect.size(), |f| {
-                    let ps = state.ps * 0.75;
+                    let ps = state.node_radius * 0.75;
                     for NodePoint { point, edge, angle: _ } in &state.visible_nodes {
                         for node_id in &self.selected_node_ids {
                             if edge.node_id == *node_id {
@@ -320,7 +331,7 @@ impl Program<TreeViewMsg> for TreeView {
                 if let Some(NodePoint { point, edge: _, angle: _ }) = &state.closest_node_point {
                     self.draw_node(
                         point,
-                        state.ps,
+                        state.node_radius,
                         state.stroke,
                         ColorSimple::BLU.scale_alpha(0.75),
                         &state.tree_rect,

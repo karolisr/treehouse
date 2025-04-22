@@ -16,7 +16,7 @@ pub struct TreeViewState {
     pub tree_label_text_template: Text,
     pub tip_idx_range: Option<IndexRange>,
     pub visible_nodes: Vec<NodePoint>,
-    pub ps: Float,
+    pub node_radius: Float,
     pub closest_node_point: Option<NodePoint>,
     pub mouse_hovering_node: bool,
     pub clip_rect: Rectangle,
@@ -38,7 +38,7 @@ impl Default for TreeViewState {
                 ..Default::default()
             },
             tip_idx_range: None,
-            ps: SF * 1e1,
+            node_radius: SF * 5e0,
             visible_nodes: Vec::new(),
             closest_node_point: None,
             mouse_hovering_node: false,
@@ -51,7 +51,7 @@ impl Default for TreeViewState {
                 ..Default::default()
             },
             center: Point { x: 0e0, y: 0e0 },
-            size: SF * 1e2,
+            size: SF,
         }
     }
 }
