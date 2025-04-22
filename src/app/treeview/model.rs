@@ -1,4 +1,4 @@
-use super::{NodeOrderingOption, TreeReprOption};
+use super::{Ltt, NodeOrderingOption, TreeReprOption};
 use crate::{
     Edge, Edges, Float, NodeId, Tree,
     app::{SCROLL_TOOL_W, SF, SIDE_COL_W, windows::window_settings},
@@ -17,6 +17,8 @@ pub struct TreeView {
     pub selected_node_ordering_option: NodeOrderingOption,
     pub selected_tree_repr_option: TreeReprOption,
 
+    pub ltt: Ltt,
+    pub show_ltt: bool,
     pub drawing_enabled: bool,
     pub has_brlen: bool,
     pub has_int_labels: bool,
@@ -153,10 +155,11 @@ impl TreeView {
             max_label_size_idx: 24,
 
             draw_tip_branch_labels_allowed: false,
-            draw_tip_labels: true,
-            draw_branch_labels: true,
-            draw_int_labels: true,
-            draw_legend: true,
+            draw_tip_labels: false,
+            draw_branch_labels: false,
+            draw_int_labels: false,
+            draw_legend: false,
+            show_ltt: true,
 
             selected_node_size_idx: 1,
             selected_canvas_w_idx: 1,
@@ -219,4 +222,5 @@ pub enum TreeViewMsg {
     BranchLabelVisibilityChanged(bool),
     BranchLabelSizeSelectionChanged(u16),
     LegendVisibilityChanged(bool),
+    LttVisibilityChanged(bool),
 }

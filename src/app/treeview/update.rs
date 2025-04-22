@@ -190,6 +190,14 @@ impl TreeView {
                 Task::none()
             }
 
+            TreeViewMsg::LttVisibilityChanged(state) => {
+                self.show_ltt = state;
+                self.update_node_size();
+                self.update_tip_label_w();
+                self.update_canvas_h();
+                Task::none()
+            }
+
             TreeViewMsg::CanvasWidthSelectionChanged(idx) => {
                 self.selected_canvas_w_idx = idx;
                 self.update_canvas_w();

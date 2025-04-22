@@ -1,7 +1,7 @@
-use super::{NodeOrderingOption, TreeView};
+use super::{NodeOrderingOption, TreeReprOption, TreeView};
 use crate::{
     Float,
-    app::{PADDING, SCROLL_TOOL_W, SF, TREE_LAB_FONT_NAME},
+    app::{LTT_H, PADDING, SCROLL_TOOL_W, SF, TREE_LAB_FONT_NAME},
     flatten_tree, lerp, text_width,
 };
 
@@ -45,6 +45,17 @@ impl TreeView {
 
     pub fn update_node_size(&mut self) {
         self.min_canvas_h = self.window_h - PADDING * 2e0 - SF * 2e0;
+
+        // == Refactor ============================================================================
+        if ((self.selected_tree_repr_option == TreeReprOption::Phylogram
+            && self.selected_node_size_idx == self.min_node_size_idx)
+            || (self.selected_tree_repr_option == TreeReprOption::Fan
+                && self.selected_canvas_w_idx == self.min_canvas_w_idx))
+            && self.show_ltt
+        {
+            self.min_canvas_h -= LTT_H;
+        } // ======================================================================================
+
         self.min_node_size = self.min_canvas_h / self.tip_count as Float;
         self.max_node_size = Float::max(self.max_label_size * 3e0, self.min_node_size);
         self.max_node_size_idx = self.max_label_size_idx;

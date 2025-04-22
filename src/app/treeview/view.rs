@@ -1,7 +1,9 @@
-use super::{TreeView, TreeViewMsg};
+use super::{Ltt, TreeView, TreeViewMsg};
 use crate::{
     Float,
-    app::{BUTTON_W, LINE_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, SIDE_COL_W, TEXT_SIZE},
+    app::{
+        BUTTON_W, LINE_H, LTT_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, SIDE_COL_W, TEXT_SIZE,
+    },
 };
 use iced::{
     Alignment, Background, Border, Color, Element, Font, Length, Pixels,
@@ -83,6 +85,7 @@ impl TreeView {
 
         let mut side_col: Column<TreeViewMsg> = Column::new();
         let mut main_row: Row<TreeViewMsg> = Row::new();
+        let mut main_col: Column<TreeViewMsg> = Column::new();
 
         side_col = side_col.push(row![
             column![
@@ -184,6 +187,9 @@ impl TreeView {
         side_col = side_col.push(self.legend_toggler(self.has_brlen));
 
         side_col = side_col.push(self.horizontal_space(0, PADDING));
+        side_col = side_col.push(self.ltt_toggler(true));
+
+        side_col = side_col.push(self.horizontal_space(0, PADDING));
         side_col = side_col.push(self.horizontal_rule(SF));
         side_col = side_col.push(self.horizontal_space(0, PADDING));
 
@@ -193,8 +199,10 @@ impl TreeView {
                     .align_y(Vertical::Center)
                     .spacing(PADDING),
             )
+            .align_x(Horizontal::Center)
+            .align_y(Vertical::Top)
             .width(Length::Fill)
-            .align_x(Horizontal::Center),
+            .height(Length::Shrink),
         );
 
         side_col = side_col.width(SIDE_COL_W);
@@ -203,10 +211,20 @@ impl TreeView {
             && self.selected_node_size_idx != self.min_node_size_idx)
             || self.selected_canvas_w_idx != self.min_canvas_w_idx
         {
-            main_row = main_row.push(self.scrollable(self.tree_canvas()));
+            main_col = main_col.push(self.scrollable(self.tree_canvas()));
         } else {
-            main_row = main_row.push(self.tree_canvas());
+            main_col = main_col.push(self.tree_canvas());
         }
+
+        if self.show_ltt {
+            main_col = main_col.push(
+                self.ltt_canvas()
+                    .width(Length::Fixed(self.canvas_w - PADDING * 2e0 - SF))
+                    .height(Length::Fill),
+            );
+        }
+
+        main_row = main_row.push(main_col);
 
         if (self.selected_tree_repr_option == TreeReprOption::Phylogram
             && self.selected_node_size_idx == self.min_node_size_idx)
@@ -307,6 +325,12 @@ impl TreeView {
             .height(Length::Fixed(self.canvas_h))
     }
 
+    fn ltt_canvas(&self) -> Canvas<&Ltt, TreeViewMsg> {
+        Canvas::new(&self.ltt)
+        // .width(Length::Fixed(self.canvas_w))
+        // .height(Length::Fixed(self.canvas_h))
+    }
+
     fn horizontal_space(&self, width: impl Into<Length>, height: impl Into<Length>) -> Space {
         horizontal_space().width(width).height(height)
     }
@@ -358,6 +382,14 @@ impl TreeView {
         let mut tgl = self.apply_toggler_settings("Legend", self.has_brlen && self.draw_legend);
         if enabled {
             tgl = tgl.on_toggle(TreeViewMsg::LegendVisibilityChanged);
+        }
+        tgl
+    }
+
+    fn ltt_toggler(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
+        let mut tgl = self.apply_toggler_settings("LTT", self.show_ltt);
+        if enabled {
+            tgl = tgl.on_toggle(TreeViewMsg::LttVisibilityChanged);
         }
         tgl
     }
@@ -574,7 +606,12 @@ impl TreeView {
         scrl = scrl
             .direction(ScrollableDirection::Both { horizontal: scrl_bar_h, vertical: scrl_bar_v });
         scrl = scrl.width(self.scroll_w);
-        scrl = scrl.height(self.min_canvas_h + SF);
+
+        match self.show_ltt {
+            true => scrl = scrl.height(self.min_canvas_h + SF - LTT_H),
+            false => scrl = scrl.height(self.min_canvas_h + SF),
+        }
+
         scrl = scrl.on_scroll(TreeViewMsg::TreeViewScrolled);
         self.apply_scroller_settings(scrl)
     }
