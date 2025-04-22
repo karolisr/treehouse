@@ -97,7 +97,10 @@ impl App {
                             }
                         }
                         #[cfg(target_os = "macos")]
-                        Task::none()
+                        {
+                            println!("Ctrl + {k}");
+                            Task::none()
+                        }
                     }
                     _ => Task::none(),
                 },
