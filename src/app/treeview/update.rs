@@ -1,4 +1,4 @@
-use super::{TreeView, TreeViewMsg};
+use super::{TreeReprOption, TreeView, TreeViewMsg};
 use crate::{Float, PI, app::SF};
 use iced::Task;
 
@@ -23,7 +23,19 @@ impl TreeView {
                 Task::done(TreeViewMsg::RotAngleSelectionChanged(
                     self.selected_rot_angle_idx,
                 )),
-            ]),
+            ])
+            .chain(if let Some(id) = self.win_id {
+                iced::window::get_size(id)
+                    .map(|s| TreeViewMsg::WindowResized(s.width * SF, s.height * SF))
+            } else {
+                Task::none()
+            })
+            .chain(Task::done(TreeViewMsg::EnableDrawing)),
+
+            TreeViewMsg::EnableDrawing => {
+                self.drawing_enabled = true;
+                Task::none()
+            }
 
             TreeViewMsg::TreeReprOptionChanged(tree_repr_option) => {
                 #[cfg(debug_assertions)]
@@ -35,7 +47,10 @@ impl TreeView {
                 self.branch_labels_geom_cache.clear();
                 self.selected_nodes_geom_cache.clear();
                 self.pointer_geom_cache.clear();
-                self.selected_tree_repr_option = Some(tree_repr_option);
+                self.selected_tree_repr_option = tree_repr_option;
+                self.update_node_size();
+                self.update_tip_label_w();
+                self.update_canvas_h();
                 Task::none()
             }
 
@@ -156,14 +171,14 @@ impl TreeView {
             }
 
             TreeViewMsg::NodeOrderingOptionChanged(node_ordering_option) => {
-                if node_ordering_option != self.selected_node_ordering_option.unwrap() {
+                if node_ordering_option != self.selected_node_ordering_option {
                     self.edge_geom_cache.clear();
                     self.tip_labels_geom_cache.clear();
                     self.int_labels_geom_cache.clear();
                     self.branch_labels_geom_cache.clear();
                     self.selected_nodes_geom_cache.clear();
                     self.pointer_geom_cache.clear();
-                    self.selected_node_ordering_option = Some(node_ordering_option);
+                    self.selected_node_ordering_option = node_ordering_option;
                     self.sort();
                     self.merge_tip_chunks();
                 }
@@ -175,10 +190,17 @@ impl TreeView {
                 Task::none()
             }
 
-            TreeViewMsg::SetWinId(id) => {
-                self.win_id = Some(id);
-                iced::window::get_size(id)
-                    .map(|s| TreeViewMsg::WindowResized(s.width * SF, s.height * SF))
+            TreeViewMsg::CanvasWidthSelectionChanged(idx) => {
+                self.selected_canvas_w_idx = idx;
+                self.update_canvas_w();
+                if self.selected_tree_repr_option == TreeReprOption::Fan {
+                    self.update_canvas_h();
+                }
+                if self.draw_tip_branch_labels_allowed && self.draw_tip_labels {
+                    self.update_extra_space_for_labels();
+                }
+                self.update_tip_label_w();
+                Task::none()
             }
 
             TreeViewMsg::WindowResized(w, h) => {
@@ -204,16 +226,8 @@ impl TreeView {
                 Task::none()
             }
 
-            TreeViewMsg::CanvasWidthSelectionChanged(idx) => {
-                self.selected_canvas_w_idx = idx;
-                self.update_canvas_w();
-
-                if self.draw_tip_branch_labels_allowed && self.draw_tip_labels {
-                    self.update_extra_space_for_labels();
-                }
-
-                self.update_tip_label_w();
-
+            TreeViewMsg::SetWinId(id) => {
+                self.win_id = Some(id);
                 Task::none()
             }
 
@@ -255,7 +269,6 @@ impl TreeView {
             }
 
             TreeViewMsg::TreeUpdated(tree) => {
-                self.drawing_enabled = false;
                 self.selected_node_ids.clear();
                 #[cfg(debug_assertions)]
                 self.debug_geom_cache.clear();
@@ -289,8 +302,7 @@ impl TreeView {
                 self.update_node_size();
                 self.update_tip_label_w();
                 self.update_canvas_h();
-                self.drawing_enabled = true;
-                Task::none()
+                if !self.drawing_enabled { Task::done(TreeViewMsg::Init) } else { Task::none() }
             }
         }
     }

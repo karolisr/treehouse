@@ -28,8 +28,9 @@ use iced::{
 };
 use numfmt::Formatter as NumFmt;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum NodeOrderingOption {
+    #[default]
     Unordered,
     Ascending,
     Descending,
@@ -51,8 +52,9 @@ const NODE_ORDERING_OPTIONS: [NodeOrderingOption; 3] = [
     NodeOrderingOption::Descending,
 ];
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum TreeReprOption {
+    #[default]
     Phylogram,
     Fan,
 }
@@ -140,17 +142,17 @@ impl TreeView {
         side_col = side_col.push(self.horizontal_space(0, PADDING));
 
         match self.selected_tree_repr_option {
-            Some(TreeReprOption::Phylogram) => {
+            TreeReprOption::Phylogram => {
+                side_col = side_col.push(self.slider("Width", self.canvas_width_slider()));
                 if self.min_node_size_idx != self.max_node_size_idx {
                     side_col = side_col.push(self.slider("Edge Spacing", self.node_size_slider()));
                 }
-                side_col = side_col.push(self.slider("Tree Width", self.canvas_width_slider()));
             }
-            Some(TreeReprOption::Fan) => {
+            TreeReprOption::Fan => {
+                side_col = side_col.push(self.slider("Zoom", self.canvas_width_slider()));
                 side_col = side_col.push(self.slider("Opening Angle", self.opn_angle_slider()));
                 side_col = side_col.push(self.slider("Rotation Angle", self.rot_angle_slider()));
             }
-            None => {}
         }
 
         side_col = side_col.push(self.horizontal_space(0, PADDING));
@@ -197,7 +199,8 @@ impl TreeView {
 
         side_col = side_col.width(SIDE_COL_W);
 
-        if self.selected_node_size_idx != self.min_node_size_idx
+        if (self.selected_tree_repr_option == TreeReprOption::Phylogram
+            && self.selected_node_size_idx != self.min_node_size_idx)
             || self.selected_canvas_w_idx != self.min_canvas_w_idx
         {
             main_row = main_row.push(self.scrollable(self.tree_canvas()));
@@ -205,7 +208,11 @@ impl TreeView {
             main_row = main_row.push(self.tree_canvas());
         }
 
-        if self.selected_node_size_idx == self.min_node_size_idx {
+        if (self.selected_tree_repr_option == TreeReprOption::Phylogram
+            && self.selected_node_size_idx == self.min_node_size_idx)
+            || (self.selected_tree_repr_option == TreeReprOption::Fan
+                && self.selected_canvas_w_idx == self.min_canvas_w_idx)
+        {
             main_row = main_row.push(self.vertical_rule(SF));
         } else {
             main_row = main_row.push(self.vertical_space(SF, 0));
@@ -487,7 +494,7 @@ impl TreeView {
         let pl: PickList<TreeReprOption, &[TreeReprOption], TreeReprOption, TreeViewMsg> =
             PickList::new(
                 &TREE_REPR_OPTIONS,
-                self.selected_tree_repr_option,
+                Some(self.selected_tree_repr_option),
                 TreeViewMsg::TreeReprOptionChanged,
             );
         self.apply_pick_list_settings(pl)
@@ -503,7 +510,7 @@ impl TreeView {
             TreeViewMsg,
         > = PickList::new(
             &NODE_ORDERING_OPTIONS,
-            self.selected_node_ordering_option,
+            Some(self.selected_node_ordering_option),
             TreeViewMsg::NodeOrderingOptionChanged,
         );
         self.apply_pick_list_settings(pl)
@@ -567,7 +574,7 @@ impl TreeView {
         scrl = scrl
             .direction(ScrollableDirection::Both { horizontal: scrl_bar_h, vertical: scrl_bar_v });
         scrl = scrl.width(self.scroll_w);
-        scrl = scrl.height(self.available_vertical_space + SF);
+        scrl = scrl.height(self.min_canvas_h + SF);
         scrl = scrl.on_scroll(TreeViewMsg::TreeViewScrolled);
         self.apply_scroller_settings(scrl)
     }

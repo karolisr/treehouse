@@ -28,12 +28,24 @@ impl TreeView {
     }
 
     pub fn update_canvas_h(&mut self) {
-        self.canvas_h = self.node_size * self.tip_count as Float;
+        match self.selected_tree_repr_option {
+            super::TreeReprOption::Phylogram => {
+                self.canvas_h = self.node_size * self.tip_count as Float;
+            }
+            super::TreeReprOption::Fan => {
+                if self.selected_canvas_w_idx == self.min_canvas_w_idx {
+                    self.canvas_h = self.min_canvas_h;
+                } else {
+                    self.canvas_h = self.min_canvas_h
+                        + self.selected_canvas_w_idx as Float * self.min_canvas_h / 4e0;
+                }
+            }
+        }
     }
 
     pub fn update_node_size(&mut self) {
-        self.available_vertical_space = self.window_h - PADDING * 2e0 - SF * 2e0;
-        self.min_node_size = self.available_vertical_space / self.tip_count as Float;
+        self.min_canvas_h = self.window_h - PADDING * 2e0 - SF * 2e0;
+        self.min_node_size = self.min_canvas_h / self.tip_count as Float;
         self.max_node_size = Float::max(self.max_label_size * 3e0, self.min_node_size);
         self.max_node_size_idx = self.max_label_size_idx;
 
@@ -47,7 +59,7 @@ impl TreeView {
 
         if self.selected_node_size_idx == self.min_node_size_idx {
             self.cnv_y0 = 0e0;
-            self.cnv_y1 = self.cnv_y0 + self.available_vertical_space;
+            self.cnv_y1 = self.cnv_y0 + self.min_canvas_h;
         }
 
         if self.max_node_size_idx > 1 {
@@ -60,9 +72,16 @@ impl TreeView {
             self.node_size = self.min_node_size
         }
 
-        self.draw_tip_branch_labels_allowed = (self.available_vertical_space / self.node_size)
-            as usize
-            <= self.max_count_of_tip_labels_to_draw;
+        match self.selected_tree_repr_option {
+            super::TreeReprOption::Phylogram => {
+                self.draw_tip_branch_labels_allowed = (self.min_canvas_h / self.node_size) as usize
+                    <= self.max_count_of_tip_labels_to_draw;
+            }
+            super::TreeReprOption::Fan => {
+                self.draw_tip_branch_labels_allowed =
+                    self.tip_count <= self.max_count_of_tip_labels_to_draw * 10;
+            }
+        }
     }
 
     pub fn update_tallest_tips(&mut self) {
@@ -116,7 +135,7 @@ impl TreeView {
     }
 
     pub fn sort(&mut self) {
-        match self.selected_node_ordering_option.unwrap() {
+        match self.selected_node_ordering_option {
             NodeOrderingOption::Unordered => {
                 self.tree = self.tree_original.clone();
                 self.tree_chunked_edges = match &self.tree_original_chunked_edges {

@@ -4,7 +4,7 @@ use crate::{
     app::{SF, TREE_LAB_FONT_NAME},
 };
 use iced::{
-    Rectangle,
+    Point, Rectangle,
     alignment::Vertical,
     widget::canvas::{
         Stroke, Text,
@@ -22,6 +22,8 @@ pub struct TreeViewState {
     pub clip_rect: Rectangle,
     pub tree_rect: Rectangle,
     pub stroke: Stroke<'static>,
+    pub center: Point,
+    pub size: Float,
 }
 
 impl Default for TreeViewState {
@@ -48,6 +50,8 @@ impl Default for TreeViewState {
                 line_join: LineJoin::Round,
                 ..Default::default()
             },
+            center: Point { x: 0e0, y: 0e0 },
+            size: SF * 1e2,
         }
     }
 }

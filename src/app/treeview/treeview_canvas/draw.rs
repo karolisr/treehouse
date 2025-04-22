@@ -1,7 +1,8 @@
 use super::{super::TreeView, drawables::Label};
 use crate::{
-    Float,
-    app::{PADDING, SF, TEXT_SIZE},
+    Float, PI,
+    app::{PADDING, SF, TEXT_SIZE, TREE_LAB_FONT_NAME},
+    text_width,
 };
 use iced::{
     Pixels, Point, Rectangle, Size, Vector,
@@ -35,17 +36,29 @@ impl TreeView {
         clip: &Rectangle,
         frame: &mut Frame,
     ) {
-        let text_size: Pixels = text_size.into();
         let zero_point = Point { x: 0e0, y: 0e0 };
+        let mut text_w = text_width(text_size, text_size, TREE_LAB_FONT_NAME);
+        let text_size: Pixels = text_size.into();
         frame.with_clip(*clip, |f| {
             f.translate(Vector { x: tree_rect.x + offset.x, y: tree_rect.y + offset.y });
             for Label { mut text, angle } in labels {
                 text.size = text_size;
-                if let Some(angle) = angle {
+                if let Some(mut angle) = angle {
+                    let mut adjust_w = offset.x;
+                    // = Rotate labels on the left side of the circle by 180 degrees ==============
+                    let a = angle % (2e0 * PI);
+                    if a > PI / 2e0 && a < PI * 1.5 {
+                        angle += PI;
+                        match text.align_x {
+                            Horizontal::Left => adjust_w = -text_w.width(&text.content) - offset.x,
+                            Horizontal::Center => {}
+                            Horizontal::Right => adjust_w = text_w.width(&text.content) + offset.x,
+                        }
+                    } // ==========================================================================
                     f.push_transform();
                     f.translate(Vector {
-                        x: text.position.x - offset.x + angle.cos() * offset.x,
-                        y: text.position.y - offset.y + angle.sin() * offset.x,
+                        x: text.position.x - offset.x + angle.cos() * adjust_w,
+                        y: text.position.y - offset.y + angle.sin() * adjust_w,
                     });
                     f.rotate(angle);
                     text.position = zero_point;

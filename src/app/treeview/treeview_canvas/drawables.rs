@@ -9,7 +9,7 @@ use iced::{
     },
 };
 use std::{
-    ops::{Deref, RangeInclusive},
+    ops::RangeInclusive,
     thread::{self, ScopedJoinHandle},
 };
 
@@ -32,6 +32,13 @@ pub struct NodePoint {
     pub angle: Option<Float>,
 }
 
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct NodePoints {
+    pub points: Vec<NodePoint>,
+    pub center: Point,
+    pub size: Float,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct Label {
     pub text: Text,
@@ -45,12 +52,10 @@ pub struct EdgePoints {
 }
 
 impl TreeView {
-    pub fn paths_from_chunks(&self, w: Float, h: Float) -> Vec<Path> {
-        let center = Point { x: w / 2e0, y: h / 2e0 };
-        let size = w.min(h) / 2e0;
+    pub fn paths_from_chunks(&self, w: Float, h: Float, center: Point, size: Float) -> Vec<Path> {
         let rot_angle = self.rot_angle;
         let max_angle = self.opn_angle;
-        let repr: TreeReprOption = self.selected_tree_repr_option.unwrap();
+        let repr: TreeReprOption = self.selected_tree_repr_option;
         let mut paths: Vec<Path> = Vec::with_capacity(self.node_count);
         thread::scope(|thread_scope| {
             let mut handles: Vec<ScopedJoinHandle<'_, Path>> = Vec::new();
@@ -77,57 +82,20 @@ impl TreeView {
         paths
     }
 
-    pub fn tip_labels_in_range(
+    pub fn node_labels(
         &self,
-        w: Float,
-        h: Float,
-        idx_0: usize,
-        idx_1: usize,
+        nodes: &Vec<NodePoint>,
+        tips: bool,
         label_text_template: &Text,
     ) -> Vec<Label> {
-        let center = Point { x: w / 2e0, y: h / 2e0 };
-        let size = w.min(h) / 2e0;
-        let rot_angle = self.rot_angle;
-        let opn_angle = self.opn_angle;
-        let repr: TreeReprOption = self.selected_tree_repr_option.unwrap();
-        let mut labels: Vec<Label> = Vec::with_capacity(idx_1 - idx_0);
-        for edge in &self.tree_tip_edges[idx_0..=idx_1] {
-            if let Some(name) = &edge.name {
-                let mut text = label_text_template.clone();
-                text.content = name.deref().into();
-                match repr {
-                    TreeReprOption::Phylogram => {
-                        let node_point = node_point(w, h, edge);
-                        text.position = node_point;
-                        labels.push(Label { text, angle: None });
-                    }
-                    TreeReprOption::Fan => {
-                        let angle = edge_angle(rot_angle, opn_angle, edge);
-                        let node_point = node_point_rad(angle, center, size, edge);
-                        text.position = node_point;
-                        labels.push(Label { text, angle: Some(angle) });
-                    }
-                }
-            }
-        }
-        labels
-    }
-
-    pub fn visible_int_node_labels(
-        &self,
-        _w: Float,
-        _h: Float,
-        visible_nodes: &Vec<NodePoint>,
-        label_text_template: &Text,
-    ) -> Vec<Label> {
-        let mut labels: Vec<Label> = Vec::with_capacity(visible_nodes.len());
-        for NodePoint { point, edge, angle } in visible_nodes {
-            if edge.is_tip {
+        let mut labels: Vec<Label> = Vec::with_capacity(nodes.len());
+        for NodePoint { point, edge, angle } in nodes {
+            if (tips && !edge.is_tip) || (!tips && edge.is_tip) {
                 continue;
             }
             if let Some(name) = &edge.name {
                 let mut text = label_text_template.clone();
-                text.content = name.deref().into();
+                text.content = name.to_string();
                 text.position = *point;
                 labels.push(Label { text, angle: *angle });
             }
@@ -135,14 +103,15 @@ impl TreeView {
         labels
     }
 
-    pub fn visible_branch_labels(
+    pub fn branch_labels(
         &self,
-        w: Float,
-        h: Float,
+        size: Float,
         visible_nodes: &Vec<NodePoint>,
         label_text_template: &Text,
     ) -> Vec<Label> {
-        let size = w.min(h) / 2e0;
+        let mut label_text_template = label_text_template.clone();
+        label_text_template.align_x = Horizontal::Center;
+        label_text_template.align_y = Vertical::Bottom;
         let mut labels: Vec<Label> = Vec::with_capacity(visible_nodes.len());
         for NodePoint { point, edge, angle } in visible_nodes {
             if edge.parent_node_id.is_none() {
@@ -151,30 +120,36 @@ impl TreeView {
             let mut text = label_text_template.clone();
             let mut node_point = *point;
 
+            let adj = edge.brlen_normalized as Float * size / 2e0;
             if let Some(angle) = angle {
-                let adj = edge.brlen_normalized as Float * size / 2e0;
                 node_point.x -= angle.cos() * adj;
                 node_point.y -= angle.sin() * adj;
             } else {
-                let adj = edge.brlen_normalized as Float * w / 2e0;
                 node_point.x -= adj;
             }
 
             text.position = node_point;
             text.content = format!("{:.3}", edge.brlen);
-            text.align_x = Horizontal::Center;
-            text.align_y = Vertical::Bottom;
             labels.push(Label { text, angle: *angle });
         }
         labels
     }
 
     pub fn visible_tip_idx_range(&self) -> Option<IndexRange> {
-        let tip_idx_0: i64 = (self.cnv_y0 / self.node_size) as i64 - 3;
-        let tip_idx_1: i64 = (self.cnv_y1 / self.node_size) as i64 + 3;
-        let tip_idx_0: usize = tip_idx_0.max(0) as usize;
-        let tip_idx_1: usize = tip_idx_1.min(self.tree_tip_edges.len() as i64 - 1) as usize;
-        if tip_idx_0 < tip_idx_1 { Some(IndexRange { b: tip_idx_0, e: tip_idx_1 }) } else { None }
+        match self.selected_tree_repr_option {
+            TreeReprOption::Phylogram => {
+                let tip_idx_0: i64 = (self.cnv_y0 / self.node_size) as i64 - 3;
+                let tip_idx_1: i64 = (self.cnv_y1 / self.node_size) as i64 + 3;
+                let tip_idx_0: usize = tip_idx_0.max(0) as usize;
+                let tip_idx_1: usize = tip_idx_1.min(self.tree_tip_edges.len() as i64 - 1) as usize;
+                if tip_idx_0 < tip_idx_1 {
+                    Some(IndexRange { b: tip_idx_0, e: tip_idx_1 })
+                } else {
+                    None
+                }
+            }
+            TreeReprOption::Fan => Some(IndexRange { b: 0, e: self.tree_tip_edges.len() - 1 }),
+        }
     }
 
     pub fn visible_node_ranges(&self, tip_idx_range: &IndexRange) -> ChunkEdgeRange {
@@ -193,14 +168,17 @@ impl TreeView {
         }
     }
 
-    pub fn visible_nodes(&self, w: Float, h: Float, tip_idx_range: &IndexRange) -> Vec<NodePoint> {
+    pub fn visible_nodes(&self, w: Float, h: Float, tip_idx_range: &IndexRange) -> NodePoints {
         let ChunkEdgeRange {
             chnk: IndexRange { b: chnk_idx_0, e: chnk_idx_1 },
             edge: IndexRange { b: edge_idx_0, e: edge_idx_1 },
         } = self.visible_node_ranges(tip_idx_range);
+        let tree_repr = self.selected_tree_repr_option;
+        let size: Float = match tree_repr {
+            TreeReprOption::Phylogram => w,
+            TreeReprOption::Fan => w.min(h) / 2e0,
+        };
         let center = Point { x: w / 2e0, y: h / 2e0 };
-        let size = w.min(h) / 2e0;
-        let tree_repr = self.selected_tree_repr_option.unwrap();
         let mut points: Vec<NodePoint> = Vec::new();
         if chnk_idx_0 == chnk_idx_1 {
             let chunk = &self.tree_chunked_edges[chnk_idx_0];
@@ -249,7 +227,8 @@ impl TreeView {
                 }
             }
         }
-        points
+
+        NodePoints { points, center, size }
     }
 }
 

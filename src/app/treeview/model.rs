@@ -14,8 +14,8 @@ pub struct TreeView {
     pub win_id: Option<WinId>,
     pub threads: usize,
 
-    pub selected_node_ordering_option: Option<NodeOrderingOption>,
-    pub selected_tree_repr_option: Option<TreeReprOption>,
+    pub selected_node_ordering_option: NodeOrderingOption,
+    pub selected_tree_repr_option: TreeReprOption,
 
     pub drawing_enabled: bool,
     pub has_brlen: bool,
@@ -51,9 +51,10 @@ pub struct TreeView {
     pub selected_canvas_w_idx: u16,
 
     pub canvas_h: Float,
+    pub min_canvas_h: Float,
     pub cnv_y0: Float,
     pub cnv_y1: Float,
-    pub available_vertical_space: Float,
+
     pub node_size: Float,
     pub min_node_size: Float,
     pub max_node_size: Float,
@@ -117,8 +118,8 @@ impl TreeView {
         Self {
             threads: 6,
 
-            selected_node_ordering_option: Some(NodeOrderingOption::Ascending),
-            selected_tree_repr_option: Some(TreeReprOption::Phylogram),
+            selected_node_ordering_option: NodeOrderingOption::Unordered,
+            selected_tree_repr_option: TreeReprOption::Phylogram,
 
             window_w: window_settings().size.width,
             window_h: SF,
@@ -126,11 +127,11 @@ impl TreeView {
             scroll_w: SF,
             not_scroll_w: SIDE_COL_W + SCROLL_TOOL_W,
 
-            selected_opn_angle_idx: 180,
-            min_opn_angle_idx: 0,
+            selected_opn_angle_idx: 359,
+            min_opn_angle_idx: 45,
             max_opn_angle_idx: 359,
 
-            selected_rot_angle_idx: 270,
+            selected_rot_angle_idx: 0,
             min_rot_angle_idx: 0,
             max_rot_angle_idx: 360,
 
@@ -139,31 +140,29 @@ impl TreeView {
             min_canvas_w_idx: 1,
             max_canvas_w_idx: 24,
 
-            canvas_h: SF,
             cnv_y0: SF,
             cnv_y1: SF,
-            available_vertical_space: SF,
-
+            canvas_h: SF,
+            min_canvas_h: SF,
             node_size: SF,
             min_node_size: SF,
             max_node_size: SF,
-
             min_node_size_idx: 1,
             max_node_size_idx: 24,
             min_label_size_idx: 1,
             max_label_size_idx: 24,
 
             draw_tip_branch_labels_allowed: false,
-            draw_tip_labels: false,
-            draw_branch_labels: false,
-            draw_int_labels: false,
-            draw_legend: false,
+            draw_tip_labels: true,
+            draw_branch_labels: true,
+            draw_int_labels: true,
+            draw_legend: true,
 
             selected_node_size_idx: 1,
             selected_canvas_w_idx: 1,
-            selected_tip_label_size_idx: 5,
-            selected_branch_label_size_idx: 5,
-            selected_int_label_size_idx: 5,
+            selected_tip_label_size_idx: 10,
+            selected_branch_label_size_idx: 10,
+            selected_int_label_size_idx: 10,
 
             tip_label_size: SF,
             branch_label_size: SF,
@@ -188,17 +187,21 @@ impl TreeView {
 
 #[derive(Debug, Clone)]
 pub enum TreeViewMsg {
-    DeselectNode(NodeId),
-    Init,
     OpenFile,
-    Root(NodeId),
+    SetWinId(WinId),
+    Init,
+    EnableDrawing,
+
+    TreeViewScrolled(ScrollableViewport),
+    WindowResized(Float, Float),
+
     SelectDeselectNode(NodeId),
     SelectNode(NodeId),
-    SetWinId(WinId),
-    TreeUpdated(Tree),
-    TreeViewScrolled(ScrollableViewport),
+    DeselectNode(NodeId),
     Unroot,
-    WindowResized(Float, Float),
+    Root(NodeId),
+
+    TreeUpdated(Tree),
 
     TreeReprOptionChanged(TreeReprOption),
     NodeOrderingOptionChanged(NodeOrderingOption),
