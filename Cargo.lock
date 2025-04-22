@@ -2819,7 +2819,6 @@ dependencies = [
  "objc2-app-kit 0.3.1",
  "objc2-foundation 0.3.1",
  "rfd",
- "windows-sys 0.59.0",
 ]
 
 [[package]]

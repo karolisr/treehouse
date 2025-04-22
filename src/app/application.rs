@@ -12,6 +12,7 @@ use crate::{Tree, parse_newick};
 use iced::{
     Element, Subscription, Task, exit,
     futures::channel::mpsc::Sender,
+    keyboard::{Key, Modifiers, on_key_press},
     widget,
     window::{
         Event as WinEvent, Id as WinId, close as close_window, close_events, close_requests,
@@ -25,11 +26,11 @@ use std::{
     fs::{read, write},
     path::PathBuf,
 };
-#[allow(unused_imports)]
-#[cfg(target_os = "windows")]
-use windows_sys::Win32::UI::WindowsAndMessaging::{
-    DispatchMessageW, GetMessageW, MSG, TranslateAcceleratorW, TranslateMessage,
-};
+// #[allow(unused_imports)]
+// #[cfg(target_os = "windows")]
+// use windows_sys::Win32::UI::WindowsAndMessaging::{
+//     DispatchMessageW, GetMessageW, MSG, TranslateAcceleratorW, TranslateMessage,
+// };
 
 #[derive(Default)]
 pub struct App {
@@ -43,7 +44,7 @@ pub struct App {
 pub enum AppMsg {
     AppInitialized,
     TreeWinMsg(WinId, TreeWinMsg),
-    MenuEvent(MenuEvent),
+    MenuEvent(bool, MenuEvent),
     MenuEventsSender(Sender<MenuEventReplyMsg>),
     OpenWin(AppWinType),
     PathToOpen(WinId, PathBuf),
@@ -56,6 +57,7 @@ pub enum AppMsg {
     WinOpened(WinId),
     #[cfg(target_os = "windows")]
     AddMenuForHwnd(u64),
+    KeysPressed(Key, Modifiers),
 }
 
 pub enum FileType {
@@ -81,6 +83,26 @@ impl App {
 
     pub fn update(&mut self, app_msg: AppMsg) -> Task<AppMsg> {
         match app_msg {
+            AppMsg::KeysPressed(key, modifiers) => match modifiers {
+                Modifiers::CTRL => match key {
+                    Key::Character(k) => {
+                        #[cfg(any(target_os = "windows", target_os = "linux"))]
+                        {
+                            let k: &str = k.as_str();
+                            match k {
+                                "o" => Task::done(AppMsg::MenuEvent(false, MenuEvent::OpenFile)),
+                                "s" => Task::done(AppMsg::MenuEvent(false, MenuEvent::SaveAs)),
+                                "w" => Task::done(AppMsg::MenuEvent(false, MenuEvent::CloseWindow)),
+                                _ => Task::none(),
+                            }
+                        }
+                        #[cfg(target_os = "macos")]
+                        Task::none()
+                    }
+                    _ => Task::none(),
+                },
+                _ => Task::none(),
+            },
             AppMsg::AppInitialized => {
                 #[cfg(any(target_os = "windows", target_os = "macos"))]
                 let menu = prepare_app_menu();
@@ -185,8 +207,10 @@ impl App {
                 self.menu_events_sender = Some(sender);
                 Task::none()
             }
-            AppMsg::MenuEvent(menu_event) => {
-                let _ = menu_event_reply(self, MenuEventReplyMsg::Ack);
+            AppMsg::MenuEvent(is_real, menu_event) => {
+                if is_real {
+                    let _ = menu_event_reply(self, MenuEventReplyMsg::Ack);
+                }
                 let id = iced::window::get_latest();
 
                 match menu_event {
@@ -342,6 +366,7 @@ fn subscriptions() -> Subscription<AppMsg> {
     // let runtime_events = listen().map(AppMsg::RuntimeEvent);
     // let raw_events = listen_raw(|e, status, id| Some(AppMsg::RawEvent(e, status, id)));
     let menu_events = menu_events();
+    let keyboard_events = on_key_press(|key, modifiers| Some(AppMsg::KeysPressed(key, modifiers)));
 
     Subscription::batch([
         open_events,
@@ -349,6 +374,7 @@ fn subscriptions() -> Subscription<AppMsg> {
         close_events,
         menu_events,
         all_window_events,
+        keyboard_events,
         // url_events,
         // runtime_events,
         // raw_events,

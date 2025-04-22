@@ -35,7 +35,7 @@ fn menu_events_stream() -> impl Stream<Item = AppMsg> {
                             menu_event,
                             MenuEvent::Quit | MenuEvent::CloseWindow | MenuEvent::QuitInternal
                         );
-                        let _ = output.send(AppMsg::MenuEvent(menu_event)).await;
+                        let _ = output.send(AppMsg::MenuEvent(true, menu_event)).await;
                     }
                 }
             }
