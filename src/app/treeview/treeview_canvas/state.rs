@@ -3,10 +3,17 @@ use crate::{
     Float,
     app::{SF, TREE_LAB_FONT_NAME},
 };
-use iced::{Rectangle, alignment::Vertical, widget::canvas::Text};
+use iced::{
+    Rectangle,
+    alignment::Vertical,
+    widget::canvas::{
+        Stroke, Text,
+        stroke::{LineCap, LineJoin},
+    },
+};
 
 pub struct TreeViewState {
-    pub tree_label_template: Text,
+    pub tree_label_text_template: Text,
     pub tip_idx_range: Option<IndexRange>,
     pub visible_nodes: Vec<NodePoint>,
     pub ps: Float,
@@ -14,12 +21,13 @@ pub struct TreeViewState {
     pub mouse_hovering_node: bool,
     pub clip_rect: Rectangle,
     pub tree_rect: Rectangle,
+    pub stroke: Stroke<'static>,
 }
 
 impl Default for TreeViewState {
     fn default() -> Self {
         Self {
-            tree_label_template: Text {
+            tree_label_text_template: Text {
                 font: iced::Font {
                     family: iced::font::Family::Name(TREE_LAB_FONT_NAME),
                     ..Default::default()
@@ -34,6 +42,12 @@ impl Default for TreeViewState {
             mouse_hovering_node: false,
             clip_rect: Default::default(),
             tree_rect: Default::default(),
+            stroke: Stroke {
+                width: SF,
+                line_cap: LineCap::Square,
+                line_join: LineJoin::Round,
+                ..Default::default()
+            },
         }
     }
 }

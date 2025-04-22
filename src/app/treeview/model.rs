@@ -1,6 +1,6 @@
 use super::{NodeOrderingOption, TreeReprOption};
 use crate::{
-    Edge, Edges, Float, NodeId, Tree, TreeFloat,
+    Edge, Edges, Float, NodeId, Tree,
     app::{SCROLL_TOOL_W, SF, SIDE_COL_W, windows::window_settings},
 };
 use iced::{
@@ -34,12 +34,12 @@ pub struct TreeView {
     pub scroll_w: Float,
     pub not_scroll_w: Float,
 
-    pub opn_angle: TreeFloat,
+    pub opn_angle: Float,
     pub selected_opn_angle_idx: u16,
     pub min_opn_angle_idx: u16,
     pub max_opn_angle_idx: u16,
 
-    pub rot_angle: TreeFloat,
+    pub rot_angle: Float,
     pub selected_rot_angle_idx: u16,
     pub min_rot_angle_idx: u16,
     pub max_rot_angle_idx: u16,
@@ -128,7 +128,7 @@ impl TreeView {
 
             selected_opn_angle_idx: 180,
             min_opn_angle_idx: 0,
-            max_opn_angle_idx: 400,
+            max_opn_angle_idx: 359,
 
             selected_rot_angle_idx: 270,
             min_rot_angle_idx: 0,

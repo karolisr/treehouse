@@ -4,13 +4,12 @@ use super::{
 };
 use crate::{
     ColorSimple,
-    app::{PADDING, SCROLL_TOOL_W, SF, treeview::TreeReprOption},
+    app::{PADDING, SCROLL_TOOL_W, SF},
 };
 use iced::{
-    Event, Point, Rectangle, Renderer, Size, Theme, Vector,
-    border::Radius,
+    Event, Point, Rectangle, Renderer, Theme,
     mouse::{Cursor, Event as MouseEvent, Interaction},
-    widget::canvas::{Action, Geometry, Path, Program, Stroke, stroke},
+    widget::canvas::{Action, Geometry, Program},
     window::Event as WinEvent,
 };
 
@@ -103,7 +102,7 @@ impl Program<TreeViewMsg> for TreeView {
                                 .total_cmp(&mouse_pt.distance(b.point))
                         });
 
-                    if let Some(NodePoint { point, edge }) = closest_pt {
+                    if let Some(NodePoint { point, edge, angle }) = closest_pt {
                         if mouse_pt.distance(*point) <= state.ps {
                             state.mouse_hovering_node = true;
                             if state.closest_node_point.is_none()
@@ -111,12 +110,18 @@ impl Program<TreeViewMsg> for TreeView {
                                     != edge.node_id
                             {
                                 self.pointer_geom_cache.clear();
-                                state.closest_node_point =
-                                    Some(NodePoint { point: *point, edge: edge.clone() });
+                                state.closest_node_point = Some(NodePoint {
+                                    point: *point,
+                                    edge: edge.clone(),
+                                    angle: *angle,
+                                });
                                 Some(Action::request_redraw())
                             } else {
-                                state.closest_node_point =
-                                    Some(NodePoint { point: *point, edge: edge.clone() });
+                                state.closest_node_point = Some(NodePoint {
+                                    point: *point,
+                                    edge: edge.clone(),
+                                    angle: *angle,
+                                });
                                 None
                             }
                         } else {
@@ -168,14 +173,6 @@ impl Program<TreeViewMsg> for TreeView {
             return vec![];
         }
 
-        let tree_repr = self.selected_tree_repr_option.unwrap();
-
-        let fan_size = state.tree_rect.width.min(state.tree_rect.height) as f64 / 2e0;
-        let fan_center = Point {
-            x: state.tree_rect.width as f64 / 2e0,
-            y: state.tree_rect.height as f64 / 2e0,
-        };
-
         let mut geoms: Vec<Geometry> = Vec::new();
 
         #[cfg(debug_assertions)]
@@ -199,14 +196,12 @@ impl Program<TreeViewMsg> for TreeView {
             let g_legend = self
                 .legend_geom_cache
                 .draw(renderer, state.clip_rect.size(), |f| {
-                    let stroke = Stroke {
-                        width: SF,
-                        line_cap: stroke::LineCap::Square,
-                        line_join: stroke::LineJoin::Round,
-                        // style: ColorSimple::BLU.into(),
-                        ..Default::default()
-                    };
-                    self.draw_scale_bar(stroke, &state.tree_label_template, &state.tree_rect, f);
+                    self.draw_scale_bar(
+                        state.stroke,
+                        &state.tree_label_text_template,
+                        &state.tree_rect,
+                        f,
+                    );
                 });
             geoms.push(g_legend);
         }
@@ -214,20 +209,8 @@ impl Program<TreeViewMsg> for TreeView {
         let g_edges = self
             .edge_geom_cache
             .draw(renderer, state.clip_rect.size(), |f| {
-                let stroke = Stroke {
-                    width: SF,
-                    line_cap: stroke::LineCap::Square,
-                    line_join: stroke::LineJoin::Round,
-                    ..Default::default()
-                };
-                let paths = match tree_repr {
-                    TreeReprOption::Phylogram => {
-                        self.paths_from_chunks(state.tree_rect.width, state.tree_rect.height)
-                    }
-                    TreeReprOption::Fan => self.paths_from_chunks_fan(fan_size, fan_center),
-                };
-
-                self.draw_edges(paths, stroke, &state.tree_rect, f);
+                let paths = self.paths_from_chunks(state.tree_rect.width, state.tree_rect.height);
+                self.draw_edges(paths, state.stroke, &state.tree_rect, f);
             });
         geoms.push(g_edges);
 
@@ -235,41 +218,22 @@ impl Program<TreeViewMsg> for TreeView {
             if self.draw_tip_branch_labels_allowed && self.has_tip_labels && self.draw_tip_labels {
                 let g_tip_labels =
                     self.tip_labels_geom_cache
-                        .draw(renderer, state.clip_rect.size(), |f| match tree_repr {
-                            TreeReprOption::Phylogram => {
-                                let labels = self.tip_labels_in_range(
-                                    state.tree_rect.width,
-                                    state.tree_rect.height,
-                                    tip_idx_range.b,
-                                    tip_idx_range.e,
-                                    &state.tree_label_template,
-                                );
-                                self.draw_labels(
-                                    labels,
-                                    self.tip_label_size,
-                                    Point { x: self.tip_label_offset_x, y: 0e0 },
-                                    &state.tree_rect,
-                                    &state.clip_rect,
-                                    f,
-                                );
-                            }
-                            TreeReprOption::Fan => {
-                                let labels = self.tip_labels_in_range_fan(
-                                    fan_size,
-                                    fan_center,
-                                    tip_idx_range.b,
-                                    tip_idx_range.e,
-                                    &state.tree_label_template,
-                                );
-                                self.draw_labels_fan(
-                                    labels,
-                                    self.tip_label_size,
-                                    Point { x: self.tip_label_offset_x, y: 0e0 },
-                                    &state.tree_rect,
-                                    &state.clip_rect,
-                                    f,
-                                )
-                            }
+                        .draw(renderer, state.clip_rect.size(), |f| {
+                            let labels = self.tip_labels_in_range(
+                                state.tree_rect.width,
+                                state.tree_rect.height,
+                                tip_idx_range.b,
+                                tip_idx_range.e,
+                                &state.tree_label_text_template,
+                            );
+                            self.draw_labels(
+                                labels,
+                                self.tip_label_size,
+                                Point { x: self.tip_label_offset_x, y: 0e0 },
+                                &state.tree_rect,
+                                &state.clip_rect,
+                                f,
+                            );
                         });
 
                 geoms.push(g_tip_labels);
@@ -278,40 +242,21 @@ impl Program<TreeViewMsg> for TreeView {
             if self.has_int_labels && self.draw_int_labels {
                 let g_int_labels =
                     self.int_labels_geom_cache
-                        .draw(renderer, state.clip_rect.size(), |f| match tree_repr {
-                            TreeReprOption::Phylogram => {
-                                let labels = self.visible_int_node_labels(
-                                    state.tree_rect.width,
-                                    state.tree_rect.height,
-                                    &state.visible_nodes,
-                                    &state.tree_label_template,
-                                );
-                                self.draw_labels(
-                                    labels,
-                                    self.int_label_size,
-                                    Point { x: self.int_label_offset_x, y: 0e0 },
-                                    &state.tree_rect,
-                                    &state.clip_rect,
-                                    f,
-                                );
-                            }
-                            TreeReprOption::Fan => {
-                                let labels = self.visible_int_node_labels_fan(
-                                    fan_size,
-                                    fan_center,
-                                    &state.visible_nodes,
-                                    &state.tree_label_template,
-                                );
-
-                                self.draw_labels_fan(
-                                    labels,
-                                    self.int_label_size,
-                                    Point { x: self.int_label_offset_x, y: 0e0 },
-                                    &state.tree_rect,
-                                    &state.clip_rect,
-                                    f,
-                                )
-                            }
+                        .draw(renderer, state.clip_rect.size(), |f| {
+                            let labels = self.visible_int_node_labels(
+                                state.tree_rect.width,
+                                state.tree_rect.height,
+                                &state.visible_nodes,
+                                &state.tree_label_text_template,
+                            );
+                            self.draw_labels(
+                                labels,
+                                self.int_label_size,
+                                Point { x: self.int_label_offset_x, y: 0e0 },
+                                &state.tree_rect,
+                                &state.clip_rect,
+                                f,
+                            );
                         });
                 geoms.push(g_int_labels);
             }
@@ -324,7 +269,7 @@ impl Program<TreeViewMsg> for TreeView {
                                 state.tree_rect.width,
                                 state.tree_rect.height,
                                 &state.visible_nodes,
-                                &state.tree_label_template,
+                                &state.tree_label_text_template,
                             );
                             self.draw_labels(
                                 labels,
@@ -341,64 +286,37 @@ impl Program<TreeViewMsg> for TreeView {
             let g_selected_nodes =
                 self.selected_nodes_geom_cache
                     .draw(renderer, state.clip_rect.size(), |f| {
-                        let stroke = Stroke {
-                            width: SF * 2e0,
-                            line_cap: stroke::LineCap::Square,
-                            line_join: stroke::LineJoin::Round,
-                            style: ColorSimple::RED.into(),
-                            ..Default::default()
-                        };
                         let ps = state.ps * 0.75;
-                        f.with_save(|f| {
-                            f.translate(Vector {
-                                x: state.tree_rect.x - ps / 2e0,
-                                y: state.tree_rect.y - ps / 2e0,
-                            });
-                            let path = Path::new(|p| {
-                                for NodePoint { point, edge } in &state.visible_nodes {
-                                    for node_id in &self.selected_node_ids {
-                                        if edge.node_id == *node_id {
-                                            p.rounded_rectangle(
-                                                *point,
-                                                Size::new(ps, ps),
-                                                Radius::new(ps),
-                                            );
-                                        }
-                                    }
+                        for NodePoint { point, edge, angle: _ } in &state.visible_nodes {
+                            for node_id in &self.selected_node_ids {
+                                if edge.node_id == *node_id {
+                                    self.draw_node(
+                                        point,
+                                        ps,
+                                        state.stroke,
+                                        ColorSimple::YEL.scale_alpha(0.75),
+                                        &state.tree_rect,
+                                        f,
+                                    );
                                 }
-                            });
-                            f.fill(&path, ColorSimple::YEL.scale_alpha(0.75));
-                            f.stroke(&path, stroke);
-                        });
+                            }
+                        }
                     });
             geoms.push(g_selected_nodes);
 
             let g_pointer = self
                 .pointer_geom_cache
                 .draw(renderer, state.clip_rect.size(), |f| {
-                    if let Some(NodePoint { point, edge: _ }) = &state.closest_node_point {
-                        let stroke = Stroke {
-                            width: SF,
-                            line_cap: stroke::LineCap::Square,
-                            line_join: stroke::LineJoin::Round,
-                            style: ColorSimple::BLK.scale_alpha(0.65).into(),
-                            ..Default::default()
-                        };
-                        f.with_save(|f| {
-                            f.translate(Vector {
-                                x: state.tree_rect.x - state.ps / 2e0,
-                                y: state.tree_rect.y - state.ps / 2e0,
-                            });
-                            let path = Path::new(|p| {
-                                p.rounded_rectangle(
-                                    *point,
-                                    Size::new(state.ps, state.ps),
-                                    Radius::new(state.ps),
-                                );
-                            });
-                            f.fill(&path, ColorSimple::BLU.scale_alpha(0.75));
-                            f.stroke(&path, stroke);
-                        });
+                    if let Some(NodePoint { point, edge: _, angle: _ }) = &state.closest_node_point
+                    {
+                        self.draw_node(
+                            point,
+                            state.ps,
+                            state.stroke,
+                            ColorSimple::BLU.scale_alpha(0.75),
+                            &state.tree_rect,
+                            f,
+                        );
                     }
                 });
             geoms.push(g_pointer);

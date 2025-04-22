@@ -1,7 +1,5 @@
-use std::f64::consts::PI;
-
 use super::{TreeView, TreeViewMsg};
-use crate::{Float, app::SF};
+use crate::{Float, PI, app::SF};
 use iced::Task;
 
 impl TreeView {
@@ -30,7 +28,6 @@ impl TreeView {
             TreeViewMsg::TreeReprOptionChanged(tree_repr_option) => {
                 #[cfg(debug_assertions)]
                 self.debug_geom_cache.clear();
-                self.selected_node_ids.clear();
                 self.legend_geom_cache.clear();
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
@@ -45,7 +42,6 @@ impl TreeView {
             TreeViewMsg::OpnAngleSelectionChanged(idx) => {
                 #[cfg(debug_assertions)]
                 self.debug_geom_cache.clear();
-                self.selected_node_ids.clear();
                 self.legend_geom_cache.clear();
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
@@ -54,14 +50,13 @@ impl TreeView {
                 self.selected_nodes_geom_cache.clear();
                 self.pointer_geom_cache.clear();
                 self.selected_opn_angle_idx = idx;
-                self.opn_angle = idx as f64 / 360e0 * 2e0 * PI;
+                self.opn_angle = idx as Float / 360e0 * 2e0 * PI;
                 Task::none()
             }
 
             TreeViewMsg::RotAngleSelectionChanged(idx) => {
                 #[cfg(debug_assertions)]
                 self.debug_geom_cache.clear();
-                self.selected_node_ids.clear();
                 self.legend_geom_cache.clear();
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();
@@ -70,7 +65,7 @@ impl TreeView {
                 self.selected_nodes_geom_cache.clear();
                 self.pointer_geom_cache.clear();
                 self.selected_rot_angle_idx = idx;
-                self.rot_angle = idx as f64 / 360e0 * 2e0 * PI;
+                self.rot_angle = idx as Float / 360e0 * 2e0 * PI;
                 Task::none()
             }
 
@@ -261,9 +256,9 @@ impl TreeView {
 
             TreeViewMsg::TreeUpdated(tree) => {
                 self.drawing_enabled = false;
+                self.selected_node_ids.clear();
                 #[cfg(debug_assertions)]
                 self.debug_geom_cache.clear();
-                self.selected_node_ids.clear();
                 self.legend_geom_cache.clear();
                 self.edge_geom_cache.clear();
                 self.tip_labels_geom_cache.clear();

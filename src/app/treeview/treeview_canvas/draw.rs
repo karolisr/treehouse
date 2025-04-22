@@ -1,15 +1,82 @@
-use super::super::TreeView;
+use super::{super::TreeView, drawables::Label};
 use crate::{
     Float,
     app::{PADDING, SF, TEXT_SIZE},
 };
 use iced::{
-    Pixels, Point, Radians, Rectangle, Vector,
+    Pixels, Point, Rectangle, Size, Vector,
     alignment::{Horizontal, Vertical},
-    widget::canvas::{Frame, Path, Stroke, Text},
+    border::Radius,
+    widget::canvas::{Fill, Frame, Path, Stroke, Text},
 };
 
 impl TreeView {
+    pub fn draw_edges(
+        &self,
+        paths: Vec<Path>,
+        stroke: Stroke,
+        tree_rect: &Rectangle,
+        frame: &mut Frame,
+    ) {
+        frame.with_save(|f| {
+            f.translate(Vector { x: tree_rect.x, y: tree_rect.y });
+            for p in paths {
+                f.stroke(&p, stroke);
+            }
+        })
+    }
+
+    pub fn draw_labels(
+        &self,
+        labels: Vec<Label>,
+        text_size: Float,
+        offset: Point,
+        tree_rect: &Rectangle,
+        clip: &Rectangle,
+        frame: &mut Frame,
+    ) {
+        let text_size: Pixels = text_size.into();
+        let zero_point = Point { x: 0e0, y: 0e0 };
+        frame.with_clip(*clip, |f| {
+            f.translate(Vector { x: tree_rect.x + offset.x, y: tree_rect.y + offset.y });
+            for Label { mut text, angle } in labels {
+                text.size = text_size;
+                if let Some(angle) = angle {
+                    f.push_transform();
+                    f.translate(Vector {
+                        x: text.position.x - offset.x + angle.cos() * offset.x,
+                        y: text.position.y - offset.y + angle.sin() * offset.x,
+                    });
+                    f.rotate(angle);
+                    text.position = zero_point;
+                    f.fill_text(text);
+                    f.pop_transform();
+                } else {
+                    f.fill_text(text);
+                }
+            }
+        });
+    }
+
+    pub fn draw_node(
+        &self,
+        point: &Point,
+        ps: Float,
+        stroke: Stroke,
+        fill: impl Into<Fill>,
+        tree_rect: &Rectangle,
+        frame: &mut Frame,
+    ) {
+        frame.with_save(|f| {
+            f.translate(Vector { x: tree_rect.x - ps / 2e0, y: tree_rect.y - ps / 2e0 });
+            let path = Path::new(|p| {
+                p.rounded_rectangle(*point, Size::new(ps, ps), Radius::new(ps));
+            });
+            f.fill(&path, fill);
+            f.stroke(&path, stroke);
+        });
+    }
+
     pub fn draw_scale_bar(
         &self,
         stroke: Stroke,
@@ -52,68 +119,5 @@ impl TreeView {
 
         frame.stroke(&path, stroke);
         frame.fill_text(l);
-    }
-
-    pub fn draw_edges(
-        &self,
-        paths: Vec<Path>,
-        stroke: Stroke,
-        tree_rect: &Rectangle,
-        frame: &mut Frame,
-    ) {
-        frame.with_save(|f| {
-            f.translate(Vector { x: tree_rect.x, y: tree_rect.y });
-            for p in paths {
-                f.stroke(&p, stroke);
-            }
-        })
-    }
-
-    pub fn draw_labels(
-        &self,
-        labels: Vec<Text>,
-        size: Float,
-        offset: Point,
-        tree_rect: &Rectangle,
-        clip: &Rectangle,
-        frame: &mut Frame,
-    ) {
-        let size_pix: Pixels = size.into();
-        frame.with_clip(*clip, |f| {
-            f.translate(Vector { x: tree_rect.x + offset.x, y: tree_rect.y + offset.y });
-            for mut l in labels {
-                l.size = size_pix;
-                f.fill_text(l);
-            }
-        });
-    }
-
-    pub fn draw_labels_fan(
-        &self,
-        labels: Vec<(Text, Radians)>,
-        size: Float,
-        offset: Point,
-        tree_rect: &Rectangle,
-        clip: &Rectangle,
-        frame: &mut Frame,
-    ) {
-        let size_pix: Pixels = size.into();
-        let pos = Point { x: 0e0, y: 0e0 };
-        frame.with_clip(*clip, |f| {
-            f.translate(Vector { x: tree_rect.x, y: tree_rect.y });
-            for (mut l, a) in labels {
-                f.push_transform();
-                l.size = size_pix;
-                let af = a.0;
-                f.translate(Vector {
-                    x: l.position.x + af.cos() * (offset.x),
-                    y: l.position.y + af.sin() * (offset.x),
-                });
-                f.rotate(a);
-                l.position = pos;
-                f.fill_text(l);
-                f.pop_transform();
-            }
-        });
     }
 }

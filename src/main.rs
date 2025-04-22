@@ -28,6 +28,7 @@ pub use text_width::text_width;
 pub use utils::lerp;
 
 pub type Float = f32;
+pub const PI: Float = std::f32::consts::PI;
 
 fn main() -> iced::Result {
     iced::daemon(App::new, App::update, App::view)
