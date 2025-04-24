@@ -103,14 +103,14 @@ features = [
     "canvas",
     ### Enables the advanced module
     "advanced",
+    ### Auto-detects light/dark mode for the built-in theme
+    "auto-detect-theme",
     ### Enables a debug view in native platforms (press F12)
     # "debug",
     ### Redraws on every runtime event, and not only when a widget requests it
     # "unconditional-rendering",
     ### Enables the "tiny-skia" software renderer backend
     # "tiny-skia",
-    ### Auto-detects light/dark mode for the built-in theme
-    # "auto-detect-theme",
     ### Enables querying system information
     # "system",
     ### Enables "tokio" as the "executor::Default" on native platforms
@@ -146,6 +146,7 @@ features = [
 
 [dependencies]
 numfmt = "1"
+tracing-subscriber = "0"
 # roarsvg = "0"
 
 [dependencies.dendros]
