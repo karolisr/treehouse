@@ -14,7 +14,10 @@ pub(super) use treeview::{TreeView, TreeViewMsg};
 #[cfg(target_os = "linux")]
 pub const APP_ID: &str = "TreeHouse";
 
-pub const SF: Float = 1e0;
+#[cfg(debug_assertions)]
+pub const DEBUG: bool = false;
+
+pub const SF: Float = 2e0;
 pub const APP_SCALE_FACTOR: f64 = 1e0 / SF as f64;
 pub const ANTIALIASING: bool = true;
 pub const TEXT_SIZE: Float = 14.0 * SF;

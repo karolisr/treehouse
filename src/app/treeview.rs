@@ -7,4 +7,4 @@ mod view;
 
 pub(super) use ltt_canvas::Ltt;
 pub(crate) use model::{TreeView, TreeViewMsg};
-pub(super) use view::{NodeOrderingOption, TreeReprOption};
+pub(super) use view::{NodeOrderingOption, TreeStyleOption};

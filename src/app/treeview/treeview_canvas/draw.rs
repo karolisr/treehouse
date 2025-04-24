@@ -81,11 +81,16 @@ impl TreeView {
     ) {
         frame.with_save(|f| {
             f.translate(Vector { x: tree_rect.x, y: tree_rect.y });
-            let path = Path::new(|p| {
+            let path_fill = Path::new(|p| {
                 p.circle(*point, ps);
             });
-            f.fill(&path, fill);
-            f.stroke(&path, stroke);
+
+            let path_stroke = Path::new(|p| {
+                p.circle(*point, ps - SF / 2e0);
+            });
+
+            f.fill(&path_fill, fill);
+            f.stroke(&path_stroke, stroke);
         });
     }
 

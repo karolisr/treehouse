@@ -31,10 +31,13 @@ pub type Float = f32;
 pub const PI: Float = std::f32::consts::PI;
 
 fn main() -> iced::Result {
+    #[cfg(debug_assertions)]
+    tracing_subscriber::fmt::init();
     iced::daemon(App::new, App::update, App::view)
         .title(App::title)
         .subscription(App::subscription)
         .antialiasing(ANTIALIASING)
         .scale_factor(App::scale_factor)
+        .theme(App::theme)
         .run()
 }

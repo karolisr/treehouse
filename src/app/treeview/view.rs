@@ -55,22 +55,22 @@ const NODE_ORDERING_OPTIONS: [NodeOrderingOption; 3] = [
 ];
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub enum TreeReprOption {
+pub enum TreeStyleOption {
     #[default]
     Phylogram,
     Fan,
 }
 
-impl std::fmt::Display for TreeReprOption {
+impl std::fmt::Display for TreeStyleOption {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            TreeReprOption::Phylogram => "Phylogram",
-            TreeReprOption::Fan => "Fan",
+            TreeStyleOption::Phylogram => "Phylogram",
+            TreeStyleOption::Fan => "Fan",
         })
     }
 }
 
-const TREE_REPR_OPTIONS: [TreeReprOption; 2] = [TreeReprOption::Phylogram, TreeReprOption::Fan];
+const TREE_STYLE_OPTIONS: [TreeStyleOption; 2] = [TreeStyleOption::Phylogram, TreeStyleOption::Fan];
 
 impl TreeView {
     pub fn view(&self) -> Element<TreeViewMsg> {
@@ -83,11 +83,19 @@ impl TreeView {
             .into();
         }
 
-        let mut side_col: Column<TreeViewMsg> = Column::new();
-        let mut main_row: Row<TreeViewMsg> = Row::new();
-        let mut main_col: Column<TreeViewMsg> = Column::new();
+        // Main Row:
+        let mut mr: Row<TreeViewMsg> = Row::new();
 
-        side_col = side_col.push(row![
+        // Main Column:
+        let mut mc: Column<TreeViewMsg> = Column::new();
+
+        // Tree Canvas Row:
+        let mut tcr: Row<TreeViewMsg> = Row::new();
+
+        // Side Column:
+        let mut sc: Column<TreeViewMsg> = Column::new();
+
+        sc = sc.push(row![
             column![
                 self.txt("Tips"),
                 self.txt("Nodes"),
@@ -99,103 +107,99 @@ impl TreeView {
             .align_x(Horizontal::Left)
             .width(Length::Fill),
             column![
-                self.usize_txt(self.tip_count),
-                self.usize_txt(self.node_count),
+                self.txt_usize(self.tip_count),
+                self.txt_usize(self.node_count),
                 match self.has_brlen {
-                    true => self.float_txt(self.tree_height),
-                    false => self.usize_txt(self.tree_height as usize),
+                    true => self.txt_float(self.tree_height),
+                    false => self.txt_usize(self.tree_height as usize),
                 },
-                self.bool_txt(self.is_rooted),
-                self.bool_txt(self.has_brlen),
-                self.bool_option_txt(self.is_ultrametric),
+                self.txt_bool(self.is_rooted),
+                self.txt_bool(self.has_brlen),
+                self.txt_bool_option(self.is_ultrametric),
             ]
             .align_x(Horizontal::Right)
         ]);
 
-        side_col = side_col.push(self.horizontal_space(0, PADDING));
-        side_col = side_col.push(self.horizontal_rule(SF));
-        side_col = side_col.push(self.horizontal_space(0, PADDING));
+        sc = sc.push(self.space_h(0, PADDING));
+        sc = sc.push(self.rule_h(SF));
+        sc = sc.push(self.space_h(0, PADDING));
 
-        side_col = side_col.push(
+        sc = sc.push(
             row![
                 text!("Style").size(TEXT_SIZE).align_x(Alignment::Start),
-                self.tree_repr_options_pick_list(),
+                self.pick_list_tree_style(),
             ]
             .align_y(Vertical::Center)
             .width(Length::Fill)
             .spacing(PADDING),
         );
 
-        side_col = side_col.push(self.horizontal_space(0, PADDING));
+        sc = sc.push(self.space_h(0, PADDING));
 
-        side_col = side_col.push(
+        sc = sc.push(
             row![
                 text!("Node Order")
                     .size(TEXT_SIZE)
                     .align_x(Alignment::Start),
-                self.node_ordering_options_pick_list(),
+                self.pick_list_node_ordering(),
             ]
             .align_y(Vertical::Center)
             .width(Length::Fill)
             .spacing(PADDING),
         );
 
-        side_col = side_col.push(self.horizontal_space(0, PADDING));
-        side_col = side_col.push(self.horizontal_rule(SF));
-        side_col = side_col.push(self.horizontal_space(0, PADDING));
+        sc = sc.push(self.space_h(0, PADDING));
+        sc = sc.push(self.rule_h(SF));
+        sc = sc.push(self.space_h(0, PADDING));
 
-        match self.selected_tree_repr_option {
-            TreeReprOption::Phylogram => {
-                side_col = side_col.push(self.slider("Width", self.canvas_width_slider()));
+        match self.sel_tree_style_opt {
+            TreeStyleOption::Phylogram => {
+                sc = sc.push(self.slider("Width", self.slider_width_canvas()));
                 if self.min_node_size_idx != self.max_node_size_idx {
-                    side_col = side_col.push(self.slider("Edge Spacing", self.node_size_slider()));
+                    sc = sc.push(self.slider("Edge Spacing", self.slider_size_node()));
                 }
             }
-            TreeReprOption::Fan => {
-                side_col = side_col.push(self.slider("Zoom", self.canvas_width_slider()));
-                side_col = side_col.push(self.slider("Opening Angle", self.opn_angle_slider()));
-                side_col = side_col.push(self.slider("Rotation Angle", self.rot_angle_slider()));
+            TreeStyleOption::Fan => {
+                sc = sc.push(self.slider("Zoom", self.slider_width_canvas()));
+                sc = sc.push(self.slider("Opening Angle", self.slider_angle_opn()));
+                sc = sc.push(self.slider("Rotation Angle", self.slider_angle_rot()));
             }
         }
 
-        side_col = side_col.push(self.horizontal_space(0, PADDING));
-        side_col = side_col.push(self.horizontal_rule(SF));
-        side_col = side_col.push(self.horizontal_space(0, PADDING));
+        sc = sc.push(self.space_h(0, PADDING));
+        sc = sc.push(self.rule_h(SF));
+        sc = sc.push(self.space_h(0, PADDING));
 
-        side_col = side_col.push(
-            self.tip_labels_toggler(self.draw_tip_branch_labels_allowed && self.has_tip_labels),
-        );
-        if self.draw_tip_branch_labels_allowed && self.has_tip_labels && self.draw_tip_labels {
-            side_col = side_col.push(self.tip_labels_size_slider());
+        sc = sc.push(self.toggler_label_tip(self.tip_brnch_labs_allowed && self.has_tip_labs));
+        if self.tip_brnch_labs_allowed && self.has_tip_labs && self.draw_tip_labs {
+            sc = sc.push(self.slider_size_label_tip());
         }
 
-        side_col = side_col.push(self.horizontal_space(0, PADDING));
-        side_col = side_col.push(
-            self.branch_labels_toggler(self.has_brlen && self.draw_tip_branch_labels_allowed),
-        );
-        if self.has_brlen && self.draw_tip_branch_labels_allowed && self.draw_branch_labels {
-            side_col = side_col.push(self.branch_labels_size_slider());
+        sc = sc.push(self.space_h(0, PADDING));
+        sc = sc.push(self.toggler_label_branch(self.has_brlen && self.tip_brnch_labs_allowed));
+        if self.has_brlen && self.tip_brnch_labs_allowed && self.draw_brnch_labs {
+            sc = sc.push(self.slider_size_label_branch());
         }
 
-        side_col = side_col.push(self.horizontal_space(0, PADDING));
-        side_col = side_col.push(self.int_labels_toggler(self.has_int_labels));
-        if self.has_int_labels && self.draw_int_labels {
-            side_col = side_col.push(self.int_labels_size_slider());
+        sc = sc.push(self.space_h(0, PADDING));
+        sc = sc.push(self.toggler_label_int(self.has_int_labs));
+        if self.has_int_labs && self.draw_int_labs {
+            sc = sc.push(self.slider_size_label_int());
         }
 
-        side_col = side_col.push(self.horizontal_space(0, PADDING));
-        side_col = side_col.push(self.legend_toggler(self.has_brlen));
+        sc = sc.push(self.space_h(0, PADDING));
+        sc = sc.push(self.toggler_legend(self.has_brlen));
 
-        side_col = side_col.push(self.horizontal_space(0, PADDING));
-        side_col = side_col.push(self.ltt_toggler(true));
+        sc = sc.push(self.space_h(0, PADDING));
+        sc = sc.push(self.toggler_ltt(true));
 
-        side_col = side_col.push(self.horizontal_space(0, PADDING));
-        side_col = side_col.push(self.horizontal_rule(SF));
-        side_col = side_col.push(self.horizontal_space(0, PADDING));
+        sc = sc.push(self.space_h(0, PADDING));
+        sc = sc.push(self.rule_h(SF));
+        sc = sc.push(self.space_h(0, PADDING));
 
-        side_col = side_col.push(
+        sc = sc.push(
             container(
-                row![self.root_btn(), self.unroot_btn()]
+                row![self.btn_root(), self.btn_unroot()]
                     .align_y(Vertical::Center)
                     .spacing(PADDING),
             )
@@ -205,59 +209,65 @@ impl TreeView {
             .height(Length::Shrink),
         );
 
-        side_col = side_col.width(SIDE_COL_W);
+        sc = sc.width(SIDE_COL_W);
 
-        if (self.selected_tree_repr_option == TreeReprOption::Phylogram
-            && self.selected_node_size_idx != self.min_node_size_idx)
-            || self.selected_canvas_w_idx != self.min_canvas_w_idx
+        if (self.sel_tree_style_opt == TreeStyleOption::Phylogram
+            && self.sel_node_size_idx != self.min_node_size_idx)
+            || self.sel_tre_cnv_w_idx != self.min_tre_cnv_w_idx
         {
-            main_col = main_col.push(self.scrollable(self.tree_canvas()));
+            tcr = tcr.push(self.scroll_canvas_tree(self.canvas_tree()));
         } else {
-            main_col = main_col.push(self.tree_canvas());
+            tcr = tcr.push(self.canvas_tree());
         }
+
+        // if (self.sel_tree_style_opt == TreeStyleOption::Phylogram
+        //     && self.sel_node_size_idx == self.min_node_size_idx)
+        //     || (self.sel_tree_style_opt == TreeStyleOption::Fan
+        //         && self.sel_tre_cnv_w_idx == self.min_tre_cnv_w_idx)
+        // {
+        //     tcr = tcr.push(self.rule_v(SF));
+        // } else {
+        //     tcr = tcr.push(self.space_v(SF, 0));
+        // }
+
+        mc = mc.push(tcr);
 
         if self.show_ltt {
-            main_col = main_col.push(
-                self.ltt_canvas()
-                    .width(Length::Fixed(self.canvas_w - PADDING * 2e0 - SF))
-                    .height(Length::Fill),
-            );
+            if self.sel_tree_style_opt == TreeStyleOption::Phylogram
+                && self.sel_tre_cnv_w_idx != self.min_tre_cnv_w_idx
+            {
+                mc = mc.push(self.scroll_canvas_ltt(self.canvas_ltt()));
+            } else {
+                mc = mc.push(self.canvas_ltt());
+            }
         }
 
-        main_row = main_row.push(main_col);
+        mc = mc.spacing(PADDING);
+        mr = mr.push(mc);
+        mr = mr.push(self.space_v(PADDING, 0));
+        mr = mr.push(sc);
+        mr = mr.padding(PADDING);
 
-        if (self.selected_tree_repr_option == TreeReprOption::Phylogram
-            && self.selected_node_size_idx == self.min_node_size_idx)
-            || (self.selected_tree_repr_option == TreeReprOption::Fan
-                && self.selected_canvas_w_idx == self.min_canvas_w_idx)
-        {
-            main_row = main_row.push(self.vertical_rule(SF));
-        } else {
-            main_row = main_row.push(self.vertical_space(SF, 0));
-        }
-
-        main_row = main_row.push(self.vertical_space(PADDING, 0));
-
-        main_row = main_row.push(side_col);
-        main_row = main_row.padding(PADDING);
-
-        main_row.into()
+        mr.into()
     }
 
-    fn unroot_btn(&self) -> Button<TreeViewMsg> {
-        self.btn(
-            "Unroot",
-            match self.tree_original.is_rooted() {
-                true => Some(TreeViewMsg::Unroot),
-                false => None,
-            },
-        )
+    // --------------------------------------------------------------------------------------------
+
+    fn btn<'a>(&'a self, lab: &'a str, msg: Option<TreeViewMsg>) -> Button<'a, TreeViewMsg> {
+        let txt = Text::new(lab)
+            .align_x(Horizontal::Center)
+            .align_y(Vertical::Center)
+            .size(TEXT_SIZE);
+        let mut btn = Button::new(txt);
+        btn = btn.on_press_maybe(msg);
+        btn = self.apply_settings_btn(btn);
+        btn
     }
 
-    fn root_btn(&self) -> Button<TreeViewMsg> {
+    fn btn_root(&self) -> Button<TreeViewMsg> {
         self.btn("Root", {
-            if self.selected_node_ids.len() == 1 {
-                let node_id = *self.selected_node_ids.iter().last().unwrap();
+            if self.sel_node_ids.len() == 1 {
+                let node_id = *self.sel_node_ids.iter().last().unwrap();
                 match self.tree.can_root(node_id) {
                     true => Some(TreeViewMsg::Root(node_id)),
                     false => None,
@@ -268,131 +278,113 @@ impl TreeView {
         })
     }
 
-    fn btn<'a>(&'a self, lab: &'a str, msg: Option<TreeViewMsg>) -> Button<'a, TreeViewMsg> {
-        let txt = Text::new(lab)
-            .align_x(Horizontal::Center)
-            .align_y(Vertical::Center)
-            .size(TEXT_SIZE);
-        let mut btn = Button::new(txt);
-        btn = btn.on_press_maybe(msg);
-        btn = self.apply_btn_settings(btn);
-        btn
+    fn btn_unroot(&self) -> Button<TreeViewMsg> {
+        self.btn(
+            "Unroot",
+            match self.tree_orig.is_rooted() {
+                true => Some(TreeViewMsg::Unroot),
+                false => None,
+            },
+        )
     }
 
-    fn usize_txt(&self, n: impl Into<usize>) -> Text {
-        let mut num_fmt = NumFmt::new();
-        num_fmt = num_fmt.precision(numfmt::Precision::Decimals(0));
-        num_fmt = num_fmt.separator(',').unwrap();
-        let s = num_fmt.fmt2(n.into());
-        self.txt(s)
-    }
+    // --------------------------------------------------------------------------------------------
 
-    fn float_txt(&self, n: impl Into<Float>) -> Text {
-        let mut num_fmt = NumFmt::new();
-        num_fmt = num_fmt.precision(numfmt::Precision::Decimals(3));
-        num_fmt = num_fmt.separator(',').unwrap();
-        let s = num_fmt.fmt2(n.into());
-        self.txt(s)
-    }
-
-    fn bool_txt(&self, b: bool) -> Text {
-        let s = match b {
-            true => "Yes",
-            false => "No",
-        };
-        self.txt(s)
-    }
-
-    fn bool_option_txt(&self, ob: Option<bool>) -> Text {
-        match ob {
-            Some(b) => self.bool_txt(b),
-            None => self.txt("N/A"),
-        }
-    }
-
-    fn txt(&self, s: impl Into<String>) -> Text {
-        Text::new(s.into())
-            .align_x(Horizontal::Right)
-            .align_y(Vertical::Center)
-            .width(Length::Shrink)
-            .size(TEXT_SIZE)
-        // .font(Font::with_name(TREE_LAB_FONT_NAME))
-    }
-
-    fn tree_canvas(&self) -> Canvas<&TreeView, TreeViewMsg> {
-        Canvas::new(self)
-            .width(Length::Fixed(self.canvas_w))
-            .height(Length::Fixed(self.canvas_h))
-    }
-
-    fn ltt_canvas(&self) -> Canvas<&Ltt, TreeViewMsg> {
+    fn canvas_ltt(&self) -> Canvas<&Ltt, TreeViewMsg> {
         Canvas::new(&self.ltt)
-        // .width(Length::Fixed(self.canvas_w))
-        // .height(Length::Fixed(self.canvas_h))
+            .width(Length::Fixed(self.ltt_cnv_w))
+            .height(Length::Fixed(LTT_H))
     }
 
-    fn horizontal_space(&self, width: impl Into<Length>, height: impl Into<Length>) -> Space {
-        horizontal_space().width(width).height(height)
+    fn canvas_tree(&self) -> Canvas<&TreeView, TreeViewMsg> {
+        Canvas::new(self)
+            .width(Length::Fixed(self.tre_cnv_w))
+            .height(Length::Fixed(self.tre_cnv_h))
     }
 
-    fn vertical_space(&self, width: impl Into<Length>, height: impl Into<Length>) -> Space {
-        vertical_space().width(width).height(height)
-    }
+    // --------------------------------------------------------------------------------------------
 
-    fn horizontal_rule(&self, height: impl Into<Pixels>) -> Rule<'_, WidgetTheme> {
-        let rule: Rule<'_, WidgetTheme> = Rule::horizontal(height);
-        self.apply_rule_settings(rule)
-    }
-
-    fn vertical_rule(&self, width: impl Into<Pixels>) -> Rule<'_, WidgetTheme> {
-        let rule: Rule<'_, WidgetTheme> = Rule::vertical(width);
-        self.apply_rule_settings(rule)
-    }
-
-    fn tip_labels_toggler(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
-        let mut tgl =
-            self.apply_toggler_settings("Tip Labels", self.has_tip_labels && self.draw_tip_labels);
-        if enabled {
-            tgl = tgl.on_toggle(TreeViewMsg::TipLabelVisibilityChanged);
-        }
-        tgl
-    }
-
-    fn branch_labels_toggler(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
-        let mut tgl = self
-            .apply_toggler_settings("Branch Lengths", self.has_brlen && self.draw_branch_labels);
-        if enabled {
-            tgl = tgl.on_toggle(TreeViewMsg::BranchLabelVisibilityChanged);
-        }
-        tgl
-    }
-
-    fn int_labels_toggler(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
-        let mut tgl = self.apply_toggler_settings(
-            "Internal Labels",
-            self.has_int_labels && self.draw_int_labels,
+    fn pick_list_node_ordering(
+        &self,
+    ) -> PickList<NodeOrderingOption, &[NodeOrderingOption], NodeOrderingOption, TreeViewMsg> {
+        let pl: PickList<
+            NodeOrderingOption,
+            &[NodeOrderingOption],
+            NodeOrderingOption,
+            TreeViewMsg,
+        > = PickList::new(
+            &NODE_ORDERING_OPTIONS,
+            Some(self.sel_node_ord_opt),
+            TreeViewMsg::NodeOrderingOptionChanged,
         );
-        if enabled {
-            tgl = tgl.on_toggle(TreeViewMsg::IntLabelVisibilityChanged);
-        }
-        tgl
+        self.apply_settings_pick_list(pl)
     }
 
-    fn legend_toggler(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
-        let mut tgl = self.apply_toggler_settings("Legend", self.has_brlen && self.draw_legend);
-        if enabled {
-            tgl = tgl.on_toggle(TreeViewMsg::LegendVisibilityChanged);
-        }
-        tgl
+    fn pick_list_tree_style(
+        &self,
+    ) -> PickList<TreeStyleOption, &[TreeStyleOption], TreeStyleOption, TreeViewMsg> {
+        let pl: PickList<TreeStyleOption, &[TreeStyleOption], TreeStyleOption, TreeViewMsg> =
+            PickList::new(
+                &TREE_STYLE_OPTIONS,
+                Some(self.sel_tree_style_opt),
+                TreeViewMsg::TreeReprOptionChanged,
+            );
+        self.apply_settings_pick_list(pl)
     }
 
-    fn ltt_toggler(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
-        let mut tgl = self.apply_toggler_settings("LTT", self.show_ltt);
-        if enabled {
-            tgl = tgl.on_toggle(TreeViewMsg::LttVisibilityChanged);
-        }
-        tgl
+    // --------------------------------------------------------------------------------------------
+
+    fn rule_h(&self, height: impl Into<Pixels>) -> Rule<'_, WidgetTheme> {
+        let rule: Rule<'_, WidgetTheme> = Rule::horizontal(height);
+        self.apply_settings_rule(rule)
     }
+
+    #[allow(dead_code)]
+    fn rule_v(&self, width: impl Into<Pixels>) -> Rule<'_, WidgetTheme> {
+        let rule: Rule<'_, WidgetTheme> = Rule::vertical(width);
+        self.apply_settings_rule(rule)
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+    fn scroll_bar(&self) -> Scrollbar {
+        let mut sb = Scrollbar::new();
+        sb = sb.width(Pixels(SCROLL_BAR_W));
+        sb = sb.scroller_width(Pixels(SCROLL_BAR_W));
+        sb
+    }
+
+    fn scroll_canvas_ltt<'a>(
+        &'a self,
+        cnv: Canvas<&'a Ltt, TreeViewMsg>,
+    ) -> Scrollable<'a, TreeViewMsg> {
+        let mut scrl: Scrollable<TreeViewMsg> = Scrollable::new(cnv);
+        scrl = scrl.direction(ScrollableDirection::Horizontal(self.scroll_bar()));
+        scrl = scrl.width(self.tree_scroll_w);
+        scrl = scrl.height(LTT_H);
+        scrl = scrl.on_scroll(TreeViewMsg::LttCanvasScrolled);
+        self.apply_settings_scroll(scrl)
+    }
+
+    fn scroll_canvas_tree<'a>(
+        &'a self,
+        cnv: Canvas<&'a TreeView, TreeViewMsg>,
+    ) -> Scrollable<'a, TreeViewMsg> {
+        let mut scrl: Scrollable<TreeViewMsg> = Scrollable::new(cnv);
+
+        scrl = scrl.direction(ScrollableDirection::Both {
+            horizontal: self.scroll_bar(),
+            vertical: self.scroll_bar(),
+        });
+
+        scrl = scrl.width(self.tree_scroll_w);
+        scrl = scrl.height(self.tree_scroll_h);
+        scrl = scrl.on_scroll(TreeViewMsg::TreeCanvasScrolled);
+
+        self.apply_settings_scroll(scrl)
+    }
+
+    // --------------------------------------------------------------------------------------------
 
     fn slider<'a>(
         &self,
@@ -407,84 +399,186 @@ impl TreeView {
         ]
     }
 
-    fn rot_angle_slider(&self) -> Slider<u16, TreeViewMsg> {
-        let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
-            self.min_rot_angle_idx..=self.max_rot_angle_idx,
-            self.selected_rot_angle_idx,
-            TreeViewMsg::RotAngleSelectionChanged,
-        );
-        sldr = sldr.step(1_u16);
-        sldr = sldr.shift_step(2_u16);
-        self.apply_slider_settings(sldr)
-    }
-
-    fn opn_angle_slider(&self) -> Slider<u16, TreeViewMsg> {
+    fn slider_angle_opn(&self) -> Slider<u16, TreeViewMsg> {
         let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
             self.min_opn_angle_idx..=self.max_opn_angle_idx,
-            self.selected_opn_angle_idx,
+            self.sel_opn_angle_idx,
             TreeViewMsg::OpnAngleSelectionChanged,
         );
         sldr = sldr.step(1_u16);
         sldr = sldr.shift_step(2_u16);
-        self.apply_slider_settings(sldr)
+        self.apply_settings_slider(sldr)
     }
 
-    fn node_size_slider(&self) -> Slider<u16, TreeViewMsg> {
+    fn slider_angle_rot(&self) -> Slider<u16, TreeViewMsg> {
         let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
-            self.min_node_size_idx..=self.max_node_size_idx,
-            self.selected_node_size_idx,
-            TreeViewMsg::NodeSizeSelectionChanged,
+            self.min_rot_angle_idx..=self.max_rot_angle_idx,
+            self.sel_rot_angle_idx,
+            TreeViewMsg::RotAngleSelectionChanged,
         );
         sldr = sldr.step(1_u16);
         sldr = sldr.shift_step(2_u16);
-        self.apply_slider_settings(sldr)
+        self.apply_settings_slider(sldr)
     }
 
-    fn canvas_width_slider(&self) -> Slider<u16, TreeViewMsg> {
+    fn slider_size_label_branch(&self) -> Slider<u16, TreeViewMsg> {
         let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
-            self.min_canvas_w_idx..=self.max_canvas_w_idx,
-            self.selected_canvas_w_idx,
-            TreeViewMsg::CanvasWidthSelectionChanged,
-        );
-        sldr = sldr.step(1_u16);
-        sldr = sldr.shift_step(2_u16);
-        self.apply_slider_settings(sldr)
-    }
-
-    fn tip_labels_size_slider(&self) -> Slider<u16, TreeViewMsg> {
-        let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
-            self.min_label_size_idx..=self.max_label_size_idx,
-            self.selected_tip_label_size_idx,
-            TreeViewMsg::TipLabelSizeSelectionChanged,
-        );
-        sldr = sldr.step(1_u16);
-        sldr = sldr.shift_step(2_u16);
-        self.apply_slider_settings(sldr)
-    }
-
-    fn branch_labels_size_slider(&self) -> Slider<u16, TreeViewMsg> {
-        let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
-            self.min_label_size_idx..=self.max_label_size_idx,
-            self.selected_branch_label_size_idx,
+            self.min_lab_size_idx..=self.max_lab_size_idx,
+            self.sel_brnch_lab_size_idx,
             TreeViewMsg::BranchLabelSizeSelectionChanged,
         );
         sldr = sldr.step(1_u16);
         sldr = sldr.shift_step(2_u16);
-        self.apply_slider_settings(sldr)
+        self.apply_settings_slider(sldr)
     }
 
-    fn int_labels_size_slider(&self) -> Slider<u16, TreeViewMsg> {
+    fn slider_size_label_int(&self) -> Slider<u16, TreeViewMsg> {
         let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
-            self.min_label_size_idx..=self.max_label_size_idx,
-            self.selected_int_label_size_idx,
+            self.min_lab_size_idx..=self.max_lab_size_idx,
+            self.sel_int_lab_size_idx,
             TreeViewMsg::IntLabelSizeSelectionChanged,
         );
         sldr = sldr.step(1_u16);
         sldr = sldr.shift_step(2_u16);
-        self.apply_slider_settings(sldr)
+        self.apply_settings_slider(sldr)
     }
 
-    fn apply_btn_settings<'a>(
+    fn slider_size_label_tip(&self) -> Slider<u16, TreeViewMsg> {
+        let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
+            self.min_lab_size_idx..=self.max_lab_size_idx,
+            self.sel_tip_lab_size_idx,
+            TreeViewMsg::TipLabelSizeSelectionChanged,
+        );
+        sldr = sldr.step(1_u16);
+        sldr = sldr.shift_step(2_u16);
+        self.apply_settings_slider(sldr)
+    }
+
+    fn slider_size_node(&self) -> Slider<u16, TreeViewMsg> {
+        let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
+            self.min_node_size_idx..=self.max_node_size_idx,
+            self.sel_node_size_idx,
+            TreeViewMsg::NodeSizeSelectionChanged,
+        );
+        sldr = sldr.step(1_u16);
+        sldr = sldr.shift_step(2_u16);
+        self.apply_settings_slider(sldr)
+    }
+
+    fn slider_width_canvas(&self) -> Slider<u16, TreeViewMsg> {
+        let mut sldr: Slider<u16, TreeViewMsg> = Slider::new(
+            self.min_tre_cnv_w_idx..=self.max_tre_cnv_w_idx,
+            self.sel_tre_cnv_w_idx,
+            TreeViewMsg::CanvasWidthSelectionChanged,
+        );
+        sldr = sldr.step(1_u16);
+        sldr = sldr.shift_step(2_u16);
+        self.apply_settings_slider(sldr)
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+    fn space_h(&self, width: impl Into<Length>, height: impl Into<Length>) -> Space {
+        horizontal_space().width(width).height(height)
+    }
+
+    fn space_v(&self, width: impl Into<Length>, height: impl Into<Length>) -> Space {
+        vertical_space().width(width).height(height)
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+    fn toggler<'a>(&self, label: &'a str, value: bool) -> Toggler<'a, TreeViewMsg> {
+        let mut tglr: Toggler<TreeViewMsg> = Toggler::new(value);
+        tglr = tglr.label(label);
+        tglr = self.apply_settings_toggler(tglr);
+        tglr
+    }
+
+    fn toggler_label_branch(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
+        let mut tglr = self.toggler("Branch Lengths", self.has_brlen && self.draw_brnch_labs);
+        if enabled {
+            tglr = tglr.on_toggle(TreeViewMsg::BranchLabelVisibilityChanged);
+        }
+        tglr
+    }
+
+    fn toggler_label_int(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
+        let mut tglr = self.toggler("Internal Labels", self.has_int_labs && self.draw_int_labs);
+        if enabled {
+            tglr = tglr.on_toggle(TreeViewMsg::IntLabelVisibilityChanged);
+        }
+        tglr
+    }
+
+    fn toggler_label_tip(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
+        let mut tglr = self.toggler("Tip Labels", self.has_tip_labs && self.draw_tip_labs);
+        if enabled {
+            tglr = tglr.on_toggle(TreeViewMsg::TipLabelVisibilityChanged);
+        }
+        tglr
+    }
+
+    fn toggler_legend(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
+        let mut tglr = self.toggler("Legend", self.has_brlen && self.draw_legend);
+        if enabled {
+            tglr = tglr.on_toggle(TreeViewMsg::LegendVisibilityChanged);
+        }
+        tglr
+    }
+
+    fn toggler_ltt(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
+        let mut tglr = self.toggler("LTT Plot", self.show_ltt);
+        if enabled {
+            tglr = tglr.on_toggle(TreeViewMsg::LttVisibilityChanged);
+        }
+        tglr
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+    fn txt(&self, s: impl Into<String>) -> Text {
+        Text::new(s.into())
+            .align_x(Horizontal::Right)
+            .align_y(Vertical::Center)
+            .width(Length::Shrink)
+            .size(TEXT_SIZE)
+    }
+
+    fn txt_bool(&self, b: bool) -> Text {
+        let s = match b {
+            true => "Yes",
+            false => "No",
+        };
+        self.txt(s)
+    }
+
+    fn txt_bool_option(&self, ob: Option<bool>) -> Text {
+        match ob {
+            Some(b) => self.txt_bool(b),
+            None => self.txt("N/A"),
+        }
+    }
+
+    fn txt_float(&self, n: impl Into<Float>) -> Text {
+        let mut num_fmt = NumFmt::new();
+        num_fmt = num_fmt.precision(numfmt::Precision::Decimals(3));
+        num_fmt = num_fmt.separator(',').unwrap();
+        let s = num_fmt.fmt2(n.into());
+        self.txt(s)
+    }
+
+    fn txt_usize(&self, n: impl Into<usize>) -> Text {
+        let mut num_fmt = NumFmt::new();
+        num_fmt = num_fmt.precision(numfmt::Precision::Decimals(0));
+        num_fmt = num_fmt.separator(',').unwrap();
+        let s = num_fmt.fmt2(n.into());
+        self.txt(s)
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+    fn apply_settings_btn<'a>(
         &'a self,
         mut btn: Button<'a, TreeViewMsg>,
     ) -> Button<'a, TreeViewMsg> {
@@ -520,35 +614,7 @@ impl TreeView {
         btn
     }
 
-    fn tree_repr_options_pick_list(
-        &self,
-    ) -> PickList<TreeReprOption, &[TreeReprOption], TreeReprOption, TreeViewMsg> {
-        let pl: PickList<TreeReprOption, &[TreeReprOption], TreeReprOption, TreeViewMsg> =
-            PickList::new(
-                &TREE_REPR_OPTIONS,
-                Some(self.selected_tree_repr_option),
-                TreeViewMsg::TreeReprOptionChanged,
-            );
-        self.apply_pick_list_settings(pl)
-    }
-
-    fn node_ordering_options_pick_list(
-        &self,
-    ) -> PickList<NodeOrderingOption, &[NodeOrderingOption], NodeOrderingOption, TreeViewMsg> {
-        let pl: PickList<
-            NodeOrderingOption,
-            &[NodeOrderingOption],
-            NodeOrderingOption,
-            TreeViewMsg,
-        > = PickList::new(
-            &NODE_ORDERING_OPTIONS,
-            Some(self.selected_node_ordering_option),
-            TreeViewMsg::NodeOrderingOptionChanged,
-        );
-        self.apply_pick_list_settings(pl)
-    }
-
-    fn apply_pick_list_settings<
+    fn apply_settings_pick_list<
         'a,
         T: std::cmp::PartialEq + std::fmt::Display + std::clone::Clone,
     >(
@@ -589,34 +655,19 @@ impl TreeView {
         pl
     }
 
-    fn scrollable<'a>(
-        &'a self,
-        cnv: Canvas<&'a TreeView, TreeViewMsg>,
-    ) -> Scrollable<'a, TreeViewMsg> {
-        let mut scrl: Scrollable<TreeViewMsg> = Scrollable::new(cnv);
-
-        let mut scrl_bar_h = Scrollbar::new();
-        scrl_bar_h = scrl_bar_h.width(Pixels(SCROLL_BAR_W));
-        scrl_bar_h = scrl_bar_h.scroller_width(Pixels(SCROLL_BAR_W));
-
-        let mut scrl_bar_v = Scrollbar::new();
-        scrl_bar_v = scrl_bar_v.width(Pixels(SCROLL_BAR_W));
-        scrl_bar_v = scrl_bar_v.scroller_width(Pixels(SCROLL_BAR_W));
-
-        scrl = scrl
-            .direction(ScrollableDirection::Both { horizontal: scrl_bar_h, vertical: scrl_bar_v });
-        scrl = scrl.width(self.scroll_w);
-
-        match self.show_ltt {
-            true => scrl = scrl.height(self.min_canvas_h + SF - LTT_H),
-            false => scrl = scrl.height(self.min_canvas_h + SF),
-        }
-
-        scrl = scrl.on_scroll(TreeViewMsg::TreeViewScrolled);
-        self.apply_scroller_settings(scrl)
+    fn apply_settings_rule<'a>(&self, rule: Rule<'a, WidgetTheme>) -> Rule<'a, WidgetTheme> {
+        rule.style(|theme| {
+            let palette = theme.extended_palette();
+            RuleStyle {
+                color: palette.background.strong.color,
+                width: (SF * 1e0) as u16,
+                radius: (SF * 2e0).into(),
+                fill_mode: RuleFillMode::Percent(1e2),
+            }
+        })
     }
 
-    fn apply_scroller_settings<'a>(
+    fn apply_settings_scroll<'a>(
         &'a self,
         scrl: Scrollable<'a, TreeViewMsg>,
     ) -> Scrollable<'a, TreeViewMsg> {
@@ -699,31 +750,7 @@ impl TreeView {
         })
     }
 
-    fn apply_toggler_settings<'a>(&self, label: &'a str, value: bool) -> Toggler<'a, TreeViewMsg> {
-        let mut tglr: Toggler<TreeViewMsg> = Toggler::new(value);
-        tglr = tglr.label(label);
-        tglr = tglr.text_size(TEXT_SIZE);
-        tglr = tglr.size(TEXT_SIZE * 1.5);
-        tglr = tglr.spacing(PADDING_INNER);
-        tglr = tglr.text_alignment(Alignment::End);
-        tglr = tglr.width(Length::Fill);
-        tglr = tglr.text_line_height(LINE_H);
-        tglr
-    }
-
-    fn apply_rule_settings<'a>(&self, rule: Rule<'a, WidgetTheme>) -> Rule<'a, WidgetTheme> {
-        rule.style(|theme| {
-            let palette = theme.extended_palette();
-            RuleStyle {
-                color: palette.background.strong.color,
-                width: (SF * 1e0) as u16,
-                radius: (SF * 2e0).into(),
-                fill_mode: RuleFillMode::Full,
-            }
-        })
-    }
-
-    fn apply_slider_settings<'a, T>(
+    fn apply_settings_slider<'a, T>(
         &'a self,
         sldr: Slider<'a, T, TreeViewMsg>,
     ) -> Slider<'a, T, TreeViewMsg>
@@ -761,5 +788,18 @@ impl TreeView {
                 },
             }
         })
+    }
+
+    fn apply_settings_toggler<'a>(
+        &self,
+        mut tglr: Toggler<'a, TreeViewMsg>,
+    ) -> Toggler<'a, TreeViewMsg> {
+        tglr = tglr.text_size(TEXT_SIZE);
+        tglr = tglr.size(TEXT_SIZE * 1.5);
+        tglr = tglr.spacing(PADDING_INNER);
+        tglr = tglr.text_alignment(Alignment::End);
+        tglr = tglr.width(Length::Fill);
+        tglr = tglr.text_line_height(LINE_H);
+        tglr
     }
 }

@@ -1,4 +1,4 @@
-use super::{TreeReprOption, TreeView, TreeViewMsg};
+use super::{TreeStyleOption, TreeView, TreeViewMsg};
 use crate::{Float, PI, app::SF};
 use iced::Task;
 
@@ -9,19 +9,19 @@ impl TreeView {
 
             TreeViewMsg::Init => Task::batch([
                 Task::done(TreeViewMsg::TipLabelSizeSelectionChanged(
-                    self.selected_tip_label_size_idx,
+                    self.sel_tip_lab_size_idx,
                 )),
                 Task::done(TreeViewMsg::IntLabelSizeSelectionChanged(
-                    self.selected_int_label_size_idx,
+                    self.sel_int_lab_size_idx,
                 )),
                 Task::done(TreeViewMsg::BranchLabelSizeSelectionChanged(
-                    self.selected_branch_label_size_idx,
+                    self.sel_brnch_lab_size_idx,
                 )),
                 Task::done(TreeViewMsg::OpnAngleSelectionChanged(
-                    self.selected_opn_angle_idx,
+                    self.sel_opn_angle_idx,
                 )),
                 Task::done(TreeViewMsg::RotAngleSelectionChanged(
-                    self.selected_rot_angle_idx,
+                    self.sel_rot_angle_idx,
                 )),
             ])
             .chain(if let Some(id) = self.win_id {
@@ -37,67 +37,95 @@ impl TreeView {
                 Task::none()
             }
 
+            TreeViewMsg::Refresh => {
+                #[cfg(debug_assertions)]
+                {
+                    self.g_bounds.clear();
+                    self.g_palette.clear();
+                }
+                self.g_legend.clear();
+                self.g_edge.clear();
+                self.g_lab_tip.clear();
+                self.g_lab_int.clear();
+                self.g_lab_brnch.clear();
+                self.g_node_sel.clear();
+                self.g_node_hover.clear();
+                Task::none()
+            }
+
             TreeViewMsg::TreeReprOptionChanged(tree_repr_option) => {
                 #[cfg(debug_assertions)]
-                self.debug_geom_cache.clear();
-                self.legend_geom_cache.clear();
-                self.edge_geom_cache.clear();
-                self.tip_labels_geom_cache.clear();
-                self.int_labels_geom_cache.clear();
-                self.branch_labels_geom_cache.clear();
-                self.selected_nodes_geom_cache.clear();
-                self.pointer_geom_cache.clear();
-                self.selected_tree_repr_option = tree_repr_option;
+                {
+                    self.g_bounds.clear();
+                    self.g_palette.clear();
+                }
+                self.g_legend.clear();
+                self.g_edge.clear();
+                self.g_lab_tip.clear();
+                self.g_lab_int.clear();
+                self.g_lab_brnch.clear();
+                self.g_node_sel.clear();
+                self.g_node_hover.clear();
+                self.sel_tree_style_opt = tree_repr_option;
                 self.update_node_size();
                 self.update_tip_label_w();
+                self.update_canvas_w();
                 self.update_canvas_h();
                 Task::none()
             }
 
             TreeViewMsg::OpnAngleSelectionChanged(idx) => {
                 #[cfg(debug_assertions)]
-                self.debug_geom_cache.clear();
-                self.legend_geom_cache.clear();
-                self.edge_geom_cache.clear();
-                self.tip_labels_geom_cache.clear();
-                self.int_labels_geom_cache.clear();
-                self.branch_labels_geom_cache.clear();
-                self.selected_nodes_geom_cache.clear();
-                self.pointer_geom_cache.clear();
-                self.selected_opn_angle_idx = idx;
+                {
+                    self.g_bounds.clear();
+                    self.g_palette.clear();
+                }
+                self.g_legend.clear();
+                self.g_edge.clear();
+                self.g_lab_tip.clear();
+                self.g_lab_int.clear();
+                self.g_lab_brnch.clear();
+                self.g_node_sel.clear();
+                self.g_node_hover.clear();
+                self.sel_opn_angle_idx = idx;
                 self.opn_angle = idx as Float / 360e0 * 2e0 * PI;
                 Task::none()
             }
 
             TreeViewMsg::RotAngleSelectionChanged(idx) => {
                 #[cfg(debug_assertions)]
-                self.debug_geom_cache.clear();
-                self.legend_geom_cache.clear();
-                self.edge_geom_cache.clear();
-                self.tip_labels_geom_cache.clear();
-                self.int_labels_geom_cache.clear();
-                self.branch_labels_geom_cache.clear();
-                self.selected_nodes_geom_cache.clear();
-                self.pointer_geom_cache.clear();
-                self.selected_rot_angle_idx = idx;
+                {
+                    self.g_bounds.clear();
+                    self.g_palette.clear();
+                }
+                self.g_legend.clear();
+                self.g_edge.clear();
+                self.g_lab_tip.clear();
+                self.g_lab_int.clear();
+                self.g_lab_brnch.clear();
+                self.g_node_sel.clear();
+                self.g_node_hover.clear();
+                self.sel_rot_angle_idx = idx;
                 self.rot_angle = idx as Float / 360e0 * 2e0 * PI;
                 Task::none()
             }
 
-            TreeViewMsg::TreeViewScrolled(vp) => {
-                self.cnv_y0 = vp.absolute_offset().y;
-                self.cnv_y1 = self.cnv_y0 + vp.bounds().height;
-                self.legend_geom_cache.clear();
-                self.tip_labels_geom_cache.clear();
-                self.int_labels_geom_cache.clear();
-                self.branch_labels_geom_cache.clear();
-                self.selected_nodes_geom_cache.clear();
-                self.pointer_geom_cache.clear();
+            TreeViewMsg::TreeCanvasScrolled(vp) => {
+                self.tre_cnv_y0 = vp.absolute_offset().y;
+                self.tre_cnv_y1 = self.tre_cnv_y0 + vp.bounds().height;
+                self.g_legend.clear();
+                self.g_lab_tip.clear();
+                self.g_lab_int.clear();
+                self.g_lab_brnch.clear();
+                self.g_node_sel.clear();
+                self.g_node_hover.clear();
                 Task::none()
             }
 
+            TreeViewMsg::LttCanvasScrolled(_vp) => Task::none(),
+
             TreeViewMsg::NodeSizeSelectionChanged(idx) => {
-                self.selected_node_size_idx = idx;
+                self.sel_node_size_idx = idx;
                 self.update_node_size();
                 self.update_tip_label_w();
                 self.update_canvas_h();
@@ -105,32 +133,32 @@ impl TreeView {
             }
 
             TreeViewMsg::BranchLabelVisibilityChanged(state) => {
-                self.draw_branch_labels = state;
+                self.draw_brnch_labs = state;
                 Task::none()
             }
 
             TreeViewMsg::BranchLabelSizeSelectionChanged(idx) => {
-                self.branch_labels_geom_cache.clear();
-                self.selected_branch_label_size_idx = idx;
-                self.branch_label_size = self.min_label_size * idx as Float;
+                self.g_lab_brnch.clear();
+                self.sel_brnch_lab_size_idx = idx;
+                self.brnch_lab_size = self.min_lab_size * idx as Float;
                 Task::none()
             }
 
             TreeViewMsg::TipLabelVisibilityChanged(state) => {
                 #[cfg(debug_assertions)]
-                self.debug_geom_cache.clear();
-                self.legend_geom_cache.clear();
-                self.edge_geom_cache.clear();
-                self.tip_labels_geom_cache.clear();
-                self.int_labels_geom_cache.clear();
-                self.branch_labels_geom_cache.clear();
-                self.selected_nodes_geom_cache.clear();
-                self.pointer_geom_cache.clear();
-                self.draw_tip_labels = state;
-                if self.drawing_enabled
-                    && self.draw_tip_branch_labels_allowed
-                    && self.draw_tip_labels
                 {
+                    self.g_bounds.clear();
+                    self.g_palette.clear();
+                }
+                self.g_legend.clear();
+                self.g_edge.clear();
+                self.g_lab_tip.clear();
+                self.g_lab_int.clear();
+                self.g_lab_brnch.clear();
+                self.g_node_sel.clear();
+                self.g_node_hover.clear();
+                self.draw_tip_labs = state;
+                if self.drawing_enabled && self.tip_brnch_labs_allowed && self.draw_tip_labs {
                     self.update_extra_space_for_labels();
                 }
                 self.update_node_size();
@@ -141,16 +169,19 @@ impl TreeView {
 
             TreeViewMsg::TipLabelSizeSelectionChanged(idx) => {
                 #[cfg(debug_assertions)]
-                self.debug_geom_cache.clear();
-                self.legend_geom_cache.clear();
-                self.edge_geom_cache.clear();
-                self.tip_labels_geom_cache.clear();
-                self.int_labels_geom_cache.clear();
-                self.branch_labels_geom_cache.clear();
-                self.selected_nodes_geom_cache.clear();
-                self.pointer_geom_cache.clear();
-                self.selected_tip_label_size_idx = idx;
-                self.tip_label_size = self.min_label_size * idx as Float;
+                {
+                    self.g_bounds.clear();
+                    self.g_palette.clear();
+                }
+                self.g_legend.clear();
+                self.g_edge.clear();
+                self.g_lab_tip.clear();
+                self.g_lab_int.clear();
+                self.g_lab_brnch.clear();
+                self.g_node_sel.clear();
+                self.g_node_hover.clear();
+                self.sel_tip_lab_size_idx = idx;
+                self.tip_lab_size = self.min_lab_size * idx as Float;
                 self.update_extra_space_for_labels();
                 self.update_node_size();
                 self.update_tip_label_w();
@@ -159,26 +190,26 @@ impl TreeView {
             }
 
             TreeViewMsg::IntLabelVisibilityChanged(state) => {
-                self.draw_int_labels = state;
+                self.draw_int_labs = state;
                 Task::none()
             }
 
             TreeViewMsg::IntLabelSizeSelectionChanged(idx) => {
-                self.int_labels_geom_cache.clear();
-                self.selected_int_label_size_idx = idx;
-                self.int_label_size = self.min_label_size * idx as Float;
+                self.g_lab_int.clear();
+                self.sel_int_lab_size_idx = idx;
+                self.int_lab_size = self.min_lab_size * idx as Float;
                 Task::none()
             }
 
             TreeViewMsg::NodeOrderingOptionChanged(node_ordering_option) => {
-                if node_ordering_option != self.selected_node_ordering_option {
-                    self.edge_geom_cache.clear();
-                    self.tip_labels_geom_cache.clear();
-                    self.int_labels_geom_cache.clear();
-                    self.branch_labels_geom_cache.clear();
-                    self.selected_nodes_geom_cache.clear();
-                    self.pointer_geom_cache.clear();
-                    self.selected_node_ordering_option = node_ordering_option;
+                if node_ordering_option != self.sel_node_ord_opt {
+                    self.g_edge.clear();
+                    self.g_lab_tip.clear();
+                    self.g_lab_int.clear();
+                    self.g_lab_brnch.clear();
+                    self.g_node_sel.clear();
+                    self.g_node_hover.clear();
+                    self.sel_node_ord_opt = node_ordering_option;
                     self.sort();
                     self.merge_tip_chunks();
                 }
@@ -199,12 +230,12 @@ impl TreeView {
             }
 
             TreeViewMsg::CanvasWidthSelectionChanged(idx) => {
-                self.selected_canvas_w_idx = idx;
+                self.sel_tre_cnv_w_idx = idx;
                 self.update_canvas_w();
-                if self.selected_tree_repr_option == TreeReprOption::Fan {
+                if self.sel_tree_style_opt == TreeStyleOption::Fan {
                     self.update_canvas_h();
                 }
-                if self.draw_tip_branch_labels_allowed && self.draw_tip_labels {
+                if self.tip_brnch_labs_allowed && self.draw_tip_labs {
                     self.update_extra_space_for_labels();
                 }
                 self.update_tip_label_w();
@@ -213,19 +244,22 @@ impl TreeView {
 
             TreeViewMsg::WindowResized(w, h) => {
                 #[cfg(debug_assertions)]
-                self.debug_geom_cache.clear();
-                self.legend_geom_cache.clear();
-                self.edge_geom_cache.clear();
-                self.tip_labels_geom_cache.clear();
-                self.int_labels_geom_cache.clear();
-                self.branch_labels_geom_cache.clear();
-                self.selected_nodes_geom_cache.clear();
-                self.pointer_geom_cache.clear();
+                {
+                    self.g_bounds.clear();
+                    self.g_palette.clear();
+                }
+                self.g_legend.clear();
+                self.g_edge.clear();
+                self.g_lab_tip.clear();
+                self.g_lab_int.clear();
+                self.g_lab_brnch.clear();
+                self.g_node_sel.clear();
+                self.g_node_hover.clear();
                 self.window_w = w;
                 self.window_h = h;
-                self.scroll_w = self.window_w - self.not_scroll_w;
+                self.tree_scroll_w = self.window_w - self.side_with_padding_w;
                 self.update_canvas_w();
-                if self.draw_tip_branch_labels_allowed && self.draw_tip_labels {
+                if self.tip_brnch_labs_allowed && self.draw_tip_labs {
                     self.update_extra_space_for_labels();
                 }
                 self.update_node_size();
@@ -240,7 +274,7 @@ impl TreeView {
             }
 
             TreeViewMsg::SelectDeselectNode(node_id) => {
-                if self.selected_node_ids.contains(&node_id) {
+                if self.sel_node_ids.contains(&node_id) {
                     Task::done(TreeViewMsg::DeselectNode(node_id))
                 } else {
                     Task::done(TreeViewMsg::SelectNode(node_id))
@@ -248,14 +282,14 @@ impl TreeView {
             }
 
             TreeViewMsg::SelectNode(node_id) => {
-                self.selected_node_ids.insert(node_id);
-                self.selected_nodes_geom_cache.clear();
+                self.sel_node_ids.insert(node_id);
+                self.g_node_sel.clear();
                 Task::none()
             }
 
             TreeViewMsg::DeselectNode(node_id) => {
-                self.selected_node_ids.remove(&node_id);
-                self.selected_nodes_geom_cache.clear();
+                self.sel_node_ids.remove(&node_id);
+                self.g_node_sel.clear();
                 Task::none()
             }
 
@@ -272,37 +306,40 @@ impl TreeView {
             }
 
             TreeViewMsg::Unroot => {
-                self.tree_original.unroot();
-                Task::done(TreeViewMsg::TreeUpdated(self.tree_original.clone()))
+                self.tree_orig.unroot();
+                Task::done(TreeViewMsg::TreeUpdated(self.tree_orig.clone()))
             }
 
             TreeViewMsg::TreeUpdated(tree) => {
-                self.selected_node_ids.clear();
+                self.sel_node_ids.clear();
                 #[cfg(debug_assertions)]
-                self.debug_geom_cache.clear();
-                self.legend_geom_cache.clear();
-                self.edge_geom_cache.clear();
-                self.tip_labels_geom_cache.clear();
-                self.int_labels_geom_cache.clear();
-                self.branch_labels_geom_cache.clear();
-                self.selected_nodes_geom_cache.clear();
-                self.pointer_geom_cache.clear();
-                self.tree_original = tree;
+                {
+                    self.g_bounds.clear();
+                    self.g_palette.clear();
+                }
+                self.g_legend.clear();
+                self.g_edge.clear();
+                self.g_lab_tip.clear();
+                self.g_lab_int.clear();
+                self.g_lab_brnch.clear();
+                self.g_node_sel.clear();
+                self.g_node_hover.clear();
+                self.tree_orig = tree;
                 self.tree_srtd_asc = None;
                 self.tree_srtd_desc = None;
                 self.tree_srtd_asc_chunked_edges = None;
                 self.tree_srtd_desc_chunked_edges = None;
-                self.tree_original_chunked_edges = None;
-                self.node_count = self.tree_original.node_count_all();
-                self.tip_count = self.tree_original.tip_count_all();
-                self.int_node_count = self.tree_original.internal_node_count_all();
-                self.has_brlen = self.tree_original.has_branch_lengths();
-                self.has_int_labels = self.tree_original.has_int_labels();
-                self.has_tip_labels = self.tree_original.has_tip_labels();
-                self.tree_height = self.tree_original.height() as Float;
-                self.is_rooted = self.tree_original.is_rooted();
-                let epsilon = self.tree_original.height() / 1e2;
-                self.is_ultrametric = self.tree_original.is_ultrametric(epsilon);
+                self.tree_orig_chunked_edges = None;
+                self.node_count = self.tree_orig.node_count_all();
+                self.tip_count = self.tree_orig.tip_count_all();
+                self.int_node_count = self.tree_orig.internal_node_count_all();
+                self.has_brlen = self.tree_orig.has_branch_lengths();
+                self.has_int_labs = self.tree_orig.has_int_labels();
+                self.has_tip_labs = self.tree_orig.has_tip_labels();
+                self.tree_height = self.tree_orig.height() as Float;
+                self.is_rooted = self.tree_orig.is_rooted();
+                let epsilon = self.tree_orig.height() / 1e2;
+                self.is_ultrametric = self.tree_orig.is_ultrametric(epsilon);
                 self.sort();
                 self.merge_tip_chunks();
                 self.update_tallest_tips();

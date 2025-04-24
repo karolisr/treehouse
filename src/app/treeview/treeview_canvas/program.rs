@@ -2,12 +2,14 @@ use super::{
     super::{TreeView, TreeViewMsg},
     NodePoint, TreeViewState,
 };
+#[cfg(debug_assertions)]
+use crate::app::DEBUG;
 use crate::{
-    ColorSimple,
+    Float,
     app::{PADDING, SCROLL_TOOL_W, SF},
 };
 use iced::{
-    Event, Point, Rectangle, Renderer, Theme,
+    Event, Point, Rectangle, Renderer, Size, Theme,
     mouse::{Cursor, Event as MouseEvent, Interaction},
     widget::canvas::{Action, Geometry, Program},
     window::Event as WinEvent,
@@ -30,29 +32,32 @@ impl Program<TreeViewMsg> for TreeView {
                         x: 0e0,
                         y: 0e0,
                         width: bounds.width - SCROLL_TOOL_W + PADDING,
-                        height: self.canvas_h,
+                        height: self.tre_cnv_h,
                     };
 
-                    state.tree_rect = match self.selected_tree_repr_option {
-                        crate::app::treeview::TreeReprOption::Phylogram => Rectangle {
-                            x: state.clip_rect.x + SF,
+                    state.tree_rect = match self.sel_tree_style_opt {
+                        crate::app::treeview::TreeStyleOption::Phylogram => Rectangle {
+                            x: state.clip_rect.x + SF / 2e0 + state.node_radius,
                             y: state.clip_rect.y
-                                + SF
-                                + self.max_label_size
-                                + self.branch_label_offset_y,
-                            width: state.clip_rect.width - SF * 2e0 - self.tip_label_w,
+                                + SF / 2e0
+                                + self.max_lab_size
+                                + self.brnch_lab_offset_y,
+                            width: state.clip_rect.width
+                                - SF
+                                - state.node_radius * 2e0
+                                - self.tip_lab_w,
                             height: state.clip_rect.height
-                                - SF * 2e0
-                                - self.max_label_size * 1.5
+                                - SF
+                                - self.max_lab_size * 1.5
                                 - SCROLL_TOOL_W,
                         },
-                        crate::app::treeview::TreeReprOption::Fan => Rectangle {
-                            x: state.clip_rect.x + SF + self.tip_label_w,
-                            y: state.clip_rect.y + SF + self.tip_label_w,
-                            width: state.clip_rect.width - SF * 2e0 - self.tip_label_w * 2e0,
+                        crate::app::treeview::TreeStyleOption::Fan => Rectangle {
+                            x: state.clip_rect.x + SF / 2e0 + self.tip_lab_w,
+                            y: state.clip_rect.y + SF / 2e0 + self.tip_lab_w,
+                            width: state.clip_rect.width - SF - self.tip_lab_w * 2e0,
                             height: state.clip_rect.height
-                                - SF * 2e0
-                                - self.tip_label_w * 2e0
+                                - SF
+                                - self.tip_lab_w * 2e0
                                 - SCROLL_TOOL_W,
                         },
                     };
@@ -96,7 +101,7 @@ impl Program<TreeViewMsg> for TreeView {
             Event::Mouse(MouseEvent::CursorMoved { position: _ }) => {
                 if cursor.is_over(bounds) && self.drawing_enabled {
                     #[cfg(debug_assertions)]
-                    self.debug_geom_cache.clear();
+                    self.g_bounds.clear();
 
                     let mut mouse_pt;
                     if let Some(x) = cursor.position_over(bounds) {
@@ -122,7 +127,7 @@ impl Program<TreeViewMsg> for TreeView {
                                 || state.closest_node_point.clone().unwrap().edge.node_id
                                     != edge.node_id
                             {
-                                self.pointer_geom_cache.clear();
+                                self.g_node_hover.clear();
                                 state.closest_node_point = Some(NodePoint {
                                     point: *point,
                                     edge: edge.clone(),
@@ -140,19 +145,19 @@ impl Program<TreeViewMsg> for TreeView {
                         } else {
                             state.mouse_hovering_node = false;
                             state.closest_node_point = None;
-                            self.pointer_geom_cache.clear();
+                            self.g_node_hover.clear();
                             Some(Action::request_redraw())
                         }
                     } else {
                         state.mouse_hovering_node = false;
                         state.closest_node_point = None;
-                        self.pointer_geom_cache.clear();
+                        self.g_node_hover.clear();
                         None
                     }
                 } else {
                     state.mouse_hovering_node = false;
                     state.closest_node_point = None;
-                    self.pointer_geom_cache.clear();
+                    self.g_node_hover.clear();
                     None
                 }
             }
@@ -173,7 +178,7 @@ impl Program<TreeViewMsg> for TreeView {
         &self,
         state: &Self::State,
         renderer: &Renderer,
-        _theme: &Theme,
+        theme: &Theme,
         #[cfg(not(debug_assertions))] _bounds: Rectangle,
         #[cfg(debug_assertions)] bounds: Rectangle,
         #[cfg(not(debug_assertions))] _cursor: Cursor,
@@ -185,19 +190,47 @@ impl Program<TreeViewMsg> for TreeView {
 
         let mut geoms: Vec<Geometry> = Vec::new();
 
+        let palette = theme.palette();
+        let palette_ex = theme.extended_palette();
+
+        let color_text = palette.text;
+
         #[cfg(debug_assertions)]
-        {
-            let g_bounds = self.debug_geom_cache.draw(renderer, bounds.size(), |f| {
+        let color_bg_weakest = palette_ex.background.weakest.color;
+        let color_bg_weak = palette_ex.background.weak.color;
+        let color_bg_base = palette_ex.background.base.color;
+        let color_bg_strong = palette_ex.background.strong.color;
+        let color_bg_strongest = palette_ex.background.strongest.color;
+
+        let color_primary_weak = palette_ex.primary.weak.color;
+        let color_primary_base = palette_ex.primary.base.color;
+        let color_primary_strong = palette_ex.primary.strong.color;
+
+        let color_secondary_weak = palette_ex.secondary.weak.color;
+        let color_secondary_base = palette_ex.secondary.base.color;
+        let color_secondary_strong = palette_ex.secondary.strong.color;
+
+        let color_success_base = palette_ex.success.base.color;
+        let color_warning_base = palette_ex.warning.base.color;
+        let color_danger_base = palette_ex.danger.base.color;
+
+        let mut lab_txt_template = state.lab_txt_template.clone();
+        lab_txt_template.color = color_text;
+        let stroke = state.stroke.with_color(color_text);
+
+        #[cfg(debug_assertions)]
+        if DEBUG {
+            let g_bounds = self.g_bounds.draw(renderer, bounds.size(), |f| {
                 f.fill_rectangle(
                     Point { x: state.clip_rect.x, y: state.clip_rect.y },
                     state.clip_rect.size(),
-                    ColorSimple::CYA.scale_alpha(0.125),
+                    color_text.scale_alpha(0.05),
                 );
 
                 f.fill_rectangle(
                     Point { x: state.tree_rect.x, y: state.tree_rect.y },
                     state.tree_rect.size(),
-                    ColorSimple::MAG.scale_alpha(0.125),
+                    color_text.scale_alpha(0.05),
                 );
 
                 if let Some(pt) = cursor.position_over(state.clip_rect) {
@@ -207,140 +240,211 @@ impl Program<TreeViewMsg> for TreeView {
                             state.node_radius + SF * 2e0,
                         );
                     });
-                    f.stroke(&path, state.stroke.with_color(ColorSimple::RED));
+                    f.stroke(
+                        &path,
+                        stroke.with_color(color_danger_base).with_width(SF * 2e0),
+                    );
                 }
             });
             geoms.push(g_bounds);
         }
 
         if self.has_brlen && self.draw_legend {
-            let g_legend = self
-                .legend_geom_cache
-                .draw(renderer, state.clip_rect.size(), |f| {
-                    self.draw_scale_bar(
-                        state.stroke,
-                        &state.tree_label_text_template,
-                        &state.tree_rect,
-                        f,
-                    );
-                });
+            let g_legend = self.g_legend.draw(renderer, state.clip_rect.size(), |f| {
+                self.draw_scale_bar(stroke, &lab_txt_template, &state.tree_rect, f);
+            });
             geoms.push(g_legend);
         }
 
-        let g_edges = self
-            .edge_geom_cache
-            .draw(renderer, state.clip_rect.size(), |f| {
-                let paths = self.paths_from_chunks(
-                    state.tree_rect.width,
-                    state.tree_rect.height,
-                    state.center,
-                    state.size,
+        let g_edge = self.g_edge.draw(renderer, state.clip_rect.size(), |f| {
+            let paths = self.paths_from_chunks(
+                state.tree_rect.width,
+                state.tree_rect.height,
+                state.center,
+                state.size,
+            );
+            self.draw_edges(paths, stroke, &state.tree_rect, f);
+        });
+        geoms.push(g_edge);
+
+        if self.tip_brnch_labs_allowed && self.has_tip_labs && self.draw_tip_labs {
+            let g_lab_tip = self.g_lab_tip.draw(renderer, state.clip_rect.size(), |f| {
+                let labels = self.node_labels(&state.visible_nodes, true, &lab_txt_template);
+                self.draw_labels(
+                    labels,
+                    self.tip_lab_size,
+                    Point { x: self.tip_lab_offset_x, y: 0e0 },
+                    &state.tree_rect,
+                    &state.clip_rect,
+                    f,
                 );
-                self.draw_edges(paths, state.stroke, &state.tree_rect, f);
             });
-        geoms.push(g_edges);
 
-        if self.draw_tip_branch_labels_allowed && self.has_tip_labels && self.draw_tip_labels {
-            let g_tip_labels =
-                self.tip_labels_geom_cache
-                    .draw(renderer, state.clip_rect.size(), |f| {
-                        let labels = self.node_labels(
-                            &state.visible_nodes,
-                            true,
-                            &state.tree_label_text_template,
-                        );
-                        self.draw_labels(
-                            labels,
-                            self.tip_label_size,
-                            Point { x: self.tip_label_offset_x, y: 0e0 },
-                            &state.tree_rect,
-                            &state.clip_rect,
-                            f,
-                        );
-                    });
-
-            geoms.push(g_tip_labels);
+            geoms.push(g_lab_tip);
         }
 
-        if self.has_int_labels && self.draw_int_labels {
-            let g_int_labels =
-                self.int_labels_geom_cache
-                    .draw(renderer, state.clip_rect.size(), |f| {
-                        let labels = self.node_labels(
-                            &state.visible_nodes,
-                            false,
-                            &state.tree_label_text_template,
-                        );
-                        self.draw_labels(
-                            labels,
-                            self.int_label_size,
-                            Point { x: self.int_label_offset_x, y: 0e0 },
-                            &state.tree_rect,
-                            &state.clip_rect,
-                            f,
-                        );
-                    });
-            geoms.push(g_int_labels);
+        if self.has_int_labs && self.draw_int_labs {
+            let g_lab_int = self.g_lab_int.draw(renderer, state.clip_rect.size(), |f| {
+                let labels = self.node_labels(&state.visible_nodes, false, &lab_txt_template);
+                self.draw_labels(
+                    labels,
+                    self.int_lab_size,
+                    Point { x: self.int_lab_offset_x, y: 0e0 },
+                    &state.tree_rect,
+                    &state.clip_rect,
+                    f,
+                );
+            });
+            geoms.push(g_lab_int);
         }
 
-        if self.has_brlen && self.draw_tip_branch_labels_allowed && self.draw_branch_labels {
-            let g_branch_labels =
-                self.branch_labels_geom_cache
-                    .draw(renderer, state.clip_rect.size(), |f| {
-                        let labels = self.branch_labels(
-                            state.size,
-                            &state.visible_nodes,
-                            &state.tree_label_text_template,
-                        );
-                        self.draw_labels(
-                            labels,
-                            self.branch_label_size,
-                            Point { x: 0e0, y: self.branch_label_offset_y },
-                            &state.tree_rect,
-                            &state.clip_rect,
-                            f,
-                        );
-                    });
-            geoms.push(g_branch_labels);
-        }
-
-        let g_selected_nodes =
-            self.selected_nodes_geom_cache
+        if self.has_brlen && self.tip_brnch_labs_allowed && self.draw_brnch_labs {
+            let g_lab_brnch = self
+                .g_lab_brnch
                 .draw(renderer, state.clip_rect.size(), |f| {
-                    let ps = state.node_radius * 0.75;
-                    for NodePoint { point, edge, angle: _ } in &state.visible_nodes {
-                        for node_id in &self.selected_node_ids {
-                            if edge.node_id == *node_id {
-                                self.draw_node(
-                                    point,
-                                    ps,
-                                    state.stroke,
-                                    ColorSimple::YEL.scale_alpha(0.75),
-                                    &state.tree_rect,
-                                    f,
-                                );
-                            }
-                        }
-                    }
+                    let labels =
+                        self.branch_labels(state.size, &state.visible_nodes, &lab_txt_template);
+                    self.draw_labels(
+                        labels,
+                        self.brnch_lab_size,
+                        Point { x: 0e0, y: self.brnch_lab_offset_y },
+                        &state.tree_rect,
+                        &state.clip_rect,
+                        f,
+                    );
                 });
-        geoms.push(g_selected_nodes);
+            geoms.push(g_lab_brnch);
+        }
 
-        let g_pointer = self
-            .pointer_geom_cache
+        let g_node_sel = self.g_node_sel.draw(renderer, state.clip_rect.size(), |f| {
+            let ps = state.node_radius * 0.75;
+            for NodePoint { point, edge, angle: _ } in &state.visible_nodes {
+                for node_id in &self.sel_node_ids {
+                    if edge.node_id == *node_id {
+                        self.draw_node(
+                            point,
+                            ps,
+                            stroke,
+                            color_warning_base.scale_alpha(0.75),
+                            &state.tree_rect,
+                            f,
+                        );
+                    }
+                }
+            }
+        });
+        geoms.push(g_node_sel);
+
+        let g_node_hover = self
+            .g_node_hover
             .draw(renderer, state.clip_rect.size(), |f| {
                 if let Some(NodePoint { point, edge: _, angle: _ }) = &state.closest_node_point {
                     self.draw_node(
                         point,
                         state.node_radius,
-                        state.stroke,
-                        ColorSimple::BLU.scale_alpha(0.75),
+                        stroke,
+                        color_secondary_strong.scale_alpha(0.75),
                         &state.tree_rect,
                         f,
                     );
                 }
             });
-        geoms.push(g_pointer);
+        geoms.push(g_node_hover);
 
+        #[cfg(debug_assertions)]
+        if DEBUG {
+            let g_palette = self.g_palette.draw(renderer, bounds.size(), |f| {
+                let colors_bg = [
+                    color_bg_base,
+                    color_bg_weakest,
+                    color_bg_weak,
+                    color_bg_strong,
+                    color_bg_strongest,
+                ];
+
+                let colors_primary = [
+                    color_primary_base,
+                    color_primary_weak,
+                    color_primary_strong,
+                    color_text,
+                ];
+
+                let colors_secondary = [
+                    color_secondary_base,
+                    color_secondary_weak,
+                    color_secondary_strong,
+                ];
+
+                let colors_other = [color_success_base, color_warning_base, color_danger_base];
+
+                let color_rect_size = SF * 15e0;
+                let palette_rect_w = 2e0 * PADDING + color_rect_size * 5e0;
+                let palette_rect_h = 2e0 * PADDING + color_rect_size * 4e0;
+                let palette_rect_x = state.tree_rect.x + PADDING;
+                let palette_rect_y =
+                    state.tree_rect.y + state.tree_rect.height - palette_rect_h - PADDING;
+
+                f.fill_rectangle(
+                    Point { x: palette_rect_x, y: palette_rect_y },
+                    Size { width: palette_rect_w, height: palette_rect_h },
+                    color_bg_base,
+                );
+
+                f.stroke_rectangle(
+                    Point { x: palette_rect_x + SF / 2e0, y: palette_rect_y + SF / 2e0 },
+                    Size {
+                        width: 2e0 * PADDING + color_rect_size * 5e0 - SF,
+                        height: 2e0 * PADDING + color_rect_size * 4e0 - SF,
+                    },
+                    stroke.with_color(color_text),
+                );
+
+                for (i, c) in colors_bg.iter().enumerate() {
+                    f.fill_rectangle(
+                        Point {
+                            x: palette_rect_x + PADDING + color_rect_size * i as Float,
+                            y: palette_rect_y + PADDING,
+                        },
+                        Size { width: color_rect_size, height: color_rect_size },
+                        *c,
+                    );
+                }
+
+                for (i, c) in colors_primary.iter().enumerate() {
+                    f.fill_rectangle(
+                        Point {
+                            x: palette_rect_x + PADDING + color_rect_size * i as Float,
+                            y: palette_rect_y + PADDING + color_rect_size * 1e0,
+                        },
+                        Size { width: color_rect_size, height: color_rect_size },
+                        *c,
+                    );
+                }
+
+                for (i, c) in colors_secondary.iter().enumerate() {
+                    f.fill_rectangle(
+                        Point {
+                            x: palette_rect_x + PADDING + color_rect_size * i as Float,
+                            y: palette_rect_y + PADDING + color_rect_size * 2e0,
+                        },
+                        Size { width: color_rect_size, height: color_rect_size },
+                        *c,
+                    );
+                }
+
+                for (i, c) in colors_other.iter().enumerate() {
+                    f.fill_rectangle(
+                        Point {
+                            x: palette_rect_x + PADDING + color_rect_size * i as Float,
+                            y: palette_rect_y + PADDING + color_rect_size * 3e0,
+                        },
+                        Size { width: color_rect_size, height: color_rect_size },
+                        *c,
+                    );
+                }
+            });
+            geoms.push(g_palette);
+        }
         geoms
     }
 }

@@ -21,7 +21,7 @@ pub enum AppWinType {
 pub fn window_settings() -> Settings {
     Settings {
         size: Size { width: 800.0, height: 700.0 },
-        min_size: Some(Size { width: 600.0, height: 600.0 }),
+        min_size: Some(Size { width: 600.0, height: 630.0 }),
         position: Position::Centered,
         resizable: true,
         level: Level::Normal,

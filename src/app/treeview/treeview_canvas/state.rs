@@ -13,7 +13,7 @@ use iced::{
 };
 
 pub struct TreeViewState {
-    pub tree_label_text_template: Text,
+    pub lab_txt_template: Text,
     pub tip_idx_range: Option<IndexRange>,
     pub visible_nodes: Vec<NodePoint>,
     pub node_radius: Float,
@@ -29,7 +29,7 @@ pub struct TreeViewState {
 impl Default for TreeViewState {
     fn default() -> Self {
         Self {
-            tree_label_text_template: Text {
+            lab_txt_template: Text {
                 font: iced::Font {
                     family: iced::font::Family::Name(TREE_LAB_FONT_NAME),
                     ..Default::default()
@@ -38,7 +38,7 @@ impl Default for TreeViewState {
                 ..Default::default()
             },
             tip_idx_range: None,
-            node_radius: SF * 5e0,
+            node_radius: SF * 1e1,
             visible_nodes: Vec::new(),
             closest_node_point: None,
             mouse_hovering_node: false,

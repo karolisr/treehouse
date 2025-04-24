@@ -10,7 +10,7 @@ use super::{
 };
 use crate::{Tree, parse_newick};
 use iced::{
-    Element, Subscription, Task, exit,
+    Element, Subscription, Task, Theme, exit,
     futures::channel::mpsc::Sender,
     keyboard::{Key, Modifiers, on_key_press},
     widget,
@@ -33,6 +33,8 @@ pub struct App {
     menu_events_sender: Option<Sender<MenuEventReplyMsg>>,
     #[cfg(any(target_os = "windows", target_os = "macos"))]
     menu: Option<muda::Menu>,
+    sel_theme_idx: usize,
+    theme: Theme,
 }
 
 #[derive(Debug)]
@@ -53,6 +55,9 @@ pub enum AppMsg {
     #[cfg(target_os = "windows")]
     AddMenuForHwnd(u64),
     KeysPressed(Key, Modifiers),
+    SetThemeNext,
+    SetThemePrev,
+    Refresh,
 }
 
 pub enum FileType {
@@ -78,6 +83,43 @@ impl App {
 
     pub fn update(&mut self, app_msg: AppMsg) -> Task<AppMsg> {
         match app_msg {
+            AppMsg::Refresh => {
+                let id = iced::window::get_latest();
+                id.and_then(|id| {
+                    Task::done(AppMsg::TreeWinMsg(
+                        id,
+                        TreeWinMsg::TreeViewMsg(id, TreeViewMsg::Refresh),
+                    ))
+                })
+            }
+            AppMsg::SetThemeNext => {
+                let idx = (Theme::ALL.len() - 1).min(self.sel_theme_idx + 1);
+                let theme = Theme::ALL[idx].clone();
+                if self.theme.extended_palette().is_dark == theme.extended_palette().is_dark {
+                    self.theme = theme;
+                    self.sel_theme_idx = idx;
+                    Task::done(AppMsg::Refresh)
+                } else if idx == Theme::ALL.len() - 1 {
+                    Task::done(AppMsg::Refresh)
+                } else {
+                    self.sel_theme_idx = idx;
+                    Task::done(AppMsg::SetThemeNext)
+                }
+            }
+            AppMsg::SetThemePrev => {
+                let idx = 0.max(self.sel_theme_idx as i32 - 1) as usize;
+                let theme = Theme::ALL[idx].clone();
+                if self.theme.extended_palette().is_dark == theme.extended_palette().is_dark {
+                    self.theme = theme;
+                    self.sel_theme_idx = idx;
+                    Task::done(AppMsg::Refresh)
+                } else if idx == 0 {
+                    Task::done(AppMsg::Refresh)
+                } else {
+                    self.sel_theme_idx = idx;
+                    Task::done(AppMsg::SetThemePrev)
+                }
+            }
             AppMsg::KeysPressed(key, modifiers) => match modifiers {
                 Modifiers::CTRL => match key {
                     Key::Character(k) => {
@@ -89,12 +131,33 @@ impl App {
                                 "s" => Task::done(AppMsg::MenuEvent(false, MenuEvent::SaveAs)),
                                 "w" => Task::done(AppMsg::MenuEvent(false, MenuEvent::CloseWindow)),
                                 "q" => Task::done(AppMsg::MenuEvent(false, MenuEvent::Quit)),
+                                "[" => Task::done(AppMsg::SetThemePrev),
+                                "]" => Task::done(AppMsg::SetThemeNext),
                                 _ => Task::none(),
                             }
                         }
                         #[cfg(target_os = "macos")]
                         {
                             println!("Ctrl + {k}");
+                            Task::none()
+                        }
+                    }
+                    _ => Task::none(),
+                },
+                Modifiers::COMMAND => match key {
+                    Key::Character(k) => {
+                        #[cfg(target_os = "macos")]
+                        {
+                            let k: &str = k.as_str();
+                            match k {
+                                "[" => Task::done(AppMsg::SetThemePrev),
+                                "]" => Task::done(AppMsg::SetThemeNext),
+                                _ => Task::none(),
+                            }
+                        }
+                        #[cfg(any(target_os = "windows", target_os = "linux"))]
+                        {
+                            println!("Cmd + {k}");
                             Task::none()
                         }
                     }
@@ -329,8 +392,16 @@ impl App {
         APP_SCALE_FACTOR
     }
 
+    pub fn theme(&self, _: WinId) -> Theme {
+        self.theme.clone()
+    }
+
     pub fn new() -> (Self, Task<AppMsg>) {
-        let app = Self { ..Default::default() };
+        let app = Self {
+            sel_theme_idx: 1,
+            theme: Theme::default(),
+            ..Default::default()
+        };
         #[cfg(target_os = "macos")]
         register_ns_application_delegate_handlers();
         (app, Task::done(AppMsg::AppInitialized))

@@ -42,7 +42,7 @@
             ]
         },
         "editor.wordWrap": "off",
-        "editor.formatOnPaste": true,
+        "editor.formatOnPaste": false,
         "editor.minimap.autohide": false,
     },
     "extensions": {

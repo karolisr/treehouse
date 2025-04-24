@@ -1,4 +1,4 @@
-use super::super::{TreeReprOption, TreeView};
+use super::super::{TreeStyleOption, TreeView};
 use crate::{Edge, Float};
 use iced::{
     Point, Radians,
@@ -55,7 +55,7 @@ impl TreeView {
     pub fn paths_from_chunks(&self, w: Float, h: Float, center: Point, size: Float) -> Vec<Path> {
         let rot_angle = self.rot_angle;
         let max_angle = self.opn_angle;
-        let repr: TreeReprOption = self.selected_tree_repr_option;
+        let repr: TreeStyleOption = self.sel_tree_style_opt;
         let mut paths: Vec<Path> = Vec::with_capacity(self.node_count);
         thread::scope(|thread_scope| {
             let mut handles: Vec<ScopedJoinHandle<'_, Path>> = Vec::new();
@@ -64,8 +64,8 @@ impl TreeView {
                     let mut pb = PathBuilder::new();
                     for edge in chunk {
                         match repr {
-                            TreeReprOption::Phylogram => edge_path_phylogram(w, h, edge, &mut pb),
-                            TreeReprOption::Fan => {
+                            TreeStyleOption::Phylogram => edge_path_phylogram(w, h, edge, &mut pb),
+                            TreeStyleOption::Fan => {
                                 edge_path_fan(rot_angle, max_angle, center, size, edge, &mut pb)
                             }
                         }
@@ -136,10 +136,10 @@ impl TreeView {
     }
 
     pub fn visible_tip_idx_range(&self) -> Option<IndexRange> {
-        match self.selected_tree_repr_option {
-            TreeReprOption::Phylogram => {
-                let tip_idx_0: i64 = (self.cnv_y0 / self.node_size) as i64 - 3;
-                let tip_idx_1: i64 = (self.cnv_y1 / self.node_size) as i64 + 3;
+        match self.sel_tree_style_opt {
+            TreeStyleOption::Phylogram => {
+                let tip_idx_0: i64 = (self.tre_cnv_y0 / self.node_size) as i64 - 3;
+                let tip_idx_1: i64 = (self.tre_cnv_y1 / self.node_size) as i64 + 3;
                 let tip_idx_0: usize = tip_idx_0.max(0) as usize;
                 let tip_idx_1: usize = tip_idx_1.min(self.tree_tip_edges.len() as i64 - 1) as usize;
                 if tip_idx_0 < tip_idx_1 {
@@ -148,7 +148,7 @@ impl TreeView {
                     None
                 }
             }
-            TreeReprOption::Fan => Some(IndexRange { b: 0, e: self.tree_tip_edges.len() - 1 }),
+            TreeStyleOption::Fan => Some(IndexRange { b: 0, e: self.tree_tip_edges.len() - 1 }),
         }
     }
 
@@ -173,10 +173,10 @@ impl TreeView {
             chnk: IndexRange { b: chnk_idx_0, e: chnk_idx_1 },
             edge: IndexRange { b: edge_idx_0, e: edge_idx_1 },
         } = self.visible_node_ranges(tip_idx_range);
-        let tree_repr = self.selected_tree_repr_option;
+        let tree_repr = self.sel_tree_style_opt;
         let size: Float = match tree_repr {
-            TreeReprOption::Phylogram => w,
-            TreeReprOption::Fan => w.min(h) / 2e0,
+            TreeStyleOption::Phylogram => w,
+            TreeStyleOption::Fan => w.min(h) / 2e0,
         };
         let center = Point { x: w / 2e0, y: h / 2e0 };
         let mut points: Vec<NodePoint> = Vec::new();
@@ -186,10 +186,10 @@ impl TreeView {
                 let mut angle: Option<Float> = None;
                 let point: Point;
                 match tree_repr {
-                    TreeReprOption::Phylogram => {
+                    TreeStyleOption::Phylogram => {
                         point = node_point(w, h, e);
                     }
-                    TreeReprOption::Fan => {
+                    TreeStyleOption::Fan => {
                         let a = edge_angle(self.rot_angle, self.opn_angle, e);
                         point = node_point_rad(a, center, size, e);
                         angle = Some(a);
@@ -214,10 +214,10 @@ impl TreeView {
                     let mut angle: Option<Float> = None;
                     let point: Point;
                     match tree_repr {
-                        TreeReprOption::Phylogram => {
+                        TreeStyleOption::Phylogram => {
                             point = node_point(w, h, e);
                         }
-                        TreeReprOption::Fan => {
+                        TreeStyleOption::Fan => {
                             let a = edge_angle(self.rot_angle, self.opn_angle, e);
                             point = node_point_rad(a, center, size, e);
                             angle = Some(a);
