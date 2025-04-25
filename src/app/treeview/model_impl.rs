@@ -2,7 +2,7 @@ use super::{NodeOrderingOption, TreeStyleOption, TreeView};
 use crate::{
     Float,
     app::{LTT_H, PADDING, SF, TREE_LAB_FONT_NAME},
-    flatten_tree, lerp, text_width,
+    chunk_edges, flatten_tree, lerp, text_width,
 };
 
 impl TreeView {
@@ -128,7 +128,7 @@ impl TreeView {
 
     pub fn merge_tip_chunks(&mut self) {
         self.tree_tip_edges = Vec::new();
-        for (i_c, chunk) in self.tree_chunked_edges.iter().enumerate() {
+        for (i_c, chunk) in self.tree_edges_chunked.iter().enumerate() {
             for (i_e, edge) in chunk.iter().enumerate() {
                 if edge.is_tip {
                     let mut e = edge.clone();
@@ -144,11 +144,17 @@ impl TreeView {
         match self.sel_node_ord_opt {
             NodeOrderingOption::Unordered => {
                 self.tree = self.tree_orig.clone();
-                self.tree_chunked_edges = match &self.tree_orig_chunked_edges {
-                    Some(chunked_edges) => chunked_edges.clone(),
+                self.tree_edges_chunked = match &self.tree_orig_edges_chunked {
+                    Some(chunked_edges) => {
+                        self.tree_edges = self.tree_orig_edges.clone().unwrap();
+                        chunked_edges.clone()
+                    }
                     None => {
-                        self.tree_orig_chunked_edges = Some(flatten_tree(&self.tree, self.threads));
-                        self.tree_orig_chunked_edges.clone().unwrap()
+                        let edges = flatten_tree(&self.tree);
+                        self.tree_orig_edges = Some(edges.clone());
+                        self.tree_orig_edges_chunked = Some(chunk_edges(&edges, self.threads));
+                        self.tree_edges = edges;
+                        self.tree_orig_edges_chunked.clone().unwrap()
                     }
                 };
             }
@@ -156,31 +162,38 @@ impl TreeView {
             NodeOrderingOption::Ascending => match &self.tree_srtd_asc {
                 Some(tree_srtd_asc) => {
                     self.tree = tree_srtd_asc.clone();
-                    self.tree_chunked_edges = self.tree_srtd_asc_chunked_edges.clone().unwrap();
+                    self.tree_edges = self.tree_srtd_asc_edges.clone().unwrap();
+                    self.tree_edges_chunked = self.tree_srtd_asc_edges_chunked.clone().unwrap();
                 }
                 None => {
                     let mut tmp = self.tree_orig.clone();
                     tmp.sort(false);
                     self.tree_srtd_asc = Some(tmp);
                     self.tree = self.tree_srtd_asc.clone().unwrap();
-                    self.tree_srtd_asc_chunked_edges = Some(flatten_tree(&self.tree, self.threads));
-                    self.tree_chunked_edges = self.tree_srtd_asc_chunked_edges.clone().unwrap();
+                    let edges = flatten_tree(&self.tree);
+                    self.tree_srtd_asc_edges = Some(edges.clone());
+                    self.tree_srtd_asc_edges_chunked = Some(chunk_edges(&edges, self.threads));
+                    self.tree_edges = edges;
+                    self.tree_edges_chunked = self.tree_srtd_asc_edges_chunked.clone().unwrap();
                 }
             },
 
             NodeOrderingOption::Descending => match &self.tree_srtd_desc {
                 Some(tree_srtd_desc) => {
                     self.tree = tree_srtd_desc.clone();
-                    self.tree_chunked_edges = self.tree_srtd_desc_chunked_edges.clone().unwrap();
+                    self.tree_edges = self.tree_srtd_desc_edges.clone().unwrap();
+                    self.tree_edges_chunked = self.tree_srtd_desc_edges_chunked.clone().unwrap();
                 }
                 None => {
                     let mut tmp = self.tree_orig.clone();
                     tmp.sort(true);
                     self.tree_srtd_desc = Some(tmp);
                     self.tree = self.tree_srtd_desc.clone().unwrap();
-                    self.tree_srtd_desc_chunked_edges =
-                        Some(flatten_tree(&self.tree, self.threads));
-                    self.tree_chunked_edges = self.tree_srtd_desc_chunked_edges.clone().unwrap();
+                    let edges = flatten_tree(&self.tree);
+                    self.tree_srtd_desc_edges = Some(edges.clone());
+                    self.tree_srtd_desc_edges_chunked = Some(chunk_edges(&edges, self.threads));
+                    self.tree_edges = edges;
+                    self.tree_edges_chunked = self.tree_srtd_desc_edges_chunked.clone().unwrap();
                 }
             },
         };

@@ -23,6 +23,7 @@ pub struct TreeViewState {
     pub tree_rect: Rectangle,
     pub stroke: Stroke<'static>,
     pub center: Point,
+    pub crosshairs: Option<Point>,
     pub size: Float,
 }
 
@@ -51,6 +52,7 @@ impl Default for TreeViewState {
                 ..Default::default()
             },
             center: Point { x: 0e0, y: 0e0 },
+            crosshairs: None,
             size: SF,
         }
     }

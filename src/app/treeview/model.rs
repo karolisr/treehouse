@@ -1,6 +1,6 @@
 use super::{Ltt, NodeOrderingOption, TreeStyleOption};
 use crate::{
-    Edge, Edges, Float, NodeId, Tree,
+    Edges, Float, NodeId, Tree,
     app::{SCROLL_TOOL_W, SF, SIDE_COL_W, windows::window_settings},
 };
 use iced::{
@@ -47,6 +47,9 @@ pub struct TreeView {
     pub min_rot_angle_idx: u16,
     pub max_rot_angle_idx: u16,
 
+    pub cursor_x: Float,
+    pub cursor_y: Float,
+
     pub ltt_cnv_w: Float,
     pub tre_cnv_w: Float,
     pub min_tre_cnv_w: Float,
@@ -54,10 +57,16 @@ pub struct TreeView {
     pub max_tre_cnv_w_idx: u16,
     pub sel_tre_cnv_w_idx: u16,
 
-    pub tre_cnv_h: Float,
-    pub min_tre_cnv_h: Float,
+    pub ltt_cnv_scrolled: bool,
+    pub tre_cnv_scrolled: bool,
+
+    pub ltt_cnv_x0: Float,
+    pub ltt_cnv_y0: Float,
+    pub tre_cnv_x0: Float,
     pub tre_cnv_y0: Float,
     pub tre_cnv_y1: Float,
+    pub tre_cnv_h: Float,
+    pub min_tre_cnv_h: Float,
 
     pub node_size: Float,
     pub min_node_size: Float,
@@ -99,25 +108,32 @@ pub struct TreeView {
     pub g_legend: Cache,
     pub g_node_hover: Cache,
     pub g_node_sel: Cache,
+    pub g_crosshairs: Cache,
 
     #[cfg(debug_assertions)]
     pub g_bounds: Cache,
     #[cfg(debug_assertions)]
     pub g_palette: Cache,
 
-    pub tree: Tree,
-    pub tree_tip_edges: Vec<Edge>,
-    pub tree_chunked_edges: Vec<Edges>,
-
-    pub tree_orig: Tree,
-    pub tree_orig_chunked_edges: Option<Vec<Edges>>,
-    pub tree_srtd_asc: Option<Tree>,
-    pub tree_srtd_asc_chunked_edges: Option<Vec<Edges>>,
-    pub tree_srtd_desc: Option<Tree>,
-    pub tree_srtd_desc_chunked_edges: Option<Vec<Edges>>,
-
     pub sel_node_ids: HashSet<NodeId>,
-    pub tallest_tips: Vec<Edge>,
+    pub tree_tip_edges: Edges,
+    pub tallest_tips: Edges,
+
+    pub tree: Tree,
+    pub tree_orig: Tree,
+    pub tree_srtd_asc: Option<Tree>,
+    pub tree_srtd_desc: Option<Tree>,
+
+    // pub ltt_points: Vec<LttPoint>,
+    pub tree_edges: Edges,
+    pub tree_orig_edges: Option<Edges>,
+    pub tree_srtd_asc_edges: Option<Edges>,
+    pub tree_srtd_desc_edges: Option<Edges>,
+
+    pub tree_edges_chunked: Vec<Edges>,
+    pub tree_orig_edges_chunked: Option<Vec<Edges>>,
+    pub tree_srtd_asc_edges_chunked: Option<Vec<Edges>>,
+    pub tree_srtd_desc_edges_chunked: Option<Vec<Edges>>,
 }
 
 impl TreeView {
@@ -148,6 +164,9 @@ impl TreeView {
             min_tre_cnv_w_idx: 1,
             max_tre_cnv_w_idx: 24,
 
+            ltt_cnv_x0: SF,
+            ltt_cnv_y0: SF,
+            tre_cnv_x0: SF,
             tre_cnv_y0: SF,
             tre_cnv_y1: SF,
             tre_cnv_h: SF,
@@ -161,11 +180,11 @@ impl TreeView {
             max_lab_size_idx: 24,
 
             tip_brnch_labs_allowed: false,
-            draw_tip_labs: true,
+            draw_tip_labs: false,
             draw_brnch_labs: false,
-            draw_int_labs: true,
+            draw_int_labs: false,
             draw_legend: true,
-            show_ltt: false,
+            show_ltt: true,
 
             sel_node_size_idx: 1,
             sel_tre_cnv_w_idx: 1,
@@ -202,8 +221,12 @@ pub enum TreeViewMsg {
     EnableDrawing,
     Refresh,
 
-    LttCanvasScrolled(ScrollableViewport),
-    TreeCanvasScrolled(ScrollableViewport),
+    CursorPosition { x: Float, y: Float },
+    LttCnvScrolled(ScrollableViewport),
+    TreCnvScrolled(ScrollableViewport),
+
+    ScrollToX { sender: &'static str, x: Float },
+    // ScrollToY { sender: &'static str, y: Float },
     WindowResized(Float, Float),
 
     SelectDeselectNode(NodeId),

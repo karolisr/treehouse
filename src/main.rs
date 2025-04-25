@@ -23,7 +23,9 @@ mod utils;
 
 use app::{ANTIALIASING, App};
 pub use colors::ColorSimple;
-pub use dendros::{Edge, Edges, NodeId, NodeType, Tree, TreeFloat, flatten_tree, parse_newick};
+pub use dendros::{
+    Edge, Edges, NodeId, NodeType, Tree, TreeFloat, chunk_edges, flatten_tree, parse_newick,
+};
 pub use text_width::text_width;
 pub use utils::lerp;
 

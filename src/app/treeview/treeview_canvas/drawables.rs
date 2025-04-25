@@ -59,7 +59,7 @@ impl TreeView {
         let mut paths: Vec<Path> = Vec::with_capacity(self.node_count);
         thread::scope(|thread_scope| {
             let mut handles: Vec<ScopedJoinHandle<'_, Path>> = Vec::new();
-            for chunk in &self.tree_chunked_edges {
+            for chunk in &self.tree_edges_chunked {
                 let handle = thread_scope.spawn(move || {
                     let mut pb = PathBuilder::new();
                     for edge in chunk {
@@ -181,7 +181,7 @@ impl TreeView {
         let center = Point { x: w / 2e0, y: h / 2e0 };
         let mut points: Vec<NodePoint> = Vec::new();
         if chnk_idx_0 == chnk_idx_1 {
-            let chunk = &self.tree_chunked_edges[chnk_idx_0];
+            let chunk = &self.tree_edges_chunked[chnk_idx_0];
             for e in &chunk[edge_idx_0..=edge_idx_1] {
                 let mut angle: Option<Float> = None;
                 let point: Point;
@@ -201,14 +201,14 @@ impl TreeView {
             for chnk_idx in chnk_idx_0..=chnk_idx_1 {
                 let edge_range: RangeInclusive<usize>;
                 if chnk_idx == chnk_idx_0 {
-                    edge_range = edge_idx_0..=self.tree_chunked_edges[chnk_idx].len() - 1;
+                    edge_range = edge_idx_0..=self.tree_edges_chunked[chnk_idx].len() - 1;
                 } else if chnk_idx == chnk_idx_1 {
                     edge_range = 0..=edge_idx_1
                 } else {
-                    edge_range = 0..=self.tree_chunked_edges[chnk_idx].len() - 1;
+                    edge_range = 0..=self.tree_edges_chunked[chnk_idx].len() - 1;
                 }
 
-                let chunk = &self.tree_chunked_edges[chnk_idx];
+                let chunk = &self.tree_edges_chunked[chnk_idx];
 
                 for e in &chunk[edge_range] {
                     let mut angle: Option<Float> = None;

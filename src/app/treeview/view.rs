@@ -362,7 +362,8 @@ impl TreeView {
         scrl = scrl.direction(ScrollableDirection::Horizontal(self.scroll_bar()));
         scrl = scrl.width(self.tree_scroll_w);
         scrl = scrl.height(LTT_H);
-        scrl = scrl.on_scroll(TreeViewMsg::LttCanvasScrolled);
+        scrl = scrl.on_scroll(TreeViewMsg::LttCnvScrolled);
+        scrl = scrl.id("ltt");
         self.apply_settings_scroll(scrl)
     }
 
@@ -379,7 +380,8 @@ impl TreeView {
 
         scrl = scrl.width(self.tree_scroll_w);
         scrl = scrl.height(self.tree_scroll_h);
-        scrl = scrl.on_scroll(TreeViewMsg::TreeCanvasScrolled);
+        scrl = scrl.on_scroll(TreeViewMsg::TreCnvScrolled);
+        scrl = scrl.id("tre");
 
         self.apply_settings_scroll(scrl)
     }

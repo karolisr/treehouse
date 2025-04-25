@@ -1,9 +1,14 @@
 use super::{TreeStyleOption, TreeView, TreeViewMsg};
 use crate::{Float, PI, app::SF};
-use iced::Task;
+use dendros::ltt;
+use iced::{
+    Point, Task,
+    widget::scrollable::{self, AbsoluteOffset},
+};
 
 impl TreeView {
     pub fn update(&mut self, msg: TreeViewMsg) -> Task<TreeViewMsg> {
+        // println!("{msg:?}");
         match msg {
             TreeViewMsg::OpenFile => Task::none(),
 
@@ -110,7 +115,29 @@ impl TreeView {
                 Task::none()
             }
 
-            TreeViewMsg::TreeCanvasScrolled(vp) => {
+            TreeViewMsg::ScrollToX { sender, x } => {
+                if self.sel_tree_style_opt == TreeStyleOption::Phylogram {
+                    match sender {
+                        "tre" => {
+                            self.tre_cnv_scrolled = true;
+                            self.ltt_cnv_scrolled = false;
+                            scrollable::scroll_to("ltt", AbsoluteOffset { x, y: self.ltt_cnv_y0 })
+                        }
+                        "ltt" => {
+                            self.ltt_cnv_scrolled = true;
+                            self.tre_cnv_scrolled = false;
+                            scrollable::scroll_to("tre", AbsoluteOffset { x, y: self.tre_cnv_y0 })
+                        }
+                        _ => Task::none(),
+                    }
+                } else {
+                    Task::none()
+                }
+            }
+
+            // TreeViewMsg::ScrollToY { sender: _, y: _ } => Task::none(),
+            TreeViewMsg::TreCnvScrolled(vp) => {
+                self.tre_cnv_x0 = vp.absolute_offset().x;
                 self.tre_cnv_y0 = vp.absolute_offset().y;
                 self.tre_cnv_y1 = self.tre_cnv_y0 + vp.bounds().height;
                 self.g_legend.clear();
@@ -119,10 +146,40 @@ impl TreeView {
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
                 self.g_node_hover.clear();
-                Task::none()
+                if self.tre_cnv_scrolled && self.tre_cnv_x0 != self.ltt_cnv_x0 {
+                    Task::done(TreeViewMsg::ScrollToX { sender: "tre", x: self.tre_cnv_x0 })
+                } else {
+                    self.tre_cnv_scrolled = true;
+                    Task::none()
+                }
             }
 
-            TreeViewMsg::LttCanvasScrolled(_vp) => Task::none(),
+            TreeViewMsg::LttCnvScrolled(vp) => {
+                self.ltt_cnv_x0 = vp.absolute_offset().x;
+                self.ltt_cnv_y0 = vp.absolute_offset().y;
+                if self.ltt_cnv_scrolled && self.tre_cnv_x0 != self.ltt_cnv_x0 {
+                    Task::done(TreeViewMsg::ScrollToX { sender: "ltt", x: self.ltt_cnv_x0 })
+                } else {
+                    self.ltt_cnv_scrolled = true;
+                    Task::none()
+                }
+            }
+
+            TreeViewMsg::CursorPosition { x, y } => {
+                self.cursor_x = x;
+                self.cursor_y = y;
+
+                // match self.sel_tree_style_opt {
+                //     TreeStyleOption::Phylogram => self.ltt.crosshairs = Some(Point { x, y }),
+                //     TreeStyleOption::Fan => {
+                //         self.ltt.crosshairs = None;
+                //     }
+                // }
+
+                self.ltt.crosshairs = Some(Point { x, y });
+
+                Task::none()
+            }
 
             TreeViewMsg::NodeSizeSelectionChanged(idx) => {
                 self.sel_node_size_idx = idx;
@@ -226,7 +283,7 @@ impl TreeView {
                 self.update_node_size();
                 self.update_tip_label_w();
                 self.update_canvas_h();
-                Task::none()
+                Task::done(TreeViewMsg::ScrollToX { sender: "tre", x: self.tre_cnv_x0 })
             }
 
             TreeViewMsg::CanvasWidthSelectionChanged(idx) => {
@@ -327,9 +384,9 @@ impl TreeView {
                 self.tree_orig = tree;
                 self.tree_srtd_asc = None;
                 self.tree_srtd_desc = None;
-                self.tree_srtd_asc_chunked_edges = None;
-                self.tree_srtd_desc_chunked_edges = None;
-                self.tree_orig_chunked_edges = None;
+                self.tree_srtd_asc_edges_chunked = None;
+                self.tree_srtd_desc_edges_chunked = None;
+                self.tree_orig_edges_chunked = None;
                 self.node_count = self.tree_orig.node_count_all();
                 self.tip_count = self.tree_orig.tip_count_all();
                 self.int_node_count = self.tree_orig.internal_node_count_all();
@@ -341,6 +398,7 @@ impl TreeView {
                 let epsilon = self.tree_orig.height() / 1e2;
                 self.is_ultrametric = self.tree_orig.is_ultrametric(epsilon);
                 self.sort();
+                self.ltt.set_data(ltt(&self.tree_edges, 1000, epsilon));
                 self.merge_tip_chunks();
                 self.update_tallest_tips();
                 self.update_extra_space_for_labels();
