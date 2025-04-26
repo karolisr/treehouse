@@ -1,11 +1,66 @@
 use super::{NodeOrderingOption, TreeStyleOption, TreeView};
 use crate::{
     Float,
-    app::{LTT_H, PADDING, SF, TREE_LAB_FONT_NAME},
+    app::{LTT_H, PADDING, SCROLL_TOOL_W, SF, TREE_LAB_FONT_NAME},
     chunk_edges, flatten_tree, lerp, text_width,
 };
+use iced::Rectangle;
 
 impl TreeView {
+    pub fn update_visible(&mut self) {
+        self.tip_idx_range = self.visible_tip_idx_range();
+        if let Some(tip_idx_range) = &self.tip_idx_range {
+            let node_points =
+                self.visible_nodes(self.tree_rect.width, self.tree_rect.height, tip_idx_range);
+            self.visible_nodes = node_points.points;
+            self.center = node_points.center;
+            self.size = node_points.size;
+        } else {
+            self.visible_nodes.clear();
+        }
+    }
+
+    pub fn update_rects(&mut self) {
+        self.clip_rect = Rectangle {
+            x: 0e0,
+            y: 0e0,
+            width: self.tre_cnv_w - SCROLL_TOOL_W + PADDING,
+            height: self.tre_cnv_h,
+        };
+
+        self.tree_rect = match self.sel_tree_style_opt {
+            TreeStyleOption::Phylogram => Rectangle {
+                x: self.clip_rect.x + SF / 2e0 + self.node_radius,
+                y: self.clip_rect.y + SF / 2e0 + self.max_lab_size + self.brnch_lab_offset_y,
+                width: self.clip_rect.width - SF - self.node_radius * 2e0 - self.tip_lab_w,
+                height: self.clip_rect.height - SF - self.max_lab_size * 1.5 - SCROLL_TOOL_W,
+            },
+            TreeStyleOption::Fan => Rectangle {
+                x: self.clip_rect.x + SF / 2e0 + self.tip_lab_w,
+                y: self.clip_rect.y + SF / 2e0 + self.tip_lab_w,
+                width: self.clip_rect.width - SF - self.tip_lab_w * 2e0,
+                height: self.clip_rect.height - SF - self.tip_lab_w * 2e0 - SCROLL_TOOL_W,
+            },
+        };
+
+        match self.sel_tree_style_opt {
+            TreeStyleOption::Phylogram => {
+                // self.ltt.tree_rect_x = self.tree_rect.x;
+                // self.ltt.tree_rect_w = self.tree_rect.width;
+                self.ltt.tree_rect_x = self.clip_rect.x + SF / 2e0 + self.node_radius;
+                self.ltt.tree_rect_w = self.clip_rect.width - SF - self.node_radius * 2e0;
+            }
+            TreeStyleOption::Fan => {
+                self.ltt.tree_rect_x = self.clip_rect.x + SF / 2e0 + self.node_radius;
+                self.ltt.tree_rect_w =
+                    self.tree_scroll_w - SCROLL_TOOL_W + PADDING - SF - self.node_radius * 2e0;
+            }
+        };
+
+        self.ltt.g_bounds.clear();
+        self.ltt.g_ltt.clear();
+    }
+
     pub fn update_canvas_w(&mut self) {
         self.min_tre_cnv_w = self.tree_scroll_w;
         self.tre_cnv_w = self.min_tre_cnv_w + (self.sel_tre_cnv_w_idx - 1) as Float * 1e2 * SF;

@@ -194,6 +194,9 @@ impl TreeView {
         sc = sc.push(self.toggler_ltt(true));
 
         sc = sc.push(self.space_h(0, PADDING));
+        sc = sc.push(self.toggler_crosshairs(true));
+
+        sc = sc.push(self.space_h(0, PADDING));
         sc = sc.push(self.rule_h(SF));
         sc = sc.push(self.space_h(0, PADDING));
 
@@ -494,6 +497,19 @@ impl TreeView {
         let mut tglr: Toggler<TreeViewMsg> = Toggler::new(value);
         tglr = tglr.label(label);
         tglr = self.apply_settings_toggler(tglr);
+        tglr
+    }
+
+    fn toggler_crosshairs(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
+        let lab = match self.sel_tree_style_opt {
+            TreeStyleOption::Phylogram => "Cursor Tracking Line",
+            TreeStyleOption::Fan => "Cursor Tracking Circle",
+        };
+
+        let mut tglr = self.toggler(lab, self.show_crosshairs);
+        if enabled {
+            tglr = tglr.on_toggle(TreeViewMsg::CrosshairsVisibilityChanged);
+        }
         tglr
     }
 

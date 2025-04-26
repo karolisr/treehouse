@@ -1,14 +1,12 @@
-use std::f32::consts::PI;
-
 use super::{
-    super::{TreeView, TreeViewMsg},
+    super::{TreeStyleOption, TreeView, TreeViewMsg},
     NodePoint, TreeViewState,
 };
 #[cfg(debug_assertions)]
 use crate::app::DEBUG;
 use crate::{
     Float,
-    app::{PADDING, SCROLL_TOOL_W, SF},
+    app::{PADDING, SF},
 };
 use iced::{
     Event, Point, Radians, Rectangle, Renderer, Size, Theme,
@@ -16,6 +14,7 @@ use iced::{
     widget::canvas::{Action, Geometry, Path, Program, path::Arc},
     window::Event as WinEvent,
 };
+use std::f32::consts::PI;
 
 impl Program<TreeViewMsg> for TreeView {
     type State = TreeViewState;
@@ -28,60 +27,6 @@ impl Program<TreeViewMsg> for TreeView {
         cursor: Cursor,
     ) -> Option<Action<TreeViewMsg>> {
         match event {
-            Event::Window(WinEvent::RedrawRequested(_)) => {
-                /////////////////////////////////////////////////////////////////////////////////
-                if self.drawing_enabled {
-                    state.clip_rect = Rectangle {
-                        x: 0e0,
-                        y: 0e0,
-                        width: bounds.width - SCROLL_TOOL_W + PADDING,
-                        height: self.tre_cnv_h,
-                    };
-
-                    state.tree_rect = match self.sel_tree_style_opt {
-                        crate::app::treeview::TreeStyleOption::Phylogram => Rectangle {
-                            x: state.clip_rect.x + SF / 2e0 + state.node_radius,
-                            y: state.clip_rect.y
-                                + SF / 2e0
-                                + self.max_lab_size
-                                + self.brnch_lab_offset_y,
-                            width: state.clip_rect.width
-                                - SF
-                                - state.node_radius * 2e0
-                                - self.tip_lab_w,
-                            height: state.clip_rect.height
-                                - SF
-                                - self.max_lab_size * 1.5
-                                - SCROLL_TOOL_W,
-                        },
-                        crate::app::treeview::TreeStyleOption::Fan => Rectangle {
-                            x: state.clip_rect.x + SF / 2e0 + self.tip_lab_w,
-                            y: state.clip_rect.y + SF / 2e0 + self.tip_lab_w,
-                            width: state.clip_rect.width - SF - self.tip_lab_w * 2e0,
-                            height: state.clip_rect.height
-                                - SF
-                                - self.tip_lab_w * 2e0
-                                - SCROLL_TOOL_W,
-                        },
-                    };
-
-                    state.tip_idx_range = self.visible_tip_idx_range();
-                    if let Some(tip_idx_range) = &state.tip_idx_range {
-                        let x = self.visible_nodes(
-                            state.tree_rect.width,
-                            state.tree_rect.height,
-                            tip_idx_range,
-                        );
-                        state.visible_nodes = x.points;
-                        state.center = x.center;
-                        state.size = x.size;
-                    } else {
-                        state.visible_nodes.clear();
-                    }
-                }
-                /////////////////////////////////////////////////////////////////////////////////
-                None
-            }
             Event::Window(WinEvent::Resized(size)) => Some(Action::publish(
                 TreeViewMsg::WindowResized(size.width, size.height),
             )),
@@ -104,9 +49,23 @@ impl Program<TreeViewMsg> for TreeView {
                 iced::mouse::Button::Other(_) => None,
             },
             Event::Mouse(MouseEvent::CursorMoved { position: _ }) => {
-                if cursor.is_over(bounds) && self.drawing_enabled {
-                    #[cfg(debug_assertions)]
-                    self.g_bounds.clear();
+                if cursor.is_over(self.clip_rect) && self.drawing_enabled {
+                    if let Some(pt) = cursor.position_over(self.clip_rect) {
+                        if pt.x < PADDING * 2e0 + SF || pt.x > PADDING * 2e0 + self.tree_rect.width
+                        {
+                            state.crosshairs = None;
+                            state.mouse_hovering_node = false;
+                            state.closest_node_point = None;
+                            self.g_node_hover.clear();
+                            return Some(Action::publish(TreeViewMsg::CursorOnLttCnv { x: None }));
+                        }
+                    } else {
+                        state.crosshairs = None;
+                        state.mouse_hovering_node = false;
+                        state.closest_node_point = None;
+                        self.g_node_hover.clear();
+                        return Some(Action::publish(TreeViewMsg::CursorOnLttCnv { x: None }));
+                    }
 
                     let mut mouse_pt;
                     if let Some(x) = cursor.position_over(bounds) {
@@ -115,21 +74,21 @@ impl Program<TreeViewMsg> for TreeView {
                         return None;
                     }
 
-                    mouse_pt.x -= PADDING + state.tree_rect.x;
-                    mouse_pt.y -= PADDING + state.tree_rect.y;
+                    mouse_pt.x -= PADDING + self.tree_rect.x;
+                    mouse_pt.y -= PADDING + self.tree_rect.y;
 
                     state.crosshairs =
                         Some(Point { x: mouse_pt.x - SF / 2e0, y: mouse_pt.y - SF / 2e0 });
 
                     let closest_pt: Option<&NodePoint> =
-                        state.visible_nodes.iter().min_by(|&a, &b| {
+                        self.visible_nodes.iter().min_by(|&a, &b| {
                             mouse_pt
                                 .distance(a.point)
                                 .total_cmp(&mouse_pt.distance(b.point))
                         });
 
                     if let Some(NodePoint { point, edge, angle }) = closest_pt {
-                        if mouse_pt.distance(*point) <= state.node_radius {
+                        if mouse_pt.distance(*point) <= self.node_radius {
                             state.mouse_hovering_node = true;
                             state.crosshairs = Some(*point);
                             if state.closest_node_point.is_none()
@@ -142,21 +101,16 @@ impl Program<TreeViewMsg> for TreeView {
                                     edge: edge.clone(),
                                     angle: *angle,
                                 });
-                                // Some(Action::request_redraw())
                                 self.g_crosshairs.clear();
                                 match self.sel_tree_style_opt {
-                                    crate::app::treeview::TreeStyleOption::Phylogram => {
-                                        Some(Action::publish(TreeViewMsg::CursorPosition {
-                                            x: point.x,
-                                            y: point.y,
+                                    TreeStyleOption::Phylogram => {
+                                        Some(Action::publish(TreeViewMsg::CursorOnTreCnv {
+                                            x: Some(point.x / self.tree_rect.width),
                                         }))
                                     }
-                                    crate::app::treeview::TreeStyleOption::Fan => {
-                                        Some(Action::publish(TreeViewMsg::CursorPosition {
-                                            x: state.center.distance(*point) / state.size
-                                                // * (state.clip_rect.width - SF - PADDING * 2e0),
-                                                * (self.ltt_cnv_w - SCROLL_TOOL_W + PADDING - SF - PADDING * 2e0),
-                                            y: 0e0,
+                                    TreeStyleOption::Fan => {
+                                        Some(Action::publish(TreeViewMsg::CursorOnTreCnv {
+                                            x: Some(self.center.distance(*point) / self.size),
                                         }))
                                     }
                                 }
@@ -172,22 +126,17 @@ impl Program<TreeViewMsg> for TreeView {
                             state.mouse_hovering_node = false;
                             state.closest_node_point = None;
                             self.g_node_hover.clear();
-                            // Some(Action::request_redraw())
                             self.g_crosshairs.clear();
                             if let Some(ch) = state.crosshairs {
                                 match self.sel_tree_style_opt {
-                                    crate::app::treeview::TreeStyleOption::Phylogram => {
-                                        Some(Action::publish(TreeViewMsg::CursorPosition {
-                                            x: ch.x,
-                                            y: ch.y,
+                                    TreeStyleOption::Phylogram => {
+                                        Some(Action::publish(TreeViewMsg::CursorOnTreCnv {
+                                            x: Some(ch.x / self.tree_rect.width),
                                         }))
                                     }
-                                    crate::app::treeview::TreeStyleOption::Fan => {
-                                        Some(Action::publish(TreeViewMsg::CursorPosition {
-                                            x: state.center.distance(ch) / state.size
-                                                // * (state.clip_rect.width - SF - PADDING * 2e0),
-                                                * (self.ltt_cnv_w - SCROLL_TOOL_W + PADDING - SF - PADDING * 2e0),
-                                            y: 0e0,
+                                    TreeStyleOption::Fan => {
+                                        Some(Action::publish(TreeViewMsg::CursorOnTreCnv {
+                                            x: Some(self.center.distance(ch) / self.size),
                                         }))
                                     }
                                 }
@@ -199,7 +148,6 @@ impl Program<TreeViewMsg> for TreeView {
                         state.mouse_hovering_node = false;
                         state.closest_node_point = None;
                         self.g_node_hover.clear();
-
                         None
                     }
                 } else {
@@ -209,6 +157,13 @@ impl Program<TreeViewMsg> for TreeView {
                     self.g_node_hover.clear();
                     None
                 }
+            }
+            Event::Mouse(MouseEvent::CursorLeft) => {
+                state.crosshairs = None;
+                state.mouse_hovering_node = false;
+                state.closest_node_point = None;
+                self.g_node_hover.clear();
+                Some(Action::publish(TreeViewMsg::CursorOnLttCnv { x: None }))
             }
             _ => None,
         }
@@ -220,7 +175,13 @@ impl Program<TreeViewMsg> for TreeView {
         _bounds: Rectangle,
         _cursor: Cursor,
     ) -> Interaction {
-        if state.mouse_hovering_node { Interaction::Pointer } else { Interaction::Crosshair }
+        if state.mouse_hovering_node {
+            Interaction::Pointer
+        } else if state.crosshairs.is_some() {
+            Interaction::Crosshair
+        } else {
+            Interaction::default()
+        }
     }
 
     fn draw(
@@ -270,22 +231,22 @@ impl Program<TreeViewMsg> for TreeView {
         if DEBUG {
             let g_bounds = self.g_bounds.draw(renderer, bounds.size(), |f| {
                 f.fill_rectangle(
-                    Point { x: state.clip_rect.x, y: state.clip_rect.y },
-                    state.clip_rect.size(),
+                    Point { x: self.clip_rect.x, y: self.clip_rect.y },
+                    self.clip_rect.size(),
                     color_text.scale_alpha(0.05),
                 );
 
                 f.fill_rectangle(
-                    Point { x: state.tree_rect.x, y: state.tree_rect.y },
-                    state.tree_rect.size(),
+                    Point { x: self.tree_rect.x, y: self.tree_rect.y },
+                    self.tree_rect.size(),
                     color_text.scale_alpha(0.05),
                 );
 
                 if let Some(pt) = state.crosshairs {
                     let path = iced::widget::canvas::Path::new(|p| {
                         p.circle(
-                            Point { x: pt.x + state.tree_rect.x, y: pt.y + state.tree_rect.y },
-                            state.node_radius + SF * 2e0,
+                            Point { x: pt.x + self.tree_rect.x, y: pt.y + self.tree_rect.y },
+                            self.node_radius + SF * 2e0,
                         );
                     });
                     f.stroke(
@@ -298,32 +259,32 @@ impl Program<TreeViewMsg> for TreeView {
         }
 
         if self.has_brlen && self.draw_legend {
-            let g_legend = self.g_legend.draw(renderer, state.clip_rect.size(), |f| {
-                self.draw_scale_bar(stroke, &lab_txt_template, &state.tree_rect, f);
+            let g_legend = self.g_legend.draw(renderer, self.clip_rect.size(), |f| {
+                self.draw_scale_bar(stroke, &lab_txt_template, &self.tree_rect, f);
             });
             geoms.push(g_legend);
         }
 
-        let g_edge = self.g_edge.draw(renderer, state.clip_rect.size(), |f| {
+        let g_edge = self.g_edge.draw(renderer, self.clip_rect.size(), |f| {
             let paths = self.paths_from_chunks(
-                state.tree_rect.width,
-                state.tree_rect.height,
-                state.center,
-                state.size,
+                self.tree_rect.width,
+                self.tree_rect.height,
+                self.center,
+                self.size,
             );
-            self.draw_edges(paths, stroke, &state.tree_rect, f);
+            self.draw_edges(paths, stroke, &self.tree_rect, f);
         });
         geoms.push(g_edge);
 
         if self.tip_brnch_labs_allowed && self.has_tip_labs && self.draw_tip_labs {
-            let g_lab_tip = self.g_lab_tip.draw(renderer, state.clip_rect.size(), |f| {
-                let labels = self.node_labels(&state.visible_nodes, true, &lab_txt_template);
+            let g_lab_tip = self.g_lab_tip.draw(renderer, self.clip_rect.size(), |f| {
+                let labels = self.node_labels(&self.visible_nodes, true, &lab_txt_template);
                 self.draw_labels(
                     labels,
                     self.tip_lab_size,
                     Point { x: self.tip_lab_offset_x, y: 0e0 },
-                    &state.tree_rect,
-                    &state.clip_rect,
+                    &self.tree_rect,
+                    &self.clip_rect,
                     f,
                 );
             });
@@ -332,14 +293,14 @@ impl Program<TreeViewMsg> for TreeView {
         }
 
         if self.has_int_labs && self.draw_int_labs {
-            let g_lab_int = self.g_lab_int.draw(renderer, state.clip_rect.size(), |f| {
-                let labels = self.node_labels(&state.visible_nodes, false, &lab_txt_template);
+            let g_lab_int = self.g_lab_int.draw(renderer, self.clip_rect.size(), |f| {
+                let labels = self.node_labels(&self.visible_nodes, false, &lab_txt_template);
                 self.draw_labels(
                     labels,
                     self.int_lab_size,
                     Point { x: self.int_lab_offset_x, y: 0e0 },
-                    &state.tree_rect,
-                    &state.clip_rect,
+                    &self.tree_rect,
+                    &self.clip_rect,
                     f,
                 );
             });
@@ -347,26 +308,23 @@ impl Program<TreeViewMsg> for TreeView {
         }
 
         if self.has_brlen && self.tip_brnch_labs_allowed && self.draw_brnch_labs {
-            let g_lab_brnch = self
-                .g_lab_brnch
-                .draw(renderer, state.clip_rect.size(), |f| {
-                    let labels =
-                        self.branch_labels(state.size, &state.visible_nodes, &lab_txt_template);
-                    self.draw_labels(
-                        labels,
-                        self.brnch_lab_size,
-                        Point { x: 0e0, y: self.brnch_lab_offset_y },
-                        &state.tree_rect,
-                        &state.clip_rect,
-                        f,
-                    );
-                });
+            let g_lab_brnch = self.g_lab_brnch.draw(renderer, self.clip_rect.size(), |f| {
+                let labels = self.branch_labels(self.size, &self.visible_nodes, &lab_txt_template);
+                self.draw_labels(
+                    labels,
+                    self.brnch_lab_size,
+                    Point { x: 0e0, y: self.brnch_lab_offset_y },
+                    &self.tree_rect,
+                    &self.clip_rect,
+                    f,
+                );
+            });
             geoms.push(g_lab_brnch);
         }
 
-        let g_node_sel = self.g_node_sel.draw(renderer, state.clip_rect.size(), |f| {
-            let ps = state.node_radius * 0.75;
-            for NodePoint { point, edge, angle: _ } in &state.visible_nodes {
+        let g_node_sel = self.g_node_sel.draw(renderer, self.clip_rect.size(), |f| {
+            let ps = self.node_radius * 0.75;
+            for NodePoint { point, edge, angle: _ } in &self.visible_nodes {
                 for node_id in &self.sel_node_ids {
                     if edge.node_id == *node_id {
                         self.draw_node(
@@ -374,7 +332,7 @@ impl Program<TreeViewMsg> for TreeView {
                             ps,
                             stroke,
                             color_warning_base.scale_alpha(0.75),
-                            &state.tree_rect,
+                            &self.tree_rect,
                             f,
                         );
                     }
@@ -385,45 +343,69 @@ impl Program<TreeViewMsg> for TreeView {
 
         let g_node_hover = self
             .g_node_hover
-            .draw(renderer, state.clip_rect.size(), |f| {
+            .draw(renderer, self.clip_rect.size(), |f| {
                 if let Some(NodePoint { point, edge: _, angle: _ }) = &state.closest_node_point {
                     self.draw_node(
                         point,
-                        state.node_radius,
+                        self.node_radius,
                         stroke,
                         color_secondary_strong.scale_alpha(0.75),
-                        &state.tree_rect,
+                        &self.tree_rect,
                         f,
                     );
                 }
             });
         geoms.push(g_node_hover);
 
-        let g_cross = self
-            .g_crosshairs
-            .draw(renderer, state.clip_rect.size(), |f| {
-                if let Some(ch) = state.crosshairs {
-                    let path = Path::new(|p| match self.sel_tree_style_opt {
-                        crate::app::treeview::TreeStyleOption::Phylogram => {
-                            p.move_to(Point { x: 0e0, y: ch.y + state.tree_rect.y });
-                            p.line_to(Point { x: f.width(), y: ch.y + state.tree_rect.y });
-                            p.move_to(Point { x: ch.x + state.tree_rect.x, y: 0e0 });
-                            p.line_to(Point { x: ch.x + state.tree_rect.x, y: f.height() });
+        if self.show_crosshairs {
+            let g_cross = self
+                .g_crosshairs
+                .draw(renderer, self.clip_rect.size(), |f| {
+                    if state.crosshairs.is_some() || self.cursor_x_fraction.is_some() {
+                        let x: Float;
+                        let radius: Float;
+                        if let Some(x_frac) = self.cursor_x_fraction {
+                            x = x_frac * self.size;
+                            radius = x;
+                        } else {
+                            let pt = state.crosshairs.unwrap();
+                            x = pt.x;
+                            radius = self.center.distance(pt);
                         }
-                        crate::app::treeview::TreeStyleOption::Fan => {
-                            let arc: Arc = Arc {
-                                center: state.center,
-                                radius: state.center.distance(ch),
-                                start_angle: Radians(0e0),
-                                end_angle: Radians(2e0 * PI),
-                            };
-                            p.arc(arc);
+                        if x >= 0e0 && radius <= self.size {
+                            let path = Path::new(|p| match self.sel_tree_style_opt {
+                                TreeStyleOption::Phylogram => {
+                                    p.move_to(Point {
+                                        x: x + self.tree_rect.x,
+                                        y: self.tree_rect.y,
+                                    });
+                                    p.line_to(Point {
+                                        x: x + self.tree_rect.x,
+                                        y: self.tree_rect.y + self.tree_rect.height,
+                                    });
+                                }
+
+                                TreeStyleOption::Fan => {
+                                    let center = Point {
+                                        x: self.center.x + self.tree_rect.x,
+                                        y: self.center.y + self.tree_rect.y,
+                                    };
+
+                                    let arc: Arc = Arc {
+                                        center,
+                                        radius,
+                                        start_angle: Radians(0e0),
+                                        end_angle: Radians(2e0 * PI),
+                                    };
+                                    p.arc(arc);
+                                }
+                            });
+                            f.stroke(&path, stroke.with_color(color_primary_strong));
                         }
-                    });
-                    f.stroke(&path, stroke.with_color(color_primary_strong));
-                }
-            });
-        geoms.push(g_cross);
+                    }
+                });
+            geoms.push(g_cross);
+        }
 
         #[cfg(debug_assertions)]
         if DEBUG {
@@ -454,9 +436,9 @@ impl Program<TreeViewMsg> for TreeView {
                 let color_rect_size = SF * 15e0;
                 let palette_rect_w = 2e0 * PADDING + color_rect_size * 5e0;
                 let palette_rect_h = 2e0 * PADDING + color_rect_size * 4e0;
-                let palette_rect_x = state.tree_rect.x + PADDING;
+                let palette_rect_x = self.tree_rect.x + PADDING;
                 let palette_rect_y =
-                    state.tree_rect.y + state.tree_rect.height - palette_rect_h - PADDING;
+                    self.tree_rect.y + self.tree_rect.height - palette_rect_h - PADDING;
 
                 f.fill_rectangle(
                     Point { x: palette_rect_x, y: palette_rect_y },

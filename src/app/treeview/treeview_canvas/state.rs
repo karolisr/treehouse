@@ -1,10 +1,7 @@
-use super::drawables::{IndexRange, NodePoint};
-use crate::{
-    Float,
-    app::{SF, TREE_LAB_FONT_NAME},
-};
+use super::drawables::NodePoint;
+use crate::app::{SF, TREE_LAB_FONT_NAME};
 use iced::{
-    Point, Rectangle,
+    Point,
     alignment::Vertical,
     widget::canvas::{
         Stroke, Text,
@@ -14,17 +11,10 @@ use iced::{
 
 pub struct TreeViewState {
     pub lab_txt_template: Text,
-    pub tip_idx_range: Option<IndexRange>,
-    pub visible_nodes: Vec<NodePoint>,
-    pub node_radius: Float,
     pub closest_node_point: Option<NodePoint>,
     pub mouse_hovering_node: bool,
-    pub clip_rect: Rectangle,
-    pub tree_rect: Rectangle,
     pub stroke: Stroke<'static>,
-    pub center: Point,
     pub crosshairs: Option<Point>,
-    pub size: Float,
 }
 
 impl Default for TreeViewState {
@@ -38,22 +28,15 @@ impl Default for TreeViewState {
                 align_y: Vertical::Center,
                 ..Default::default()
             },
-            tip_idx_range: None,
-            node_radius: SF * 1e1,
-            visible_nodes: Vec::new(),
             closest_node_point: None,
             mouse_hovering_node: false,
-            clip_rect: Default::default(),
-            tree_rect: Default::default(),
             stroke: Stroke {
                 width: SF,
                 line_cap: LineCap::Square,
                 line_join: LineJoin::Round,
                 ..Default::default()
             },
-            center: Point { x: 0e0, y: 0e0 },
             crosshairs: None,
-            size: SF,
         }
     }
 }

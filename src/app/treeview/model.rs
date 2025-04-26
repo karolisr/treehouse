@@ -1,9 +1,13 @@
-use super::{Ltt, NodeOrderingOption, TreeStyleOption};
+use super::{
+    Ltt, NodeOrderingOption, TreeStyleOption,
+    treeview_canvas::{IndexRange, NodePoint},
+};
 use crate::{
     Edges, Float, NodeId, Tree,
     app::{SCROLL_TOOL_W, SF, SIDE_COL_W, windows::window_settings},
 };
 use iced::{
+    Point, Rectangle,
     widget::{canvas::Cache, scrollable::Viewport as ScrollableViewport},
     window::Id as WinId,
 };
@@ -19,6 +23,7 @@ pub struct TreeView {
 
     pub ltt: Ltt,
     pub show_ltt: bool,
+    pub show_crosshairs: bool,
     pub drawing_enabled: bool,
     pub has_brlen: bool,
     pub has_int_labs: bool,
@@ -47,9 +52,6 @@ pub struct TreeView {
     pub min_rot_angle_idx: u16,
     pub max_rot_angle_idx: u16,
 
-    pub cursor_x: Float,
-    pub cursor_y: Float,
-
     pub ltt_cnv_w: Float,
     pub tre_cnv_w: Float,
     pub min_tre_cnv_w: Float,
@@ -67,6 +69,15 @@ pub struct TreeView {
     pub tre_cnv_y1: Float,
     pub tre_cnv_h: Float,
     pub min_tre_cnv_h: Float,
+
+    pub tip_idx_range: Option<IndexRange>,
+    pub visible_nodes: Vec<NodePoint>,
+    pub center: Point,
+    pub size: Float,
+    pub clip_rect: Rectangle,
+    pub tree_rect: Rectangle,
+    pub node_radius: Float,
+    pub cursor_x_fraction: Option<Float>,
 
     pub node_size: Float,
     pub min_node_size: Float,
@@ -124,7 +135,6 @@ pub struct TreeView {
     pub tree_srtd_asc: Option<Tree>,
     pub tree_srtd_desc: Option<Tree>,
 
-    // pub ltt_points: Vec<LttPoint>,
     pub tree_edges: Edges,
     pub tree_orig_edges: Option<Edges>,
     pub tree_srtd_asc_edges: Option<Edges>,
@@ -143,6 +153,8 @@ impl TreeView {
 
             sel_node_ord_opt: NodeOrderingOption::Unordered,
             sel_tree_style_opt: TreeStyleOption::Phylogram,
+
+            node_radius: SF * 1e1,
 
             window_w: window_settings().size.width,
             window_h: SF,
@@ -185,6 +197,7 @@ impl TreeView {
             draw_int_labs: false,
             draw_legend: true,
             show_ltt: true,
+            show_crosshairs: true,
 
             sel_node_size_idx: 1,
             sel_tre_cnv_w_idx: 1,
@@ -221,12 +234,12 @@ pub enum TreeViewMsg {
     EnableDrawing,
     Refresh,
 
-    CursorPosition { x: Float, y: Float },
+    CursorOnTreCnv { x: Option<Float> },
+    CursorOnLttCnv { x: Option<Float> },
     LttCnvScrolled(ScrollableViewport),
     TreCnvScrolled(ScrollableViewport),
 
     ScrollToX { sender: &'static str, x: Float },
-    // ScrollToY { sender: &'static str, y: Float },
     WindowResized(Float, Float),
 
     SelectDeselectNode(NodeId),
@@ -254,4 +267,5 @@ pub enum TreeViewMsg {
     BranchLabelSizeSelectionChanged(u16),
     LegendVisibilityChanged(bool),
     LttVisibilityChanged(bool),
+    CrosshairsVisibilityChanged(bool),
 }

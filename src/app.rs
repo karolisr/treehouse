@@ -15,7 +15,7 @@ pub(super) use treeview::{TreeView, TreeViewMsg};
 pub const APP_ID: &str = "TreeHouse";
 
 #[cfg(debug_assertions)]
-pub const DEBUG: bool = true;
+pub const DEBUG: bool = false;
 
 pub const SF: Float = 1e0;
 pub const APP_SCALE_FACTOR: f64 = 1e0 / SF as f64;

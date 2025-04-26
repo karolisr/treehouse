@@ -1,14 +1,12 @@
 use super::{TreeStyleOption, TreeView, TreeViewMsg};
-use crate::{Float, PI, app::SF};
-use dendros::ltt;
+use crate::{Float, PI, app::SF, ltt};
 use iced::{
-    Point, Task,
+    Task,
     widget::scrollable::{self, AbsoluteOffset},
 };
 
 impl TreeView {
     pub fn update(&mut self, msg: TreeViewMsg) -> Task<TreeViewMsg> {
-        // println!("{msg:?}");
         match msg {
             TreeViewMsg::OpenFile => Task::none(),
 
@@ -55,6 +53,11 @@ impl TreeView {
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
                 self.g_node_hover.clear();
+
+                self.ltt.g_bounds.clear();
+                self.ltt.g_ltt.clear();
+                self.ltt.g_crosshairs.clear();
+
                 Task::none()
             }
 
@@ -76,6 +79,8 @@ impl TreeView {
                 self.update_tip_label_w();
                 self.update_canvas_w();
                 self.update_canvas_h();
+                self.update_rects();
+                self.update_visible();
                 Task::none()
             }
 
@@ -94,6 +99,7 @@ impl TreeView {
                 self.g_node_hover.clear();
                 self.sel_opn_angle_idx = idx;
                 self.opn_angle = idx as Float / 360e0 * 2e0 * PI;
+                self.update_visible();
                 Task::none()
             }
 
@@ -112,6 +118,7 @@ impl TreeView {
                 self.g_node_hover.clear();
                 self.sel_rot_angle_idx = idx;
                 self.rot_angle = idx as Float / 360e0 * 2e0 * PI;
+                self.update_visible();
                 Task::none()
             }
 
@@ -135,17 +142,21 @@ impl TreeView {
                 }
             }
 
-            // TreeViewMsg::ScrollToY { sender: _, y: _ } => Task::none(),
             TreeViewMsg::TreCnvScrolled(vp) => {
                 self.tre_cnv_x0 = vp.absolute_offset().x;
                 self.tre_cnv_y0 = vp.absolute_offset().y;
                 self.tre_cnv_y1 = self.tre_cnv_y0 + vp.bounds().height;
                 self.g_legend.clear();
-                self.g_lab_tip.clear();
-                self.g_lab_int.clear();
-                self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
                 self.g_node_hover.clear();
+
+                if self.sel_tree_style_opt == TreeStyleOption::Phylogram {
+                    self.g_lab_tip.clear();
+                    self.g_lab_int.clear();
+                    self.g_lab_brnch.clear();
+                }
+
+                self.update_visible();
                 if self.tre_cnv_scrolled && self.tre_cnv_x0 != self.ltt_cnv_x0 {
                     Task::done(TreeViewMsg::ScrollToX { sender: "tre", x: self.tre_cnv_x0 })
                 } else {
@@ -165,19 +176,19 @@ impl TreeView {
                 }
             }
 
-            TreeViewMsg::CursorPosition { x, y } => {
-                self.cursor_x = x;
-                self.cursor_y = y;
+            TreeViewMsg::CursorOnTreCnv { x } => {
+                self.cursor_x_fraction = None;
+                self.ltt.cursor_x_fraction = x;
+                self.ltt.g_crosshairs.clear();
+                self.g_crosshairs.clear();
+                Task::none()
+            }
 
-                // match self.sel_tree_style_opt {
-                //     TreeStyleOption::Phylogram => self.ltt.crosshairs = Some(Point { x, y }),
-                //     TreeStyleOption::Fan => {
-                //         self.ltt.crosshairs = None;
-                //     }
-                // }
-
-                self.ltt.crosshairs = Some(Point { x, y });
-
+            TreeViewMsg::CursorOnLttCnv { x } => {
+                self.cursor_x_fraction = x;
+                self.ltt.cursor_x_fraction = x;
+                self.ltt.g_crosshairs.clear();
+                self.g_crosshairs.clear();
                 Task::none()
             }
 
@@ -186,6 +197,8 @@ impl TreeView {
                 self.update_node_size();
                 self.update_tip_label_w();
                 self.update_canvas_h();
+                self.update_rects();
+                self.update_visible();
                 Task::none()
             }
 
@@ -221,6 +234,8 @@ impl TreeView {
                 self.update_node_size();
                 self.update_tip_label_w();
                 self.update_canvas_h();
+                self.update_rects();
+                self.update_visible();
                 Task::none()
             }
 
@@ -243,6 +258,8 @@ impl TreeView {
                 self.update_node_size();
                 self.update_tip_label_w();
                 self.update_canvas_h();
+                self.update_rects();
+                self.update_visible();
                 Task::none()
             }
 
@@ -283,7 +300,15 @@ impl TreeView {
                 self.update_node_size();
                 self.update_tip_label_w();
                 self.update_canvas_h();
+                self.update_rects();
+                self.update_visible();
                 Task::done(TreeViewMsg::ScrollToX { sender: "tre", x: self.tre_cnv_x0 })
+            }
+
+            TreeViewMsg::CrosshairsVisibilityChanged(state) => {
+                self.show_crosshairs = state;
+                self.g_crosshairs.clear();
+                Task::none()
             }
 
             TreeViewMsg::CanvasWidthSelectionChanged(idx) => {
@@ -296,6 +321,8 @@ impl TreeView {
                     self.update_extra_space_for_labels();
                 }
                 self.update_tip_label_w();
+                self.update_rects();
+                self.update_visible();
                 Task::none()
             }
 
@@ -322,6 +349,8 @@ impl TreeView {
                 self.update_node_size();
                 self.update_tip_label_w();
                 self.update_canvas_h();
+                self.update_rects();
+                self.update_visible();
                 Task::none()
             }
 
@@ -398,13 +427,15 @@ impl TreeView {
                 let epsilon = self.tree_orig.height() / 1e2;
                 self.is_ultrametric = self.tree_orig.is_ultrametric(epsilon);
                 self.sort();
-                self.ltt.set_data(ltt(&self.tree_edges, 1000, epsilon));
+                self.ltt.set_data(ltt(&self.tree_edges, 1000));
                 self.merge_tip_chunks();
                 self.update_tallest_tips();
                 self.update_extra_space_for_labels();
                 self.update_node_size();
                 self.update_tip_label_w();
                 self.update_canvas_h();
+                self.update_rects();
+                self.update_visible();
                 if !self.drawing_enabled { Task::done(TreeViewMsg::Init) } else { Task::none() }
             }
         }
