@@ -1,5 +1,8 @@
-use super::{AppWinType, Win};
-use iced::{Element, Task, window::Id as WinId};
+use super::{AppWinType, Win, window_settings};
+use iced::{
+    Element, Point, Task,
+    window::{Id as WinId, Position, Settings},
+};
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct PlayWin {
@@ -21,6 +24,14 @@ impl Win for PlayWin {
 
     fn win_type(&self) -> &AppWinType {
         &self.win_type
+    }
+
+    fn settings() -> Settings {
+        let tmp = window_settings();
+        Settings {
+            position: Position::Specific(Point { x: tmp.size.width + 5e1, y: 0e0 }),
+            ..tmp
+        }
     }
 }
 

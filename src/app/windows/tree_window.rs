@@ -1,9 +1,13 @@
 use super::{
     super::{TreeView, TreeViewMsg},
-    AppWinType, Win,
+    AppWinType, Win, window_settings,
 };
 use crate::{Tree, parse_newick, write_newick};
-use iced::{Element, Task, window::Id as WinId};
+#[allow(unused_imports)]
+use iced::{
+    Element, Point, Task,
+    window::{Id as WinId, Position, Settings},
+};
 use std::path::PathBuf;
 
 pub struct TreeWin {
@@ -29,6 +33,14 @@ impl Win for TreeWin {
 
     fn win_type(&self) -> &AppWinType {
         &self.win_type
+    }
+
+    fn settings() -> Settings {
+        let tmp = window_settings();
+        Settings {
+            // position: Position::Specific(Point { x: 0e0, y: 0e0 }),
+            ..tmp
+        }
     }
 }
 

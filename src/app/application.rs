@@ -6,7 +6,7 @@ use super::{
     APP_SCALE_FACTOR,
     menus::{MenuEvent, MenuEventReplyMsg, menu_events},
     treeview::TreeViewMsg,
-    windows::{AppWin, AppWinType, PlayWin, PlayWinMsg, TreeWin, TreeWinMsg, window_settings},
+    windows::{AppWin, AppWinType, PlayWin, PlayWinMsg, TreeWin, TreeWinMsg, Win},
 };
 use crate::{Tree, parse_newick};
 use iced::{
@@ -15,8 +15,8 @@ use iced::{
     keyboard::{Key, Modifiers, on_key_press},
     widget,
     window::{
-        Event as WinEvent, Id as WinId, close as close_window, close_events, close_requests,
-        events, gain_focus, open, open_events,
+        Event as WinEvent, Id as WinId, Settings, close as close_window, close_events,
+        close_requests, events, gain_focus, open, open_events,
     },
 };
 use std::{
@@ -544,7 +544,11 @@ fn subscriptions() -> Subscription<AppMsg> {
 }
 
 fn open_window(app: &mut App, app_win_type: AppWinType) -> Task<AppMsg> {
-    let (win_id, task) = open(window_settings());
+    let win_settings: Settings = match app_win_type {
+        AppWinType::TreeWin => TreeWin::settings(),
+        AppWinType::PlayWin => PlayWin::settings(),
+    };
+    let (win_id, task) = open(win_settings);
     let win: AppWin = match app_win_type {
         AppWinType::TreeWin => AppWin::TreeWin(TreeWin::new(win_id, &app_win_type)),
         AppWinType::PlayWin => AppWin::PlayWin(PlayWin::new(win_id, &app_win_type)),
