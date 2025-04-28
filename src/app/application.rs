@@ -183,12 +183,10 @@ impl App {
             AppMsg::Win(id, e) => match e {
                 WinEvent::FileDropped(path_buf) => Task::done(AppMsg::PathToOpen(id, path_buf)),
                 WinEvent::Focused => {
-                    // self.focused_win_id.insert(id);
                     self.focused_win_id = Some(id);
                     Task::none()
                 }
                 WinEvent::Unfocused => {
-                    // self.focused_win_id.remove(&id);
                     self.focused_win_id = None;
                     Task::none()
                 }
@@ -308,7 +306,7 @@ impl App {
                 if is_real {
                     let _ = menu_event_reply(self, MenuEventReplyMsg::Ack);
                 }
-                // let win_id = self.focused_win_id.iter().last();
+
                 if let Some(id) = self.focused_win_id {
                     match menu_event {
                         MenuEvent::OpenFile => {
@@ -342,6 +340,13 @@ impl App {
                         MenuEvent::Undefined(s) => {
                             Task::done(AppMsg::PathToOpen(id, s.clone().into()))
                         }
+                    }
+                } else if let Some(id) = self.win_type_win_id_map.get(&AppWinType::TreeWin) {
+                    match menu_event {
+                        MenuEvent::Undefined(s) => {
+                            Task::done(AppMsg::PathToOpen(*id, s.clone().into()))
+                        }
+                        _ => Task::none(),
                     }
                 } else {
                     Task::none()
