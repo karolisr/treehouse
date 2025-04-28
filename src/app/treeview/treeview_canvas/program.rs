@@ -255,7 +255,6 @@ impl Program<TreeViewMsg> for TreeView {
         #[cfg(debug_assertions)]
         let color_success_base = palette_ex.success.base.color;
         let color_warning_base = palette_ex.warning.base.color;
-        #[cfg(debug_assertions)]
         let color_danger_base = palette_ex.danger.base.color;
 
         let mut lab_txt_template = state.lab_txt_template.clone();
@@ -387,6 +386,21 @@ impl Program<TreeViewMsg> for TreeView {
         });
         geoms.push(g_node_hover);
 
+        if let Some(pt) = self.found_edge_pt {
+            let g_node_found_iter = self.g_node_found_iter.draw(renderer, bounds.size(), |f| {
+                let ps = self.node_radius * 1e0;
+                self.draw_node(
+                    &pt,
+                    ps,
+                    stroke,
+                    color_danger_base.scale_alpha(0.75),
+                    &self.tree_rect,
+                    f,
+                );
+            });
+            geoms.push(g_node_found_iter);
+        }
+
         let g_node_sel = self.g_node_sel.draw(renderer, bounds.size(), |f| {
             let ps = self.node_radius * 0.75;
             for NodePoint { point, edge, angle: _ } in &self.visible_nodes {
@@ -406,10 +420,10 @@ impl Program<TreeViewMsg> for TreeView {
         });
         geoms.push(g_node_sel);
 
-        let g_node_filt = self.g_node_filt.draw(renderer, bounds.size(), |f| {
+        let g_node_found = self.g_node_found.draw(renderer, bounds.size(), |f| {
             let ps = self.node_radius * 0.5;
             for NodePoint { point, edge, angle: _ } in &self.visible_nodes {
-                for node_id in &self.filtered_node_ids {
+                for node_id in &self.found_node_ids {
                     if edge.node_id == *node_id {
                         self.draw_node(
                             point,
@@ -423,7 +437,7 @@ impl Program<TreeViewMsg> for TreeView {
                 }
             }
         });
-        geoms.push(g_node_filt);
+        geoms.push(g_node_found);
 
         if self.show_cursor_line {
             let g_cursor_line = self.g_cursor_line.draw(renderer, bounds.size(), |f| {

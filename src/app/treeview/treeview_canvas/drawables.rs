@@ -301,14 +301,14 @@ fn edge_point_rad(angle: Float, center: Point, size: Float, edge: &Edge) -> Poin
 }
 
 #[inline]
-fn node_point(w: Float, h: Float, edge: &Edge) -> Point {
+pub fn node_point(w: Float, h: Float, edge: &Edge) -> Point {
     let x = edge.x1 as Float * w;
     let y = edge.y as Float * h;
     Point { x, y }
 }
 
 #[inline]
-fn node_point_rad(angle: Float, center: Point, size: Float, edge: &Edge) -> Point {
+pub fn node_point_rad(angle: Float, center: Point, size: Float, edge: &Edge) -> Point {
     let x1 = edge.x1 as Float * angle.cos() * size;
     let y1 = edge.x1 as Float * angle.sin() * size;
     Point { x: center.x + x1, y: center.y + y1 }
@@ -329,6 +329,6 @@ fn edge_points_rad(angle: Float, center: Point, size: Float, edge: &Edge) -> Edg
 }
 
 #[inline]
-fn edge_angle(rot_angle: Float, opn_angle: Float, edge: &Edge) -> Float {
+pub fn edge_angle(rot_angle: Float, opn_angle: Float, edge: &Edge) -> Float {
     rot_angle + edge.y as Float * opn_angle
 }

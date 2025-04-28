@@ -92,8 +92,10 @@ impl TreeView {
         // Main Column:
         let mut mc: Column<TreeViewMsg> = Column::new();
 
-        // Top Tools Row:
-        let mut ttr: Row<TreeViewMsg> = Row::new();
+        // Top Tools Column:
+        let mut ttc: Column<TreeViewMsg> = Column::new();
+        let mut ttr1: Row<TreeViewMsg> = Row::new();
+        let mut ttr2: Row<TreeViewMsg> = Row::new();
 
         // Tree Canvas Row:
         let mut tcr: Row<TreeViewMsg> = Row::new();
@@ -104,25 +106,80 @@ impl TreeView {
         // Side Column:
         let mut sc: Column<TreeViewMsg> = Column::new();
 
-        ttr = ttr.push(TextInput::new("Search", &self.search_string).on_input(TreeViewMsg::Search));
-        ttr = ttr.push(self.btn("Add", {
-            match self.filtered_node_ids.is_empty() {
-                true => None,
-                false => Some(TreeViewMsg::AddFoundToSelection),
-            }
-        }));
-        ttr = ttr.push(self.btn("Rem", {
-            match self.filtered_node_ids.is_empty() {
-                true => None,
-                false => Some(TreeViewMsg::RemFoundFromSelection),
-            }
-        }));
-        ttr = ttr.spacing(PADDING);
+        ttr1 =
+            ttr1.push(TextInput::new("Search", &self.search_string).on_input(TreeViewMsg::Search));
+
+        let add_rem_btn_row = row![
+            self.btn("+", {
+                match self.found_node_ids.is_empty() {
+                    true => None,
+                    false => Some(TreeViewMsg::AddFoundToSelection),
+                }
+            })
+            .width(3e0 * PADDING)
+            .height(3e0 * PADDING),
+            self.btn("-", {
+                match self.found_node_ids.is_empty() {
+                    true => None,
+                    false => Some(TreeViewMsg::RemFoundFromSelection),
+                }
+            })
+            .width(3e0 * PADDING)
+            .height(3e0 * PADDING)
+        ];
+
+        let nxt_prv_btn_row = row![
+            self.btn("<", {
+                match self.found_edges.is_empty() {
+                    true => None,
+                    false => {
+                        if self.found_edge_idx > 0 {
+                            Some(TreeViewMsg::PrevResult)
+                        } else {
+                            None
+                        }
+                    }
+                }
+            })
+            .width(3e0 * PADDING)
+            .height(3e0 * PADDING),
+            self.btn(">", {
+                match self.found_edges.is_empty() {
+                    true => None,
+                    false => {
+                        if self.found_edge_idx < self.found_edges.len() - 1 {
+                            Some(TreeViewMsg::NextResult)
+                        } else {
+                            None
+                        }
+                    }
+                }
+            })
+            .width(3e0 * PADDING)
+            .height(3e0 * PADDING)
+        ];
+
+        ttr1 = ttr1.push(add_rem_btn_row);
+        ttr1 = ttr1.push(nxt_prv_btn_row);
+        ttr2 = ttr2.push(
+            iced::widget::checkbox("Tips Only", self.tip_only_search)
+                .on_toggle(TreeViewMsg::TipOnlySearchSelectionChanged)
+                .text_size(TEXT_SIZE),
+        );
+
+        ttr1 = ttr1.spacing(PADDING).align_y(Vertical::Center);
+        ttr2 = ttr2.spacing(PADDING);
+
+        ttc = ttc.push(ttr1);
+        ttc = ttc.push(ttr2);
+
+        ttc = ttc.spacing(PADDING);
 
         mc = mc.push(
-            container(ttr)
+            container(ttc)
                 .style(bordered_box)
                 .padding(PADDING)
+                .align_y(Vertical::Center)
                 .width(Length::Fill)
                 .height(TTR_H),
         );

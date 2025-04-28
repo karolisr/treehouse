@@ -11,12 +11,59 @@ impl TreeView {
             TreeViewMsg::Search(s) => {
                 self.search_string = s;
                 self.filter_nodes();
-                self.g_node_filt.clear();
-                Task::none()
+                self.g_node_found.clear();
+                self.g_node_found_iter.clear();
+                self.update_found_node_point();
+                if let Some(pt) = self.found_edge_pt {
+                    Task::done(TreeViewMsg::ScrollTo { x: pt.x, y: pt.y })
+                } else {
+                    Task::none()
+                }
             }
 
+            TreeViewMsg::TipOnlySearchSelectionChanged(state) => {
+                self.tip_only_search = state;
+                Task::done(TreeViewMsg::Search(self.search_string.clone()))
+            }
+
+            TreeViewMsg::PrevResult => {
+                self.found_edge_idx -= 1;
+                self.update_found_node_point();
+                self.g_node_found_iter.clear();
+                if let Some(pt) = self.found_edge_pt {
+                    Task::done(TreeViewMsg::ScrollTo { x: pt.x, y: pt.y })
+                } else {
+                    Task::none()
+                }
+            }
+
+            TreeViewMsg::NextResult => {
+                self.found_edge_idx += 1;
+                self.update_found_node_point();
+                self.g_node_found_iter.clear();
+                if let Some(pt) = self.found_edge_pt {
+                    Task::done(TreeViewMsg::ScrollTo { x: pt.x, y: pt.y })
+                } else {
+                    Task::none()
+                }
+            }
+
+            TreeViewMsg::ScrollTo { x, y } => scrollable::scroll_to(
+                "tre",
+                match self.sel_tree_style_opt {
+                    TreeStyleOption::Phylogram => AbsoluteOffset {
+                        x: x - self.tree_scroll_w / 2e0,
+                        y: y - self.tree_scroll_h / 2e0,
+                    },
+                    TreeStyleOption::Fan => AbsoluteOffset {
+                        x: x - self.tree_scroll_w / 2e0 + self.tip_lab_w,
+                        y: y - self.tree_scroll_h / 2e0 + self.tip_lab_w,
+                    },
+                },
+            ),
+
             TreeViewMsg::AddFoundToSelection => {
-                for node_id in &self.filtered_node_ids {
+                for node_id in &self.found_node_ids {
                     self.sel_node_ids.insert(*node_id);
                 }
                 self.g_node_sel.clear();
@@ -24,7 +71,7 @@ impl TreeView {
             }
 
             TreeViewMsg::RemFoundFromSelection => {
-                for node_id in &self.filtered_node_ids {
+                for node_id in &self.found_node_ids {
                     self.sel_node_ids.remove(node_id);
                 }
                 self.g_node_sel.clear();
@@ -78,7 +125,8 @@ impl TreeView {
                 self.g_lab_int.clear();
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
-                self.g_node_filt.clear();
+                self.g_node_found.clear();
+                self.g_node_found_iter.clear();
                 self.g_node_hover.clear();
 
                 self.ltt.g_frame.clear();
@@ -101,7 +149,8 @@ impl TreeView {
                 self.g_lab_int.clear();
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
-                self.g_node_filt.clear();
+                self.g_node_found.clear();
+                self.g_node_found_iter.clear();
                 self.g_node_hover.clear();
                 self.sel_tree_style_opt = tree_repr_option;
                 self.update_node_size();
@@ -109,7 +158,8 @@ impl TreeView {
                 self.update_canvas_w();
                 self.update_canvas_h();
                 self.update_rects();
-                self.update_visible();
+                self.update_visible_nodes();
+                self.update_found_node_point();
                 Task::none()
             }
 
@@ -126,11 +176,13 @@ impl TreeView {
                 self.g_lab_int.clear();
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
-                self.g_node_filt.clear();
+                self.g_node_found.clear();
+                self.g_node_found_iter.clear();
                 self.g_node_hover.clear();
                 self.sel_opn_angle_idx = idx;
                 self.opn_angle = idx as Float / 360e0 * 2e0 * PI;
-                self.update_visible();
+                self.update_visible_nodes();
+                self.update_found_node_point();
                 Task::none()
             }
 
@@ -147,11 +199,13 @@ impl TreeView {
                 self.g_lab_int.clear();
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
-                self.g_node_filt.clear();
+                self.g_node_found.clear();
+                self.g_node_found_iter.clear();
                 self.g_node_hover.clear();
                 self.sel_rot_angle_idx = idx;
                 self.rot_angle = idx as Float / 360e0 * 2e0 * PI;
-                self.update_visible();
+                self.update_visible_nodes();
+                self.update_found_node_point();
                 Task::none()
             }
 
@@ -187,7 +241,8 @@ impl TreeView {
                 self.tre_cnv_y1 = self.tre_cnv_y0 + vp.bounds().height;
                 self.g_legend.clear();
                 self.g_node_sel.clear();
-                self.g_node_filt.clear();
+                self.g_node_found.clear();
+                self.g_node_found_iter.clear();
                 self.g_node_hover.clear();
 
                 if self.sel_tree_style_opt == TreeStyleOption::Phylogram {
@@ -196,7 +251,7 @@ impl TreeView {
                     self.g_lab_brnch.clear();
                 }
 
-                self.update_visible();
+                self.update_visible_nodes();
                 if self.tre_cnv_scrolled && self.tre_cnv_x0 != self.ltt_cnv_x0 {
                     Task::done(TreeViewMsg::ScrollToX { sender: "tre", x: self.tre_cnv_x0 })
                 } else {
@@ -244,7 +299,8 @@ impl TreeView {
                 self.update_tip_label_w();
                 self.update_canvas_h();
                 self.update_rects();
-                self.update_visible();
+                self.update_visible_nodes();
+                self.update_found_node_point();
                 Task::none()
             }
 
@@ -272,7 +328,8 @@ impl TreeView {
                 self.g_lab_int.clear();
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
-                self.g_node_filt.clear();
+                self.g_node_found.clear();
+                self.g_node_found_iter.clear();
                 self.g_node_hover.clear();
                 self.draw_tip_labs = state;
                 if self.drawing_enabled && self.tip_brnch_labs_allowed && self.draw_tip_labs {
@@ -282,7 +339,8 @@ impl TreeView {
                 self.update_tip_label_w();
                 self.update_canvas_h();
                 self.update_rects();
-                self.update_visible();
+                self.update_visible_nodes();
+                self.update_found_node_point();
                 Task::none()
             }
 
@@ -298,7 +356,8 @@ impl TreeView {
                 self.g_lab_int.clear();
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
-                self.g_node_filt.clear();
+                self.g_node_found.clear();
+                self.g_node_found_iter.clear();
                 self.g_node_hover.clear();
                 self.sel_tip_lab_size_idx = idx;
                 self.tip_lab_size = self.min_lab_size * idx as Float;
@@ -307,7 +366,8 @@ impl TreeView {
                 self.update_tip_label_w();
                 self.update_canvas_h();
                 self.update_rects();
-                self.update_visible();
+                self.update_visible_nodes();
+                self.update_found_node_point();
                 Task::none()
             }
 
@@ -330,12 +390,14 @@ impl TreeView {
                     self.g_lab_int.clear();
                     self.g_lab_brnch.clear();
                     self.g_node_sel.clear();
-                    self.g_node_filt.clear();
+                    self.g_node_found.clear();
+                    self.g_node_found_iter.clear();
                     self.g_node_hover.clear();
                     self.sel_node_ord_opt = node_ordering_option;
                     self.sort();
                     self.merge_tip_chunks();
-                    self.update_visible();
+                    self.update_visible_nodes();
+                    self.update_found_node_point();
                 }
                 Task::none()
             }
@@ -351,7 +413,8 @@ impl TreeView {
                 self.update_tip_label_w();
                 self.update_canvas_h();
                 self.update_rects();
-                self.update_visible();
+                self.update_visible_nodes();
+                self.update_found_node_point();
                 Task::done(TreeViewMsg::ScrollToX { sender: "tre", x: self.tre_cnv_x0 })
             }
 
@@ -372,7 +435,8 @@ impl TreeView {
                 }
                 self.update_tip_label_w();
                 self.update_rects();
-                self.update_visible();
+                self.update_visible_nodes();
+                self.update_found_node_point();
                 Task::none()
             }
 
@@ -388,7 +452,8 @@ impl TreeView {
                 self.g_lab_int.clear();
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
-                self.g_node_filt.clear();
+                self.g_node_found.clear();
+                self.g_node_found_iter.clear();
                 self.g_node_hover.clear();
                 self.window_w = w;
                 self.window_h = h;
@@ -401,7 +466,8 @@ impl TreeView {
                 self.update_tip_label_w();
                 self.update_canvas_h();
                 self.update_rects();
-                self.update_visible();
+                self.update_visible_nodes();
+                self.update_found_node_point();
                 Task::none()
             }
 
@@ -460,7 +526,8 @@ impl TreeView {
                 self.g_lab_int.clear();
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
-                self.g_node_filt.clear();
+                self.g_node_found.clear();
+                self.g_node_found_iter.clear();
                 self.g_node_hover.clear();
                 self.tree_orig = tree;
                 self.tree_srtd_asc = None;
@@ -487,7 +554,8 @@ impl TreeView {
                 self.update_tip_label_w();
                 self.update_canvas_h();
                 self.update_rects();
-                self.update_visible();
+                self.update_visible_nodes();
+                self.update_found_node_point();
                 if !self.drawing_enabled { Task::done(TreeViewMsg::Init) } else { Task::none() }
             }
         }

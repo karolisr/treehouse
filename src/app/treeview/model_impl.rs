@@ -1,4 +1,7 @@
-use super::{NodeOrderingOption, TreeStyleOption, TreeView};
+use super::{
+    NodeOrderingOption, TreeStyleOption, TreeView,
+    treeview_canvas::{edge_angle, node_point, node_point_rad},
+};
 use crate::{
     Float,
     app::{LTT_H, PADDING, SCROLL_TOOL_W, SF, TREE_LAB_FONT_NAME, TTR_H},
@@ -7,23 +10,48 @@ use crate::{
 use iced::Rectangle;
 
 impl TreeView {
+    pub fn update_found_node_point(&mut self) {
+        if self.found_edges.is_empty() {
+            self.found_edge_pt = None;
+            return;
+        }
+        let edge = &self.found_edges[self.found_edge_idx];
+        self.found_edge_pt = Some(match self.sel_tree_style_opt {
+            TreeStyleOption::Phylogram => {
+                node_point(self.tree_rect.width, self.tree_rect.height, edge)
+            }
+            TreeStyleOption::Fan => {
+                let angle = edge_angle(self.rot_angle, self.opn_angle, edge);
+                node_point_rad(angle, self.center, self.size, edge)
+            }
+        });
+    }
+
     pub fn filter_nodes(&mut self) {
-        self.filtered_node_ids.clear();
+        self.found_node_ids.clear();
+        self.found_edges.clear();
+        self.found_edge_idx = 0;
 
         if self.search_string.len() < 3 {
             return;
         };
 
-        for e in &self.tree_edges {
+        let edges_to_search = match self.tip_only_search {
+            true => &self.tree_tip_edges,
+            false => &self.tree_edges,
+        };
+
+        for e in edges_to_search {
             if let Some(n) = &e.name {
                 if let Some(_found) = n.to_lowercase().find(&self.search_string.to_lowercase()) {
-                    self.filtered_node_ids.insert(e.node_id);
+                    self.found_node_ids.insert(e.node_id);
+                    self.found_edges.push(e.clone());
                 }
             }
         }
     }
 
-    pub fn update_visible(&mut self) {
+    pub fn update_visible_nodes(&mut self) {
         self.tip_idx_range = self.visible_tip_idx_range();
         if let Some(tip_idx_range) = &self.tip_idx_range {
             let node_points =

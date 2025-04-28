@@ -21,8 +21,6 @@ pub struct TreeView {
     pub sel_node_ord_opt: NodeOrderingOption,
     pub sel_tree_style_opt: TreeStyleOption,
 
-    pub search_string: String,
-
     pub ltt: Ltt,
     pub ltt_bins: usize,
     pub show_ltt: bool,
@@ -123,7 +121,8 @@ pub struct TreeView {
     pub g_legend: Cache,
     pub g_node_hover: Cache,
     pub g_node_sel: Cache,
-    pub g_node_filt: Cache,
+    pub g_node_found: Cache,
+    pub g_node_found_iter: Cache,
     pub g_cursor_line: Cache,
 
     #[cfg(debug_assertions)]
@@ -131,8 +130,15 @@ pub struct TreeView {
     #[cfg(debug_assertions)]
     pub g_palette: Cache,
 
+    pub search_string: String,
+    pub tip_only_search: bool,
+
+    pub found_node_ids: HashSet<NodeId>,
+    pub found_edges: Edges,
+    pub found_edge_idx: usize,
+    pub found_edge_pt: Option<Point>,
     pub sel_node_ids: HashSet<NodeId>,
-    pub filtered_node_ids: HashSet<NodeId>,
+
     pub tree_tip_edges: Edges,
     pub tallest_tips: Edges,
 
@@ -158,6 +164,8 @@ impl TreeView {
             threads: 6,
 
             ltt_bins: 1000,
+
+            tip_only_search: true,
 
             sel_node_ord_opt: NodeOrderingOption::Unordered,
             sel_tree_style_opt: TreeStyleOption::Phylogram,
@@ -203,9 +211,9 @@ impl TreeView {
             draw_tip_labs: false,
             draw_brnch_labs: false,
             draw_int_labs: false,
-            draw_legend: true,
-            show_ltt: true,
-            show_cursor_line: true,
+            draw_legend: false,
+            show_ltt: false,
+            show_cursor_line: false,
 
             sel_node_size_idx: 1,
             sel_tre_cnv_w_idx: 1,
@@ -243,6 +251,11 @@ pub enum TreeViewMsg {
     Refresh,
 
     Search(String),
+    TipOnlySearchSelectionChanged(bool),
+
+    PrevResult,
+    NextResult,
+
     AddFoundToSelection,
     RemFoundFromSelection,
 
@@ -252,6 +265,7 @@ pub enum TreeViewMsg {
     TreCnvScrolled(ScrollableViewport),
 
     ScrollToX { sender: &'static str, x: Float },
+    ScrollTo { x: Float, y: Float },
     WindowResized(Float, Float),
 
     SelectDeselectNode(NodeId),
