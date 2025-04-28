@@ -31,10 +31,8 @@ fn menu_events_stream() -> impl Stream<Item = AppMsg> {
                     if let Ok(event) = muda::MenuEvent::receiver().recv() {
                         let menu_event_str: &str = &event.id().0;
                         let menu_event: MenuEvent = String::from(menu_event_str).into();
-                        termination_requested = matches!(
-                            menu_event,
-                            MenuEvent::Quit | MenuEvent::CloseWindow | MenuEvent::QuitInternal
-                        );
+                        termination_requested =
+                            matches!(menu_event, MenuEvent::Quit | MenuEvent::QuitInternal);
                         let _ = output.send(AppMsg::MenuEvent(true, menu_event)).await;
                     }
                 }

@@ -13,7 +13,9 @@ use iced::{
         Canvas, Column, PickList, Row, Rule, Scrollable, Slider, Space, Text, Theme as WidgetTheme,
         Toggler,
         button::{Button, Status as ButtonStatus, Style as ButtonStyle},
-        column, container, horizontal_space,
+        column, container,
+        container::bordered_box,
+        horizontal_space,
         pick_list::{Handle as PickListHandle, Status as PickListStatus, Style as PickListStyle},
         row,
         rule::{FillMode as RuleFillMode, Style as RuleStyle},
@@ -92,8 +94,35 @@ impl TreeView {
         // Tree Canvas Row:
         let mut tcr: Row<TreeViewMsg> = Row::new();
 
+        // Ltt Canvas Row:
+        let mut lcr: Row<TreeViewMsg> = Row::new();
+
         // Side Column:
         let mut sc: Column<TreeViewMsg> = Column::new();
+
+        if (self.sel_tree_style_opt == TreeStyleOption::Phylogram
+            && self.sel_node_size_idx != self.min_node_size_idx)
+            || self.sel_tre_cnv_w_idx != self.min_tre_cnv_w_idx
+        {
+            tcr = tcr.push(self.scroll_canvas_tree(self.canvas_tree()));
+        } else {
+            tcr = tcr.push(self.canvas_tree());
+        }
+
+        mc = mc.push(container(tcr).style(bordered_box).padding(PADDING));
+
+        if self.show_ltt {
+            mc = mc.push(self.space_h(0, PADDING));
+            if self.sel_tree_style_opt == TreeStyleOption::Phylogram
+                && self.sel_tre_cnv_w_idx != self.min_tre_cnv_w_idx
+            {
+                lcr = lcr.push(self.scroll_canvas_ltt(self.canvas_ltt()));
+            } else {
+                lcr = lcr.push(self.canvas_ltt());
+            }
+        }
+
+        mc = mc.push(container(lcr).style(bordered_box).padding(PADDING));
 
         sc = sc.push(row![
             column![
@@ -194,7 +223,7 @@ impl TreeView {
         sc = sc.push(self.toggler_ltt(true));
 
         sc = sc.push(self.space_h(0, PADDING));
-        sc = sc.push(self.toggler_crosshairs(true));
+        sc = sc.push(self.toggler_cursor_line(true));
 
         sc = sc.push(self.space_h(0, PADDING));
         sc = sc.push(self.rule_h(SF));
@@ -212,43 +241,16 @@ impl TreeView {
             .height(Length::Shrink),
         );
 
-        sc = sc.width(SIDE_COL_W);
+        sc = sc.width(SIDE_COL_W - PADDING * 2e0);
 
-        if (self.sel_tree_style_opt == TreeStyleOption::Phylogram
-            && self.sel_node_size_idx != self.min_node_size_idx)
-            || self.sel_tre_cnv_w_idx != self.min_tre_cnv_w_idx
-        {
-            tcr = tcr.push(self.scroll_canvas_tree(self.canvas_tree()));
-        } else {
-            tcr = tcr.push(self.canvas_tree());
-        }
-
-        // if (self.sel_tree_style_opt == TreeStyleOption::Phylogram
-        //     && self.sel_node_size_idx == self.min_node_size_idx)
-        //     || (self.sel_tree_style_opt == TreeStyleOption::Fan
-        //         && self.sel_tre_cnv_w_idx == self.min_tre_cnv_w_idx)
-        // {
-        //     tcr = tcr.push(self.rule_v(SF));
-        // } else {
-        //     tcr = tcr.push(self.space_v(SF, 0));
-        // }
-
-        mc = mc.push(tcr);
-
-        if self.show_ltt {
-            if self.sel_tree_style_opt == TreeStyleOption::Phylogram
-                && self.sel_tre_cnv_w_idx != self.min_tre_cnv_w_idx
-            {
-                mc = mc.push(self.scroll_canvas_ltt(self.canvas_ltt()));
-            } else {
-                mc = mc.push(self.canvas_ltt());
-            }
-        }
-
-        mc = mc.spacing(PADDING);
         mr = mr.push(mc);
         mr = mr.push(self.space_v(PADDING, 0));
-        mr = mr.push(sc);
+        mr = mr.push(
+            container(sc)
+                .style(bordered_box)
+                .padding(PADDING)
+                .width(SIDE_COL_W),
+        );
         mr = mr.padding(PADDING);
 
         mr.into()
@@ -500,15 +502,15 @@ impl TreeView {
         tglr
     }
 
-    fn toggler_crosshairs(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
+    fn toggler_cursor_line(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
         let lab = match self.sel_tree_style_opt {
             TreeStyleOption::Phylogram => "Cursor Tracking Line",
             TreeStyleOption::Fan => "Cursor Tracking Circle",
         };
 
-        let mut tglr = self.toggler(lab, self.show_crosshairs);
+        let mut tglr = self.toggler(lab, self.show_cursor_line);
         if enabled {
-            tglr = tglr.on_toggle(TreeViewMsg::CrosshairsVisibilityChanged);
+            tglr = tglr.on_toggle(TreeViewMsg::CursorLineVisibilityChanged);
         }
         tglr
     }

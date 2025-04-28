@@ -45,7 +45,10 @@ impl TreeView {
                 {
                     self.g_bounds.clear();
                     self.g_palette.clear();
+                    self.ltt.g_bounds.clear();
                 }
+                self.g_cursor_line.clear();
+                self.g_frame.clear();
                 self.g_legend.clear();
                 self.g_edge.clear();
                 self.g_lab_tip.clear();
@@ -54,9 +57,9 @@ impl TreeView {
                 self.g_node_sel.clear();
                 self.g_node_hover.clear();
 
-                self.ltt.g_bounds.clear();
+                self.ltt.g_frame.clear();
                 self.ltt.g_ltt.clear();
-                self.ltt.g_crosshairs.clear();
+                self.ltt.g_cursor_line.clear();
 
                 Task::none()
             }
@@ -66,6 +69,7 @@ impl TreeView {
                 {
                     self.g_bounds.clear();
                     self.g_palette.clear();
+                    self.ltt.g_bounds.clear();
                 }
                 self.g_legend.clear();
                 self.g_edge.clear();
@@ -89,6 +93,7 @@ impl TreeView {
                 {
                     self.g_bounds.clear();
                     self.g_palette.clear();
+                    self.ltt.g_bounds.clear();
                 }
                 self.g_legend.clear();
                 self.g_edge.clear();
@@ -108,6 +113,7 @@ impl TreeView {
                 {
                     self.g_bounds.clear();
                     self.g_palette.clear();
+                    self.ltt.g_bounds.clear();
                 }
                 self.g_legend.clear();
                 self.g_edge.clear();
@@ -143,6 +149,12 @@ impl TreeView {
             }
 
             TreeViewMsg::TreCnvScrolled(vp) => {
+                #[cfg(debug_assertions)]
+                {
+                    self.g_bounds.clear();
+                    self.g_palette.clear();
+                    self.ltt.g_bounds.clear();
+                }
                 self.tre_cnv_x0 = vp.absolute_offset().x;
                 self.tre_cnv_y0 = vp.absolute_offset().y;
                 self.tre_cnv_y1 = self.tre_cnv_y0 + vp.bounds().height;
@@ -177,18 +189,24 @@ impl TreeView {
             }
 
             TreeViewMsg::CursorOnTreCnv { x } => {
+                #[cfg(debug_assertions)]
+                {
+                    self.g_bounds.clear();
+                    self.g_palette.clear();
+                    self.ltt.g_bounds.clear();
+                }
                 self.cursor_x_fraction = None;
                 self.ltt.cursor_x_fraction = x;
-                self.ltt.g_crosshairs.clear();
-                self.g_crosshairs.clear();
+                self.ltt.g_cursor_line.clear();
+                self.g_cursor_line.clear();
                 Task::none()
             }
 
             TreeViewMsg::CursorOnLttCnv { x } => {
                 self.cursor_x_fraction = x;
                 self.ltt.cursor_x_fraction = x;
-                self.ltt.g_crosshairs.clear();
-                self.g_crosshairs.clear();
+                self.ltt.g_cursor_line.clear();
+                self.g_cursor_line.clear();
                 Task::none()
             }
 
@@ -286,6 +304,7 @@ impl TreeView {
                     self.sel_node_ord_opt = node_ordering_option;
                     self.sort();
                     self.merge_tip_chunks();
+                    self.update_visible();
                 }
                 Task::none()
             }
@@ -305,9 +324,9 @@ impl TreeView {
                 Task::done(TreeViewMsg::ScrollToX { sender: "tre", x: self.tre_cnv_x0 })
             }
 
-            TreeViewMsg::CrosshairsVisibilityChanged(state) => {
-                self.show_crosshairs = state;
-                self.g_crosshairs.clear();
+            TreeViewMsg::CursorLineVisibilityChanged(state) => {
+                self.show_cursor_line = state;
+                self.g_cursor_line.clear();
                 Task::none()
             }
 

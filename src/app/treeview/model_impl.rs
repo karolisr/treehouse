@@ -30,30 +30,32 @@ impl TreeView {
 
         self.tree_rect = match self.sel_tree_style_opt {
             TreeStyleOption::Phylogram => Rectangle {
-                x: self.clip_rect.x + SF / 2e0 + self.node_radius,
+                x: self.clip_rect.x + SF / 2e0 + PADDING,
                 y: self.clip_rect.y + SF / 2e0 + self.max_lab_size + self.brnch_lab_offset_y,
-                width: self.clip_rect.width - SF - self.node_radius * 2e0 - self.tip_lab_w,
+                width: self.clip_rect.width - SF - PADDING * 2e0 - self.tip_lab_w,
                 height: self.clip_rect.height - SF - self.max_lab_size * 1.5 - SCROLL_TOOL_W,
             },
             TreeStyleOption::Fan => Rectangle {
                 x: self.clip_rect.x + SF / 2e0 + self.tip_lab_w,
-                y: self.clip_rect.y + SF / 2e0 + self.tip_lab_w,
+                y: self.clip_rect.y + SF / 2e0 + self.tip_lab_w + PADDING,
                 width: self.clip_rect.width - SF - self.tip_lab_w * 2e0,
-                height: self.clip_rect.height - SF - self.tip_lab_w * 2e0 - SCROLL_TOOL_W,
+                height: self.clip_rect.height
+                    - SF
+                    - self.tip_lab_w * 2e0
+                    - SCROLL_TOOL_W
+                    - PADDING * 2e0,
             },
         };
 
         match self.sel_tree_style_opt {
             TreeStyleOption::Phylogram => {
-                // self.ltt.tree_rect_x = self.tree_rect.x;
-                // self.ltt.tree_rect_w = self.tree_rect.width;
-                self.ltt.tree_rect_x = self.clip_rect.x + SF / 2e0 + self.node_radius;
-                self.ltt.tree_rect_w = self.clip_rect.width - SF - self.node_radius * 2e0;
+                self.ltt.ltt_rect_x = self.clip_rect.x + SF / 2e0 + PADDING;
+                self.ltt.ltt_rect_w = self.clip_rect.width - SF - PADDING * 2e0;
             }
             TreeStyleOption::Fan => {
-                self.ltt.tree_rect_x = self.clip_rect.x + SF / 2e0 + self.node_radius;
-                self.ltt.tree_rect_w =
-                    self.tree_scroll_w - SCROLL_TOOL_W + PADDING - SF - self.node_radius * 2e0;
+                self.ltt.ltt_rect_x = self.clip_rect.x + SF / 2e0 + PADDING;
+                self.ltt.ltt_rect_w =
+                    self.tree_scroll_w - SCROLL_TOOL_W + PADDING - SF - PADDING * 2e0;
             }
         };
 
@@ -101,9 +103,9 @@ impl TreeView {
     }
 
     pub fn update_node_size(&mut self) {
-        self.min_tre_cnv_h = self.window_h - PADDING * 2e0;
+        self.min_tre_cnv_h = self.window_h - PADDING * 4e0;
         if self.show_ltt {
-            self.min_tre_cnv_h -= LTT_H + PADDING;
+            self.min_tre_cnv_h -= LTT_H;
         }
         self.tree_scroll_h = self.min_tre_cnv_h;
 

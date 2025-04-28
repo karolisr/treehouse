@@ -1,6 +1,4 @@
 use super::TreeViewMsg;
-#[cfg(debug_assertions)]
-use crate::app::DEBUG;
 use crate::{
     Float, LttPoint,
     app::{PADDING, SCROLL_TOOL_W, SF},
@@ -21,12 +19,13 @@ pub struct Ltt {
 
     pub cursor_x_fraction: Option<Float>,
 
-    pub tree_rect_x: Float,
-    pub tree_rect_w: Float,
+    pub ltt_rect_x: Float,
+    pub ltt_rect_w: Float,
 
     pub g_bounds: Cache,
     pub g_ltt: Cache,
-    pub g_crosshairs: Cache,
+    pub g_cursor_line: Cache,
+    pub g_frame: Cache,
 }
 
 impl Ltt {
@@ -41,7 +40,7 @@ pub struct LttState {
     pub clip_rect: Rectangle,
     pub ltt_rect: Rectangle,
     pub stroke: Stroke<'static>,
-    pub crosshairs: Option<Point>,
+    pub cursor_point: Option<Point>,
 }
 
 impl Default for LttState {
@@ -55,7 +54,7 @@ impl Default for LttState {
                 line_join: LineJoin::Round,
                 ..Default::default()
             },
-            crosshairs: None,
+            cursor_point: None,
         }
     }
 }
@@ -80,9 +79,9 @@ impl Program<TreeViewMsg> for Ltt {
                 };
 
                 state.ltt_rect = Rectangle {
-                    x: self.tree_rect_x,
+                    x: self.ltt_rect_x,
                     y: state.clip_rect.y + SF / 2e0 + PADDING,
-                    width: self.tree_rect_w,
+                    width: self.ltt_rect_w,
                     height: state.clip_rect.height - SF - SCROLL_TOOL_W,
                 };
                 None
@@ -96,29 +95,29 @@ impl Program<TreeViewMsg> for Ltt {
                         return None;
                     }
 
-                    mouse_pt.x -= PADDING + state.ltt_rect.x;
-                    mouse_pt.y -= PADDING + state.ltt_rect.y;
+                    mouse_pt.x -= PADDING * 2e0 + state.ltt_rect.x;
+                    mouse_pt.y -= PADDING * 2e0 + state.ltt_rect.y;
 
-                    state.crosshairs =
+                    state.cursor_point =
                         Some(Point { x: mouse_pt.x - SF / 2e0, y: mouse_pt.y - SF / 2e0 });
 
-                    let x_frac = state.crosshairs.unwrap().x / state.ltt_rect.width;
+                    let x_frac = state.cursor_point.unwrap().x / state.ltt_rect.width;
 
                     if (0e0..=1e0).contains(&x_frac) {
                         Some(Action::publish(TreeViewMsg::CursorOnLttCnv {
                             x: Some(x_frac),
                         }))
                     } else {
-                        state.crosshairs = None;
+                        state.cursor_point = None;
                         Some(Action::publish(TreeViewMsg::CursorOnLttCnv { x: None }))
                     }
                 } else {
-                    state.crosshairs = None;
+                    state.cursor_point = None;
                     None
                 }
             }
             _ => {
-                state.crosshairs = None;
+                state.cursor_point = None;
                 None
             }
         }
@@ -130,7 +129,7 @@ impl Program<TreeViewMsg> for Ltt {
         _bounds: Rectangle,
         _cursor: Cursor,
     ) -> Interaction {
-        if state.crosshairs.is_some() { Interaction::Crosshair } else { Interaction::default() }
+        if state.cursor_point.is_some() { Interaction::Crosshair } else { Interaction::default() }
     }
 
     fn draw(
@@ -138,8 +137,7 @@ impl Program<TreeViewMsg> for Ltt {
         state: &Self::State,
         renderer: &Renderer,
         theme: &Theme,
-        #[cfg(not(debug_assertions))] _bounds: Rectangle,
-        #[cfg(debug_assertions)] bounds: Rectangle,
+        bounds: Rectangle,
         _cursor: Cursor,
     ) -> Vec<Geometry> {
         #[allow(unused_mut)]
@@ -152,7 +150,7 @@ impl Program<TreeViewMsg> for Ltt {
         let stroke = state.stroke.with_color(color_text);
 
         #[cfg(debug_assertions)]
-        if DEBUG {
+        if crate::app::DEBUG {
             let g_bounds = self.g_bounds.draw(renderer, bounds.size(), |f| {
                 f.fill_rectangle(
                     Point { x: state.clip_rect.x, y: state.clip_rect.y },
@@ -169,23 +167,37 @@ impl Program<TreeViewMsg> for Ltt {
             geoms.push(g_bounds);
         }
 
-        let g_cross = self
-            .g_crosshairs
-            .draw(renderer, state.clip_rect.size(), |f| {
-                if let Some(x_frac) = self.cursor_x_fraction {
-                    let x = state.ltt_rect.x + state.ltt_rect.width * x_frac;
-                    if x >= state.ltt_rect.x && x <= state.ltt_rect.x + state.ltt_rect.width {
-                        let path = Path::new(|p| {
-                            p.move_to(Point { x, y: state.ltt_rect.y });
-                            p.line_to(Point { x, y: state.ltt_rect.y + state.ltt_rect.height });
-                        });
-                        f.stroke(&path, stroke.with_color(color_primary_strong));
-                    }
+        // let g_frame = self.g_frame.draw(renderer, bounds.size(), |f| {
+        //     let color_secondary_base = palette_ex.secondary.base.color;
+        //     f.stroke_rectangle(
+        //         Point {
+        //             x: state.clip_rect.x + SF / 2e0,
+        //             y: state.clip_rect.y + SF / 2e0,
+        //         },
+        //         iced::Size {
+        //             width: state.clip_rect.width,
+        //             height: state.clip_rect.height - SF - PADDING,
+        //         },
+        //         stroke.with_color(color_secondary_base),
+        //     );
+        // });
+        // geoms.push(g_frame);
+
+        let g_cross = self.g_cursor_line.draw(renderer, bounds.size(), |f| {
+            if let Some(x_frac) = self.cursor_x_fraction {
+                let x = state.ltt_rect.x + state.ltt_rect.width * x_frac;
+                if x >= state.ltt_rect.x && x <= state.ltt_rect.x + state.ltt_rect.width {
+                    let path = Path::new(|p| {
+                        p.move_to(Point { x, y: state.ltt_rect.y });
+                        p.line_to(Point { x, y: state.ltt_rect.y + state.ltt_rect.height });
+                    });
+                    f.stroke(&path, stroke.with_color(color_primary_strong));
                 }
-            });
+            }
+        });
         geoms.push(g_cross);
 
-        let g_ltt = self.g_ltt.draw(renderer, state.clip_rect.size(), |f| {
+        let g_ltt = self.g_ltt.draw(renderer, bounds.size(), |f| {
             if let Some(pts) = &self.ltt_points {
                 let mut max_count: usize = 0;
                 for LttPoint { time: _, count } in pts {

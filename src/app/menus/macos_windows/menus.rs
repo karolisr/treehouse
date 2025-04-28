@@ -4,7 +4,7 @@ use muda::{
     accelerator::{Accelerator, Code, Modifiers},
 };
 
-pub fn prepare_app_menu() -> Menu {
+pub fn prepare_app_menu() -> (Menu, MenuItem, MenuItem) {
     let menu = Menu::default();
 
     #[cfg(target_os = "windows")]
@@ -59,5 +59,5 @@ pub fn prepare_app_menu() -> Menu {
     menu.append(&submenu_app).ok();
     menu.append(&submenu_file).ok();
 
-    menu
+    (menu, menu_item_quit, menu_item_close_win)
 }

@@ -14,7 +14,7 @@ pub struct TreeViewState {
     pub closest_node_point: Option<NodePoint>,
     pub mouse_hovering_node: bool,
     pub stroke: Stroke<'static>,
-    pub crosshairs: Option<Point>,
+    pub cursor_point: Option<Point>,
 }
 
 impl Default for TreeViewState {
@@ -36,7 +36,7 @@ impl Default for TreeViewState {
                 line_join: LineJoin::Round,
                 ..Default::default()
             },
-            crosshairs: None,
+            cursor_point: None,
         }
     }
 }

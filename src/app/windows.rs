@@ -1,21 +1,30 @@
+mod play_window;
 mod tree_window;
 
 #[cfg(target_os = "linux")]
 pub use crate::app::APP_ID;
 use iced::{
     Size,
-    window::{Level, Position, Settings, settings::PlatformSpecific},
+    window::{Id as WinId, Level, Position, Settings, settings::PlatformSpecific},
 };
+pub use play_window::{PlayWin, PlayWinMsg};
 pub use tree_window::{TreeWin, TreeWinMsg};
 
-#[derive(Debug)]
 pub enum AppWin {
-    TreeWin(Box<TreeWin>),
+    TreeWin(TreeWin),
+    PlayWin(PlayWin),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum AppWinType {
     TreeWin,
+    PlayWin,
+}
+
+#[allow(dead_code)]
+pub trait Win {
+    fn win_id(&self) -> WinId;
+    fn win_type(&self) -> &AppWinType;
 }
 
 pub fn window_settings() -> Settings {

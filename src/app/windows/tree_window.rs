@@ -1,34 +1,46 @@
+use super::{
+    super::{TreeView, TreeViewMsg},
+    AppWinType, Win,
+};
+use crate::{Tree, parse_newick, write_newick};
+use iced::{Element, Task, window::Id as WinId};
 use std::path::PathBuf;
 
-use super::super::{TreeView, TreeViewMsg};
-use crate::Tree;
-use dendros::{parse_newick, write_newick};
-use iced::{Element, Task, window::Id as WinId};
-
-#[derive(Default, Debug)]
 pub struct TreeWin {
     pub title: Option<String>,
     pub tv: TreeView,
+    win_id: WinId,
+    win_type: AppWinType,
 }
 
 #[derive(Debug, Clone)]
 pub enum TreeWinMsg {
     SetTitle(String),
-    TreeUpdated(WinId, Tree),
-    TreeViewMsg(WinId, TreeViewMsg),
-    SaveNewick(WinId, PathBuf),
-    SaveNewickAck(WinId, String, PathBuf),
+    TreeUpdated(Tree),
+    TreeViewMsg(TreeViewMsg),
+    SaveNewick(PathBuf),
+    SaveNewickAck(String, PathBuf),
+}
+
+impl Win for TreeWin {
+    fn win_id(&self) -> WinId {
+        self.win_id
+    }
+
+    fn win_type(&self) -> &AppWinType {
+        &self.win_type
+    }
 }
 
 impl TreeWin {
-    pub fn update(&mut self, main_win_msg: TreeWinMsg) -> Task<TreeWinMsg> {
-        match main_win_msg {
-            TreeWinMsg::SaveNewick(id, path_buf) => {
+    pub fn update(&mut self, tree_win_msg: TreeWinMsg) -> Task<TreeWinMsg> {
+        match tree_win_msg {
+            TreeWinMsg::SaveNewick(path_buf) => {
                 let newick_string = write_newick(&self.tv.tree);
-                Task::done(TreeWinMsg::SaveNewickAck(id, newick_string, path_buf))
+                Task::done(TreeWinMsg::SaveNewickAck(newick_string, path_buf))
             }
-            TreeWinMsg::SaveNewickAck(id, newick_string, path_buf) => Task::done(
-                TreeWinMsg::TreeUpdated(id, parse_newick(newick_string).unwrap()),
+            TreeWinMsg::SaveNewickAck(newick_string, path_buf) => Task::done(
+                TreeWinMsg::TreeUpdated(parse_newick(newick_string).unwrap()),
             )
             .chain(Task::done(TreeWinMsg::SetTitle(String::from(
                 path_buf
@@ -41,20 +53,18 @@ impl TreeWin {
                 self.title = Some(title);
                 Task::none()
             }
-            TreeWinMsg::TreeUpdated(id, tree) => {
-                Task::done(TreeWinMsg::TreeViewMsg(id, TreeViewMsg::TreeUpdated(tree)))
+            TreeWinMsg::TreeUpdated(tree) => {
+                Task::done(TreeWinMsg::TreeViewMsg(TreeViewMsg::TreeUpdated(tree)))
             }
-            TreeWinMsg::TreeViewMsg(id, msg) => self
-                .tv
-                .update(msg)
-                .map(move |msg| TreeWinMsg::TreeViewMsg(id, msg)),
+            TreeWinMsg::TreeViewMsg(msg) => self.tv.update(msg).map(TreeWinMsg::TreeViewMsg),
         }
     }
 
-    pub fn view(&self, id: WinId) -> Element<TreeWinMsg> {
+    pub fn view(&self, _: WinId) -> Element<TreeWinMsg> {
         self.tv
             .view()
-            .map(move |msg| TreeWinMsg::TreeViewMsg(id, msg))
+            // .explain(crate::ColorSimple::CYA)
+            .map(TreeWinMsg::TreeViewMsg)
     }
 
     pub fn title(&self) -> String {
@@ -64,7 +74,12 @@ impl TreeWin {
         }
     }
 
-    pub fn new() -> Self {
-        Self { tv: TreeView::new(), ..Default::default() }
+    pub fn new(win_id: WinId, win_type: &AppWinType) -> Self {
+        Self {
+            tv: TreeView::new(),
+            title: None,
+            win_id,
+            win_type: *win_type,
+        }
     }
 }

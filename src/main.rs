@@ -1,5 +1,4 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
 // #![cfg_attr(
 //     debug_assertions,
 //     allow(
@@ -25,7 +24,7 @@ use app::{ANTIALIASING, App};
 pub use colors::ColorSimple;
 pub use dendros::{
     Edge, Edges, LttPoint, NodeId, NodeType, Tree, TreeFloat, chunk_edges, flatten_tree, ltt,
-    parse_newick,
+    parse_newick, write_newick,
 };
 pub use text_width::text_width;
 pub use utils::lerp;
@@ -35,7 +34,9 @@ pub const PI: Float = std::f32::consts::PI;
 
 fn main() -> iced::Result {
     #[cfg(debug_assertions)]
-    tracing_subscriber::fmt::init();
+    if app::DEBUG {
+        tracing_subscriber::fmt::init();
+    }
     iced::daemon(App::new, App::update, App::view)
         .title(App::title)
         .subscription(App::subscription)

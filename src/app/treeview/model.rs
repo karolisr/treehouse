@@ -23,7 +23,7 @@ pub struct TreeView {
 
     pub ltt: Ltt,
     pub show_ltt: bool,
-    pub show_crosshairs: bool,
+    pub show_cursor_line: bool,
     pub drawing_enabled: bool,
     pub has_brlen: bool,
     pub has_int_labs: bool,
@@ -112,6 +112,7 @@ pub struct TreeView {
     pub draw_brnch_labs: bool,
     pub draw_legend: bool,
 
+    pub g_frame: Cache,
     pub g_edge: Cache,
     pub g_lab_tip: Cache,
     pub g_lab_int: Cache,
@@ -119,7 +120,7 @@ pub struct TreeView {
     pub g_legend: Cache,
     pub g_node_hover: Cache,
     pub g_node_sel: Cache,
-    pub g_crosshairs: Cache,
+    pub g_cursor_line: Cache,
 
     #[cfg(debug_assertions)]
     pub g_bounds: Cache,
@@ -154,7 +155,7 @@ impl TreeView {
             sel_node_ord_opt: NodeOrderingOption::Unordered,
             sel_tree_style_opt: TreeStyleOption::Phylogram,
 
-            node_radius: SF * 1e1,
+            node_radius: SF * 7e0,
 
             window_w: window_settings().size.width,
             window_h: SF,
@@ -195,9 +196,9 @@ impl TreeView {
             draw_tip_labs: false,
             draw_brnch_labs: false,
             draw_int_labs: false,
-            draw_legend: true,
-            show_ltt: true,
-            show_crosshairs: true,
+            draw_legend: false,
+            show_ltt: false,
+            show_cursor_line: false,
 
             sel_node_size_idx: 1,
             sel_tre_cnv_w_idx: 1,
@@ -267,5 +268,5 @@ pub enum TreeViewMsg {
     BranchLabelSizeSelectionChanged(u16),
     LegendVisibilityChanged(bool),
     LttVisibilityChanged(bool),
-    CrosshairsVisibilityChanged(bool),
+    CursorLineVisibilityChanged(bool),
 }

@@ -1,5 +1,5 @@
 use super::super::{TreeStyleOption, TreeView};
-use crate::{Edge, Float};
+use crate::{Edge, Float, app::PADDING};
 use iced::{
     Point, Radians,
     alignment::{Horizontal, Vertical},
@@ -52,7 +52,14 @@ pub struct EdgePoints {
 }
 
 impl TreeView {
-    pub fn paths_from_chunks(&self, w: Float, h: Float, center: Point, size: Float) -> Vec<Path> {
+    pub fn paths_from_chunks(
+        &self,
+        w: Float,
+        h: Float,
+        center: Point,
+        size: Float,
+        draw_root: bool,
+    ) -> Vec<Path> {
         let rot_angle = self.rot_angle;
         let max_angle = self.opn_angle;
         let repr: TreeStyleOption = self.sel_tree_style_opt;
@@ -64,10 +71,12 @@ impl TreeView {
                     let mut pb = PathBuilder::new();
                     for edge in chunk {
                         match repr {
-                            TreeStyleOption::Phylogram => edge_path_phylogram(w, h, edge, &mut pb),
-                            TreeStyleOption::Fan => {
-                                edge_path_fan(rot_angle, max_angle, center, size, edge, &mut pb)
+                            TreeStyleOption::Phylogram => {
+                                edge_path_phylogram(w, h, edge, &mut pb, draw_root)
                             }
+                            TreeStyleOption::Fan => edge_path_fan(
+                                rot_angle, max_angle, center, size, edge, &mut pb, draw_root,
+                            ),
                         }
                     }
                     pb.build()
@@ -233,14 +242,17 @@ impl TreeView {
 }
 
 #[inline]
-fn edge_path_phylogram(w: Float, h: Float, edge: &Edge, pb: &mut PathBuilder) {
+fn edge_path_phylogram(w: Float, h: Float, edge: &Edge, pb: &mut PathBuilder, draw_root: bool) {
     let EdgePoints { pt_0, pt_1 } = edge_points(w, h, edge);
     pb.move_to(pt_1);
     pb.line_to(pt_0);
     if let Some(y_parent) = edge.y_parent {
         let pt_parent = Point { x: pt_0.x, y: y_parent as Float * h };
         pb.line_to(pt_parent)
-    };
+    } else if draw_root && edge.parent_node_id.is_none() {
+        let pt_parent = Point { x: PADDING * -1e0, y: edge.y as Float * h };
+        pb.line_to(pt_parent)
+    }
 }
 
 #[inline]
@@ -251,6 +263,7 @@ fn edge_path_fan(
     size: Float,
     edge: &Edge,
     pb: &mut PathBuilder,
+    draw_root: bool,
 ) {
     let angle = edge_angle(rot_angle, opn_angle, edge);
     let EdgePoints { pt_0, pt_1 } = edge_points_rad(angle, center, size, edge);
@@ -265,7 +278,12 @@ fn edge_path_fan(
             end_angle: Radians(angle_parent),
         };
         pb.arc(p_arc);
-    };
+    } else if draw_root && edge.parent_node_id.is_none() {
+        let x0 = center.x - (PADDING * 1e0) * angle.cos();
+        let y0 = center.y - (PADDING * 1e0) * angle.sin();
+        let pt_parent = Point { x: x0, y: y0 };
+        pb.line_to(pt_parent)
+    }
 }
 
 #[inline]
