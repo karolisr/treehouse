@@ -3,6 +3,7 @@ use crate::{
     Float,
     app::{
         BUTTON_W, LINE_H, LTT_H, PADDING, PADDING_INNER, SCROLL_BAR_W, SF, SIDE_COL_W, TEXT_SIZE,
+        TTR_H,
     },
 };
 use iced::{
@@ -10,8 +11,8 @@ use iced::{
     alignment::{Horizontal, Vertical},
     border,
     widget::{
-        Canvas, Column, PickList, Row, Rule, Scrollable, Slider, Space, Text, Theme as WidgetTheme,
-        Toggler,
+        Canvas, Column, PickList, Row, Rule, Scrollable, Slider, Space, Text, TextInput,
+        Theme as WidgetTheme, Toggler,
         button::{Button, Status as ButtonStatus, Style as ButtonStyle},
         column, container,
         container::bordered_box,
@@ -91,6 +92,9 @@ impl TreeView {
         // Main Column:
         let mut mc: Column<TreeViewMsg> = Column::new();
 
+        // Top Tools Row:
+        let mut ttr: Row<TreeViewMsg> = Row::new();
+
         // Tree Canvas Row:
         let mut tcr: Row<TreeViewMsg> = Row::new();
 
@@ -99,6 +103,30 @@ impl TreeView {
 
         // Side Column:
         let mut sc: Column<TreeViewMsg> = Column::new();
+
+        ttr = ttr.push(TextInput::new("Search", &self.search_string).on_input(TreeViewMsg::Search));
+        ttr = ttr.push(self.btn("Add", {
+            match self.filtered_node_ids.is_empty() {
+                true => None,
+                false => Some(TreeViewMsg::AddFoundToSelection),
+            }
+        }));
+        ttr = ttr.push(self.btn("Rem", {
+            match self.filtered_node_ids.is_empty() {
+                true => None,
+                false => Some(TreeViewMsg::RemFoundFromSelection),
+            }
+        }));
+        ttr = ttr.spacing(PADDING);
+
+        mc = mc.push(
+            container(ttr)
+                .style(bordered_box)
+                .padding(PADDING)
+                .width(Length::Fill)
+                .height(TTR_H),
+        );
+        mc = mc.push(self.space_h(0, PADDING));
 
         if (self.sel_tree_style_opt == TreeStyleOption::Phylogram
             && self.sel_node_size_idx != self.min_node_size_idx)

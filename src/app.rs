@@ -30,3 +30,4 @@ pub const SIDE_COL_W: Float = 2e2 * SF + PADDING * 2e0;
 pub const BUTTON_W: Float = (SIDE_COL_W - PADDING * 5e0) / 2e0;
 pub const SCROLL_TOOL_W: Float = SCROLL_BAR_W + PADDING * 2e0 + SF;
 pub const LTT_H: Float = 2e2 * SF;
+pub const TTR_H: Float = 50e0 * SF;

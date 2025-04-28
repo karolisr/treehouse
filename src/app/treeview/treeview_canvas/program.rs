@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     Float,
-    app::{PADDING, SF},
+    app::{PADDING, SF, TTR_H},
 };
 use iced::{
     Event, Point, Radians, Rectangle, Renderer, Theme,
@@ -74,7 +74,7 @@ impl Program<TreeViewMsg> for TreeView {
                     }
 
                     mouse_pt.x -= PADDING * 2e0 + self.tree_rect.x;
-                    mouse_pt.y -= PADDING * 2e0 + self.tree_rect.y;
+                    mouse_pt.y -= TTR_H + PADDING * 3e0 + self.tree_rect.y;
 
                     state.cursor_point =
                         Some(Point { x: mouse_pt.x - SF / 2e0, y: mouse_pt.y - SF / 2e0 });
@@ -215,7 +215,6 @@ impl Program<TreeViewMsg> for TreeView {
 
         #[cfg(debug_assertions)]
         let color_primary_weak = palette_ex.primary.weak.color;
-        #[cfg(debug_assertions)]
         let color_primary_base = palette_ex.primary.base.color;
         let color_primary_strong = palette_ex.primary.strong.color;
 
@@ -346,6 +345,20 @@ impl Program<TreeViewMsg> for TreeView {
             geoms.push(g_lab_brnch);
         }
 
+        let g_node_hover = self.g_node_hover.draw(renderer, bounds.size(), |f| {
+            if let Some(NodePoint { point, edge: _, angle: _ }) = &state.closest_node_point {
+                self.draw_node(
+                    point,
+                    self.node_radius,
+                    stroke,
+                    color_secondary_strong.scale_alpha(0.75),
+                    &self.tree_rect,
+                    f,
+                );
+            }
+        });
+        geoms.push(g_node_hover);
+
         let g_node_sel = self.g_node_sel.draw(renderer, bounds.size(), |f| {
             let ps = self.node_radius * 0.75;
             for NodePoint { point, edge, angle: _ } in &self.visible_nodes {
@@ -365,19 +378,24 @@ impl Program<TreeViewMsg> for TreeView {
         });
         geoms.push(g_node_sel);
 
-        let g_node_hover = self.g_node_hover.draw(renderer, bounds.size(), |f| {
-            if let Some(NodePoint { point, edge: _, angle: _ }) = &state.closest_node_point {
-                self.draw_node(
-                    point,
-                    self.node_radius,
-                    stroke,
-                    color_secondary_strong.scale_alpha(0.75),
-                    &self.tree_rect,
-                    f,
-                );
+        let g_node_filt = self.g_node_filt.draw(renderer, bounds.size(), |f| {
+            let ps = self.node_radius * 0.5;
+            for NodePoint { point, edge, angle: _ } in &self.visible_nodes {
+                for node_id in &self.filtered_node_ids {
+                    if edge.node_id == *node_id {
+                        self.draw_node(
+                            point,
+                            ps,
+                            stroke,
+                            color_primary_base.scale_alpha(0.75),
+                            &self.tree_rect,
+                            f,
+                        );
+                    }
+                }
             }
         });
-        geoms.push(g_node_hover);
+        geoms.push(g_node_filt);
 
         if self.show_cursor_line {
             let g_cross = self.g_cursor_line.draw(renderer, bounds.size(), |f| {

@@ -8,6 +8,29 @@ use iced::{
 impl TreeView {
     pub fn update(&mut self, msg: TreeViewMsg) -> Task<TreeViewMsg> {
         match msg {
+            TreeViewMsg::Search(s) => {
+                self.search_string = s;
+                self.filter_nodes();
+                self.g_node_filt.clear();
+                Task::none()
+            }
+
+            TreeViewMsg::AddFoundToSelection => {
+                for node_id in &self.filtered_node_ids {
+                    self.sel_node_ids.insert(*node_id);
+                }
+                self.g_node_sel.clear();
+                Task::none()
+            }
+
+            TreeViewMsg::RemFoundFromSelection => {
+                for node_id in &self.filtered_node_ids {
+                    self.sel_node_ids.remove(node_id);
+                }
+                self.g_node_sel.clear();
+                Task::none()
+            }
+
             TreeViewMsg::OpenFile => Task::none(),
 
             TreeViewMsg::Init => Task::batch([
@@ -55,6 +78,7 @@ impl TreeView {
                 self.g_lab_int.clear();
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
+                self.g_node_filt.clear();
                 self.g_node_hover.clear();
 
                 self.ltt.g_frame.clear();
@@ -77,6 +101,7 @@ impl TreeView {
                 self.g_lab_int.clear();
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
+                self.g_node_filt.clear();
                 self.g_node_hover.clear();
                 self.sel_tree_style_opt = tree_repr_option;
                 self.update_node_size();
@@ -101,6 +126,7 @@ impl TreeView {
                 self.g_lab_int.clear();
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
+                self.g_node_filt.clear();
                 self.g_node_hover.clear();
                 self.sel_opn_angle_idx = idx;
                 self.opn_angle = idx as Float / 360e0 * 2e0 * PI;
@@ -121,6 +147,7 @@ impl TreeView {
                 self.g_lab_int.clear();
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
+                self.g_node_filt.clear();
                 self.g_node_hover.clear();
                 self.sel_rot_angle_idx = idx;
                 self.rot_angle = idx as Float / 360e0 * 2e0 * PI;
@@ -160,6 +187,7 @@ impl TreeView {
                 self.tre_cnv_y1 = self.tre_cnv_y0 + vp.bounds().height;
                 self.g_legend.clear();
                 self.g_node_sel.clear();
+                self.g_node_filt.clear();
                 self.g_node_hover.clear();
 
                 if self.sel_tree_style_opt == TreeStyleOption::Phylogram {
@@ -244,6 +272,7 @@ impl TreeView {
                 self.g_lab_int.clear();
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
+                self.g_node_filt.clear();
                 self.g_node_hover.clear();
                 self.draw_tip_labs = state;
                 if self.drawing_enabled && self.tip_brnch_labs_allowed && self.draw_tip_labs {
@@ -269,6 +298,7 @@ impl TreeView {
                 self.g_lab_int.clear();
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
+                self.g_node_filt.clear();
                 self.g_node_hover.clear();
                 self.sel_tip_lab_size_idx = idx;
                 self.tip_lab_size = self.min_lab_size * idx as Float;
@@ -300,6 +330,7 @@ impl TreeView {
                     self.g_lab_int.clear();
                     self.g_lab_brnch.clear();
                     self.g_node_sel.clear();
+                    self.g_node_filt.clear();
                     self.g_node_hover.clear();
                     self.sel_node_ord_opt = node_ordering_option;
                     self.sort();
@@ -357,6 +388,7 @@ impl TreeView {
                 self.g_lab_int.clear();
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
+                self.g_node_filt.clear();
                 self.g_node_hover.clear();
                 self.window_w = w;
                 self.window_h = h;
@@ -428,6 +460,7 @@ impl TreeView {
                 self.g_lab_int.clear();
                 self.g_lab_brnch.clear();
                 self.g_node_sel.clear();
+                self.g_node_filt.clear();
                 self.g_node_hover.clear();
                 self.tree_orig = tree;
                 self.tree_srtd_asc = None;

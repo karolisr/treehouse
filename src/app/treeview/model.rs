@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     Edges, Float, NodeId, Tree,
-    app::{SCROLL_TOOL_W, SF, SIDE_COL_W, windows::window_settings},
+    app::{PADDING, SCROLL_TOOL_W, SF, SIDE_COL_W, windows::window_settings},
 };
 use iced::{
     Point, Rectangle,
@@ -20,6 +20,8 @@ pub struct TreeView {
 
     pub sel_node_ord_opt: NodeOrderingOption,
     pub sel_tree_style_opt: TreeStyleOption,
+
+    pub search_string: String,
 
     pub ltt: Ltt,
     pub show_ltt: bool,
@@ -120,6 +122,7 @@ pub struct TreeView {
     pub g_legend: Cache,
     pub g_node_hover: Cache,
     pub g_node_sel: Cache,
+    pub g_node_filt: Cache,
     pub g_cursor_line: Cache,
 
     #[cfg(debug_assertions)]
@@ -128,6 +131,7 @@ pub struct TreeView {
     pub g_palette: Cache,
 
     pub sel_node_ids: HashSet<NodeId>,
+    pub filtered_node_ids: HashSet<NodeId>,
     pub tree_tip_edges: Edges,
     pub tallest_tips: Edges,
 
@@ -162,7 +166,7 @@ impl TreeView {
 
             tree_scroll_w: SF,
             tree_scroll_h: SF,
-            side_with_padding_w: SIDE_COL_W + SCROLL_TOOL_W,
+            side_with_padding_w: SIDE_COL_W + SCROLL_TOOL_W + PADDING * 2e0,
 
             sel_opn_angle_idx: 359,
             min_opn_angle_idx: 45,
@@ -193,7 +197,7 @@ impl TreeView {
             max_lab_size_idx: 24,
 
             tip_brnch_labs_allowed: false,
-            draw_tip_labs: false,
+            draw_tip_labs: true,
             draw_brnch_labs: false,
             draw_int_labs: false,
             draw_legend: false,
@@ -234,6 +238,10 @@ pub enum TreeViewMsg {
     Init,
     EnableDrawing,
     Refresh,
+
+    Search(String),
+    AddFoundToSelection,
+    RemFoundFromSelection,
 
     CursorOnTreCnv { x: Option<Float> },
     CursorOnLttCnv { x: Option<Float> },

@@ -1,12 +1,28 @@
 use super::{NodeOrderingOption, TreeStyleOption, TreeView};
 use crate::{
     Float,
-    app::{LTT_H, PADDING, SCROLL_TOOL_W, SF, TREE_LAB_FONT_NAME},
+    app::{LTT_H, PADDING, SCROLL_TOOL_W, SF, TREE_LAB_FONT_NAME, TTR_H},
     chunk_edges, flatten_tree, lerp, text_width,
 };
 use iced::Rectangle;
 
 impl TreeView {
+    pub fn filter_nodes(&mut self) {
+        self.filtered_node_ids.clear();
+
+        if self.search_string.is_empty() {
+            return;
+        };
+
+        for e in &self.tree_edges {
+            if let Some(n) = &e.name {
+                if let Some(_found) = n.to_lowercase().find(&self.search_string.to_lowercase()) {
+                    self.filtered_node_ids.insert(e.node_id);
+                }
+            }
+        }
+    }
+
     pub fn update_visible(&mut self) {
         self.tip_idx_range = self.visible_tip_idx_range();
         if let Some(tip_idx_range) = &self.tip_idx_range {
@@ -103,7 +119,7 @@ impl TreeView {
     }
 
     pub fn update_node_size(&mut self) {
-        self.min_tre_cnv_h = self.window_h - PADDING * 4e0;
+        self.min_tre_cnv_h = self.window_h - PADDING * 5e0 - TTR_H;
         if self.show_ltt {
             self.min_tre_cnv_h -= LTT_H;
         }
