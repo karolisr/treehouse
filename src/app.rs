@@ -16,6 +16,8 @@ pub const APP_ID: &str = "TreeHouse";
 
 #[cfg(debug_assertions)]
 pub const DEBUG: bool = false;
+#[cfg(debug_assertions)]
+pub const TRACE: bool = false;
 
 pub const SF: Float = 1e0;
 pub const APP_SCALE_FACTOR: f64 = 1e0 / SF as f64;
@@ -29,5 +31,5 @@ pub const TREE_LAB_FONT_NAME: &str = "JetBrains Mono";
 pub const SIDE_COL_W: Float = 2e2 * SF + PADDING * 2e0;
 pub const BUTTON_W: Float = (SIDE_COL_W - PADDING * 5e0) / 2e0;
 pub const SCROLL_TOOL_W: Float = SCROLL_BAR_W + PADDING * 2e0 + SF;
-pub const LTT_H: Float = 2e2 * SF;
-pub const TTR_H: Float = 50e0 * SF;
+pub const LTT_H: Float = 15e1 * SF;
+pub const TTR_H: Float = 5e1 * SF;

@@ -10,7 +10,7 @@ impl TreeView {
     pub fn filter_nodes(&mut self) {
         self.filtered_node_ids.clear();
 
-        if self.search_string.is_empty() {
+        if self.search_string.len() < 3 {
             return;
         };
 

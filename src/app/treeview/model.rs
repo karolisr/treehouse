@@ -24,6 +24,7 @@ pub struct TreeView {
     pub search_string: String,
 
     pub ltt: Ltt,
+    pub ltt_bins: usize,
     pub show_ltt: bool,
     pub show_cursor_line: bool,
     pub drawing_enabled: bool,
@@ -156,6 +157,8 @@ impl TreeView {
         Self {
             threads: 6,
 
+            ltt_bins: 1000,
+
             sel_node_ord_opt: NodeOrderingOption::Unordered,
             sel_tree_style_opt: TreeStyleOption::Phylogram,
 
@@ -197,12 +200,12 @@ impl TreeView {
             max_lab_size_idx: 24,
 
             tip_brnch_labs_allowed: false,
-            draw_tip_labs: true,
+            draw_tip_labs: false,
             draw_brnch_labs: false,
             draw_int_labs: false,
-            draw_legend: false,
-            show_ltt: false,
-            show_cursor_line: false,
+            draw_legend: true,
+            show_ltt: true,
+            show_cursor_line: true,
 
             sel_node_size_idx: 1,
             sel_tre_cnv_w_idx: 1,

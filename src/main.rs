@@ -34,7 +34,7 @@ pub const PI: Float = std::f32::consts::PI;
 
 fn main() -> iced::Result {
     #[cfg(debug_assertions)]
-    if app::DEBUG {
+    if app::TRACE {
         tracing_subscriber::fmt::init();
     }
     iced::daemon(App::new, App::update, App::view)

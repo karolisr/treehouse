@@ -479,7 +479,7 @@ impl TreeView {
                 let epsilon = self.tree_orig.height() / 1e2;
                 self.is_ultrametric = self.tree_orig.is_ultrametric(epsilon);
                 self.sort();
-                self.ltt.set_data(ltt(&self.tree_edges, 1000));
+                self.ltt.set_data(ltt(&self.tree_edges, self.ltt_bins));
                 self.merge_tip_chunks();
                 self.update_tallest_tips();
                 self.update_extra_space_for_labels();

@@ -103,14 +103,28 @@ impl Program<TreeViewMsg> for TreeView {
                                 self.g_cursor_line.clear();
                                 match self.sel_tree_style_opt {
                                     TreeStyleOption::Phylogram => {
-                                        Some(Action::publish(TreeViewMsg::CursorOnTreCnv {
-                                            x: Some(point.x / self.tree_rect.width),
-                                        }))
+                                        let x_frac = point.x / self.tree_rect.width;
+                                        if x_frac <= 1e0 {
+                                            Some(Action::publish(TreeViewMsg::CursorOnTreCnv {
+                                                x: Some(x_frac),
+                                            }))
+                                        } else {
+                                            Some(Action::publish(TreeViewMsg::CursorOnTreCnv {
+                                                x: None,
+                                            }))
+                                        }
                                     }
                                     TreeStyleOption::Fan => {
-                                        Some(Action::publish(TreeViewMsg::CursorOnTreCnv {
-                                            x: Some(self.center.distance(*point) / self.size),
-                                        }))
+                                        let x_frac = self.center.distance(*point) / self.size;
+                                        if x_frac <= 1e0 + f32::EPSILON {
+                                            Some(Action::publish(TreeViewMsg::CursorOnTreCnv {
+                                                x: Some(x_frac),
+                                            }))
+                                        } else {
+                                            Some(Action::publish(TreeViewMsg::CursorOnTreCnv {
+                                                x: None,
+                                            }))
+                                        }
                                     }
                                 }
                             } else {
@@ -126,17 +140,31 @@ impl Program<TreeViewMsg> for TreeView {
                             state.closest_node_point = None;
                             self.g_node_hover.clear();
                             self.g_cursor_line.clear();
-                            if let Some(ch) = state.cursor_point {
+                            if let Some(cursor_point) = state.cursor_point {
                                 match self.sel_tree_style_opt {
                                     TreeStyleOption::Phylogram => {
-                                        Some(Action::publish(TreeViewMsg::CursorOnTreCnv {
-                                            x: Some(ch.x / self.tree_rect.width),
-                                        }))
+                                        let x_frac = cursor_point.x / self.tree_rect.width;
+                                        if x_frac <= 1e0 {
+                                            Some(Action::publish(TreeViewMsg::CursorOnTreCnv {
+                                                x: Some(x_frac),
+                                            }))
+                                        } else {
+                                            Some(Action::publish(TreeViewMsg::CursorOnTreCnv {
+                                                x: None,
+                                            }))
+                                        }
                                     }
                                     TreeStyleOption::Fan => {
-                                        Some(Action::publish(TreeViewMsg::CursorOnTreCnv {
-                                            x: Some(self.center.distance(ch) / self.size),
-                                        }))
+                                        let x_frac = self.center.distance(cursor_point) / self.size;
+                                        if x_frac <= 1e0 + f32::EPSILON {
+                                            Some(Action::publish(TreeViewMsg::CursorOnTreCnv {
+                                                x: Some(x_frac),
+                                            }))
+                                        } else {
+                                            Some(Action::publish(TreeViewMsg::CursorOnTreCnv {
+                                                x: None,
+                                            }))
+                                        }
                                     }
                                 }
                             } else {
@@ -398,7 +426,7 @@ impl Program<TreeViewMsg> for TreeView {
         geoms.push(g_node_filt);
 
         if self.show_cursor_line {
-            let g_cross = self.g_cursor_line.draw(renderer, bounds.size(), |f| {
+            let g_cursor_line = self.g_cursor_line.draw(renderer, bounds.size(), |f| {
                 if state.cursor_point.is_some() || self.cursor_x_fraction.is_some() {
                     let x: Float;
                     let radius: Float;
@@ -422,7 +450,7 @@ impl Program<TreeViewMsg> for TreeView {
                         }
 
                         TreeStyleOption::Fan => {
-                            if x >= 0e0 && radius <= self.size {
+                            if x > 0e0 && radius <= self.size + SF {
                                 let center = Point {
                                     x: self.center.x + self.tree_rect.x,
                                     y: self.center.y + self.tree_rect.y,
@@ -441,7 +469,7 @@ impl Program<TreeViewMsg> for TreeView {
                     f.stroke(&path, stroke.with_color(color_primary_strong));
                 }
             });
-            geoms.push(g_cross);
+            geoms.push(g_cursor_line);
         }
 
         #[cfg(debug_assertions)]

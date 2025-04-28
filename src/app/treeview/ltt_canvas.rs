@@ -183,10 +183,10 @@ impl Program<TreeViewMsg> for Ltt {
         // });
         // geoms.push(g_frame);
 
-        let g_cross = self.g_cursor_line.draw(renderer, bounds.size(), |f| {
+        let g_cursor_line = self.g_cursor_line.draw(renderer, bounds.size(), |f| {
             if let Some(x_frac) = self.cursor_x_fraction {
                 let x = state.ltt_rect.x + state.ltt_rect.width * x_frac;
-                if x >= state.ltt_rect.x && x <= state.ltt_rect.x + state.ltt_rect.width {
+                if x >= state.ltt_rect.x && x <= state.ltt_rect.x + state.ltt_rect.width + SF {
                     let path = Path::new(|p| {
                         p.move_to(Point { x, y: state.ltt_rect.y });
                         p.line_to(Point { x, y: state.ltt_rect.y + state.ltt_rect.height });
@@ -195,7 +195,7 @@ impl Program<TreeViewMsg> for Ltt {
                 }
             }
         });
-        geoms.push(g_cross);
+        geoms.push(g_cursor_line);
 
         let g_ltt = self.g_ltt.draw(renderer, bounds.size(), |f| {
             if let Some(pts) = &self.ltt_points {
@@ -204,17 +204,23 @@ impl Program<TreeViewMsg> for Ltt {
                     max_count = max_count.max(*count)
                 }
                 let path = Path::new(|p| {
+                    let y_max = state.ltt_rect.y + state.ltt_rect.height;
+
+                    let calc_y = |count: usize| {
+                        y_max
+                            - (((count as Float).log10() / (max_count as Float).log10())
+                                * state.ltt_rect.height)
+                    };
+
+                    p.move_to(Point { x: 0e0, y: calc_y(1) });
                     for LttPoint { time, count } in pts {
                         let x = *time as Float * state.ltt_rect.width + state.ltt_rect.x;
-                        let y = state.ltt_rect.y + state.ltt_rect.height
-                            - (((*count as Float).log10() / (max_count as Float).log10())
-                                * state.ltt_rect.height);
-                        let pt = Point { x, y };
-                        p.circle(pt, SF);
+                        let pt = Point { x, y: calc_y(*count) };
+                        p.line_to(pt);
                     }
                 });
 
-                f.fill(&path, color_text);
+                f.stroke(&path, stroke);
             }
         });
         geoms.push(g_ltt);
