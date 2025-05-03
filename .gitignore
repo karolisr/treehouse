@@ -4,3 +4,4 @@ examples/test*
 submodules/*
 .DS_Store
 .cargo/config.toml
+*.example.rs

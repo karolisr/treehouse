@@ -3,21 +3,6 @@
         {
             "path": "."
         },
-        // {
-        //     "path": "src"
-        // },
-        // {
-        //     "path": "tests"
-        // },
-        // {
-        //     "path": "examples"
-        // },
-        // {
-        //     "path": "resources"
-        // },
-        // {
-        //     "path": "../iced"
-        // },
     ],
     "settings": {
         "editor.rulers": [
@@ -27,23 +12,10 @@
             "configurations": [],
             "compounds": []
         },
-        "rust-analyzer.completion.hideDeprecated": true,
-        "emeraldwalk.runonsave": {
-            "autoClearConsole": true,
-            "commands": [
-                {
-                    "match": ".*/(examples|tree)/(node|newick|flatten).*\\.rs$",
-                    "cmd": "echo && cd . &>/dev/null || cd . && cargo run --quiet --example newick && echo"
-                },
-                {
-                    "match": ".*/(examples)/(text_width).*\\.rs$",
-                    "cmd": "echo && cd . &>/dev/null || cd . && cargo run --quiet --example text_width && echo"
-                }
-            ]
-        },
         "editor.wordWrap": "off",
         "editor.formatOnPaste": false,
         "editor.minimap.autohide": false,
+        "rust-analyzer.completion.hideDeprecated": true,
         "rust-analyzer.cargo.autoreload": true,
     },
     "extensions": {

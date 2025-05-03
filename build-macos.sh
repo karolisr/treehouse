@@ -9,8 +9,8 @@
 RUSTFLAGS="-Ctarget-cpu=native"
 export RUSTFLAGS
 
-cargo install cargo-bundle
-cargo install --locked --git https://github.com/iced-rs/comet.git
+# cargo install cargo-bundle
+# cargo install --locked --git https://github.com/iced-rs/comet.git
 
 cargo fmt && \
 

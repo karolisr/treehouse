@@ -1,43 +1,30 @@
-[package]
-name = "treehouse"
+[workspace]
+members = ["app", "utils", "treeview"]
+resolver = "3"
+
+[workspace.package]
 version = "0.0.0"
 edition = "2024"
 authors = ["Karolis Ramanauskas"]
 repository = "https://github.com/karolisr/treehouse"
-readme = "README.md"
 license-file = "LICENSE"
-
+readme = "README.md"
 categories = [
     "science::bioinformatics",
     "science::bioinformatics::sequence-analysis",
     "visualization",
     "gui",
 ]
+# description = ""
+# documentation = ""
+# exclude = []
+# homepage = ""
+# include = []
+# keywords = []
+# license = ""
+# publish = false
 
-# cargo-bundle (https://github.com/burtonageo/cargo-bundle) --------------
-[package.metadata.bundle]
-name = "TreeHouse"
-identifier = "is.karol.treehouse"
-icon = ["resources/icons/treehouse*.icns"]
-copyright = "Copyright (c) Karolis Ramanauskas 2025. All rights reserved."
-category = "public.app-category.utilities"
-short_description = "Short description."
-long_description = """Long description."""
-osx_frameworks = []
-osx_url_schemes = ["is.karol.treehouse"]
-linux_mime_types = []
-# linux_exec_args = []
-linux_use_terminal = false
-deb_depends = []
-# ------------------------------------------------------------------------
-
-# See more keys and their definitions at:
-#   https://doc.rust-lang.org/cargo/reference/manifest.html
-
-# Code generation options
-#   https://doc.rust-lang.org/rustc/codegen-options/index.html
-
-# ------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 [profile.dev]
 debug-assertions = true
 incremental = true      # Compile your binary in smaller steps.
@@ -61,9 +48,9 @@ rpath = false
 # debug = true
 # overflow-checks = true
 # rpath = false
-# ------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 
-# ------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 [profile.release]
 debug-assertions = false
 incremental = true       # Compile your binary in smaller steps.
@@ -87,10 +74,64 @@ rpath = false
 # debug = false
 # overflow-checks = false
 # rpath = false
-# ------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 
-# ------------------------------------------------------------------------
-[dependencies.iced]
+[workspace.dependencies]
+utils = { path = "utils" }
+treeview = { path = "treeview" }
+numfmt = "1.1.1"
+roarsvg = "0.5.0"
+tracing-subscriber = "0.3.19"
+objc2 = "0.6.1"
+objc2-app-kit = "0.3.1"
+objc2-foundation = "0.3.1"
+
+[workspace.dependencies.dendros]
+git = "https://github.com/karolisr/dendros.git"
+branch = "main"
+default-features = false
+features = []
+
+[workspace.dependencies.muda]
+git = "https://github.com/karolisr/muda.git"
+branch = "custom"
+default-features = false
+features = []
+
+[workspace.dependencies.rfd]
+version = "0.15.3"
+default-features = false
+features = []
+
+# [workspace.dependencies.tokio]
+# version = "1.44.2"
+# default-features = false
+# features = [
+#     "bytes",
+#     "fs",
+#     "full",
+#     "io-std",
+#     "io-util",
+#     "libc",
+#     "macros",
+#     "mio",
+#     "net",
+#     "parking_lot",
+#     "process",
+#     "rt-multi-thread",
+#     "rt",
+#     "signal-hook-registry",
+#     "signal",
+#     "socket2",
+#     "sync",
+#     "test-util",
+#     "time",
+#     "tokio-macros",
+#     "tracing",
+#     "windows-sys",
+# ]
+
+[workspace.dependencies.iced]
 git = "https://github.com/karolisr/iced.git"
 branch = "custom"
 default-features = false
@@ -101,10 +142,14 @@ features = [
     "thread-pool",
     ### Enables the "canvas" widget
     "canvas",
+    ### Enables lazy widgets
+    "lazy",
+    ### Enables support for the "sipper" library
+    "sipper",
     ### Enables the advanced module
-    "advanced",
+    # "advanced",
     ### Auto-detects light/dark mode for the built-in theme
-    "auto-detect-theme",
+    # "auto-detect-theme",
     ### Enables a debug view in native platforms (press F12)
     # "debug",
     ### Redraws on every runtime event, and not only when a widget requests it
@@ -117,16 +162,12 @@ features = [
     # "tokio",
     ### Enables "smol" as the "executor::Default" on native platforms
     # "smol",
-    ### Enables support for the "sipper" library
-    # "sipper",
     ### Enables the "image" widget, without any built-in codecs of the "image" crate
     # "image-without-codecs",
     ### Enables the "qr_code" widget
     # "qr_code",
     ### Enables the "markdown" widget
     # "markdown",
-    ### Enables lazy widgets
-    # "lazy",
     ### Enables broken "sRGB linear" blending to reproduce color management of the Web
     # "web-colors",
     ### Enables the WebGL backend
@@ -141,63 +182,4 @@ features = [
     # "image",
     ### Enables the "svg" widget
     # "svg",
-]
-# ------------------------------------------------------------------------
-
-[dependencies]
-numfmt = "1"
-tracing-subscriber = "0"
-# roarsvg = "0"
-
-[dependencies.dendros]
-git = "https://github.com/karolisr/dendros.git"
-branch = "main"
-default-features = false
-features = []
-
-[target.'cfg(target_os = "macos")'.dependencies]
-objc2 = "0.6"
-objc2-app-kit = "0.3"
-objc2-foundation = "0.3"
-
-# [target.'cfg(target_os = "windows")'.dependencies]
-# windows-sys = "0.59"
-
-[target.'cfg(target_os = "macos")'.dependencies.muda]
-git = "https://github.com/karolisr/muda.git"
-branch = "custom"
-default-features = false
-features = []
-
-[target.'cfg(target_os = "windows")'.dependencies.muda]
-git = "https://github.com/karolisr/muda.git"
-branch = "custom"
-default-features = false
-features = [
-    # "common-controls-v6"
-]
-
-[target.'cfg(target_os = "macos")'.dependencies.rfd]
-version = "0.15"
-default-features = false
-features = []
-
-[target.'cfg(target_os = "windows")'.dependencies.rfd]
-version = "0.15"
-default-features = false
-features = []
-
-[target.'cfg(target_os = "linux")'.dependencies.rfd]
-version = "0.15"
-default-features = false
-features = [
-    ### Uses GTK for dialogs on Linux & BSDs; has no effect on Windows and macOS
-    "gtk3",
-
-    ### Uses XDG Desktop Portal instead of GTK on Linux & BSDs
-    # "xdg-portal",
-
-    # For "xdg-portal" enable one of:
-    # "async-std",
-    # "tokio",
 ]

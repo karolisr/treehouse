@@ -1,0 +1,18 @@
+[package]
+name = "treeview"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+repository.workspace = true
+license-file.workspace = true
+readme.workspace = true
+categories.workspace = true
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+iced = { workspace = true }
+numfmt = { workspace = true }
+dendros = { workspace = true }
+utils = { workspace = true }
