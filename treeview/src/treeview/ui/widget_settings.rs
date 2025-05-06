@@ -1,12 +1,10 @@
-use super::style::{sty_btn, sty_pick_lst, sty_rule, sty_scrlbl, sty_slider};
-use crate::{TEXT_SIZE, TreeView, TreeViewMsg};
+use crate::{TreeView, TreeViewMsg};
 use iced::{
     Alignment, Font,
     Length::Fill,
     Pixels, Theme,
     widget::{
-        PickList, Rule, Scrollable, Slider, Toggler, button::Button,
-        pick_list::Handle as PickListHandle,
+        Button, PickList, Rule, Scrollable, Slider, Toggler, pick_list::Handle as PickListHandle,
     },
 };
 use std::{
@@ -16,6 +14,11 @@ use std::{
     fmt::Display,
     marker::Copy,
 };
+
+use super::style::{sty_btn, sty_pick_lst, sty_rule, sty_scrlbl, sty_slider};
+
+const SF: f32 = 1e0;
+const TEXT_SIZE: f32 = 13.0 * SF;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -64,6 +67,7 @@ impl TreeView {
         T: PartialOrd,
     {
         let mut sldr = sldr;
+        sldr = sldr.height(15);
         sldr = sldr.style(sty_slider);
         sldr
     }
@@ -80,5 +84,3 @@ impl TreeView {
         tglr
     }
 }
-
-// ------------------------------------------------------------------------------------------------

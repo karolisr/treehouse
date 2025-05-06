@@ -8,7 +8,7 @@ use iced::{
 pub fn window_settings() -> Settings {
     Settings {
         size: Size { width: 800.0, height: 600.0 },
-        min_size: Some(Size { width: 100.0, height: 100.0 }),
+        // min_size: Some(Size { width: 100.0, height: 100.0 }),
         position: Position::Centered,
         resizable: true,
         level: Level::Normal,

@@ -1,28 +1,64 @@
+use crate::app::AppMsg;
 use std::fmt::Display;
+use treeview::{SidebarLocation, TreeViewMsg};
 
-#[derive(Debug, Clone)]
-pub enum MenuEvent {
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum AppMenuItemId {
     OpenFile,
     SaveAs,
     Quit,
     CloseWindow,
+    SetSideBarPositionLeft,
+    SetSideBarPositionRight,
     Undefined,
 }
 
-impl Display for MenuEvent {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+impl From<muda::MenuItem> for AppMenuItemId {
+    fn from(value: muda::MenuItem) -> Self {
+        value.id().0.clone().into()
     }
 }
 
-impl From<String> for MenuEvent {
+impl From<muda::CheckMenuItem> for AppMenuItemId {
+    fn from(value: muda::CheckMenuItem) -> Self {
+        value.id().0.clone().into()
+    }
+}
+
+impl From<String> for AppMenuItemId {
     fn from(value: String) -> Self {
         match value.as_str() {
-            "OpenFile" => MenuEvent::OpenFile,
-            "SaveAs" => MenuEvent::SaveAs,
-            "CloseWindow" => MenuEvent::CloseWindow,
-            "Quit" => MenuEvent::Quit,
-            _ => MenuEvent::Undefined,
+            "OpenFile" => AppMenuItemId::OpenFile,
+            "SaveAs" => AppMenuItemId::SaveAs,
+            "CloseWindow" => AppMenuItemId::CloseWindow,
+            "Quit" => AppMenuItemId::Quit,
+            "SetSideBarPositionLeft" => AppMenuItemId::SetSideBarPositionLeft,
+            "SetSideBarPositionRight" => AppMenuItemId::SetSideBarPositionRight,
+            _ => AppMenuItemId::Undefined,
         }
+    }
+}
+
+impl From<AppMenuItemId> for AppMsg {
+    fn from(value: AppMenuItemId) -> Self {
+        match value {
+            AppMenuItemId::OpenFile => AppMsg::OpenFile,
+            AppMenuItemId::SaveAs => AppMsg::SaveAs,
+            AppMenuItemId::Quit => AppMsg::WinCloseRequested,
+            AppMenuItemId::CloseWindow => AppMsg::WinCloseRequested,
+            AppMenuItemId::SetSideBarPositionLeft => {
+                AppMsg::TreeViewMsg(TreeViewMsg::SetSidebarLocation(SidebarLocation::Left))
+            }
+            AppMenuItemId::SetSideBarPositionRight => {
+                AppMsg::TreeViewMsg(TreeViewMsg::SetSidebarLocation(SidebarLocation::Right))
+            }
+            _ => AppMsg::Other(Some(value.to_string())),
+        }
+    }
+}
+
+impl Display for AppMenuItemId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
     }
 }

@@ -1,23 +1,31 @@
 mod cnv_plot;
 mod cnv_tree;
-mod pane_grid_main;
+mod panes;
 mod tree_state;
 mod ui;
 mod update;
 mod view;
 
-use pane_grid_main::{PaneGridMain, PaneGridMainMsg};
+use crate::Float;
+pub(crate) use cnv_plot::PlotCnv;
+pub(crate) use cnv_tree::TreeCnv;
+use dendros::Tree;
+use panes::{PaneGrid, PaneGridMsg};
 use std::fmt::{Display, Formatter, Result};
+pub(crate) use tree_state::{TreeState, TreeStateMsg};
 
 #[derive(Default)]
 pub struct TreeView {
-    pub(crate) pane_grid_main: PaneGridMain,
+    pub(crate) trees: Vec<TreeState>,
+    pub(crate) sel_tree_idx: Option<usize>,
+
+    pub(crate) pane_grid_main: PaneGrid,
     pub(crate) show_cursor_line: bool,
     pub(crate) show_ltt: bool,
     pub(crate) show_sidebar: bool,
     pub(crate) show_toolbar: bool,
     pub(crate) show_statusbar: bool,
-    pub(crate) sidebar_position: SideBarPosition,
+    pub(crate) sidebar_position: SidebarLocation,
     pub(crate) tip_brnch_labs_allowed: bool,
 
     pub(crate) draw_brnch_labs: bool,
@@ -37,22 +45,28 @@ pub struct TreeView {
     pub(crate) min_rot_angle_idx: u16,
     pub(crate) min_tre_cnv_w_idx: u16,
 
+    pub(crate) sel_tree_style_opt: TreeStyle,
+    pub(crate) sel_node_ord_opt: NodeOrd,
+    //
     pub(crate) sel_brnch_lab_size_idx: u16,
     pub(crate) sel_int_lab_size_idx: u16,
-    pub(crate) sel_node_ord_opt: NodeOrdering,
     pub(crate) sel_node_size_idx: u16,
     pub(crate) sel_opn_angle_idx: u16,
     pub(crate) sel_rot_angle_idx: u16,
     pub(crate) sel_tip_lab_size_idx: u16,
     pub(crate) sel_tre_cnv_w_idx: u16,
-    pub(crate) sel_tree_style_opt: TreeStyle,
     //
-    pub(crate) ltt_cnv_scrolled: bool,
-    pub(crate) tre_cnv_scrolled: bool,
     pub(crate) opn_angle: Float,
     pub(crate) rot_angle: Float,
+    //
+    pub(crate) tre_cnv: TreeCnv,
+    pub(crate) ltt_cnv: PlotCnv,
+    pub(crate) ltt_cnv_scrolled: bool,
+    pub(crate) tre_cnv_scrolled: bool,
     pub(crate) min_tre_cnv_h: Float,
     pub(crate) min_tre_cnv_w: Float,
+    pub(crate) tree_scroll_w: Float,
+    pub(crate) tree_scroll_h: Float,
     pub(crate) tre_cnv_w: Float,
     pub(crate) tre_cnv_h: Float,
     pub(crate) tre_cnv_x0: Float,
@@ -66,19 +80,23 @@ pub struct TreeView {
 impl TreeView {
     pub fn new() -> Self {
         Self {
-            pane_grid_main: PaneGridMain::new(),
+            pane_grid_main: PaneGrid::new(),
 
-            show_sidebar: true,
             show_toolbar: true,
+            show_sidebar: true,
             show_statusbar: true,
 
-            draw_brnch_labs: false,
-            draw_int_labs: false,
-            draw_legend: false,
-            draw_tip_labs: false,
-            show_cursor_line: false,
-            show_ltt: false,
-            tip_brnch_labs_allowed: false,
+            draw_brnch_labs: true,
+            draw_int_labs: true,
+            draw_legend: true,
+            draw_tip_labs: true,
+            show_cursor_line: true,
+            show_ltt: true,
+
+            sel_tree_style_opt: TreeStyle::Phylogram,
+            sel_node_ord_opt: NodeOrd::Unordered,
+
+            tip_brnch_labs_allowed: true,
 
             max_lab_size_idx: 24,
             max_node_size_idx: 24,
@@ -92,13 +110,11 @@ impl TreeView {
             min_tre_cnv_w_idx: 1,
             sel_brnch_lab_size_idx: 4,
             sel_int_lab_size_idx: 4,
-            sel_node_ord_opt: NodeOrdering::Unordered,
             sel_node_size_idx: 1,
             sel_opn_angle_idx: 359,
             sel_rot_angle_idx: 360,
             sel_tip_lab_size_idx: 4,
             sel_tre_cnv_w_idx: 1,
-            sel_tree_style_opt: TreeStyle::Phylogram,
 
             ..Default::default()
         }
@@ -107,81 +123,89 @@ impl TreeView {
 
 #[derive(Debug, Clone)]
 pub enum TreeViewMsg {
-    BranchLabelSizeSelectionChanged(u16),
-    BranchLabelVisibilityChanged(bool),
-    CanvasWidthSelectionChanged(u16),
-    CursorLineVisibilityChanged(bool),
-    IntLabelSizeSelectionChanged(u16),
-    IntLabelVisibilityChanged(bool),
-    LegendVisibilityChanged(bool),
-    LttVisibilityChanged(bool),
-    NodeOrderingOptionChanged(NodeOrdering),
+    // -------------------------------------------
+    PaneGridMsg(PaneGridMsg),
+    TreeStateMsg(TreeStateMsg),
+    // -------------------------------------------
+    TreeLoaded(Tree),
+    TreeUpdated,
+    // -------------------------------------------
+    SetSidebarLocation(SidebarLocation),
+    // -------------------------------------------
+    TreeStyleOptionChanged(TreeStyle),
+    NodeOrdOptChanged(NodeOrd),
+    // -------------------------------------------
     NodeSizeSelectionChanged(u16),
+    CanvasWidthSelectionChanged(u16),
     OpnAngleSelectionChanged(u16),
     RotAngleSelectionChanged(u16),
-    TipLabelSizeSelectionChanged(u16),
+    // -------------------------------------------
     TipLabelVisibilityChanged(bool),
-    TreeStyleOptionChanged(TreeStyle),
-    TreeWinPaneGridMsg(PaneGridMainMsg),
-    //
-    Unroot,
-    Root(NodeId),
-    AddFoundToSelection,
-    CursorOnLttCnv { x: Option<f32> },
-    CursorOnTreCnv { x: Option<f32> },
-    DeselectNode(NodeId),
-    EnableDrawing,
-    Init,
-    LttCnvScrolled(ScrollableViewport),
-    NextResult,
-    OpenFile,
-    PrevResult,
-    Refresh,
-    RemFoundFromSelection,
+    IntLabelVisibilityChanged(bool),
+    BranchLabelVisibilityChanged(bool),
+    // -------------------------------------------
+    TipLabelSizeSelectionChanged(u16),
+    IntLabelSizeSelectionChanged(u16),
+    BranchLabelSizeSelectionChanged(u16),
+    // -------------------------------------------
+    LegendVisibilityChanged(bool),
+    CursorLineVisibilityChanged(bool),
+    LttPlotVisibilityChanged(bool),
+    // -------------------------------------------
+    // SelectDeselectNode(NodeId),
+    // SelectNode(NodeId),
+    // DeselectNode(NodeId),
+    // -------------------------------------------
+    // Search(String),
+    // NextResult,
+    // PrevResult,
+    // AddFoundToSelection,
+    // RemFoundFromSelection,
+    // TipOnlySearchSelectionChanged(bool),
+    // -------------------------------------------
+    TreCnvScrolled(iced::widget::scrollable::Viewport),
+    LttCnvScrolled(iced::widget::scrollable::Viewport),
     ScrollTo { x: f32, y: f32 },
     ScrollToX { sender: &'static str, x: f32 },
-    Search(String),
-    SelectDeselectNode(NodeId),
-    SelectNode(NodeId),
-    TipOnlySearchSelectionChanged(bool),
-    TreCnvScrolled(ScrollableViewport),
-    TreeUpdated(Tree),
-    WindowResized(f32, f32),
+    // -------------------------------------------
+    // CursorOnTreCnv { x: Option<f32> },
+    // CursorOnLttCnv { x: Option<f32> },
+    // -------------------------------------------
 }
 
-#[derive(Default)]
-pub(crate) enum SideBarPosition {
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum SidebarLocation {
     Left,
     #[default]
     Right,
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum TreeStyle {
     #[default]
     Phylogram,
     Fan,
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub enum NodeOrdering {
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum NodeOrd {
     #[default]
     Unordered,
     Ascending,
     Descending,
 }
 
-pub(crate) const NODE_ORDERING_OPTIONS: [NodeOrdering; 3] =
-    [NodeOrdering::Unordered, NodeOrdering::Ascending, NodeOrdering::Descending];
+pub(crate) const NODE_ORD_OPTS: [NodeOrd; 3] =
+    [NodeOrd::Unordered, NodeOrd::Ascending, NodeOrd::Descending];
 
-pub(crate) const TREE_STYLE_OPTIONS: [TreeStyle; 2] = [TreeStyle::Phylogram, TreeStyle::Fan];
+pub(crate) const TREE_STYLE_OPTS: [TreeStyle; 2] = [TreeStyle::Phylogram, TreeStyle::Fan];
 
-impl Display for NodeOrdering {
+impl Display for NodeOrd {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         f.write_str(match self {
-            NodeOrdering::Unordered => "Unordered",
-            NodeOrdering::Ascending => "Ascending",
-            NodeOrdering::Descending => "Descending",
+            NodeOrd::Unordered => "Unordered",
+            NodeOrd::Ascending => "Ascending",
+            NodeOrd::Descending => "Descending",
         })
     }
 }

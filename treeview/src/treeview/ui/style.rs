@@ -1,10 +1,9 @@
-use crate::{BORDER_W, RADIUS_WIDGET, SF, TEXT_SIZE};
 use iced::{
     Background, Border, Color, Theme,
     widget::{
         button::{Status as ButtonStatus, Style as ButtonStyle},
         container::{self, Style as ContainerStyle},
-        pane_grid::{Line, Style as PaneGridStyle},
+        pane_grid::{Highlight as PaneGridHighlight, Line as PaneGridLine, Style as PaneGridStyle},
         pick_list::{Status as PickListStatus, Style as PickListStyle},
         rule::{FillMode as RuleFillMode, Style as RuleStyle},
         scrollable::{
@@ -16,6 +15,12 @@ use iced::{
         },
     },
 };
+use utils::Clr;
+
+const SF: f32 = 1e0;
+const TEXT_SIZE: f32 = 13.0 * SF;
+const BORDER_W: f32 = SF;
+const RADIUS_WIDGET: f32 = 0e0 * SF;
 
 // ------------------------------------------------------------------------------------------------
 
@@ -25,34 +30,51 @@ pub(crate) fn sty_cont(theme: &Theme) -> ContainerStyle {
     ContainerStyle {
         text_color: Some(pb.text),
         background: Some(pe.background.weakest.color.into()),
+        border: Border { width: 2e0, color: Clr::RED, radius: 0.into() },
         ..Default::default()
     }
 }
 
 pub(crate) fn sty_cont_main(theme: &Theme) -> ContainerStyle {
     sty_cont(theme)
+    // .background(Clr::CYA)
 }
 
 pub(crate) fn sty_cont_sidebar(theme: &Theme) -> ContainerStyle {
     sty_cont(theme)
+    // .background(Clr::MAG)
 }
 
 pub(crate) fn sty_cont_toolbar(theme: &Theme) -> ContainerStyle {
     sty_cont(theme)
+    // .background(Clr::GRN)
 }
 
 pub(crate) fn sty_cont_statusbar(theme: &Theme) -> ContainerStyle {
     sty_cont(theme)
+    // .background(Clr::YEL)
 }
 
 // ------------------------------------------------------------------------------------------------
 
 pub(crate) fn sty_pane_grid(theme: &Theme) -> PaneGridStyle {
+    let pe = theme.extended_palette();
     PaneGridStyle {
-        hovered_split: Line { color: theme.extended_palette().secondary.weak.color, width: 2e0 },
-        picked_split: Line { color: theme.extended_palette().secondary.weak.color, width: 2e0 },
-        ..iced::widget::pane_grid::default(theme)
+        hovered_region: PaneGridHighlight {
+            background: Background::Color(Color { a: 0.5, ..pe.primary.base.color }),
+            border: Border { width: 0e0, color: pe.primary.strong.color, radius: 0.into() },
+        },
+        hovered_split: PaneGridLine { color: pe.primary.base.color, width: 2.0 },
+        picked_split: PaneGridLine { color: pe.primary.strong.color, width: 2.0 },
     }
+}
+
+pub(crate) fn sty_pane_titlebar(theme: &Theme) -> ContainerStyle {
+    sty_cont(theme).background(Clr::RED)
+}
+
+pub(crate) fn sty_pane_body(theme: &Theme) -> ContainerStyle {
+    sty_cont(theme).background(Clr::GRN)
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -63,7 +85,7 @@ pub(crate) fn sty_btn(theme: &Theme, status: ButtonStatus) -> ButtonStyle {
     let base = ButtonStyle {
         background: Some(Background::Color(palette.primary.base.color)),
         text_color: palette.primary.base.text,
-        border: Border { radius: RADIUS_WIDGET.into(), width: BORDER_W, ..Default::default() },
+        border: Border { radius: RADIUS_WIDGET.into(), width: 0e0, ..Default::default() },
         ..ButtonStyle::default()
     };
 
@@ -200,24 +222,17 @@ pub(crate) fn sty_slider(theme: &Theme, status: SliderStatus) -> SliderStyle {
 
     SliderStyle {
         rail: SliderRail {
-            backgrounds: (color.into(), palette.background.strong.color.into()),
-            width: TEXT_SIZE / 3e0,
-            border: Border {
-                radius: RADIUS_WIDGET.into(),
-                width: 0e0 * SF,
-                color: Color::TRANSPARENT,
-            },
+            backgrounds: (Clr::WHT.into(), Clr::BLU.into()),
+            width: 6e0,
+            border: Border { radius: RADIUS_WIDGET.into(), width: 2e0 * SF, color: Clr::GRN },
         },
 
         handle: SliderHandle {
-            shape: SliderHandleShape::Circle { radius: TEXT_SIZE / 1.75 },
-            // shape: SliderHandleShape::Rectangle {
-            //     width: TEXT_SIZE as u16,
-            //     border_radius: RADIUS_WIDGET.into(),
-            // },
+            // shape: SliderHandleShape::Circle { radius: TEXT_SIZE / 1.75 },
+            shape: SliderHandleShape::Rectangle { width: 15, border_radius: RADIUS_WIDGET.into() },
             background: color.into(),
-            border_color: Color::TRANSPARENT,
-            border_width: 0e0 * SF,
+            border_color: Clr::RED,
+            border_width: 2e0 * SF,
         },
     }
 }

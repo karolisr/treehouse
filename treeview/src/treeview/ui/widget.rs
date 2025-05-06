@@ -1,19 +1,14 @@
 use crate::{
-    TreeView, TreeViewMsg,
-    treeview::{
-        NODE_ORDERING_OPTIONS, NodeOrdering, TREE_STYLE_OPTIONS, TreeStyle, cnv_plot::PlotCnv,
-        cnv_tree::TreeCnv,
-    },
+    PlotCnv, TreeCnv, TreeState, TreeStateMsg, TreeView, TreeViewMsg,
+    treeview::{NODE_ORD_OPTS, NodeOrd, TREE_STYLE_OPTS, TreeStyle},
 };
 use iced::{
     Length::{self, Fill, Fixed, Shrink},
     Pixels, Theme,
     alignment::{Horizontal, Vertical},
     widget::{
-        Canvas, PickList, Row, Rule, Scrollable, Slider, Space, Text, Toggler,
-        button::Button,
-        container, horizontal_space, row,
-        scrollable::{Direction as ScrollableDirection, Scrollbar},
+        Button, Canvas, PickList, Row, Rule, Scrollable, Slider, Space, Text, Toggler, container,
+        horizontal_space, row, scrollable::Direction as ScrollableDirection, scrollable::Scrollbar,
         text, vertical_space,
     },
 };
@@ -34,12 +29,12 @@ impl TreeView {
         btn
     }
 
-    pub(crate) fn btn_root(&self) -> Button<TreeViewMsg> {
+    pub(crate) fn btn_root(&self, ts: &TreeState) -> Button<TreeViewMsg> {
         self.btn("Root", {
-            if self.sel_node_ids.len() == 1 {
-                let node_id = *self.sel_node_ids.iter().last().unwrap();
-                match self.tree.can_root(node_id) {
-                    true => Some(TreeViewMsg::Root(node_id)),
+            if ts.sel_node_ids.len() == 1 {
+                let node_id = *ts.sel_node_ids.iter().last().unwrap();
+                match ts.can_root(node_id) {
+                    true => Some(TreeViewMsg::TreeStateMsg(TreeStateMsg::Root(node_id))),
                     false => None,
                 }
             } else {
@@ -48,11 +43,11 @@ impl TreeView {
         })
     }
 
-    pub(crate) fn btn_unroot(&self) -> Button<TreeViewMsg> {
+    pub(crate) fn btn_unroot(&self, ts: &TreeState) -> Button<TreeViewMsg> {
         self.btn(
             "Unroot",
-            match self.tree_orig.is_rooted() {
-                true => Some(TreeViewMsg::Unroot),
+            match ts.is_rooted {
+                true => Some(TreeViewMsg::TreeStateMsg(TreeStateMsg::Unroot)),
                 false => None,
             },
         )
@@ -61,29 +56,28 @@ impl TreeView {
     // --------------------------------------------------------------------------------------------
 
     pub(crate) fn canvas_ltt(&self) -> Canvas<&PlotCnv, TreeViewMsg> {
-        Canvas::new(&self.ltt).width(Fixed(self.ltt_cnv_w)).height(Fixed(1e2))
+        Canvas::new(&self.ltt_cnv).width(Fixed(self.ltt_cnv_w)).height(Fixed(1e2))
     }
 
     pub(crate) fn canvas_tree(&self) -> Canvas<&TreeCnv, TreeViewMsg> {
-        Canvas::new(&self.tre).width(Fixed(self.tre_cnv_w)).height(Fixed(self.tre_cnv_h))
+        Canvas::new(&self.tre_cnv).width(Fixed(self.tre_cnv_w)).height(Fixed(self.tre_cnv_h))
     }
 
     // --------------------------------------------------------------------------------------------
 
     pub(crate) fn pick_list_node_ordering(&self) -> Row<TreeViewMsg> {
-        let mut pl: PickList<NodeOrdering, &[NodeOrdering], NodeOrdering, TreeViewMsg> =
-            PickList::new(
-                &NODE_ORDERING_OPTIONS,
-                Some(self.sel_node_ord_opt),
-                TreeViewMsg::NodeOrderingOptionChanged,
-            );
+        let mut pl: PickList<NodeOrd, &[NodeOrd], NodeOrd, TreeViewMsg> = PickList::new(
+            &NODE_ORD_OPTS,
+            Some(self.sel_node_ord_opt),
+            TreeViewMsg::NodeOrdOptChanged,
+        );
         pl = self.apply_settings_pick_list(pl);
         row![text!("Node Order").width(Fill), pl].align_y(Vertical::Center)
     }
 
     pub(crate) fn pick_list_tree_style(&self) -> Row<TreeViewMsg> {
         let mut pl: PickList<TreeStyle, &[TreeStyle], TreeStyle, TreeViewMsg> = PickList::new(
-            &TREE_STYLE_OPTIONS,
+            &TREE_STYLE_OPTS,
             Some(self.sel_tree_style_opt),
             TreeViewMsg::TreeStyleOptionChanged,
         );
@@ -271,7 +265,7 @@ impl TreeView {
     }
 
     pub(crate) fn toggler_label_branch(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
-        let mut tglr = self.toggler("Branch Lengths", self.has_brlen && self.draw_brnch_labs);
+        let mut tglr = self.toggler("Branch Lengths", enabled && self.draw_brnch_labs);
         if enabled {
             tglr = tglr.on_toggle(TreeViewMsg::BranchLabelVisibilityChanged);
         }
@@ -279,7 +273,7 @@ impl TreeView {
     }
 
     pub(crate) fn toggler_label_int(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
-        let mut tglr = self.toggler("Internal Labels", self.has_int_labs && self.draw_int_labs);
+        let mut tglr = self.toggler("Internal Labels", enabled && self.draw_int_labs);
         if enabled {
             tglr = tglr.on_toggle(TreeViewMsg::IntLabelVisibilityChanged);
         }
@@ -287,7 +281,7 @@ impl TreeView {
     }
 
     pub(crate) fn toggler_label_tip(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
-        let mut tglr = self.toggler("Tip Labels", self.has_tip_labs && self.draw_tip_labs);
+        let mut tglr = self.toggler("Tip Labels", enabled && self.draw_tip_labs);
         if enabled {
             tglr = tglr.on_toggle(TreeViewMsg::TipLabelVisibilityChanged);
         }
@@ -295,7 +289,7 @@ impl TreeView {
     }
 
     pub(crate) fn toggler_legend(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
-        let mut tglr = self.toggler("Legend", self.has_brlen && self.draw_legend);
+        let mut tglr = self.toggler("Legend", enabled && self.draw_legend);
         if enabled {
             tglr = tglr.on_toggle(TreeViewMsg::LegendVisibilityChanged);
         }
@@ -305,7 +299,7 @@ impl TreeView {
     pub(crate) fn toggler_ltt(&self, enabled: bool) -> Toggler<'_, TreeViewMsg> {
         let mut tglr = self.toggler("LTT Plot", self.show_ltt);
         if enabled {
-            tglr = tglr.on_toggle(TreeViewMsg::LttVisibilityChanged);
+            tglr = tglr.on_toggle(TreeViewMsg::LttPlotVisibilityChanged);
         }
         tglr
     }

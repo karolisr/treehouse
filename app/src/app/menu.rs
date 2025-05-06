@@ -1,12 +1,204 @@
-mod events;
 // #[cfg(target_os = "linux")]
-#[cfg(any(target_os = "windows", target_os = "macos"))]
+// #[cfg(any(target_os = "windows", target_os = "macos"))]
+mod events;
 mod muda_events;
-#[cfg(any(target_os = "windows", target_os = "macos"))]
-mod muda_menu;
-
-pub use events::MenuEvent;
-#[cfg(any(target_os = "windows", target_os = "macos"))]
+pub use events::AppMenuItemId;
+use muda::{
+    CheckMenuItem, MenuItem, MenuItemKind, Submenu,
+    accelerator::{Accelerator, CMD_OR_CTRL, Code},
+};
 pub use muda_events::menu_events;
-#[cfg(any(target_os = "windows", target_os = "macos"))]
-pub use muda_menu::prepare_app_menu;
+use std::collections::HashMap;
+
+#[derive(Default, Clone)]
+pub struct AppMenu {
+    muda_menu: Option<muda::Menu>,
+    items: HashMap<AppMenuItemId, MenuItemKind>,
+}
+
+impl AppMenu {
+    pub fn enable(&mut self, id: &AppMenuItemId) {
+        self.set_enabled(id, true);
+    }
+
+    pub fn disable(&mut self, id: &AppMenuItemId) {
+        self.set_enabled(id, false);
+    }
+
+    fn set_enabled(&mut self, id: &AppMenuItemId, state: bool) {
+        if let Some(mik) = self.items.get(id) {
+            if let Some(mi) = mik.as_menuitem() {
+                mi.set_enabled(state);
+            } else if let Some(mi) = mik.as_check_menuitem() {
+                mi.set_enabled(state);
+            } else if let Some(mi) = mik.as_icon_menuitem() {
+                mi.set_enabled(state);
+            } else if let Some(mi) = mik.as_submenu() {
+                mi.set_enabled(state);
+            }
+        }
+    }
+
+    pub fn update(&mut self, id: &AppMenuItemId) {
+        if let Some(mik) = self.items.get(id) {
+            match mik {
+                MenuItemKind::MenuItem(_) => (),
+                MenuItemKind::Submenu(_) => (),
+                MenuItemKind::Predefined(_) => (),
+                MenuItemKind::Check(mi) => match id {
+                    AppMenuItemId::SetSideBarPositionLeft => {
+                        mi.set_checked(true);
+                        mi.set_enabled(false);
+                        if let Some(miko) = self.items.get(&AppMenuItemId::SetSideBarPositionRight)
+                        {
+                            if let Some(mio) = miko.as_check_menuitem() {
+                                mio.set_checked(false);
+                                mio.set_enabled(true);
+                            }
+                        }
+                    }
+                    AppMenuItemId::SetSideBarPositionRight => {
+                        mi.set_checked(true);
+                        mi.set_enabled(false);
+                        if let Some(miko) = self.items.get(&AppMenuItemId::SetSideBarPositionLeft) {
+                            if let Some(mio) = miko.as_check_menuitem() {
+                                mio.set_checked(false);
+                                mio.set_enabled(true);
+                            }
+                        }
+                    }
+                    _ => (),
+                },
+                MenuItemKind::Icon(_) => (),
+            }
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    pub fn init_for_hwnd(&self, hwnd: u64) {
+        unsafe {
+            if let Some(menu) = &self.muda_menu {
+                let _rslt = menu.init_for_hwnd(hwnd as isize);
+            }
+        };
+    }
+
+    pub fn new() -> Option<Self> {
+        let menu: muda::Menu;
+        let muda_menu: Option<muda::Menu>;
+        let items: HashMap<AppMenuItemId, MenuItemKind>;
+
+        #[cfg(target_os = "linux")]
+        {
+            (muda_menu, items) = (None, HashMap::new());
+        }
+
+        #[cfg(any(target_os = "windows", target_os = "macos"))]
+        {
+            (menu, items) = Self::prepare_app_menu();
+        }
+
+        #[cfg(target_os = "macos")]
+        menu.init_for_nsapp();
+
+        #[cfg(any(target_os = "windows", target_os = "macos"))]
+        {
+            muda_menu = Some(menu);
+        }
+
+        Some(Self { muda_menu, items })
+    }
+
+    fn prepare_app_menu() -> (muda::Menu, HashMap<AppMenuItemId, MenuItemKind>) {
+        let menu = muda::Menu::default();
+        let mut items: HashMap<AppMenuItemId, MenuItemKind> = HashMap::new();
+
+        let modifier = CMD_OR_CTRL;
+
+        let submenu_app = Submenu::with_id("sub_app", "App", true);
+        let submenu_file = Submenu::with_id("sub_file", "File", true);
+        let submenu_view = Submenu::with_id("sub_view", "View", true);
+        let submenu_sidebar_pos = Submenu::with_id("sub_sidebar_pos", "Sidebar Position", true);
+
+        let menu_item_about =
+            muda::PredefinedMenuItem::about(None, Some(muda::AboutMetadata::default()));
+
+        let menu_item_close_win = MenuItem::with_id(
+            AppMenuItemId::CloseWindow,
+            "Close Window",
+            true,
+            Some(Accelerator::new(Some(modifier), Code::KeyW)),
+        );
+
+        let menu_item_quit = MenuItem::with_id(
+            AppMenuItemId::Quit,
+            "Quit",
+            true,
+            Some(Accelerator::new(Some(modifier), Code::KeyQ)),
+        );
+
+        let menu_item_open = MenuItem::with_id(
+            AppMenuItemId::OpenFile,
+            "Open File",
+            true,
+            Some(Accelerator::new(Some(modifier), Code::KeyO)),
+        );
+
+        let menu_item_save_as = MenuItem::with_id(
+            AppMenuItemId::SaveAs,
+            "Save As...",
+            true,
+            Some(Accelerator::new(Some(modifier), Code::KeyS)),
+        );
+
+        let menu_item_sidebar_pos_left = CheckMenuItem::with_id(
+            AppMenuItemId::SetSideBarPositionLeft,
+            "Left",
+            true,
+            false,
+            Some(Accelerator::new(Some(modifier), Code::BracketLeft)),
+        );
+
+        let menu_item_sidebar_pos_right = CheckMenuItem::with_id(
+            AppMenuItemId::SetSideBarPositionRight,
+            "Right",
+            false,
+            true,
+            Some(Accelerator::new(Some(modifier), Code::BracketRight)),
+        );
+
+        submenu_app.append(&menu_item_about).ok();
+        submenu_app.append(&menu_item_quit).ok();
+
+        submenu_file.append(&menu_item_open).ok();
+        submenu_file.append(&menu_item_save_as).ok();
+        submenu_file.append(&menu_item_close_win).ok();
+
+        submenu_sidebar_pos.append(&menu_item_sidebar_pos_left).ok();
+        submenu_sidebar_pos.append(&menu_item_sidebar_pos_right).ok();
+        submenu_view.append(&submenu_sidebar_pos).ok();
+
+        #[cfg(target_os = "macos")]
+        menu.append(&submenu_app).ok();
+        menu.append(&submenu_file).ok();
+        menu.append(&submenu_view).ok();
+
+        items.insert(menu_item_quit.clone().into(), MenuItemKind::MenuItem(menu_item_quit));
+        items.insert(menu_item_open.clone().into(), MenuItemKind::MenuItem(menu_item_open));
+        items.insert(menu_item_save_as.clone().into(), MenuItemKind::MenuItem(menu_item_save_as));
+        items.insert(
+            menu_item_close_win.clone().into(),
+            MenuItemKind::MenuItem(menu_item_close_win),
+        );
+        items.insert(
+            menu_item_sidebar_pos_left.clone().into(),
+            MenuItemKind::Check(menu_item_sidebar_pos_left),
+        );
+        items.insert(
+            menu_item_sidebar_pos_right.clone().into(),
+            MenuItemKind::Check(menu_item_sidebar_pos_right),
+        );
+
+        (menu, items)
+    }
+}

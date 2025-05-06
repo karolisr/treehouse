@@ -1,5 +1,5 @@
 [workspace]
-members = ["app", "utils", "treeview"]
+members = ["app", "utils", "treeview", "widget"]
 resolver = "3"
 
 [workspace.package]
@@ -79,6 +79,7 @@ rpath = false
 [workspace.dependencies]
 utils = { path = "utils" }
 treeview = { path = "treeview" }
+widget = { path = "widget" }
 numfmt = "1.1.1"
 roarsvg = "0.5.0"
 tracing-subscriber = "0.3.19"
@@ -137,15 +138,15 @@ branch = "custom"
 default-features = false
 features = [
     ### Enables the "wgpu" GPU-accelerated renderer backend
-    "wgpu",
+    # "wgpu",
     ### Enables the "thread-pool" futures executor as the "executor::Default" on native platforms
-    "thread-pool",
+    # "thread-pool",
     ### Enables the "canvas" widget
-    "canvas",
+    # "canvas",
     ### Enables lazy widgets
-    "lazy",
+    # "lazy",
     ### Enables support for the "sipper" library
-    "sipper",
+    # "sipper",
     ### Enables the advanced module
     # "advanced",
     ### Auto-detects light/dark mode for the built-in theme

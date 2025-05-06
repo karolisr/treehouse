@@ -1,4 +1,4 @@
-use crate::{NodePoint, SF, TREE_LAB_FONT_NAME};
+use crate::NodePoint;
 use iced::{
     Point,
     alignment::Vertical,
@@ -21,7 +21,7 @@ impl Default for TreeCnvState {
         Self {
             lab_txt_template: Text {
                 font: iced::Font {
-                    family: iced::font::Family::Name(TREE_LAB_FONT_NAME),
+                    // family: iced::font::Family::Name(TREE_LAB_FONT_NAME),
                     ..Default::default()
                 },
                 align_y: Vertical::Center,
@@ -30,7 +30,7 @@ impl Default for TreeCnvState {
             closest_node_point: None,
             mouse_hovering_node: false,
             stroke: Stroke {
-                width: SF,
+                // width: SF,
                 line_cap: LineCap::Square,
                 line_join: LineJoin::Round,
                 ..Default::default()

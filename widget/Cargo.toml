@@ -1,5 +1,5 @@
 [package]
-name = "treeview"
+name = "widget"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -12,8 +12,4 @@ categories.workspace = true
 crate-type = ["rlib"]
 
 [dependencies]
-iced = { workspace = true, features = ["canvas", "lazy"] }
-numfmt = { workspace = true }
-dendros = { workspace = true }
-utils = { workspace = true }
-widget = { workspace = true }
+iced = { workspace = true, features = ["advanced"] }

@@ -1,9 +1,10 @@
 mod consts;
 mod menu;
+mod ops;
 mod platform;
 mod win;
 
-use consts::*;
+// use consts::*;
 use iced::{
     Element, Subscription, Task, Theme, exit,
     window::{
@@ -11,7 +12,8 @@ use iced::{
         open as open_window,
     },
 };
-use menu::MenuEvent;
+use menu::{AppMenu, AppMenuItemId};
+
 use std::path::PathBuf;
 use treeview::{TreeView, TreeViewMsg};
 use win::window_settings;
@@ -19,16 +21,18 @@ use win::window_settings;
 pub struct App {
     winid: Option<WinId>,
     treeview: Option<TreeView>,
-    menu: Option<muda::Menu>,
+    menu: Option<AppMenu>,
 }
 
 #[derive(Debug, Clone)]
 pub enum AppMsg {
+    Other(Option<String>),
+    MenuEvent(AppMenuItemId),
     // --------------------------------
     TreeViewMsg(TreeViewMsg),
     // --------------------------------
-    MenuEvent(MenuEvent),
-    // --------------------------------
+    OpenFile,
+    SaveAs,
     PathToOpen(Option<PathBuf>),
     PathToSave(Option<PathBuf>),
     // --------------------------------
@@ -42,6 +46,8 @@ pub enum AppMsg {
     WinClose,
     WinClosed,
     // --------------------------------
+    #[cfg(target_os = "windows")]
+    AddMenuForHwnd(u64),
 }
 
 pub enum FileType {
@@ -78,22 +84,43 @@ impl App {
 
     pub fn update(&mut self, app_msg: AppMsg) -> Task<AppMsg> {
         match app_msg {
-            AppMsg::MenuEvent(menu_event) => match menu_event {
-                MenuEvent::OpenFile => Task::future(choose_file_to_open()),
-                MenuEvent::SaveAs => Task::future(choose_file_to_save()),
-                MenuEvent::Quit => Task::done(AppMsg::WinCloseRequested),
-                MenuEvent::CloseWindow => Task::done(AppMsg::WinCloseRequested),
-                MenuEvent::Undefined => Task::none(),
-            },
+            AppMsg::Other(opt_msg) => {
+                if let Some(msg) = opt_msg {
+                    println!("AppMsg::Other({msg})");
+                    Task::none()
+                } else {
+                    Task::none()
+                }
+            }
+
+            AppMsg::MenuEvent(miid) => {
+                if let Some(menu) = &mut self.menu {
+                    menu.update(&miid);
+                }
+                Task::done(miid.into())
+            }
 
             AppMsg::TreeViewMsg(treeview_msg) => {
                 if let Some(treeview) = &mut self.treeview {
+                    if let Some(menu) = &mut self.menu {
+                        if let TreeViewMsg::SetSidebarLocation(sidebar_position) = treeview_msg {
+                            match sidebar_position {
+                                treeview::SidebarLocation::Left => {
+                                    menu.update(&AppMenuItemId::SetSideBarPositionLeft)
+                                }
+                                treeview::SidebarLocation::Right => {
+                                    menu.update(&AppMenuItemId::SetSideBarPositionRight)
+                                }
+                            }
+                        }
+                    }
                     treeview.update(treeview_msg).map(AppMsg::TreeViewMsg)
                 } else {
                     Task::none()
                 }
             }
 
+            AppMsg::OpenFile => Task::future(ops::choose_file_to_open()),
             AppMsg::PathToOpen(path_buf_opt) => {
                 if let Some(path_buf) = path_buf_opt {
                     println!("{path_buf:?}");
@@ -114,7 +141,7 @@ impl App {
                         FileType::Exception => ParsedData::Exception,
                         file_type => match file_type {
                             FileType::Newick => ParsedData::Tree(dendros::parse_newick(
-                                read_text_file(path_buf.clone()),
+                                ops::read_text_file(path_buf.clone()),
                             )),
                             FileType::Nexus => ParsedData::Tree(None),
                             _ => ParsedData::Exception,
@@ -124,8 +151,7 @@ impl App {
                     match parsed_data {
                         ParsedData::Tree(tree) => match tree {
                             Some(tree) => {
-                                println!("ParsedData::Tree -> {} tips.", tree.tip_count_all());
-                                Task::none()
+                                Task::done(AppMsg::TreeViewMsg(TreeViewMsg::TreeLoaded(tree)))
                             }
                             None => {
                                 println!("ParsedData::Tree(None)");
@@ -143,6 +169,7 @@ impl App {
                 }
             }
 
+            AppMsg::SaveAs => Task::future(ops::choose_file_to_save()),
             AppMsg::PathToSave(path_buf_opt) => {
                 if let Some(path_buf) = path_buf_opt {
                     println!("{path_buf:?}");
@@ -173,13 +200,9 @@ impl App {
             }
 
             AppMsg::AppInitialized => {
-                #[cfg(any(target_os = "windows", target_os = "macos"))]
-                let menu = menu::prepare_app_menu();
-                #[cfg(target_os = "macos")]
-                menu.init_for_nsapp();
-                #[cfg(any(target_os = "windows", target_os = "macos"))]
-                {
-                    self.menu = Some(menu);
+                self.menu = AppMenu::new();
+                if let Some(menu) = &mut self.menu {
+                    menu.disable(&AppMenuItemId::SaveAs);
                 }
                 Task::done(AppMsg::WinOpen)
             }
@@ -264,11 +287,9 @@ impl App {
 
             #[cfg(target_os = "windows")]
             AppMsg::AddMenuForHwnd(hwnd) => {
-                unsafe {
-                    if let Some(menu) = &self.menu {
-                        let _rslt = menu.init_for_hwnd(hwnd as isize);
-                    }
-                };
+                if let Some(menu) = &self.menu {
+                    menu.init_for_hwnd(hwnd);
+                }
                 Task::none()
             }
         }
@@ -295,7 +316,8 @@ impl App {
     }
 
     pub fn scale_factor(&self, _: WinId) -> f64 {
-        APP_SCALE_FACTOR
+        // APP_SCALE_FACTOR
+        1e0
     }
 
     pub fn theme(&self, _: WinId) -> Theme {
@@ -307,41 +329,12 @@ impl App {
             id: None,
             fonts: vec![],
             default_font: iced::Font::DEFAULT,
-            default_text_size: iced::Pixels(TEXT_SIZE),
-            antialiasing: ANTIALIASING,
+            // default_text_size: iced::Pixels(TEXT_SIZE),
+            // antialiasing: ANTIALIASING,
+            default_text_size: iced::Pixels(13e0),
+            antialiasing: true,
+            #[cfg(target_os = "macos")]
+            allows_automatic_window_tabbing: false,
         }
     }
-}
-
-async fn choose_file_to_open() -> AppMsg {
-    let chosen = rfd::AsyncFileDialog::new()
-        .add_filter("newick", &["newick", "tre"])
-        .add_filter("nexus", &["tree", "trees", "nex", "nexus"])
-        .pick_file()
-        .await;
-    AppMsg::PathToOpen(chosen.map(|pb| pb.path().into()))
-}
-
-async fn choose_file_to_save() -> AppMsg {
-    let chosen =
-        rfd::AsyncFileDialog::new().add_filter("newick", &["newick", "tre"]).save_file().await;
-    AppMsg::PathToSave(chosen.map(|pb| pb.path().into()))
-}
-
-pub fn read_text_file(path_buf: PathBuf) -> String {
-    let data = std::fs::read(path_buf)
-        .map_err(|e| {
-            eprintln!("IO error: {:?}", e);
-        })
-        .unwrap();
-    String::from_utf8(data).unwrap()
-}
-
-#[allow(dead_code)]
-pub fn write_text_file(path_buf: &PathBuf, s: &str) {
-    std::fs::write(path_buf, s)
-        .map_err(|e| {
-            eprintln!("IO error: {:?}", e);
-        })
-        .unwrap();
 }

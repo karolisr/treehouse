@@ -1,4 +1,4 @@
-use super::events::MenuEvent;
+use super::events::AppMenuItemId;
 use crate::app::AppMsg;
 use iced::{
     Subscription,
@@ -15,8 +15,7 @@ fn menu_events_sipper() -> impl Sipper<Never, AppMsg> {
         let muda_receiver: &mut muda::MenuEventReceiver = muda::MenuEvent::receiver();
         loop {
             let event = muda_receiver.select_next_some().await;
-            let menu_event_str: &str = &event.id().0;
-            let menu_event: MenuEvent = String::from(menu_event_str).into();
+            let menu_event: AppMenuItemId = String::from(&event.id().0).into();
             let app_msg = AppMsg::MenuEvent(menu_event);
             output.send(app_msg).await;
         }
