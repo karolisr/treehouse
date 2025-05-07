@@ -1,20 +1,20 @@
-use iced::{Background, Border, Color, Theme};
+use iced::{Background, Border, Theme};
 use utils::Clr;
 
 const SF: f32 = 1e0;
 const TEXT_SIZE: f32 = 13.0 * SF;
 const BORDER_W: f32 = SF;
-const RADIUS_WIDGET: f32 = 3e0 * SF;
+const RADIUS_WIDGET: f32 = 0e0 * SF;
 
 // ------------------------------------------------------------------------------------------------
 use iced::widget::container::{self, Style as ContainerStyle};
 pub(crate) fn sty_cont(theme: &Theme) -> ContainerStyle {
     let pb = theme.palette();
-    let pe = theme.extended_palette();
+    // let pe = theme.extended_palette();
     ContainerStyle {
         text_color: Some(pb.text),
-        background: Some(pe.background.weakest.color.into()),
-        border: Border { width: 2e0, color: Clr::RED, radius: 0.into() },
+        background: None,
+        border: Border { width: 1e0, color: Clr::BLK, radius: RADIUS_WIDGET.into() },
         ..Default::default()
     }
 }
@@ -26,7 +26,7 @@ pub(crate) fn sty_cont_main(theme: &Theme) -> ContainerStyle {
 
 pub(crate) fn sty_cont_sidebar(theme: &Theme) -> ContainerStyle {
     sty_cont(theme)
-    // .background(Clr::MAG)
+    // .background(Clr::YEL)
 }
 
 pub(crate) fn sty_cont_toolbar(theme: &Theme) -> ContainerStyle {
@@ -36,7 +36,7 @@ pub(crate) fn sty_cont_toolbar(theme: &Theme) -> ContainerStyle {
 
 pub(crate) fn sty_cont_statusbar(theme: &Theme) -> ContainerStyle {
     sty_cont(theme)
-    // .background(Clr::YEL)
+    // .background(Clr::MAG)
 }
 // ------------------------------------------------------------------------------------------------
 use iced::widget::pane_grid::{
@@ -46,8 +46,12 @@ pub(crate) fn sty_pane_grid(theme: &Theme) -> PaneGridStyle {
     let pe = theme.extended_palette();
     PaneGridStyle {
         hovered_region: PaneGridHighlight {
-            background: Background::Color(Color { a: 0.5, ..pe.primary.base.color }),
-            border: Border { width: 0e0, color: pe.primary.strong.color, radius: 0.into() },
+            background: Clr::BLK.into(),
+            border: Border {
+                width: 1e0,
+                color: pe.primary.strong.color,
+                radius: RADIUS_WIDGET.into(),
+            },
         },
         hovered_split: PaneGridLine { color: pe.primary.base.color, width: 2.0 },
         picked_split: PaneGridLine { color: pe.primary.strong.color, width: 2.0 },
@@ -55,11 +59,13 @@ pub(crate) fn sty_pane_grid(theme: &Theme) -> PaneGridStyle {
 }
 
 pub(crate) fn sty_pane_titlebar(theme: &Theme) -> ContainerStyle {
-    sty_cont(theme).background(Clr::RED)
+    sty_cont(theme)
+    // .background(Clr::RED)
 }
 
 pub(crate) fn sty_pane_body(theme: &Theme) -> ContainerStyle {
-    sty_cont(theme).background(Clr::GRN)
+    sty_cont(theme)
+    // .background(Clr::GRN)
 }
 // ------------------------------------------------------------------------------------------------
 
@@ -225,19 +231,19 @@ pub(crate) fn sty_slider(theme: &Theme, status: SliderStatus) -> SliderStyle {
 
     SliderStyle {
         rail: SliderRail {
-            backgrounds: (Clr::WHT.into(), Clr::BLU.into()),
+            backgrounds: (Clr::WHT.into(), Clr::WHT.into()),
             width: 6e0,
-            border: Border { radius: RADIUS_WIDGET.into(), width: 1e0 * SF, color: Clr::GRN },
+            border: Border { radius: RADIUS_WIDGET.into(), width: 1e0 * SF, color: Clr::BLK },
         },
 
         handle: SliderHandle {
             // shape: SliderHandleShape::Circle { radius: TEXT_SIZE / 1.75 },
             shape: SliderHandleShape::Rectangle {
-                width: (TEXT_SIZE * 1.4) as u16,
+                width: (TEXT_SIZE * 1.3) as u16,
                 border_radius: RADIUS_WIDGET.into(),
             },
             background: color.into(),
-            border_color: Clr::RED,
+            border_color: Clr::BLK,
             border_width: 1e0 * SF,
         },
     }
@@ -245,28 +251,28 @@ pub(crate) fn sty_slider(theme: &Theme, status: SliderStatus) -> SliderStyle {
 // ------------------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------------------
-// use iced::widget::toggler::{Status as TogglerStatus, Style as TogglerStyle};
-// pub(crate) fn sty_toggler(theme: &Theme, status: TogglerStatus) -> TogglerStyle {
-//     let palette = theme.extended_palette();
-//     let color = match status {
-//         TogglerStatus::Active { is_toggled } => match is_toggled {
-//             true => todo!(),
-//             false => todo!(),
-//         },
-//         TogglerStatus::Hovered { is_toggled } => match is_toggled {
-//             true => todo!(),
-//             false => todo!(),
-//         },
-//         TogglerStatus::Disabled => todo!(),
-//     };
+use widget::toggler::{Status as TogglerStatus, Style as TogglerStyle};
+pub(crate) fn sty_toggler(theme: &Theme, status: TogglerStatus) -> TogglerStyle {
+    let palette = theme.extended_palette();
+    let color = match status {
+        TogglerStatus::Active { is_toggled } => match is_toggled {
+            true => palette.primary.base.color,
+            false => palette.primary.base.color,
+        },
+        TogglerStatus::Hovered { is_toggled } => match is_toggled {
+            true => palette.primary.strong.color,
+            false => palette.primary.strong.color,
+        },
+        TogglerStatus::Disabled => palette.secondary.base.color,
+    };
 
-//     TogglerStyle {
-//         background: todo!(),
-//         background_border_width: todo!(),
-//         background_border_color: todo!(),
-//         foreground: todo!(),
-//         foreground_border_width: todo!(),
-//         foreground_border_color: todo!(),
-//     }
-// }
+    TogglerStyle {
+        background: Clr::WHT,
+        background_border_width: 1e0,
+        background_border_color: Clr::BLK,
+        foreground: color,
+        foreground_border_width: 0e0,
+        foreground_border_color: Clr::TRN,
+    }
+}
 // ------------------------------------------------------------------------------------------------

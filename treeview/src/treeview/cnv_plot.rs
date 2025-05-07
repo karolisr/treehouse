@@ -12,14 +12,8 @@ pub(crate) struct PlotCnv {
 
 impl PlotCnv {}
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct PlotCnvState {}
-
-impl Default for PlotCnvState {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 impl Program<TreeViewMsg> for PlotCnv {
     type State = PlotCnvState;
@@ -48,9 +42,10 @@ impl Program<TreeViewMsg> for PlotCnv {
         _state: &Self::State,
         _renderer: &Renderer,
         _theme: &Theme,
-        _bounds: Rectangle,
+        bounds: Rectangle,
         _cursor: Cursor,
     ) -> Vec<Geometry> {
+        println!("{bounds:?}");
         vec![]
     }
 }

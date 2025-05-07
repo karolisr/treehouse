@@ -1,10 +1,28 @@
+use super::TreeViewPane;
 use crate::{TreeState, TreeStateMsg, TreeStyle, TreeView, TreeViewMsg};
-use iced::{
-    Task,
-    widget::pane_grid::{DragEvent, ResizeEvent},
-};
+use iced::Task;
+use iced::widget::pane_grid::{Axis, DragEvent, ResizeEvent, State as PaneGridState};
 
 impl TreeView {
+    fn update_lttp_visibility(&mut self) {
+        if let Some(panes) = &mut self.panes {
+            if let Some(lttp_pane_id) = self.lttp_pane_id {
+                if !self.show_ltt {
+                    panes.close(lttp_pane_id);
+                    self.lttp_pane_id = None;
+                }
+            } else if self.show_ltt {
+                if let Some(tree_pane_id) = self.tree_pane_id {
+                    if let Some((lttp_pane_id, _split)) =
+                        panes.split(Axis::Horizontal, tree_pane_id, TreeViewPane::LttPlot)
+                    {
+                        self.lttp_pane_id = Some(lttp_pane_id);
+                    }
+                }
+            }
+        }
+    }
+
     pub fn update(&mut self, msg: TreeViewMsg) -> Task<TreeViewMsg> {
         // println!("TreeView -> {msg:?}");
         match msg {
@@ -17,17 +35,25 @@ impl TreeView {
                 }
             }
 
-            TreeViewMsg::PaneDragged(drag_event) => match drag_event {
-                DragEvent::Picked { pane: _pane_idx } => Task::none(),
-                DragEvent::Dropped { pane: pane_idx, target } => {
-                    self.pane_grid_state.drop(pane_idx, target);
+            TreeViewMsg::PaneDragged(drag_event) => {
+                if let Some(pgs) = &mut self.panes {
+                    match drag_event {
+                        DragEvent::Picked { pane: _pane_idx } => Task::none(),
+                        DragEvent::Dropped { pane: pane_idx, target } => {
+                            pgs.drop(pane_idx, target);
+                            Task::none()
+                        }
+                        DragEvent::Canceled { pane: _pane_idx } => Task::none(),
+                    }
+                } else {
                     Task::none()
                 }
-                DragEvent::Canceled { pane: _pane_idx } => Task::none(),
-            },
+            }
 
             TreeViewMsg::PaneResized(ResizeEvent { split, ratio }) => {
-                self.pane_grid_state.resize(split, ratio);
+                if let Some(pgs) = &mut self.panes {
+                    pgs.resize(split, ratio);
+                }
                 Task::none()
             }
 
@@ -54,17 +80,24 @@ impl TreeView {
             }
 
             TreeViewMsg::TreeUpdated => {
+                if let Some(_sel_tree_idx) = self.sel_tree_idx {
+                    if let Some(_tree_pane_id) = &self.tree_pane_id {
+                    } else {
+                        let (panes, tree_pane_id) = PaneGridState::new(TreeViewPane::Tree);
+                        self.panes = Some(panes);
+                        self.tree_pane_id = Some(tree_pane_id)
+                    }
+                }
                 // self.ltt.set_data(ltt(&self.tree_edges, self.ltt_bins));
-                // self.update_extra_space_for_labels();
-                // self.update_node_size();
-                // self.update_tip_label_w();
-                // self.update_canvas_h();
-                // self.update_rects();
-                // self.update_visible_nodes();
-                // self.update_found_node_point();
                 // if !self.drawing_enabled { Task::done(TreeViewMsg::Init) } else { Task::none() }
-                // self.update_visible_nodes();
-                // self.update_found_node_point();
+                self.update_lttp_visibility();
+                Task::none()
+            }
+
+            TreeViewMsg::LttPlotVisibilityChanged(show_ltt) => {
+                self.show_ltt = show_ltt;
+                self.update_lttp_visibility();
+                // Task::done(TreeViewMsg::ScrollToX { sender: "tre", x: self.tre_cnv_x0 })
                 Task::none()
             }
 
@@ -328,25 +361,13 @@ impl TreeView {
                 Task::none()
             }
 
-            TreeViewMsg::LegendVisibilityChanged(state) => {
-                self.draw_legend = state;
+            TreeViewMsg::LegendVisibilityChanged(draw_legend) => {
+                self.draw_legend = draw_legend;
                 Task::none()
             }
 
-            TreeViewMsg::LttPlotVisibilityChanged(state) => {
-                self.show_ltt = state;
-                // self.update_node_size();
-                // self.update_tip_label_w();
-                // self.update_canvas_h();
-                // self.update_rects();
-                // self.update_visible_nodes();
-                // self.update_found_node_point();
-                // Task::done(TreeViewMsg::ScrollToX { sender: "tre", x: self.tre_cnv_x0 })
-                Task::none()
-            }
-
-            TreeViewMsg::CursorLineVisibilityChanged(state) => {
-                self.show_cursor_line = state;
+            TreeViewMsg::CursorLineVisibilityChanged(show_cursor_line) => {
+                self.show_cursor_line = show_cursor_line;
                 Task::none()
             }
 

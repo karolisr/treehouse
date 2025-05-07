@@ -5,9 +5,9 @@
 // #![allow(clippy::too_many_arguments)]
 // #![allow(clippy::type_complexity)]
 // #![allow(clippy::vec_init_then_push)]
-// #![allow(dead_code)]
+#![allow(dead_code)]
 // #![allow(unused_assignments)]
-// #![allow(unused_imports)]
+#![allow(unused_imports)]
 // #![allow(unused_mut)]
 // #![allow(unused_variables)]
 // -------------------------------------

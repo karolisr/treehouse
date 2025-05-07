@@ -80,12 +80,13 @@ rpath = false
 utils = { path = "utils" }
 treeview = { path = "treeview" }
 widget = { path = "widget" }
+num-traits = "0.2.19"
 numfmt = "1.1.1"
-roarsvg = "0.5.0"
-tracing-subscriber = "0.3.19"
 objc2 = "0.6.1"
 objc2-app-kit = "0.3.1"
 objc2-foundation = "0.3.1"
+roarsvg = "0.5.0"
+tracing-subscriber = "0.3.19"
 
 [workspace.dependencies.dendros]
 git = "https://github.com/karolisr/dendros.git"

@@ -213,7 +213,6 @@ impl TreeState {
         };
     }
 
-    #[allow(dead_code)]
     fn filter_nodes(&mut self) {
         self.found_node_ids.clear();
         self.found_edges.clear();
