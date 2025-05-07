@@ -1,8 +1,8 @@
 mod cnv_plot;
 mod cnv_tree;
+mod elements;
 mod styles;
 mod tree_state;
-mod ui;
 mod update;
 mod view;
 
@@ -13,6 +13,52 @@ use dendros::Tree;
 use iced::widget::pane_grid::{DragEvent, Pane, ResizeEvent, State as PaneGridState};
 use std::fmt::{Display, Formatter, Result};
 pub(crate) use tree_state::{TreeState, TreeStateMsg};
+
+impl TreeView {
+    pub fn new() -> Self {
+        Self {
+            show_toolbar: false,
+            show_sidebar: true,
+            show_statusbar: false,
+
+            draw_brnch_labs: false,
+            draw_int_labs: false,
+            draw_legend: false,
+            draw_tip_labs: false,
+            show_cursor_line: false,
+            show_ltt: false,
+
+            sel_tree_style_opt: TreeStyle::Phylogram,
+            sel_node_ord_opt: NodeOrd::Unordered,
+
+            tip_brnch_labs_allowed: true,
+
+            min_lab_size_idx: 1,
+            sel_tip_lab_size_idx: 10,
+            sel_int_lab_size_idx: 10,
+            sel_brnch_lab_size_idx: 10,
+            max_lab_size_idx: 24,
+
+            min_node_size_idx: 1,
+            sel_node_size_idx: 1,
+            max_node_size_idx: 24,
+
+            min_tre_cnv_w_idx: 1,
+            sel_tre_cnv_w_idx: 1,
+            max_tre_cnv_w_idx: 24,
+
+            min_opn_angle_idx: 45,
+            sel_opn_angle_idx: 359,
+            max_opn_angle_idx: 359,
+
+            min_rot_angle_idx: 360 - 180,
+            sel_rot_angle_idx: 360,
+            max_rot_angle_idx: 360 + 180,
+
+            ..Default::default()
+        }
+    }
+}
 
 #[derive(Default)]
 pub struct TreeView {
@@ -80,54 +126,11 @@ pub struct TreeView {
     pub(crate) ltt_cnv_y0: Float,
 }
 
-impl TreeView {
-    pub fn new() -> Self {
-        Self {
-            show_toolbar: true,
-            show_sidebar: true,
-            show_statusbar: false,
-
-            draw_brnch_labs: true,
-            draw_int_labs: true,
-            draw_legend: true,
-            draw_tip_labs: true,
-            show_cursor_line: true,
-            show_ltt: true,
-
-            sel_tree_style_opt: TreeStyle::Phylogram,
-            sel_node_ord_opt: NodeOrd::Unordered,
-
-            tip_brnch_labs_allowed: true,
-
-            max_lab_size_idx: 24,
-            max_node_size_idx: 24,
-            max_opn_angle_idx: 359,
-            max_rot_angle_idx: 360 + 180,
-            max_tre_cnv_w_idx: 24,
-            min_lab_size_idx: 1,
-            min_node_size_idx: 1,
-            min_opn_angle_idx: 45,
-            min_rot_angle_idx: 360 - 180,
-            min_tre_cnv_w_idx: 1,
-            sel_brnch_lab_size_idx: 4,
-            sel_int_lab_size_idx: 4,
-            sel_node_size_idx: 1,
-            sel_opn_angle_idx: 359,
-            sel_rot_angle_idx: 360,
-            sel_tip_lab_size_idx: 4,
-            sel_tre_cnv_w_idx: 1,
-
-            ..Default::default()
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub enum TreeViewMsg {
-    PaneDragged(DragEvent),
+    // PaneDragged(DragEvent),
     PaneResized(ResizeEvent),
     // -------------------------------------------
-    // PaneGridMsg(PaneGridMsg),
     TreeStateMsg(TreeStateMsg),
     // -------------------------------------------
     TreeLoaded(Tree),
@@ -227,64 +230,3 @@ impl Display for TreeStyle {
         })
     }
 }
-
-// impl Default for TreeView {
-//     fn default() -> Self {
-//         let pane_cfg_empty = PaneGridCfg::Pane(TreeViewPane::Empty);
-//         let pane_grid_state = PaneGridState::with_configuration(pane_cfg_empty);
-
-//         Self {
-//             pane_grid_state,
-//             trees: Default::default(),
-//             sel_tree_idx: Default::default(),
-//             show_cursor_line: Default::default(),
-//             show_ltt: Default::default(),
-//             show_sidebar: Default::default(),
-//             show_toolbar: Default::default(),
-//             show_statusbar: Default::default(),
-//             sidebar_position: Default::default(),
-//             tip_brnch_labs_allowed: Default::default(),
-//             draw_brnch_labs: Default::default(),
-//             draw_int_labs: Default::default(),
-//             draw_legend: Default::default(),
-//             draw_tip_labs: Default::default(),
-//             max_lab_size_idx: Default::default(),
-//             max_node_size_idx: Default::default(),
-//             max_opn_angle_idx: Default::default(),
-//             max_rot_angle_idx: Default::default(),
-//             max_tre_cnv_w_idx: Default::default(),
-//             min_lab_size_idx: Default::default(),
-//             min_node_size_idx: Default::default(),
-//             min_opn_angle_idx: Default::default(),
-//             min_rot_angle_idx: Default::default(),
-//             min_tre_cnv_w_idx: Default::default(),
-//             sel_tree_style_opt: Default::default(),
-//             sel_node_ord_opt: Default::default(),
-//             sel_brnch_lab_size_idx: Default::default(),
-//             sel_int_lab_size_idx: Default::default(),
-//             sel_node_size_idx: Default::default(),
-//             sel_opn_angle_idx: Default::default(),
-//             sel_rot_angle_idx: Default::default(),
-//             sel_tip_lab_size_idx: Default::default(),
-//             sel_tre_cnv_w_idx: Default::default(),
-//             opn_angle: Default::default(),
-//             rot_angle: Default::default(),
-//             tre_cnv: Default::default(),
-//             ltt_cnv: Default::default(),
-//             ltt_cnv_scrolled: Default::default(),
-//             tre_cnv_scrolled: Default::default(),
-//             min_tre_cnv_h: Default::default(),
-//             min_tre_cnv_w: Default::default(),
-//             tree_scroll_w: Default::default(),
-//             tree_scroll_h: Default::default(),
-//             tre_cnv_w: Default::default(),
-//             tre_cnv_h: Default::default(),
-//             tre_cnv_x0: Default::default(),
-//             tre_cnv_y0: Default::default(),
-//             tre_cnv_y1: Default::default(),
-//             ltt_cnv_w: Default::default(),
-//             ltt_cnv_x0: Default::default(),
-//             ltt_cnv_y0: Default::default(),
-//         }
-//     }
-// }

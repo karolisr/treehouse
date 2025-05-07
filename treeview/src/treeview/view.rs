@@ -1,10 +1,10 @@
-use super::styles::{sty_pane_body, sty_pane_grid, sty_pane_titlebar};
-use super::ui::{
+use super::elements::{
     btn, btn_root, btn_unroot, pick_list_node_ordering, pick_list_tree_style, scrollable_cnv_ltt,
     scrollable_cnv_tree, scrollable_v, slider, space_v, toggler_cursor_line, toggler_label_branch,
     toggler_label_int, toggler_label_tip, toggler_legend, toggler_ltt, txt, txt_bool,
     txt_bool_option, txt_float, txt_usize,
 };
+use super::styles::{sty_pane_body, sty_pane_grid, sty_pane_titlebar};
 use super::{SidebarLocation, TreeState};
 use super::{
     TreeViewPane,
@@ -46,9 +46,9 @@ impl TreeView {
         let mut mc = Column::new();
         let mut mr = Row::new();
 
-        mc = mc.padding(6e0);
-        mc = mc.spacing(6e0);
-        mr = mr.spacing(6e0);
+        mc = mc.padding(5e0);
+        mc = mc.spacing(5e0);
+        mr = mr.spacing(5e0);
 
         if self.show_sidebar {
             match self.sidebar_position {
@@ -142,7 +142,7 @@ impl TreeView {
                 match self.sel_tree_style_opt {
                     TreeStyle::Phylogram => {
                         sc = sc.push(slider(
-                            Some("Width"),
+                            Some("Tree Width"),
                             self.min_tre_cnv_w_idx,
                             self.max_tre_cnv_w_idx,
                             self.sel_tre_cnv_w_idx,
@@ -160,7 +160,7 @@ impl TreeView {
                     }
                     TreeStyle::Fan => {
                         sc = sc.push(slider(
-                            Some("Width"),
+                            Some("Zoom"),
                             self.min_tre_cnv_w_idx,
                             self.max_tre_cnv_w_idx,
                             self.sel_tre_cnv_w_idx,

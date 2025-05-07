@@ -14,7 +14,11 @@ pub(crate) fn sty_cont(theme: &Theme) -> ContainerStyle {
     ContainerStyle {
         text_color: Some(pb.text),
         background: None,
-        border: Border { width: 1e0, color: Clr::BLK, radius: RADIUS_WIDGET.into() },
+        border: Border {
+            width: 3e0,
+            color: Clr::BLK.scale_alpha(0.125),
+            radius: RADIUS_WIDGET.into(),
+        },
         ..Default::default()
     }
 }

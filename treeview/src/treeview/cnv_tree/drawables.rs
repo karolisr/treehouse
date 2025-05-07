@@ -21,58 +21,58 @@ use std::{
 };
 
 impl TreeCnv {
-    pub(crate) fn node_labels(
-        &self,
-        nodes: &Vec<NodePoint>,
-        tips: bool,
-        label_text_template: &Text,
-    ) -> Vec<Label> {
-        let mut labels: Vec<Label> = Vec::with_capacity(nodes.len());
-        for NodePoint { point, edge, angle } in nodes {
-            if (tips && !edge.is_tip) || (!tips && edge.is_tip) {
-                continue;
-            }
-            if let Some(name) = &edge.name {
-                let mut text = label_text_template.clone();
-                text.content = name.to_string();
-                text.position = *point;
-                labels.push(Label { text, angle: *angle });
-            }
-        }
-        labels
-    }
+    // pub(crate) fn node_labels(
+    //     &self,
+    //     nodes: &Vec<NodePoint>,
+    //     tips: bool,
+    //     label_text_template: &Text,
+    // ) -> Vec<Label> {
+    //     let mut labels: Vec<Label> = Vec::with_capacity(nodes.len());
+    //     for NodePoint { point, edge, angle } in nodes {
+    //         if (tips && !edge.is_tip) || (!tips && edge.is_tip) {
+    //             continue;
+    //         }
+    //         if let Some(name) = &edge.name {
+    //             let mut text = label_text_template.clone();
+    //             text.content = name.to_string();
+    //             text.position = *point;
+    //             labels.push(Label { text, angle: *angle });
+    //         }
+    //     }
+    //     labels
+    // }
 
-    pub(crate) fn branch_labels(
-        &self,
-        size: Float,
-        visible_nodes: &Vec<NodePoint>,
-        label_text_template: &Text,
-    ) -> Vec<Label> {
-        let mut label_text_template = label_text_template.clone();
-        label_text_template.align_x = TextAlignment::Center;
-        label_text_template.align_y = Vertical::Bottom;
-        let mut labels: Vec<Label> = Vec::with_capacity(visible_nodes.len());
-        for NodePoint { point, edge, angle } in visible_nodes {
-            if edge.parent_node_id.is_none() {
-                continue;
-            }
-            let mut text = label_text_template.clone();
-            let mut node_point = *point;
+    // pub(crate) fn branch_labels(
+    //     &self,
+    //     size: Float,
+    //     visible_nodes: &Vec<NodePoint>,
+    //     label_text_template: &Text,
+    // ) -> Vec<Label> {
+    //     let mut label_text_template = label_text_template.clone();
+    //     label_text_template.align_x = TextAlignment::Center;
+    //     label_text_template.align_y = Vertical::Bottom;
+    //     let mut labels: Vec<Label> = Vec::with_capacity(visible_nodes.len());
+    //     for NodePoint { point, edge, angle } in visible_nodes {
+    //         if edge.parent_node_id.is_none() {
+    //             continue;
+    //         }
+    //         let mut text = label_text_template.clone();
+    //         let mut node_point = *point;
 
-            let adj = edge.brlen_normalized as Float * size / 2e0;
-            if let Some(angle) = angle {
-                node_point.x -= angle.cos() * adj;
-                node_point.y -= angle.sin() * adj;
-            } else {
-                node_point.x -= adj;
-            }
+    //         let adj = edge.brlen_normalized as Float * size / 2e0;
+    //         if let Some(angle) = angle {
+    //             node_point.x -= angle.cos() * adj;
+    //             node_point.y -= angle.sin() * adj;
+    //         } else {
+    //             node_point.x -= adj;
+    //         }
 
-            text.position = node_point;
-            text.content = format!("{:.3}", edge.brlen);
-            labels.push(Label { text, angle: *angle });
-        }
-        labels
-    }
+    //         text.position = node_point;
+    //         text.content = format!("{:.3}", edge.brlen);
+    //         labels.push(Label { text, angle: *angle });
+    //     }
+    //     labels
+    // }
 
     // pub(crate) fn paths_from_chunks(
     //     &self,
@@ -266,49 +266,49 @@ impl TreeCnv {
 //     }
 // }
 
-#[inline]
-pub(crate) fn edge_point(w: Float, h: Float, edge: &Edge) -> Point {
-    let x = edge.x0 as Float * w;
-    let y = edge.y as Float * h;
-    Point { x, y }
-}
+// #[inline]
+// pub(crate) fn edge_point(w: Float, h: Float, edge: &Edge) -> Point {
+//     let x = edge.x0 as Float * w;
+//     let y = edge.y as Float * h;
+//     Point { x, y }
+// }
 
-#[inline]
-pub(crate) fn edge_point_rad(angle: Float, center: Point, size: Float, edge: &Edge) -> Point {
-    let x0 = edge.x0 as Float * angle.cos() * size;
-    let y0 = edge.x0 as Float * angle.sin() * size;
-    Point { x: center.x + x0, y: center.y + y0 }
-}
+// #[inline]
+// pub(crate) fn edge_point_rad(angle: Float, center: Point, size: Float, edge: &Edge) -> Point {
+//     let x0 = edge.x0 as Float * angle.cos() * size;
+//     let y0 = edge.x0 as Float * angle.sin() * size;
+//     Point { x: center.x + x0, y: center.y + y0 }
+// }
 
-#[inline]
-pub(crate) fn node_point(w: Float, h: Float, edge: &Edge) -> Point {
-    let x = edge.x1 as Float * w;
-    let y = edge.y as Float * h;
-    Point { x, y }
-}
+// #[inline]
+// pub(crate) fn node_point(w: Float, h: Float, edge: &Edge) -> Point {
+//     let x = edge.x1 as Float * w;
+//     let y = edge.y as Float * h;
+//     Point { x, y }
+// }
 
-#[inline]
-pub(crate) fn node_point_rad(angle: Float, center: Point, size: Float, edge: &Edge) -> Point {
-    let x1 = edge.x1 as Float * angle.cos() * size;
-    let y1 = edge.x1 as Float * angle.sin() * size;
-    Point { x: center.x + x1, y: center.y + y1 }
-}
+// #[inline]
+// pub(crate) fn node_point_rad(angle: Float, center: Point, size: Float, edge: &Edge) -> Point {
+//     let x1 = edge.x1 as Float * angle.cos() * size;
+//     let y1 = edge.x1 as Float * angle.sin() * size;
+//     Point { x: center.x + x1, y: center.y + y1 }
+// }
 
-#[inline]
-pub(crate) fn edge_points(w: Float, h: Float, edge: &Edge) -> EdgePoints {
-    let pt_0 = edge_point(w, h, edge);
-    let pt_1 = node_point(w, h, edge);
-    EdgePoints { pt_0, pt_1 }
-}
+// #[inline]
+// pub(crate) fn edge_points(w: Float, h: Float, edge: &Edge) -> EdgePoints {
+//     let pt_0 = edge_point(w, h, edge);
+//     let pt_1 = node_point(w, h, edge);
+//     EdgePoints { pt_0, pt_1 }
+// }
 
-#[inline]
-pub(crate) fn edge_points_rad(angle: Float, center: Point, size: Float, edge: &Edge) -> EdgePoints {
-    let pt_0 = edge_point_rad(angle, center, size, edge);
-    let pt_1 = node_point_rad(angle, center, size, edge);
-    EdgePoints { pt_0, pt_1 }
-}
+// #[inline]
+// pub(crate) fn edge_points_rad(angle: Float, center: Point, size: Float, edge: &Edge) -> EdgePoints {
+//     let pt_0 = edge_point_rad(angle, center, size, edge);
+//     let pt_1 = node_point_rad(angle, center, size, edge);
+//     EdgePoints { pt_0, pt_1 }
+// }
 
-#[inline]
-pub(crate) fn edge_angle(rot_angle: Float, opn_angle: Float, edge: &Edge) -> Float {
-    rot_angle + edge.y as Float * opn_angle
-}
+// #[inline]
+// pub(crate) fn edge_angle(rot_angle: Float, opn_angle: Float, edge: &Edge) -> Float {
+//     rot_angle + edge.y as Float * opn_angle
+// }

@@ -1,7 +1,8 @@
 // -------------------------------------
 // #![allow(clippy::collapsible_if)]
 // #![allow(clippy::collapsible_match)]
-// #![allow(clippy::derivable_impls)]
+#![allow(clippy::derivable_impls)]
+#![allow(clippy::single_match)]
 // #![allow(clippy::too_many_arguments)]
 // #![allow(clippy::type_complexity)]
 // #![allow(clippy::vec_init_then_push)]
@@ -13,6 +14,7 @@
 // -------------------------------------
 
 mod treeview;
+pub(crate) mod utils;
 
 pub(crate) use treeview::{
     NODE_ORD_OPTS, NodeOrd, PlotCnv, TREE_STYLE_OPTS, TreeCnv, TreeState, TreeStateMsg, TreeStyle,
