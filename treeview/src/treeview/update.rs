@@ -1,5 +1,8 @@
 use crate::{TreeState, TreeStateMsg, TreeStyle, TreeView, TreeViewMsg};
-use iced::Task;
+use iced::{
+    Task,
+    widget::pane_grid::{DragEvent, ResizeEvent},
+};
 
 impl TreeView {
     pub fn update(&mut self, msg: TreeViewMsg) -> Task<TreeViewMsg> {
@@ -14,8 +17,17 @@ impl TreeView {
                 }
             }
 
-            TreeViewMsg::PaneGridMsg(pane_grid_msg) => {
-                self.pane_grid_main.update(pane_grid_msg);
+            TreeViewMsg::PaneDragged(drag_event) => match drag_event {
+                DragEvent::Picked { pane: _pane_idx } => Task::none(),
+                DragEvent::Dropped { pane: pane_idx, target } => {
+                    self.pane_grid_state.drop(pane_idx, target);
+                    Task::none()
+                }
+                DragEvent::Canceled { pane: _pane_idx } => Task::none(),
+            },
+
+            TreeViewMsg::PaneResized(ResizeEvent { split, ratio }) => {
+                self.pane_grid_state.resize(split, ratio);
                 Task::none()
             }
 

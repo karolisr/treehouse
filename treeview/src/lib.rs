@@ -14,7 +14,9 @@
 
 mod treeview;
 
-pub(crate) use treeview::{NodeOrd, PlotCnv, TreeCnv, TreeState, TreeStateMsg, TreeStyle};
+pub(crate) use treeview::{
+    NODE_ORD_OPTS, NodeOrd, PlotCnv, TREE_STYLE_OPTS, TreeCnv, TreeState, TreeStateMsg, TreeStyle,
+};
 pub use treeview::{SidebarLocation, TreeView, TreeViewMsg};
 
 // ------------------------------------------------------------------------------------------------

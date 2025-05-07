@@ -1,6 +1,6 @@
 mod cnv_plot;
 mod cnv_tree;
-mod panes;
+mod styles;
 mod tree_state;
 mod ui;
 mod update;
@@ -10,16 +10,17 @@ use crate::Float;
 pub(crate) use cnv_plot::PlotCnv;
 pub(crate) use cnv_tree::TreeCnv;
 use dendros::Tree;
-use panes::{PaneGrid, PaneGridMsg};
+use iced::widget::pane_grid::{Configuration as PaneGridCfg, DragEvent, ResizeEvent, State};
 use std::fmt::{Display, Formatter, Result};
 pub(crate) use tree_state::{TreeState, TreeStateMsg};
+pub(crate) use ui::Pane;
 
-#[derive(Default)]
 pub struct TreeView {
     pub(crate) trees: Vec<TreeState>,
     pub(crate) sel_tree_idx: Option<usize>,
 
-    pub(crate) pane_grid_main: PaneGrid,
+    pub(crate) pane_grid_state: State<Pane>,
+
     pub(crate) show_cursor_line: bool,
     pub(crate) show_ltt: bool,
     pub(crate) show_sidebar: bool,
@@ -80,8 +81,6 @@ pub struct TreeView {
 impl TreeView {
     pub fn new() -> Self {
         Self {
-            pane_grid_main: PaneGrid::new(),
-
             show_toolbar: true,
             show_sidebar: true,
             show_statusbar: true,
@@ -123,8 +122,10 @@ impl TreeView {
 
 #[derive(Debug, Clone)]
 pub enum TreeViewMsg {
+    PaneDragged(DragEvent),
+    PaneResized(ResizeEvent),
     // -------------------------------------------
-    PaneGridMsg(PaneGridMsg),
+    // PaneGridMsg(PaneGridMsg),
     TreeStateMsg(TreeStateMsg),
     // -------------------------------------------
     TreeLoaded(Tree),
@@ -216,5 +217,68 @@ impl Display for TreeStyle {
             TreeStyle::Phylogram => "Phylogram",
             TreeStyle::Fan => "Fan",
         })
+    }
+}
+
+impl Default for TreeView {
+    fn default() -> Self {
+        // let pane_cfg_tree = PaneGridCfg::Pane(Pane::Tree { cnv_tree: TreeCnv::default() });
+        // let pane_cfg_lttp = PaneGridCfg::Pane(Pane::LttPlot { cnv_lttp: PlotCnv::default() });
+        let pane_cfg_empty = PaneGridCfg::Pane(Pane::Empty);
+        let pane_grid_state = State::with_configuration(pane_cfg_empty);
+
+        Self {
+            pane_grid_state,
+            trees: Default::default(),
+            sel_tree_idx: Default::default(),
+            show_cursor_line: Default::default(),
+            show_ltt: Default::default(),
+            show_sidebar: Default::default(),
+            show_toolbar: Default::default(),
+            show_statusbar: Default::default(),
+            sidebar_position: Default::default(),
+            tip_brnch_labs_allowed: Default::default(),
+            draw_brnch_labs: Default::default(),
+            draw_int_labs: Default::default(),
+            draw_legend: Default::default(),
+            draw_tip_labs: Default::default(),
+            max_lab_size_idx: Default::default(),
+            max_node_size_idx: Default::default(),
+            max_opn_angle_idx: Default::default(),
+            max_rot_angle_idx: Default::default(),
+            max_tre_cnv_w_idx: Default::default(),
+            min_lab_size_idx: Default::default(),
+            min_node_size_idx: Default::default(),
+            min_opn_angle_idx: Default::default(),
+            min_rot_angle_idx: Default::default(),
+            min_tre_cnv_w_idx: Default::default(),
+            sel_tree_style_opt: Default::default(),
+            sel_node_ord_opt: Default::default(),
+            sel_brnch_lab_size_idx: Default::default(),
+            sel_int_lab_size_idx: Default::default(),
+            sel_node_size_idx: Default::default(),
+            sel_opn_angle_idx: Default::default(),
+            sel_rot_angle_idx: Default::default(),
+            sel_tip_lab_size_idx: Default::default(),
+            sel_tre_cnv_w_idx: Default::default(),
+            opn_angle: Default::default(),
+            rot_angle: Default::default(),
+            tre_cnv: Default::default(),
+            ltt_cnv: Default::default(),
+            ltt_cnv_scrolled: Default::default(),
+            tre_cnv_scrolled: Default::default(),
+            min_tre_cnv_h: Default::default(),
+            min_tre_cnv_w: Default::default(),
+            tree_scroll_w: Default::default(),
+            tree_scroll_h: Default::default(),
+            tre_cnv_w: Default::default(),
+            tre_cnv_h: Default::default(),
+            tre_cnv_x0: Default::default(),
+            tre_cnv_y0: Default::default(),
+            tre_cnv_y1: Default::default(),
+            ltt_cnv_w: Default::default(),
+            ltt_cnv_x0: Default::default(),
+            ltt_cnv_y0: Default::default(),
+        }
     }
 }

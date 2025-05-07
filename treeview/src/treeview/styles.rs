@@ -1,29 +1,13 @@
-use iced::{
-    Background, Border, Color, Theme,
-    widget::{
-        button::{Status as ButtonStatus, Style as ButtonStyle},
-        container::{self, Style as ContainerStyle},
-        pane_grid::{Highlight as PaneGridHighlight, Line as PaneGridLine, Style as PaneGridStyle},
-        pick_list::{Status as PickListStatus, Style as PickListStyle},
-        rule::{FillMode as RuleFillMode, Style as RuleStyle},
-        scrollable::{
-            Rail as ScrollBarRail, Scroller, Status as ScrollableStatus, Style as ScrollableStyle,
-        },
-        slider::{
-            Handle as SliderHandle, HandleShape as SliderHandleShape, Rail as SliderRail,
-            Status as SliderStatus, Style as SliderStyle,
-        },
-    },
-};
+use iced::{Background, Border, Color, Theme};
 use utils::Clr;
 
 const SF: f32 = 1e0;
 const TEXT_SIZE: f32 = 13.0 * SF;
 const BORDER_W: f32 = SF;
-const RADIUS_WIDGET: f32 = 0e0 * SF;
+const RADIUS_WIDGET: f32 = 3e0 * SF;
 
 // ------------------------------------------------------------------------------------------------
-
+use iced::widget::container::{self, Style as ContainerStyle};
 pub(crate) fn sty_cont(theme: &Theme) -> ContainerStyle {
     let pb = theme.palette();
     let pe = theme.extended_palette();
@@ -54,9 +38,10 @@ pub(crate) fn sty_cont_statusbar(theme: &Theme) -> ContainerStyle {
     sty_cont(theme)
     // .background(Clr::YEL)
 }
-
 // ------------------------------------------------------------------------------------------------
-
+use iced::widget::pane_grid::{
+    Highlight as PaneGridHighlight, Line as PaneGridLine, Style as PaneGridStyle,
+};
 pub(crate) fn sty_pane_grid(theme: &Theme) -> PaneGridStyle {
     let pe = theme.extended_palette();
     PaneGridStyle {
@@ -76,9 +61,10 @@ pub(crate) fn sty_pane_titlebar(theme: &Theme) -> ContainerStyle {
 pub(crate) fn sty_pane_body(theme: &Theme) -> ContainerStyle {
     sty_cont(theme).background(Clr::GRN)
 }
-
 // ------------------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------------------
+use iced::widget::button::{Status as ButtonStatus, Style as ButtonStyle};
 pub(crate) fn sty_btn(theme: &Theme, status: ButtonStatus) -> ButtonStyle {
     let palette = theme.extended_palette();
 
@@ -102,7 +88,10 @@ pub(crate) fn sty_btn(theme: &Theme, status: ButtonStatus) -> ButtonStyle {
         },
     }
 }
+// ------------------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------------------
+use iced::widget::pick_list::{Status as PickListStatus, Style as PickListStyle};
 pub(crate) fn sty_pick_lst(theme: &Theme, status: PickListStatus) -> PickListStyle {
     let palette = theme.extended_palette();
 
@@ -126,7 +115,10 @@ pub(crate) fn sty_pick_lst(theme: &Theme, status: PickListStatus) -> PickListSty
         },
     }
 }
+// ------------------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------------------
+use iced::widget::rule::{FillMode as RuleFillMode, Style as RuleStyle};
 pub(crate) fn sty_rule(theme: &Theme) -> RuleStyle {
     let palette = theme.extended_palette();
     RuleStyle {
@@ -136,7 +128,12 @@ pub(crate) fn sty_rule(theme: &Theme) -> RuleStyle {
         fill_mode: RuleFillMode::Percent(1e2),
     }
 }
+// ------------------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------------------
+use iced::widget::scrollable::{
+    Rail as ScrollBarRail, Scroller, Status as ScrollableStatus, Style as ScrollableStyle,
+};
 pub(crate) fn sty_scrlbl(theme: &Theme, status: ScrollableStatus) -> ScrollableStyle {
     let palette = theme.extended_palette();
 
@@ -210,7 +207,13 @@ pub(crate) fn sty_scrlbl(theme: &Theme, status: ScrollableStatus) -> ScrollableS
         }
     }
 }
+// ------------------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------------------
+use iced::widget::slider::{
+    Handle as SliderHandle, HandleShape as SliderHandleShape, Rail as SliderRail,
+    Status as SliderStatus, Style as SliderStyle,
+};
 pub(crate) fn sty_slider(theme: &Theme, status: SliderStatus) -> SliderStyle {
     let palette = theme.extended_palette();
 
@@ -224,17 +227,46 @@ pub(crate) fn sty_slider(theme: &Theme, status: SliderStatus) -> SliderStyle {
         rail: SliderRail {
             backgrounds: (Clr::WHT.into(), Clr::BLU.into()),
             width: 6e0,
-            border: Border { radius: RADIUS_WIDGET.into(), width: 2e0 * SF, color: Clr::GRN },
+            border: Border { radius: RADIUS_WIDGET.into(), width: 1e0 * SF, color: Clr::GRN },
         },
 
         handle: SliderHandle {
             // shape: SliderHandleShape::Circle { radius: TEXT_SIZE / 1.75 },
-            shape: SliderHandleShape::Rectangle { width: 15, border_radius: RADIUS_WIDGET.into() },
+            shape: SliderHandleShape::Rectangle {
+                width: (TEXT_SIZE * 1.4) as u16,
+                border_radius: RADIUS_WIDGET.into(),
+            },
             background: color.into(),
             border_color: Clr::RED,
-            border_width: 2e0 * SF,
+            border_width: 1e0 * SF,
         },
     }
 }
+// ------------------------------------------------------------------------------------------------
 
+// ------------------------------------------------------------------------------------------------
+// use iced::widget::toggler::{Status as TogglerStatus, Style as TogglerStyle};
+// pub(crate) fn sty_toggler(theme: &Theme, status: TogglerStatus) -> TogglerStyle {
+//     let palette = theme.extended_palette();
+//     let color = match status {
+//         TogglerStatus::Active { is_toggled } => match is_toggled {
+//             true => todo!(),
+//             false => todo!(),
+//         },
+//         TogglerStatus::Hovered { is_toggled } => match is_toggled {
+//             true => todo!(),
+//             false => todo!(),
+//         },
+//         TogglerStatus::Disabled => todo!(),
+//     };
+
+//     TogglerStyle {
+//         background: todo!(),
+//         background_border_width: todo!(),
+//         background_border_color: todo!(),
+//         foreground: todo!(),
+//         foreground_border_width: todo!(),
+//         foreground_border_color: todo!(),
+//     }
+// }
 // ------------------------------------------------------------------------------------------------

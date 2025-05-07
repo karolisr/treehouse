@@ -1,3 +1,35 @@
+//! Togglers let users make binary choices by toggling a switch.
+//!
+//! # Example
+//! ```no_run
+//! # mod iced { pub mod widget { pub use iced_widget::*; } pub use iced_widget::Renderer; pub use iced_widget::core::*; }
+//! # pub type Element<'a, Message> = iced_widget::core::Element<'a, Message, iced_widget::Theme, iced_widget::Renderer>;
+//! #
+//! use iced::widget::toggler;
+//!
+//! struct State {
+//!    is_checked: bool,
+//! }
+//!
+//! enum Message {
+//!     TogglerToggled(bool),
+//! }
+//!
+//! fn view(state: &State) -> Element<'_, Message> {
+//!     toggler(state.is_checked)
+//!         .label("Toggle me!")
+//!         .on_toggle(Message::TogglerToggled)
+//!         .into()
+//! }
+//!
+//! fn update(state: &mut State, message: Message) {
+//!     match message {
+//!         Message::TogglerToggled(is_checked) => {
+//!             state.is_checked = is_checked;
+//!         }
+//!     }
+//! }
+//! ```
 use iced::advanced::layout;
 use iced::advanced::renderer;
 use iced::advanced::text;
@@ -12,6 +44,38 @@ use iced::{
     advanced::Layout, advanced::Shell, advanced::Widget,
 };
 
+/// A toggler widget.
+///
+/// # Example
+/// ```no_run
+/// # mod iced { pub mod widget { pub use iced_widget::*; } pub use iced_widget::Renderer; pub use iced_widget::core::*; }
+/// # pub type Element<'a, Message> = iced_widget::core::Element<'a, Message, iced_widget::Theme, iced_widget::Renderer>;
+/// #
+/// use iced::widget::toggler;
+///
+/// struct State {
+///    is_checked: bool,
+/// }
+///
+/// enum Message {
+///     TogglerToggled(bool),
+/// }
+///
+/// fn view(state: &State) -> Element<'_, Message> {
+///     toggler(state.is_checked)
+///         .label("Toggle me!")
+///         .on_toggle(Message::TogglerToggled)
+///         .into()
+/// }
+///
+/// fn update(state: &mut State, message: Message) {
+///     match message {
+///         Message::TogglerToggled(is_checked) => {
+///             state.is_checked = is_checked;
+///         }
+///     }
+/// }
+/// ```
 #[allow(missing_debug_implementations)]
 pub struct Toggler<'a, Message, Theme = iced::Theme, Renderer = iced::Renderer>
 where
@@ -32,6 +96,7 @@ where
     font: Option<Renderer::Font>,
     class: Theme::Class<'a>,
     last_status: Option<Status>,
+    roundness: Roundness,
 }
 
 impl<'a, Message, Theme, Renderer> Toggler<'a, Message, Theme, Renderer>
@@ -66,6 +131,7 @@ where
             font: None,
             class: Theme::default(),
             last_status: None,
+            roundness: Roundness::Auto,
         }
     }
 
@@ -149,6 +215,12 @@ where
         self
     }
 
+    /// Sets the roundness of the [`Toggler`].
+    pub fn roundness(mut self, roundness: Roundness) -> Self {
+        self.roundness = roundness;
+        self
+    }
+
     /// Sets the style of the [`Toggler`].
     #[must_use]
     pub fn style(mut self, style: impl Fn(&Theme, Status) -> Style + 'a) -> Self
@@ -160,6 +232,7 @@ where
     }
 
     /// Sets the style class of the [`Toggler`].
+    // #[cfg(feature = "advanced")]
     #[must_use]
     pub fn class(mut self, class: impl Into<Theme::Class<'a>>) -> Self {
         self.class = class.into();
@@ -325,7 +398,11 @@ where
         let bounds = toggler_layout.bounds();
         let style = theme.style(&self.class, self.last_status.unwrap_or(Status::Disabled));
 
-        let border_radius = bounds.height / BORDER_RADIUS_RATIO;
+        let border_radius = match self.roundness {
+            Roundness::Auto => bounds.height / BORDER_RADIUS_RATIO,
+            Roundness::Radius(radius) => radius,
+        };
+
         let space = SPACE_RATIO * bounds.height;
 
         let toggler_background_bounds = Rectangle {
@@ -387,6 +464,17 @@ where
     ) -> Element<'a, Message, Theme, Renderer> {
         Element::new(toggler)
     }
+}
+
+/// [`Toggler`] roundness.
+#[derive(Default, Debug)]
+pub enum Roundness {
+    /// Automatically calculates roundness to look good and circular at
+    /// different sizes.
+    #[default]
+    Auto,
+    /// Manually sets the roundness to the given radius value.
+    Radius(f32),
 }
 
 /// The possible status of a [`Toggler`].
