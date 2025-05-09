@@ -1,5 +1,8 @@
-use super::TreeViewMsg;
-use crate::{Float, IndexRange, NodeOrd, NodePoint};
+use super::{PlotCnv, TreeCnv, TreeStyle, TreeViewMsg};
+use crate::{
+    Float, NodeOrd,
+    utils::{IndexRange, NodePoint},
+};
 use dendros::{Edges, NodeId, Tree, chunk_edges, flatten_tree};
 use iced::{Point, Task};
 use std::collections::HashSet;
@@ -8,8 +11,10 @@ use std::collections::HashSet;
 pub(crate) struct TreeState {
     threads: usize,
 
+    pub(crate) tre_cnv: TreeCnv,
+    pub(crate) ltt_cnv: PlotCnv,
+
     pub(crate) sel_node_ids: HashSet<NodeId>,
-    visible_nodes: Vec<NodePoint>,
     tip_idx_range: Option<IndexRange>,
     found_edge_pt: Option<Point>,
 
@@ -32,11 +37,10 @@ pub(crate) struct TreeState {
     tree: Tree,
     tree_orig: Tree,
 
-    tree_edges: Edges,
-    tallest_tips: Edges,
-    tree_tip_edges: Edges,
-
-    tree_edges_chunked: Vec<Edges>,
+    pub(crate) tree_edges: Edges,
+    pub(crate) tallest_tips: Edges,
+    pub(crate) tree_tip_edges: Edges,
+    pub(crate) tree_edges_chunked: Vec<Edges>,
 
     tree_srtd_asc: Option<Tree>,
     tree_srtd_desc: Option<Tree>,
@@ -56,6 +60,10 @@ pub enum TreeStateMsg {
     Sort(NodeOrd),
     Unroot,
     Root(NodeId),
+    // -------------------------------------------
+    SelectDeselectNode(NodeId),
+    SelectNode(NodeId),
+    DeselectNode(NodeId),
 }
 
 impl TreeState {
@@ -81,6 +89,9 @@ impl TreeState {
         self.has_tip_labs = self.tree_orig.has_tip_labels();
         self.tree_height = self.tree_orig.height() as Float;
         self.is_rooted = self.tree_orig.is_rooted();
+
+        self.tre_cnv.is_rooted = self.is_rooted;
+        self.tre_cnv.tree_height = self.tree_height;
     }
 
     pub(crate) fn can_root(&self, node_id: NodeId) -> bool {
@@ -92,13 +103,13 @@ impl TreeState {
         match msg {
             TreeStateMsg::Init(tree, node_ord_opt) => {
                 self.init(tree);
-                self.tallest_tips = self.tallest_tips();
+                // self.tallest_tips = self.tallest_tips();
                 Task::done(TreeViewMsg::TreeStateMsg(TreeStateMsg::Sort(node_ord_opt)))
             }
 
             TreeStateMsg::Sort(node_ord_opt) => {
                 self.sort(node_ord_opt);
-                self.tree_tip_edges = self.tree_tip_edges();
+                // self.tree_tip_edges = self.tree_tip_edges();
                 Task::done(TreeViewMsg::TreeUpdated)
             }
 
@@ -123,6 +134,25 @@ impl TreeState {
                 self.cache();
                 Task::done(TreeViewMsg::TreeUpdated)
             }
+
+            // ------------------------------------------------------------------------------------
+            TreeStateMsg::SelectDeselectNode(node_id) => {
+                if self.sel_node_ids.contains(&node_id) {
+                    Task::done(TreeViewMsg::TreeStateMsg(TreeStateMsg::DeselectNode(node_id)))
+                } else {
+                    Task::done(TreeViewMsg::TreeStateMsg(TreeStateMsg::SelectNode(node_id)))
+                }
+            }
+
+            TreeStateMsg::SelectNode(node_id) => {
+                self.sel_node_ids.insert(node_id);
+                Task::none()
+            }
+
+            TreeStateMsg::DeselectNode(node_id) => {
+                self.sel_node_ids.remove(&node_id);
+                Task::none()
+            } // ----------------------------------------------------------------------------------
         }
     }
 
@@ -211,6 +241,8 @@ impl TreeState {
                 }
             },
         };
+        /////
+        self.tre_cnv.tree_edges_chunked = self.tree_edges_chunked.clone();
     }
 
     fn filter_nodes(&mut self) {

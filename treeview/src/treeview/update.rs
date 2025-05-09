@@ -1,16 +1,23 @@
 use super::TreeViewPane;
-use crate::{TreeState, TreeStateMsg, TreeStyle, TreeView, TreeViewMsg};
+use crate::{Float, PI, TreeState, TreeStateMsg, TreeStyle, TreeView, TreeViewMsg};
 use iced::widget::pane_grid::{Axis, DragEvent, ResizeEvent, State as PaneGridState};
 use iced::{Rectangle, Task};
 
 impl TreeView {
+    pub(crate) fn tree_mut(&mut self) -> Option<&mut TreeState> {
+        if let Some(tree_idx) = self.sel_tree_idx {
+            let sel_tree = &mut self.trees[tree_idx];
+            Some(sel_tree)
+        } else {
+            None
+        }
+    }
+
     pub fn update(&mut self, msg: TreeViewMsg) -> Task<TreeViewMsg> {
-        // println!("TreeView -> {msg:?}");
         match msg {
             TreeViewMsg::TreeStateMsg(tree_state_msg) => {
-                if let Some(idx) = self.sel_tree_idx {
-                    let sel_tree = &mut self.trees[idx];
-                    sel_tree.update(tree_state_msg)
+                if let Some(tree) = self.tree_mut() {
+                    tree.update(tree_state_msg)
                 } else {
                     Task::none()
                 }
@@ -23,6 +30,21 @@ impl TreeView {
                 Task::none()
             }
 
+            TreeViewMsg::PaneDragged(drag_event) => {
+                if let Some(pgs) = &mut self.panes {
+                    match drag_event {
+                        DragEvent::Picked { pane: _pane_idx } => Task::none(),
+                        DragEvent::Dropped { pane: pane_idx, target } => {
+                            pgs.drop(pane_idx, target);
+                            Task::none()
+                        }
+                        DragEvent::Canceled { pane: _pane_idx } => Task::none(),
+                    }
+                } else {
+                    Task::none()
+                }
+            }
+
             TreeViewMsg::SetSidebarLocation(position) => {
                 self.sidebar_position = position;
                 Task::none()
@@ -30,7 +52,10 @@ impl TreeView {
 
             TreeViewMsg::TreeLoaded(tree) => {
                 self.trees.push(TreeState::default());
-                self.sel_tree_idx = Some(self.trees.len() - 1);
+                let tree_idx = self.trees.len() - 1;
+                let sel_tree = &mut self.trees[tree_idx];
+                sel_tree.tre_cnv.drawing_enabled = false;
+                self.sel_tree_idx = Some(tree_idx);
                 Task::done(TreeViewMsg::TreeStateMsg(TreeStateMsg::Init(
                     tree, self.sel_node_ord_opt,
                 )))
@@ -46,7 +71,8 @@ impl TreeView {
             }
 
             TreeViewMsg::TreeUpdated => {
-                if let Some(_sel_tree_idx) = self.sel_tree_idx {
+                if let Some(tree) = self.tree_mut() {
+                    tree.tre_cnv.drawing_enabled = true;
                     if let Some(_tree_pane_id) = &self.tree_pane_id {
                     } else {
                         let (panes, tree_pane_id) = PaneGridState::new(TreeViewPane::Tree);
@@ -54,7 +80,6 @@ impl TreeView {
                         self.tree_pane_id = Some(tree_pane_id)
                     }
                 }
-                // self.ltt.set_data(ltt(&self.tree_edges, self.ltt_bins));
                 self.update_lttp_visibility();
                 Task::none()
             }
@@ -62,8 +87,7 @@ impl TreeView {
             TreeViewMsg::LttPlotVisibilityChanged(show_ltt) => {
                 self.show_ltt = show_ltt;
                 self.update_lttp_visibility();
-                // Task::done(TreeViewMsg::ScrollToX { sender: "tre", x: self.tre_cnv_x0 })
-                Task::none()
+                Task::done(TreeViewMsg::ScrollToX { sender: "tre", x: self.tre_cnv_x0 })
             }
 
             TreeViewMsg::ScrollTo { x, y } => iced::widget::scrollable::scroll_to(
@@ -110,6 +134,7 @@ impl TreeView {
                 self.tre_cnv_x0 = vp.absolute_offset().x;
                 self.tre_cnv_y0 = vp.absolute_offset().y;
                 self.tre_cnv_y1 = self.tre_cnv_y0 + vp.bounds().height;
+
                 if self.tre_cnv_scrolled && self.tre_cnv_x0 != self.ltt_cnv_x0 {
                     Task::done(TreeViewMsg::ScrollToX { sender: "tre", x: self.tre_cnv_x0 })
                 } else {
@@ -129,20 +154,47 @@ impl TreeView {
                 }
             }
 
-            TreeViewMsg::TreeStyleOptionChanged(tree_repr_option) => {
-                self.sel_tree_style_opt = tree_repr_option;
+            // ------------------------------------------------------------------------------------
+            TreeViewMsg::CursorOnTreCnv { x } => {
+                if let Some(tree) = self.tree_mut() {
+                    tree.tre_cnv.cursor_x_fraction = None;
+                    tree.ltt_cnv.cursor_x_fraction = x;
+                }
+                Task::none()
+            }
+
+            TreeViewMsg::CursorOnLttCnv { x } => {
+                if let Some(tree) = self.tree_mut() {
+                    tree.tre_cnv.cursor_x_fraction = x;
+                    tree.ltt_cnv.cursor_x_fraction = x;
+                }
+                Task::none()
+            }
+            // ------------------------------------------------------------------------------------
+            TreeViewMsg::TreeStyleOptionChanged(tree_style_opt) => {
+                self.sel_tree_style_opt = tree_style_opt;
+                if let Some(tree) = self.tree_mut() {
+                    tree.tre_cnv.sel_tree_style_opt = tree_style_opt;
+                    tree.tre_cnv.g_edge.clear();
+                }
                 Task::none()
             }
 
             TreeViewMsg::OpnAngleSelectionChanged(idx) => {
                 self.sel_opn_angle_idx = idx;
-                // self.opn_angle = idx as Float / 360e0 * 2e0 * PI;
+                if let Some(tree) = self.tree_mut() {
+                    tree.tre_cnv.opn_angle = idx as Float / 360e0 * 2e0 * PI;
+                    tree.tre_cnv.g_edge.clear();
+                }
                 Task::none()
             }
 
             TreeViewMsg::RotAngleSelectionChanged(idx) => {
                 self.sel_rot_angle_idx = idx;
-                // self.rot_angle = idx as Float / 360e0 * 2e0 * PI;
+                if let Some(tree) = self.tree_mut() {
+                    tree.tre_cnv.rot_angle = idx as Float / 360e0 * 2e0 * PI;
+                    tree.tre_cnv.g_edge.clear();
+                }
                 Task::none()
             }
 
@@ -158,7 +210,9 @@ impl TreeView {
 
             TreeViewMsg::BranchLabelSizeSelectionChanged(idx) => {
                 self.sel_brnch_lab_size_idx = idx;
-                // self.brnch_lab_size = self.min_lab_size * idx as Float;
+                if let Some(tree) = self.tree_mut() {
+                    tree.tre_cnv.brnch_lab_size = tree.tre_cnv.min_lab_size * idx as Float;
+                }
                 Task::none()
             }
 
@@ -169,7 +223,9 @@ impl TreeView {
 
             TreeViewMsg::TipLabelSizeSelectionChanged(idx) => {
                 self.sel_tip_lab_size_idx = idx;
-                // self.tip_lab_size = self.min_lab_size * idx as Float;
+                if let Some(tree) = self.tree_mut() {
+                    tree.tre_cnv.tip_lab_size = tree.tre_cnv.min_lab_size * idx as Float;
+                }
                 Task::none()
             }
 
@@ -180,7 +236,9 @@ impl TreeView {
 
             TreeViewMsg::IntLabelSizeSelectionChanged(idx) => {
                 self.sel_int_lab_size_idx = idx;
-                // self.int_lab_size = self.min_lab_size * idx as Float;
+                if let Some(tree) = self.tree_mut() {
+                    tree.tre_cnv.int_lab_size = tree.tre_cnv.min_lab_size * idx as Float;
+                }
                 Task::none()
             }
 
@@ -191,6 +249,9 @@ impl TreeView {
 
             TreeViewMsg::CursorLineVisibilityChanged(show_cursor_line) => {
                 self.show_cursor_line = show_cursor_line;
+                if let Some(tree) = self.tree_mut() {
+                    tree.tre_cnv.show_cursor_line = show_cursor_line;
+                }
                 Task::none()
             }
 
@@ -203,15 +264,6 @@ impl TreeView {
 }
 
 impl TreeView {
-    // fn update_rects(&mut self) {
-    //     self.tre_cnv.clip_rect = Rectangle {
-    //         x: 0e0,
-    //         y: 0e0,
-    //         width: self.tre_cnv_w,
-    //         height: self.tre_cnv_h,
-    //     };
-    // }
-
     fn update_lttp_visibility(&mut self) {
         if let Some(panes) = &mut self.panes {
             if let Some(lttp_pane_id) = self.lttp_pane_id {
@@ -296,8 +348,6 @@ impl TreeView {
 //                 self.tree_scroll_w - SCROLL_TOOL_W + PADDING - SF - PADDING * 2e0;
 //         }
 //     };
-//     self.ltt.g_bounds.clear();
-//     self.ltt.g_ltt.clear();
 // }
 
 // pub(crate) fn update_canvas_w(&mut self) {
@@ -399,40 +449,6 @@ impl TreeView {
 
 // ------------------------------------------------------------------------------------
 
-// TreeViewMsg::CursorOnTreCnv { x } => {
-//     self.cursor_x_fraction = None;
-//     self.ltt.cursor_x_fraction = x;
-//     Task::none()
-// }
-
-// TreeViewMsg::CursorOnLttCnv { x } => {
-//     self.cursor_x_fraction = x;
-//     self.ltt.cursor_x_fraction = x;
-//     Task::none()
-// }
-
-// ------------------------------------------------------------------------------------
-
-// TreeViewMsg::SelectDeselectNode(node_id) => {
-//     if self.sel_node_ids.contains(&node_id) {
-//         Task::done(TreeViewMsg::DeselectNode(node_id))
-//     } else {
-//         Task::done(TreeViewMsg::SelectNode(node_id))
-//     }
-// }
-
-// TreeViewMsg::SelectNode(node_id) => {
-//     self.sel_node_ids.insert(node_id);
-//     Task::none()
-// }
-
-// TreeViewMsg::DeselectNode(node_id) => {
-//     self.sel_node_ids.remove(&node_id);
-//     Task::none()
-// }
-
-// ------------------------------------------------------------------------------------
-
 // TreeViewMsg::Search(s) => {
 //     self.search_string = s;
 //     self.filter_nodes();
@@ -485,8 +501,6 @@ impl TreeView {
 
 // ------------------------------------------------------------------------------------
 
-// ------------------------------------------------------------------------------------
-
 // TreeViewMsg::Init => Task::batch([
 //     Task::done(TreeViewMsg::TipLabelSizeSelectionChanged(self.sel_tip_lab_size_idx)),
 //     Task::done(TreeViewMsg::IntLabelSizeSelectionChanged(self.sel_int_lab_size_idx)),
@@ -505,18 +519,3 @@ impl TreeView {
 // .chain(Task::done(TreeViewMsg::EnableDrawing)),
 
 // ------------------------------------------------------------------------------------
-
-// TreeViewMsg::PaneDragged(drag_event) => {
-//     if let Some(pgs) = &mut self.panes {
-//         match drag_event {
-//             DragEvent::Picked { pane: _pane_idx } => Task::none(),
-//             DragEvent::Dropped { pane: pane_idx, target } => {
-//                 pgs.drop(pane_idx, target);
-//                 Task::none()
-//             }
-//             DragEvent::Canceled { pane: _pane_idx } => Task::none(),
-//         }
-//     } else {
-//         Task::none()
-//     }
-// }

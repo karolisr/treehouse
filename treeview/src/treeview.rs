@@ -1,8 +1,7 @@
 mod cnv_plot;
 mod cnv_tree;
 mod elements;
-mod styles;
-mod tree_state;
+mod tree;
 mod update;
 mod view;
 
@@ -12,21 +11,21 @@ pub(crate) use cnv_tree::TreeCnv;
 use dendros::Tree;
 use iced::widget::pane_grid::{DragEvent, Pane, ResizeEvent, State as PaneGridState};
 use std::fmt::{Display, Formatter, Result};
-pub(crate) use tree_state::{TreeState, TreeStateMsg};
+pub(crate) use tree::{TreeState, TreeStateMsg};
 
 impl TreeView {
     pub fn new() -> Self {
         Self {
-            show_toolbar: false,
+            show_toolbar: true,
             show_sidebar: true,
-            show_statusbar: false,
+            show_statusbar: true,
 
-            draw_brnch_labs: false,
-            draw_int_labs: false,
-            draw_legend: false,
-            draw_tip_labs: false,
-            show_cursor_line: false,
-            show_ltt: false,
+            draw_brnch_labs: true,
+            draw_int_labs: true,
+            draw_legend: true,
+            draw_tip_labs: true,
+            show_cursor_line: true,
+            show_ltt: true,
 
             sel_tree_style_opt: TreeStyle::Phylogram,
             sel_node_ord_opt: NodeOrd::Unordered,
@@ -105,11 +104,6 @@ pub struct TreeView {
     pub(crate) sel_tip_lab_size_idx: u16,
     pub(crate) sel_tre_cnv_w_idx: u16,
     //
-    pub(crate) opn_angle: Float,
-    pub(crate) rot_angle: Float,
-    //
-    pub(crate) tre_cnv: TreeCnv,
-    pub(crate) ltt_cnv: PlotCnv,
     pub(crate) ltt_cnv_scrolled: bool,
     pub(crate) tre_cnv_scrolled: bool,
     pub(crate) min_tre_cnv_h: Float,
@@ -128,7 +122,7 @@ pub struct TreeView {
 
 #[derive(Debug, Clone)]
 pub enum TreeViewMsg {
-    // PaneDragged(DragEvent),
+    PaneDragged(DragEvent),
     PaneResized(ResizeEvent),
     // -------------------------------------------
     TreeStateMsg(TreeStateMsg),
@@ -158,9 +152,13 @@ pub enum TreeViewMsg {
     CursorLineVisibilityChanged(bool),
     LttPlotVisibilityChanged(bool),
     // -------------------------------------------
-    // SelectDeselectNode(NodeId),
-    // SelectNode(NodeId),
-    // DeselectNode(NodeId),
+    TreCnvScrolled(iced::widget::scrollable::Viewport),
+    LttCnvScrolled(iced::widget::scrollable::Viewport),
+    ScrollTo { x: f32, y: f32 },
+    ScrollToX { sender: &'static str, x: f32 },
+    // -------------------------------------------
+    CursorOnTreCnv { x: Option<f32> },
+    CursorOnLttCnv { x: Option<f32> },
     // -------------------------------------------
     // Search(String),
     // NextResult,
@@ -168,14 +166,6 @@ pub enum TreeViewMsg {
     // AddFoundToSelection,
     // RemFoundFromSelection,
     // TipOnlySearchSelectionChanged(bool),
-    // -------------------------------------------
-    TreCnvScrolled(iced::widget::scrollable::Viewport),
-    LttCnvScrolled(iced::widget::scrollable::Viewport),
-    ScrollTo { x: f32, y: f32 },
-    ScrollToX { sender: &'static str, x: f32 },
-    // -------------------------------------------
-    // CursorOnTreCnv { x: Option<f32> },
-    // CursorOnLttCnv { x: Option<f32> },
     // -------------------------------------------
 }
 

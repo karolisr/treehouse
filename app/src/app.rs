@@ -114,6 +114,7 @@ impl App {
                             }
                         }
                     }
+
                     treeview.update(treeview_msg).map(AppMsg::TreeViewMsg)
                 } else {
                     Task::none()

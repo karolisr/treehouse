@@ -1,5 +1,5 @@
 use crate::{
-    TreeViewMsg,
+    Float, TreeViewMsg,
     utils::{clip_rect_from_bounds, draw_point, draw_rectangle},
 };
 use iced::{
@@ -10,7 +10,14 @@ use iced::{
 
 #[derive(Debug, Default)]
 pub(crate) struct PlotCnv {
-    g_bounds: Cache,
+    // pub ltt_points: Option<Vec<LttPoint>>,
+    pub cursor_x_fraction: Option<Float>,
+    pub ltt_rect_x: Float,
+    pub ltt_rect_w: Float,
+    pub g_bounds: Cache,
+    pub g_ltt: Cache,
+    pub g_cursor_line: Cache,
+    pub g_frame: Cache,
 }
 
 impl PlotCnv {}
@@ -41,11 +48,11 @@ impl Program<TreeViewMsg> for PlotCnv {
         cursor: Cursor,
     ) -> Option<Action<TreeViewMsg>> {
         state.clip_rect = Some(clip_rect_from_bounds(bounds));
-        if let Some(cursor_pt) = cursor.position_in(bounds) {
+        if let Some(cursor_point) = cursor.position_in(bounds) {
             match event {
                 Event::Mouse(MouseEvent::CursorMoved { position: _ }) => {
                     self.g_bounds.clear();
-                    state.cursor_point = Some(cursor_pt);
+                    state.cursor_point = Some(cursor_point);
                     Some(Action::request_redraw())
                 }
                 _ => None,

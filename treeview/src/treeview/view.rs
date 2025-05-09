@@ -1,16 +1,13 @@
-use super::elements::{
-    btn, btn_root, btn_unroot, pick_list_node_ordering, pick_list_tree_style, scrollable_cnv_ltt,
-    scrollable_cnv_tree, scrollable_v, slider, space_v, toggler_cursor_line, toggler_label_branch,
-    toggler_label_int, toggler_label_tip, toggler_legend, toggler_ltt, txt, txt_bool,
-    txt_bool_option, txt_float, txt_usize,
-};
-use super::styles::{sty_pane_body, sty_pane_grid, sty_pane_titlebar};
+use super::TreeViewPane;
 use super::{SidebarLocation, TreeState};
-use super::{
-    TreeViewPane,
-    styles::{sty_cont_main, sty_cont_sidebar, sty_cont_statusbar, sty_cont_toolbar},
-};
 use crate::TreeStyle;
+use crate::utils::{
+    btn, btn_root, btn_unroot, pick_list_node_ordering, pick_list_tree_style, scrollable_cnv_ltt,
+    scrollable_cnv_tree, scrollable_v, slider, space_v, sty_cont_main, sty_cont_sidebar,
+    sty_cont_statusbar, sty_cont_toolbar, sty_pane_body, sty_pane_grid, sty_pane_titlebar,
+    toggler_cursor_line, toggler_label_branch, toggler_label_int, toggler_label_tip,
+    toggler_legend, toggler_ltt, txt, txt_bool, txt_bool_option, txt_float, txt_usize,
+};
 use crate::{TreeView, TreeViewMsg};
 use iced::{
     Element,
@@ -80,7 +77,7 @@ impl TreeView {
 
     pub(crate) fn content<'a>(
         &'a self,
-        _ts: &TreeState,
+        ts: &'a TreeState,
         pgs: &'a PaneGridState<TreeViewPane>,
     ) -> Element<'a, TreeViewMsg> {
         container(
@@ -90,7 +87,7 @@ impl TreeView {
                     let h = size.height;
                     match pane {
                         TreeViewPane::Tree => scrollable_cnv_tree(
-                            Canvas::new(&self.tre_cnv)
+                            Canvas::new(&ts.tre_cnv)
                                 .width(w.max(w * self.sel_tre_cnv_w_idx as f32))
                                 .height(h.max(h * self.sel_node_size_idx as f32)),
                             w,
@@ -103,7 +100,7 @@ impl TreeView {
                                 TreeStyle::Fan => w,
                             };
                             scrollable_cnv_ltt(
-                                Canvas::new(&self.ltt_cnv).width(width).height(h),
+                                Canvas::new(&ts.ltt_cnv).width(width).height(h),
                                 w,
                                 h,
                             )
@@ -112,21 +109,21 @@ impl TreeView {
                     }
                 }))
                 .style(sty_pane_body)
-                // .title_bar(
-                //     TitleBar::new(container(space_v(0, 30)))
-                //         .style(sty_pane_titlebar)
-                //         .always_show_controls(),
-                // )
+                .title_bar(
+                    TitleBar::new(container(space_v(0, 30)))
+                        .style(sty_pane_titlebar)
+                        .always_show_controls(),
+                )
             })
             .width(Fill)
             .height(Fill)
             .min_size(1e2)
             .spacing(6e0)
             .style(sty_pane_grid)
-            // .on_drag(TreeViewMsg::PaneDragged)
+            .on_drag(TreeViewMsg::PaneDragged)
             .on_resize(1e1, TreeViewMsg::PaneResized),
         )
-        // .style(sty_cont_main)
+        .style(sty_cont_main)
         .into()
     }
 
@@ -262,8 +259,8 @@ impl TreeView {
             }))
             .clip(true),
         )
-        .padding(4e0)
-        .width(200)
+        .padding(1e1)
+        .width(220)
         .style(sty_cont_sidebar)
         .into()
     }
