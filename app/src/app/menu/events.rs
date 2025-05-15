@@ -1,6 +1,6 @@
 use crate::app::AppMsg;
 use std::fmt::Display;
-use treeview::{SidebarLocation, TreeViewMsg};
+use treeview::{SidebarPos, TvMsg};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum AppMenuItemId {
@@ -41,16 +41,22 @@ impl From<String> for AppMenuItemId {
 
 impl From<AppMenuItemId> for AppMsg {
     fn from(value: AppMenuItemId) -> Self {
+        (&value).into()
+    }
+}
+
+impl From<&AppMenuItemId> for AppMsg {
+    fn from(value: &AppMenuItemId) -> Self {
         match value {
             AppMenuItemId::OpenFile => AppMsg::OpenFile,
             AppMenuItemId::SaveAs => AppMsg::SaveAs,
             AppMenuItemId::Quit => AppMsg::WinCloseRequested,
             AppMenuItemId::CloseWindow => AppMsg::WinCloseRequested,
             AppMenuItemId::SetSideBarPositionLeft => {
-                AppMsg::TreeViewMsg(TreeViewMsg::SetSidebarLocation(SidebarLocation::Left))
+                AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPos::Left))
             }
             AppMenuItemId::SetSideBarPositionRight => {
-                AppMsg::TreeViewMsg(TreeViewMsg::SetSidebarLocation(SidebarLocation::Right))
+                AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPos::Right))
             }
             _ => AppMsg::Other(Some(value.to_string())),
         }

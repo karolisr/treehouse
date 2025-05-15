@@ -1,16 +1,6 @@
-use crate::{
-    Float, TreeViewMsg,
-    utils::{clip_rect_from_bounds, draw_point, draw_rectangle},
-};
-use iced::{
-    Event, Point, Rectangle, Renderer, Theme,
-    mouse::{Cursor, Event as MouseEvent, Interaction},
-    widget::canvas::{Action, Cache, Geometry, Program},
-};
-
 #[derive(Debug, Default)]
 pub(crate) struct PlotCnv {
-    // pub ltt_points: Option<Vec<LttPoint>>,
+    pub ltt_points: Option<Vec<LttPoint>>,
     pub cursor_x_fraction: Option<Float>,
     pub ltt_rect_x: Float,
     pub ltt_rect_w: Float,
@@ -32,20 +22,13 @@ impl Program<TreeViewMsg> for PlotCnv {
     type State = PlotCnvState;
 
     fn mouse_interaction(
-        &self,
-        state: &Self::State,
-        _bounds: Rectangle,
-        _cursor: Cursor,
+        &self, state: &Self::State, _bounds: Rectangle, _cursor: Cursor,
     ) -> Interaction {
         if state.cursor_point.is_some() { Interaction::Crosshair } else { Interaction::default() }
     }
 
     fn update(
-        &self,
-        state: &mut Self::State,
-        event: &Event,
-        bounds: Rectangle,
-        cursor: Cursor,
+        &self, state: &mut Self::State, event: &Event, bounds: Rectangle, cursor: Cursor,
     ) -> Option<Action<TreeViewMsg>> {
         state.clip_rect = Some(clip_rect_from_bounds(bounds));
         if let Some(cursor_point) = cursor.position_in(bounds) {
@@ -66,11 +49,7 @@ impl Program<TreeViewMsg> for PlotCnv {
     }
 
     fn draw(
-        &self,
-        state: &Self::State,
-        renderer: &Renderer,
-        _theme: &Theme,
-        bounds: Rectangle,
+        &self, state: &Self::State, renderer: &Renderer, _theme: &Theme, bounds: Rectangle,
         _cursor: Cursor,
     ) -> Vec<Geometry> {
         let mut geoms: Vec<Geometry> = Vec::new();

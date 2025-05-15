@@ -13,9 +13,8 @@ use iced::{
     },
 };
 use menu::{AppMenu, AppMenuItemId};
-
 use std::path::PathBuf;
-use treeview::{TreeView, TreeViewMsg};
+use treeview::{SidebarPos, TreeView, TvMsg};
 use win::window_settings;
 
 pub struct App {
@@ -29,7 +28,7 @@ pub enum AppMsg {
     Other(Option<String>),
     MenuEvent(AppMenuItemId),
     // --------------------------------
-    TreeViewMsg(TreeViewMsg),
+    TvMsg(TvMsg),
     // --------------------------------
     OpenFile,
     SaveAs,
@@ -58,7 +57,7 @@ pub enum FileType {
 }
 
 pub enum ParsedData {
-    Tree(Option<dendros::Tree>),
+    Trees(Option<Vec<dendros::Tree>>),
     Other(String),
     Exception,
 }
@@ -72,7 +71,7 @@ impl App {
 
     pub fn view(&self, _: WinId) -> Element<AppMsg> {
         if let Some(treeview) = &self.treeview {
-            treeview.view().map(AppMsg::TreeViewMsg)
+            treeview.view().map(AppMsg::TvMsg)
         } else {
             iced::widget::container(iced::widget::text!("App::view"))
                 .width(iced::Fill)
@@ -100,27 +99,26 @@ impl App {
                 Task::done(miid.into())
             }
 
-            AppMsg::TreeViewMsg(treeview_msg) => {
+            AppMsg::TvMsg(tv_msg) => {
                 if let Some(treeview) = &mut self.treeview {
                     if let Some(menu) = &mut self.menu {
-                        if let TreeViewMsg::SetSidebarLocation(sidebar_position) = treeview_msg {
-                            match sidebar_position {
-                                treeview::SidebarLocation::Left => {
+                        if let TvMsg::SetSidebarPos(sidebar_pos) = tv_msg {
+                            match sidebar_pos {
+                                SidebarPos::Left => {
                                     menu.update(&AppMenuItemId::SetSideBarPositionLeft)
                                 }
-                                treeview::SidebarLocation::Right => {
+                                SidebarPos::Right => {
                                     menu.update(&AppMenuItemId::SetSideBarPositionRight)
                                 }
                             }
                         }
                     }
 
-                    treeview.update(treeview_msg).map(AppMsg::TreeViewMsg)
+                    treeview.update(tv_msg).map(AppMsg::TvMsg)
                 } else {
                     Task::none()
                 }
             }
-
             AppMsg::OpenFile => Task::future(ops::choose_file_to_open()),
             AppMsg::PathToOpen(path_buf_opt) => {
                 if let Some(path_buf) = path_buf_opt {
@@ -141,21 +139,22 @@ impl App {
                         FileType::Other(s) => ParsedData::Other(s),
                         FileType::Exception => ParsedData::Exception,
                         file_type => match file_type {
-                            FileType::Newick => ParsedData::Tree(dendros::parse_newick(
+                            FileType::Newick => ParsedData::Trees(dendros::parse_newick(
                                 ops::read_text_file(path_buf.clone()),
                             )),
-                            FileType::Nexus => ParsedData::Tree(None),
+                            FileType::Nexus => ParsedData::Trees(None),
                             _ => ParsedData::Exception,
                         },
                     };
 
                     match parsed_data {
-                        ParsedData::Tree(tree) => match tree {
-                            Some(tree) => {
-                                Task::done(AppMsg::TreeViewMsg(TreeViewMsg::TreeLoaded(tree)))
+                        ParsedData::Trees(trees) => match trees {
+                            Some(trees) => {
+                                println!("Loaded {} trees.", &trees.len());
+                                Task::done(AppMsg::TvMsg(TvMsg::TreesLoaded(trees)))
                             }
                             None => {
-                                println!("ParsedData::Tree(None)");
+                                println!("ParsedData::Trees(None)");
                                 Task::none()
                             }
                         },
@@ -201,7 +200,7 @@ impl App {
             }
 
             AppMsg::AppInitialized => {
-                self.menu = AppMenu::new();
+                self.menu = AppMenu::new(consts::SIDEBAR_POSITION);
                 if let Some(menu) = &mut self.menu {
                     menu.disable(&AppMenuItemId::SaveAs);
                 }
@@ -220,7 +219,7 @@ impl App {
                 if self.winid.is_none() {
                     let (window_id, task) = open_window(window_settings());
                     self.winid = Some(window_id);
-                    self.treeview = Some(TreeView::new());
+                    self.treeview = Some(TreeView::new(consts::SIDEBAR_POSITION));
                     task.discard()
                 } else {
                     eprintln!("AppMsg::OpenWindow -> Window is already open.");
@@ -255,7 +254,8 @@ impl App {
                     }
                     #[cfg(debug_assertions)]
                     {
-                        let path_buf = PathBuf::from("tests/data/tree01.newick");
+                        let path_buf = PathBuf::from("tests/data/tree02.newick");
+                        // let path_buf = PathBuf::from("tests/data/100_starting_trees.newick");
                         let path: &std::path::Path = &path_buf.clone().into_boxed_path();
                         if path.exists() {
                             Task::done(AppMsg::PathToOpen(Some(path_buf)))
@@ -317,7 +317,6 @@ impl App {
     }
 
     pub fn scale_factor(&self, _: WinId) -> f64 {
-        // APP_SCALE_FACTOR
         1e0
     }
 
@@ -330,8 +329,6 @@ impl App {
             id: None,
             fonts: vec![],
             default_font: iced::Font::DEFAULT,
-            // default_text_size: iced::Pixels(TEXT_SIZE),
-            // antialiasing: ANTIALIASING,
             default_text_size: iced::Pixels(13e0),
             antialiasing: true,
             #[cfg(target_os = "macos")]

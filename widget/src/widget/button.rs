@@ -171,10 +171,7 @@ where
     }
 
     fn layout(
-        &self,
-        tree: &mut Tree,
-        renderer: &Renderer,
-        limits: &layout::Limits,
+        &self, tree: &mut Tree, renderer: &Renderer, limits: &layout::Limits,
     ) -> layout::Node {
         layout::padded(limits, self.width, self.height, self.padding, |limits| {
             self.content.as_widget().layout(&mut tree.children[0], renderer, limits)
@@ -182,10 +179,7 @@ where
     }
 
     fn operate(
-        &self,
-        tree: &mut Tree,
-        layout: Layout<'_>,
-        renderer: &Renderer,
+        &self, tree: &mut Tree, layout: Layout<'_>, renderer: &Renderer,
         operation: &mut dyn Operation,
     ) {
         operation.container(None, layout.bounds(), &mut |operation| {
@@ -199,14 +193,8 @@ where
     }
 
     fn update(
-        &mut self,
-        tree: &mut Tree,
-        event: &Event,
-        layout: Layout<'_>,
-        cursor: mouse::Cursor,
-        renderer: &Renderer,
-        clipboard: &mut dyn Clipboard,
-        shell: &mut Shell<'_, Message>,
+        &mut self, tree: &mut Tree, event: &Event, layout: Layout<'_>, cursor: mouse::Cursor,
+        renderer: &Renderer, clipboard: &mut dyn Clipboard, shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
         self.content.as_widget_mut().update(
@@ -283,14 +271,8 @@ where
     }
 
     fn draw(
-        &self,
-        tree: &Tree,
-        renderer: &mut Renderer,
-        theme: &Theme,
-        _style: &renderer::Style,
-        layout: Layout<'_>,
-        cursor: mouse::Cursor,
-        viewport: &Rectangle,
+        &self, tree: &Tree, renderer: &mut Renderer, theme: &Theme, _style: &renderer::Style,
+        layout: Layout<'_>, cursor: mouse::Cursor, viewport: &Rectangle,
     ) {
         let bounds = layout.bounds();
         let content_layout = layout.children().next().unwrap();
@@ -318,11 +300,7 @@ where
     }
 
     fn mouse_interaction(
-        &self,
-        _tree: &Tree,
-        layout: Layout<'_>,
-        cursor: mouse::Cursor,
-        _viewport: &Rectangle,
+        &self, _tree: &Tree, layout: Layout<'_>, cursor: mouse::Cursor, _viewport: &Rectangle,
         _renderer: &Renderer,
     ) -> mouse::Interaction {
         let is_mouse_over = cursor.is_over(layout.bounds());
@@ -335,12 +313,8 @@ where
     }
 
     fn overlay<'b>(
-        &'b mut self,
-        tree: &'b mut Tree,
-        layout: Layout<'b>,
-        renderer: &Renderer,
-        viewport: &Rectangle,
-        translation: Vector,
+        &'b mut self, tree: &'b mut Tree, layout: Layout<'b>, renderer: &Renderer,
+        viewport: &Rectangle, translation: Vector,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
         self.content.as_widget_mut().overlay(
             &mut tree.children[0],

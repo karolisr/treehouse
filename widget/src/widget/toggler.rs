@@ -259,10 +259,7 @@ where
     }
 
     fn layout(
-        &self,
-        tree: &mut Tree,
-        renderer: &Renderer,
-        limits: &layout::Limits,
+        &self, tree: &mut Tree, renderer: &Renderer, limits: &layout::Limits,
     ) -> layout::Node {
         let limits = limits.width(self.width);
 
@@ -300,14 +297,8 @@ where
     }
 
     fn update(
-        &mut self,
-        _state: &mut Tree,
-        event: &Event,
-        layout: Layout<'_>,
-        cursor: mouse::Cursor,
-        _renderer: &Renderer,
-        _clipboard: &mut dyn Clipboard,
-        shell: &mut Shell<'_, Message>,
+        &mut self, _state: &mut Tree, event: &Event, layout: Layout<'_>, cursor: mouse::Cursor,
+        _renderer: &Renderer, _clipboard: &mut dyn Clipboard, shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
     ) {
         let Some(on_toggle) = &self.on_toggle else {
@@ -343,11 +334,7 @@ where
     }
 
     fn mouse_interaction(
-        &self,
-        _state: &Tree,
-        layout: Layout<'_>,
-        cursor: mouse::Cursor,
-        _viewport: &Rectangle,
+        &self, _state: &Tree, layout: Layout<'_>, cursor: mouse::Cursor, _viewport: &Rectangle,
         _renderer: &Renderer,
     ) -> mouse::Interaction {
         if cursor.is_over(layout.bounds()) {
@@ -362,14 +349,8 @@ where
     }
 
     fn draw(
-        &self,
-        tree: &Tree,
-        renderer: &mut Renderer,
-        theme: &Theme,
-        style: &renderer::Style,
-        layout: Layout<'_>,
-        _cursor: mouse::Cursor,
-        viewport: &Rectangle,
+        &self, tree: &Tree, renderer: &mut Renderer, theme: &Theme, style: &renderer::Style,
+        layout: Layout<'_>, _cursor: mouse::Cursor, viewport: &Rectangle,
     ) {
         /// Makes sure that the border radius of the toggler looks good at every size.
         const BORDER_RADIUS_RATIO: f32 = 32.0 / 13.0;

@@ -18,9 +18,7 @@ use std::{ffi::CString, path::PathBuf};
 
 pub fn register_ns_application_delegate_handlers() {
     extern "C" fn handle_application_open_files(
-        _this: &mut AnyObject,
-        _sel: objc2::runtime::Sel,
-        _sender: &objc2::runtime::AnyObject,
+        _this: &mut AnyObject, _sel: objc2::runtime::Sel, _sender: &objc2::runtime::AnyObject,
         files: &mut NSArray<NSString>,
     ) {
         autoreleasepool(|pool| {

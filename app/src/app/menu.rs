@@ -9,6 +9,7 @@ use muda::{
 };
 pub use muda_events::menu_events;
 use std::collections::HashMap;
+use treeview::SidebarPos;
 
 #[derive(Default, Clone)]
 pub struct AppMenu {
@@ -83,7 +84,7 @@ impl AppMenu {
         };
     }
 
-    pub fn new() -> Option<Self> {
+    pub fn new(sidebar_pos: SidebarPos) -> Option<Self> {
         let menu: muda::Menu;
         let muda_menu: Option<muda::Menu>;
         let items: HashMap<AppMenuItemId, MenuItemKind>;
@@ -95,7 +96,7 @@ impl AppMenu {
 
         #[cfg(any(target_os = "windows", target_os = "macos"))]
         {
-            (menu, items) = Self::prepare_app_menu();
+            (menu, items) = Self::prepare_app_menu(sidebar_pos);
         }
 
         #[cfg(target_os = "macos")]
@@ -109,7 +110,9 @@ impl AppMenu {
         Some(Self { muda_menu, items })
     }
 
-    fn prepare_app_menu() -> (muda::Menu, HashMap<AppMenuItemId, MenuItemKind>) {
+    fn prepare_app_menu(
+        sidebar_pos: SidebarPos,
+    ) -> (muda::Menu, HashMap<AppMenuItemId, MenuItemKind>) {
         let menu = muda::Menu::default();
         let mut items: HashMap<AppMenuItemId, MenuItemKind> = HashMap::new();
 
@@ -154,16 +157,16 @@ impl AppMenu {
         let menu_item_sidebar_pos_left = CheckMenuItem::with_id(
             AppMenuItemId::SetSideBarPositionLeft,
             "Left",
-            true,
-            false,
+            sidebar_pos != SidebarPos::Left,
+            sidebar_pos == SidebarPos::Left,
             Some(Accelerator::new(Some(modifier), Code::BracketLeft)),
         );
 
         let menu_item_sidebar_pos_right = CheckMenuItem::with_id(
             AppMenuItemId::SetSideBarPositionRight,
             "Right",
-            false,
-            true,
+            sidebar_pos != SidebarPos::Right,
+            sidebar_pos == SidebarPos::Right,
             Some(Accelerator::new(Some(modifier), Code::BracketRight)),
         );
 
