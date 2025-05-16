@@ -10,26 +10,23 @@ pub(super) struct PlotCnv {}
 impl PlotCnv {}
 
 #[derive(Debug, Default)]
-pub struct PlotCnvState {}
+pub struct St {}
 
 impl Program<TvMsg> for PlotCnv {
-    type State = PlotCnvState;
+    type State = St;
 
-    fn mouse_interaction(
-        &self, _state: &Self::State, _bounds: Rectangle, _cursor: Cursor,
-    ) -> Interaction {
+    fn mouse_interaction(&self, st: &St, bnds: Rectangle, crsr: Cursor) -> Interaction {
         Interaction::default()
     }
 
     fn update(
-        &self, _state: &mut Self::State, _event: &Event, _bounds: Rectangle, _cursor: Cursor,
+        &self, st: &mut St, ev: &Event, bnds: Rectangle, crsr: Cursor,
     ) -> Option<Action<TvMsg>> {
         None
     }
 
     fn draw(
-        &self, _state: &Self::State, _renderer: &Renderer, _theme: &Theme, _bounds: Rectangle,
-        _cursor: Cursor,
+        &self, st: &St, rndr: &Renderer, thm: &Theme, bnds: Rectangle, crsr: Cursor,
     ) -> Vec<Geometry> {
         vec![]
     }

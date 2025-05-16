@@ -626,9 +626,9 @@ checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
 name = "errno"
-version = "0.3.11"
+version = "0.3.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "976dd42dc7e85965fe702eb8164f21f450704bdde31faefd6471dba214cb594e"
+checksum = "cea14ef9355e3beab063703aa9dab15afd25f0667c341310c1e5274bb1d0da18"
 dependencies = [
  "libc",
  "windows-sys 0.59.0",
@@ -1545,6 +1545,7 @@ dependencies = [
 [[package]]
 name = "muda"
 version = "0.16.1"
+source = "git+https://github.com/karolisr/muda.git?branch=custom#170d13df2207f476a43eb7eec34e184cb00121b9"
 dependencies = [
  "dpi 0.1.2",
  "futures",

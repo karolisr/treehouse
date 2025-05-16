@@ -1,28 +1,12 @@
-use crate::Float;
-use crate::PI;
-use crate::RectVals;
-use crate::cnv_plot::PlotCnv;
-use crate::elements::*;
-use crate::treestate::TreeState;
-use dendros::NodeId;
-use dendros::Tree;
-use iced::Element;
-use iced::Padding;
-use iced::Rectangle;
-use iced::Size;
-use iced::Task;
+use crate::{Float, PI, PlotCnv, TreeState, elements::*};
+use dendros::{NodeId, Tree};
 use iced::widget::canvas::Cache;
-use iced::widget::pane_grid::Axis;
-use iced::widget::pane_grid::Pane;
-use iced::widget::pane_grid::ResizeEvent;
-use iced::widget::pane_grid::State as PaneGridState;
-use std::fmt::Display;
-use std::fmt::Formatter;
-use std::fmt::Result;
+use iced::widget::pane_grid::{Axis, Pane, ResizeEvent, State as PaneGridState};
+use iced::{Element, Padding};
+use std::fmt::{Display, Formatter, Result};
 
 #[derive(Default)]
 pub struct TreeView {
-    pub(super) tree_vals: RectVals<Float>,
     // --------------------------------------------
     pub(super) tree_states: Vec<TreeState>,
     sel_tree_state_idx: Option<usize>,
@@ -63,8 +47,8 @@ pub struct TreeView {
     pub(super) brnch_lab_size: Float,
     pub(super) brnch_lab_offset: Float,
     // --------------------------------------------
-    pub(super) tre_cnv_w: Float,
-    pub(super) tre_cnv_h: Float,
+    pub(super) max_tre_cnv_w: Float,
+    pub(super) max_tre_cnv_h: Float,
     // --------------------------------------------
     pub(super) opn_angle: Float,
     pub(super) rot_angle: Float,
@@ -83,15 +67,21 @@ pub struct TreeView {
     pub(super) draw_brnch_labs: bool,
     pub(super) tip_brnch_labs_allowed: bool,
     // --------------------------------------------
-    pub(super) cache_bounds: Cache,
+    pub(super) cache_bnds: Cache,
 }
 
 #[derive(Debug, Clone)]
 pub enum TvMsg {
     // --------------------------------------------
+    BrnchLabSizeChanged(u16),
+    BrnchLabVisChanged(bool),
+    CnvHeightChanged(u16),
+    CnvWidthChanged(u16),
+    CnvZoomChanged(u16),
+    IntLabSizeChanged(u16),
+    IntLabVisChanged(bool),
     LttpVisChanged(bool),
     NextTree,
-    TreeIdxChanged(Option<usize>),
     NodeOrdOptChanged(NodeOrd),
     OpnAngleChanged(u16),
     PaneResized(ResizeEvent),
@@ -102,24 +92,9 @@ pub enum TvMsg {
     SetSidebarPos(SidebarPos),
     TipLabSizeChanged(u16),
     TipLabVisChanged(bool),
-    BrnchLabVisChanged(bool),
-    IntLabVisChanged(bool),
-    IntLabSizeChanged(u16),
-    BrnchLabSizeChanged(u16),
-    CnvHeightChanged(u16),
     TreesLoaded(Vec<Tree>),
     TreeStyOptChanged(TreeStyle),
-    TreeUpdated,
-    CnvWidthChanged(u16),
-    CnvZoomChanged(u16),
     Unroot,
-    RectValsChanged(RectVals<Float>),
-    Refresh,
-    CnvDimRecalc,
-}
-
-fn angle_from_idx(idx: u16) -> Float {
-    idx as Float / 360e0 * 2e0 * PI
 }
 
 impl TreeView {
@@ -155,7 +130,7 @@ impl TreeView {
             min_opn_angle_idx: 45,
             sel_opn_angle_idx,
             opn_angle,
-            max_opn_angle_idx: 359,
+            max_opn_angle_idx: 360,
             // --------------------------------------------
             min_rot_angle_idx: 360 - 180,
             sel_rot_angle_idx,
@@ -190,73 +165,44 @@ impl TreeView {
         }
     }
 
-    pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
+    fn cnv_dim_recalc(&mut self) {
+        let size_delta = 1e2;
+        match self.sel_tree_style_opt {
+            TreeStyle::Phylogram => {
+                self.max_tre_cnv_w = (self.sel_tre_cnv_w_idx - 1) as Float * size_delta;
+                self.max_tre_cnv_h = (self.sel_tre_cnv_h_idx - 1) as Float * size_delta;
+            }
+            TreeStyle::Fan => {
+                self.max_tre_cnv_w = (self.sel_tre_cnv_z_idx - 1) as Float * size_delta;
+                self.max_tre_cnv_h = (self.sel_tre_cnv_z_idx - 1) as Float * size_delta;
+            }
+        }
+    }
+
+    pub fn update(&mut self, tv_msg: TvMsg) {
         match tv_msg {
-            // --- TvMsg::TreeIdxChanged ----------------------------------------------------------
+            // --- TvMsg::TreeUpdated -------------------------------------------------------------
             TvMsg::PrevTree => {
-                let new_idx = match self.sel_tree_state_idx {
-                    Some(idx) => {
-                        if idx > 0 {
-                            Some(idx - 1)
-                        } else {
-                            Some(idx)
-                        }
-                    }
-                    None => None,
-                };
-                Task::done(TvMsg::TreeIdxChanged(new_idx))
+                self.prev_tree();
             }
 
             TvMsg::NextTree => {
-                let new_idx = match self.sel_tree_state_idx {
-                    Some(idx) => {
-                        if idx < self.tree_states.len() - 1 {
-                            Some(idx + 1)
-                        } else {
-                            Some(idx)
-                        }
-                    }
-                    None => None,
-                };
-                Task::done(TvMsg::TreeIdxChanged(new_idx))
-            }
-
-            // --- TvMsg::TreeUpdated -------------------------------------------------------------
-            TvMsg::TreeIdxChanged(idx) => {
-                if idx != self.sel_tree_state_idx {
-                    self.sel_tree_state_idx = idx;
-                    Task::done(TvMsg::TreeUpdated)
-                } else {
-                    Task::none()
-                }
+                self.next_tree();
             }
 
             TvMsg::NodeOrdOptChanged(node_ord_opt) => {
                 self.sel_node_ord_opt = node_ord_opt;
-                Task::done(TvMsg::TreeUpdated)
             }
 
             TvMsg::Unroot => {
                 if let Some(tree) = self.get_sel_tree_mut() {
-                    if let Some(_node) = tree.unroot() {
-                        Task::done(TvMsg::TreeUpdated)
-                    } else {
-                        Task::none()
-                    }
-                } else {
-                    Task::none()
+                    if let Some(_node) = tree.unroot() {}
                 }
             }
 
             TvMsg::Root(node_id) => {
                 if let Some(tree) = self.get_sel_tree_mut() {
-                    if let Some(_node_id) = tree.root(&node_id) {
-                        Task::done(TvMsg::TreeUpdated)
-                    } else {
-                        Task::none()
-                    }
-                } else {
-                    Task::none()
+                    if let Some(_node_id) = tree.root(&node_id) {}
                 }
             }
 
@@ -283,143 +229,88 @@ impl TreeView {
                     self.pane_grid = Some(pane_grid);
                     self.tree_pane_id = Some(tree_pane_id)
                 }
-
-                self.update_lttp_visibility();
-
-                Task::done(TvMsg::TreeUpdated)
+                self.sort();
             }
+
             // --- TvMsg::CnvDimRecalc ------------------------------------------------------------
-            TvMsg::TreeStyOptChanged(tree_style_opt) => {
-                self.sel_tree_style_opt = tree_style_opt;
-                Task::done(TvMsg::CnvDimRecalc)
-            }
-
             TvMsg::CnvWidthChanged(idx) => {
                 self.sel_tre_cnv_w_idx = idx;
-                Task::done(TvMsg::CnvDimRecalc)
+                self.cnv_dim_recalc();
             }
 
             TvMsg::CnvHeightChanged(idx) => {
                 self.sel_tre_cnv_h_idx = idx;
-                Task::done(TvMsg::CnvDimRecalc)
+                self.cnv_dim_recalc();
             }
 
             TvMsg::CnvZoomChanged(idx) => {
                 self.sel_tre_cnv_z_idx = idx;
-                Task::done(TvMsg::CnvDimRecalc)
+                self.cnv_dim_recalc();
+            }
+
+            TvMsg::TreeStyOptChanged(tree_style_opt) => {
+                self.sel_tree_style_opt = tree_style_opt;
+                self.cnv_dim_recalc();
             }
 
             // --- TvMsg::Refresh -----------------------------------------------------------------
-            TvMsg::TreeUpdated => {
-                self.sort();
-                Task::done(TvMsg::Refresh)
-            }
-
-            TvMsg::CnvDimRecalc => {
-                let size_delta = 1e2;
-                match self.sel_tree_style_opt {
-                    TreeStyle::Phylogram => {
-                        self.tre_cnv_w = (self.sel_tre_cnv_w_idx - 1) as Float * size_delta;
-                        self.tre_cnv_h = (self.sel_tre_cnv_h_idx - 1) as Float * size_delta;
-                    }
-                    TreeStyle::Fan => {
-                        self.tre_cnv_w = (self.sel_tre_cnv_z_idx - 1) as Float * size_delta;
-                        self.tre_cnv_h = (self.sel_tre_cnv_z_idx - 1) as Float * size_delta;
-                    }
-                }
-                // Task::done(TvMsg::Refresh)
-                Task::none()
-            }
-
             TvMsg::TipLabVisChanged(state) => {
                 self.draw_tip_labs = state;
-                Task::done(TvMsg::Refresh)
             }
 
             TvMsg::TipLabSizeChanged(idx) => {
                 self.sel_tip_lab_size_idx = idx;
                 self.tip_lab_size = self.min_lab_size * idx as Float;
-                Task::done(TvMsg::Refresh)
             }
 
             TvMsg::IntLabVisChanged(state) => {
                 self.draw_int_labs = state;
-                Task::done(TvMsg::Refresh)
             }
 
             TvMsg::IntLabSizeChanged(idx) => {
                 self.sel_int_lab_size_idx = idx;
                 self.int_lab_size = self.min_lab_size * idx as Float;
-                Task::done(TvMsg::Refresh)
             }
 
             TvMsg::BrnchLabVisChanged(state) => {
                 self.draw_brnch_labs = state;
-                Task::done(TvMsg::Refresh)
             }
 
             TvMsg::BrnchLabSizeChanged(idx) => {
                 self.sel_brnch_lab_size_idx = idx;
                 self.brnch_lab_size = self.min_lab_size * idx as Float;
-                Task::done(TvMsg::Refresh)
             }
 
             TvMsg::SelectDeselectNode(node_id) => {
                 if let Some(tree) = self.get_sel_tree_mut() {
                     tree.select_deselect_node(&node_id);
-                    Task::done(TvMsg::Refresh)
-                } else {
-                    Task::none()
                 }
             }
 
             TvMsg::OpnAngleChanged(idx) => {
                 self.sel_opn_angle_idx = idx;
                 self.opn_angle = angle_from_idx(idx);
-                Task::done(TvMsg::Refresh)
             }
 
             TvMsg::RotAngleChanged(idx) => {
                 self.sel_rot_angle_idx = idx;
                 self.rot_angle = angle_from_idx(idx);
-                Task::done(TvMsg::Refresh)
             }
 
             // --- None ---------------------------------------------------------------------------
-            TvMsg::Refresh => {
-                self.recalc_all_nodepoints();
-                if let Some(tree) = self.get_sel_tree_mut() {
-                    tree.clear_cache_edge();
-                    tree.clear_cache_lab_tip();
-                    tree.clear_cache_lab_int();
-                    tree.clear_cache_lab_brnch();
-                }
-                self.cache_bounds.clear();
-                Task::none()
-            }
-
-            TvMsg::RectValsChanged(tree_vals) => {
-                self.tree_vals = tree_vals;
-                Task::none()
-            }
-
             TvMsg::PaneResized(ResizeEvent { split, ratio }) => {
                 if let Some(pane_grid) = &mut self.pane_grid {
                     pane_grid.resize(split, ratio);
                 }
-                Task::none()
             }
 
             TvMsg::LttpVisChanged(show_lttp) => {
                 self.show_lttp = show_lttp;
                 self.update_lttp_visibility();
-                // Task::done(TvMsg::ScrollToX { sender: "tre", x: self.tre_cnv_x0 })
-                Task::none()
             }
 
             TvMsg::SetSidebarPos(sidebar_pos) => {
                 self.sel_sidebar_pos = sidebar_pos;
-                Task::none()
             }
         }
     }
@@ -504,14 +395,42 @@ impl TreeView {
         }
     }
 
-    fn recalc_all_nodepoints(&mut self) {
-        let tree_vals = self.tree_vals;
-        let rot_angle = self.rot_angle;
-        let opn_angle = self.opn_angle;
-        let sel_tree_style_opt = self.sel_tree_style_opt;
-        if let Some(tree) = self.get_sel_tree_mut() {
-            tree.all_nodepoints_calc(tree_vals, rot_angle, opn_angle, sel_tree_style_opt);
+    fn update_sel_tree_state_idx(&mut self, idx: Option<usize>) -> bool {
+        if idx != self.sel_tree_state_idx {
+            self.sel_tree_state_idx = idx;
+            true
+        } else {
+            false
         }
+    }
+
+    fn prev_tree(&mut self) -> bool {
+        let prev_idx = match self.sel_tree_state_idx {
+            Some(idx) => {
+                if idx > 0 {
+                    Some(idx - 1)
+                } else {
+                    Some(idx)
+                }
+            }
+            None => None,
+        };
+
+        self.update_sel_tree_state_idx(prev_idx)
+    }
+
+    fn next_tree(&mut self) -> bool {
+        let next_idx = match self.sel_tree_state_idx {
+            Some(idx) => {
+                if idx < self.tree_states.len() - 1 {
+                    Some(idx + 1)
+                } else {
+                    Some(idx)
+                }
+            }
+            None => None,
+        };
+        self.update_sel_tree_state_idx(next_idx)
     }
 
     fn update_lttp_visibility(&mut self) {
@@ -604,4 +523,8 @@ impl From<&TvPane> for String {
             TvPane::LttPlot => String::from("LttPlot"),
         }
     }
+}
+
+fn angle_from_idx(idx: u16) -> Float {
+    idx as Float / 360e0 * 2e0 * PI
 }

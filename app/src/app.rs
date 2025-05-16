@@ -113,11 +113,9 @@ impl App {
                             }
                         }
                     }
-
-                    treeview.update(tv_msg).map(AppMsg::TvMsg)
-                } else {
-                    Task::none()
+                    treeview.update(tv_msg);
                 }
+                Task::none()
             }
             AppMsg::OpenFile => Task::future(ops::choose_file_to_open()),
             AppMsg::PathToOpen(path_buf_opt) => {

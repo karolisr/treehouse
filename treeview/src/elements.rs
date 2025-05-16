@@ -1,20 +1,15 @@
-use crate::SidebarPos;
-use crate::TreeView;
-use crate::TvMsg;
-use crate::cnv_plot::PlotCnv;
-use crate::treestate::TreeState;
-use crate::treeview::NODE_ORD_OPTS;
-use crate::treeview::NodeOrd;
-use crate::treeview::TREE_STYLE_OPTS;
-use crate::treeview::TreeStyle;
-use crate::treeview::TvPane;
+use crate::{
+    NODE_ORD_OPTS, NodeOrd, PlotCnv, SidebarPos, TREE_STYLE_OPTS, TreeState, TreeStyle, TreeView,
+    TvMsg, TvPane,
+};
 
 use num_traits::FromPrimitive;
+
 use std::fmt::Display;
 
-pub use iced::widget::Column;
-pub use iced::widget::Row;
-pub use iced::widget::center;
+pub use iced::widget::{Column, Row, center};
+
+use widget::toggler::Toggler;
 
 use iced::Alignment;
 use iced::Element;
@@ -44,7 +39,6 @@ use iced::widget::row;
 use iced::widget::scrollable::Direction as ScrollableDirection;
 use iced::widget::scrollable::Scrollbar;
 use iced::widget::vertical_space;
-use widget::toggler::Toggler;
 
 pub(super) fn content<'a>(tv: &'a TreeView, _sel_tree: &'a TreeState) -> Element<'a, TvMsg> {
     let ele: Element<'a, TvMsg> = if let Some(pane_grid) = &tv.pane_grid {
@@ -56,7 +50,7 @@ pub(super) fn content<'a>(tv: &'a TreeView, _sel_tree: &'a TreeState) -> Element
             )
         })
         .on_resize(1e1, TvMsg::PaneResized)
-        .min_size(150)
+        .min_size(50)
         .spacing(5)
         .into()
     } else {
@@ -70,7 +64,9 @@ fn tv_pane_content<'a>(tv: &'a TreeView, tv_pane: &TvPane, size: Size) -> Elemen
     let h = size.height;
     let scrollable = match tv_pane {
         TvPane::Tree => {
-            let cnv = Canvas::new(tv).width(w + tv.tre_cnv_w).height(h + tv.tre_cnv_h);
+            let cnv_w = { if tv.max_tre_cnv_w < w { w } else { tv.max_tre_cnv_w } };
+            let cnv_h = { if tv.max_tre_cnv_h < h { h } else { tv.max_tre_cnv_h } };
+            let cnv = Canvas::new(tv).width(cnv_w).height(cnv_h);
             scrollable_cnv_tree(cnv, w, h)
         }
         TvPane::LttPlot => {
@@ -326,8 +322,8 @@ fn btn_next_tree<'a>(enabled: bool) -> Button<'a, TvMsg> {
 
 fn btn_root(sel_tree: &TreeState) -> Button<TvMsg> {
     btn("Root", {
-        if sel_tree.selected_node_ids().len() == 1 {
-            let &node_id = sel_tree.selected_node_ids().iter().last().unwrap();
+        if sel_tree.sel_node_ids().len() == 1 {
+            let &node_id = sel_tree.sel_node_ids().iter().last().unwrap();
             match sel_tree.can_root(&node_id) {
                 true => Some(TvMsg::Root(node_id)),
                 false => None,
