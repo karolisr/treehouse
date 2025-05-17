@@ -1,15 +1,18 @@
-use crate::{Float, PI, PlotCnv, TreeState, elements::*};
+use crate::{Float, IndexRange, PI, PlotCnv, TreeState, elements::*, lerp};
 use dendros::{NodeId, Tree};
+use iced::Task;
 use iced::widget::canvas::Cache;
 use iced::widget::pane_grid::{Axis, Pane, ResizeEvent, State as PaneGridState};
+use iced::widget::scrollable::{AbsoluteOffset, Viewport, scroll_to};
 use iced::{Element, Padding};
 use std::fmt::{Display, Formatter, Result};
 
 #[derive(Default)]
 pub struct TreeView {
+    pub(super) tip_labs_to_draw_max: usize,
     // --------------------------------------------
     pub(super) tree_states: Vec<TreeState>,
-    sel_tree_state_idx: Option<usize>,
+    tree_state_idx_sel: Option<usize>,
     // --------------------------------------------
     pub(super) pane_grid: Option<PaneGridState<TvPane>>,
     tree_pane_id: Option<Pane>,
@@ -21,46 +24,46 @@ pub struct TreeView {
     show_toolbar: bool,
     show_sidebar: bool,
     // --------------------------------------------
-    pub(super) sel_sidebar_pos: SidebarPos,
+    pub(super) sidebar_pos_sel: SidebarPos,
     // --------------------------------------------
-    pub(super) min_tre_cnv_h_idx: u16,
-    pub(super) min_tre_cnv_w_idx: u16,
-    pub(super) min_tre_cnv_z_idx: u16,
-    pub(super) max_tre_cnv_h_idx: u16,
-    pub(super) max_tre_cnv_w_idx: u16,
-    pub(super) max_tre_cnv_z_idx: u16,
-    pub(super) sel_tre_cnv_h_idx: u16,
-    pub(super) sel_tre_cnv_w_idx: u16,
-    pub(super) sel_tre_cnv_z_idx: u16,
+    pub(super) tre_cnv_w_idx_min: u16,
+    pub(super) tre_cnv_h_idx_min: u16,
+    pub(super) tre_cnv_z_idx_min: u16,
+
+    pub(super) tre_cnv_w_idx_max: u16,
+    pub(super) tre_cnv_h_idx_max: u16,
+    pub(super) tre_cnv_z_idx_max: u16,
+
+    pub(super) tre_cnv_w_idx_sel: u16,
+    pub(super) tre_cnv_h_idx_sel: u16,
+    pub(super) tre_cnv_z_idx_sel: u16,
     // --------------------------------------------
-    pub(super) min_lab_size_idx: u16,
-    pub(super) sel_tip_lab_size_idx: u16,
-    pub(super) sel_int_lab_size_idx: u16,
-    pub(super) sel_brnch_lab_size_idx: u16,
-    pub(super) max_lab_size_idx: u16,
+    pub(super) lab_size_idx_min: u16,
+    pub(super) tip_lab_size_idx_sel: u16,
+    pub(super) int_lab_size_idx_sel: u16,
+    pub(super) brnch_lab_size_idx_sel: u16,
+    pub(super) lab_size_idx_max: u16,
     // --------------------------------------------
-    pub(super) min_lab_size: Float,
-    pub(super) tip_lab_size: Float,
-    pub(super) tip_lab_offset: Float,
-    pub(super) int_lab_size: Float,
-    pub(super) int_lab_offset: Float,
-    pub(super) brnch_lab_size: Float,
-    pub(super) brnch_lab_offset: Float,
-    // --------------------------------------------
-    pub(super) max_tre_cnv_w: Float,
-    pub(super) max_tre_cnv_h: Float,
+    pub(super) lab_size_max: Float,
+    pub(super) lab_size_min: Float,
+    pub(super) lab_size_tip: Float,
+    pub(super) lab_offset_tip: Float,
+    pub(super) lab_size_int: Float,
+    pub(super) lab_offset_int: Float,
+    pub(super) lab_size_brnch: Float,
+    pub(super) lab_offset_brnch: Float,
     // --------------------------------------------
     pub(super) opn_angle: Float,
     pub(super) rot_angle: Float,
-    pub(super) sel_opn_angle_idx: u16,
-    pub(super) sel_rot_angle_idx: u16,
-    pub(super) min_opn_angle_idx: u16,
-    pub(super) min_rot_angle_idx: u16,
-    pub(super) max_opn_angle_idx: u16,
-    pub(super) max_rot_angle_idx: u16,
+    pub(super) opn_angle_idx_sel: u16,
+    pub(super) rot_angle_idx_sel: u16,
+    pub(super) opn_angle_idx_min: u16,
+    pub(super) rot_angle_idx_min: u16,
+    pub(super) opn_angle_idx_max: u16,
+    pub(super) rot_angle_idx_max: u16,
     // --------------------------------------------
-    pub(super) sel_tree_style_opt: TreeStyle,
-    pub(super) sel_node_ord_opt: NodeOrd,
+    pub(super) tree_style_opt_sel: TreeStyle,
+    pub(super) node_ord_opt_sel: NodeOrd,
     pub(super) drawing_enabled: bool,
     pub(super) draw_tip_labs: bool,
     pub(super) draw_int_labs: bool,
@@ -68,6 +71,29 @@ pub struct TreeView {
     pub(super) tip_brnch_labs_allowed: bool,
     // --------------------------------------------
     pub(super) cache_bnds: Cache,
+    // --------------------------------------------
+    pub(super) ltt_cnv_w: Float,
+    pub(super) ltt_cnv_h: Float,
+    pub(super) ltt_cnv_vis_x0: Float,
+    pub(super) ltt_cnv_vis_y0: Float,
+    pub(super) ltt_scr_id: &'static str,
+    pub(super) ltt_cnv_scrolled: bool,
+    // --------------------------------------------
+    pub(super) node_size: Float,
+    pub(super) node_size_min: Float,
+    pub(super) node_size_max: Float,
+
+    pub(super) tre_cnv_w: Float,
+    pub(super) tre_cnv_h: Float,
+    pub(super) tre_cnv_vis_x0: Float,
+    pub(super) tre_cnv_vis_x1: Float,
+    pub(super) tre_cnv_vis_y0: Float,
+    pub(super) tre_cnv_vis_y1: Float,
+    pub(super) tre_scr_h: Float,
+    pub(super) tre_scr_w: Float,
+    pub(super) tre_scr_id: &'static str,
+    pub(super) tre_cnv_scrolled: bool,
+    // --------------------------------------------
 }
 
 #[derive(Debug, Clone)]
@@ -75,9 +101,9 @@ pub enum TvMsg {
     // --------------------------------------------
     BrnchLabSizeChanged(u16),
     BrnchLabVisChanged(bool),
-    CnvHeightChanged(u16),
-    CnvWidthChanged(u16),
-    CnvZoomChanged(u16),
+    CnvHeightSelChanged(u16),
+    CnvWidthSelChanged(u16),
+    CnvZoomSelChanged(u16),
     IntLabSizeChanged(u16),
     IntLabVisChanged(bool),
     LttpVisChanged(bool),
@@ -95,26 +121,38 @@ pub enum TvMsg {
     TreesLoaded(Vec<Tree>),
     TreeStyOptChanged(TreeStyle),
     Unroot,
+    // --------------------------------------------
+    TreCnvScrolled(Viewport),
+    LttCnvScrolled(Viewport),
+    ScrollTreCnvTo { x: f32, y: f32 },
+    ScrollCnvToX { receiver_id: &'static str, x: f32 },
+    // --------------------------------------------
+    // TreCnvSizeChanged(Size),
+    // --------------------------------------------
 }
 
 impl TreeView {
     pub fn new(sel_sidebar_pos: SidebarPos) -> Self {
-        let sel_opn_angle_idx = 359;
-        let opn_angle = angle_from_idx(sel_opn_angle_idx);
-        let sel_rot_angle_idx = 360;
-        let rot_angle = angle_from_idx(sel_rot_angle_idx);
+        let opn_angle_idx_sel = 359;
+        let opn_angle = angle_from_idx(opn_angle_idx_sel);
+        let rot_angle_idx_sel = 360;
+        let rot_angle = angle_from_idx(rot_angle_idx_sel);
 
-        let min_lab_size = 1e0;
-        let sel_tip_lab_size_idx = 10;
-        let sel_int_lab_size_idx = 10;
-        let sel_brnch_lab_size_idx = 10;
+        let lab_size_idx_max = 24;
 
-        let tip_lab_size = min_lab_size * sel_tip_lab_size_idx as Float;
-        let int_lab_size = min_lab_size * sel_int_lab_size_idx as Float;
-        let brnch_lab_size = min_lab_size * sel_brnch_lab_size_idx as Float;
+        let lab_size_min = 1e0;
+        let lab_size_max = lab_size_min * lab_size_idx_max as Float;
+        let tip_lab_size_idx_sel = 10;
+        let int_lab_size_idx_sel = 10;
+        let brnch_lab_size_idx_sel = 10;
+
+        let tip_lab_size = lab_size_min * tip_lab_size_idx_sel as Float;
+        let int_lab_size = lab_size_min * int_lab_size_idx_sel as Float;
+        let brnch_lab_size = lab_size_min * brnch_lab_size_idx_sel as Float;
 
         Self {
-            sel_sidebar_pos,
+            tip_labs_to_draw_max: 300,
+            sidebar_pos_sel: sel_sidebar_pos,
             show_toolbar: true,
             show_sidebar: true,
             draw_tip_labs: true,
@@ -124,74 +162,206 @@ impl TreeView {
             // --------------------------------------------
             tip_brnch_labs_allowed: true,
             // --------------------------------------------
-            sel_tree_style_opt: TreeStyle::Phylogram,
-            sel_node_ord_opt: NodeOrd::Ascending,
+            tree_style_opt_sel: TreeStyle::Phylogram,
+            node_ord_opt_sel: NodeOrd::Ascending,
             // --------------------------------------------
-            min_opn_angle_idx: 45,
-            sel_opn_angle_idx,
+            opn_angle_idx_min: 45,
+            opn_angle_idx_sel,
             opn_angle,
-            max_opn_angle_idx: 360,
+            opn_angle_idx_max: 360,
             // --------------------------------------------
-            min_rot_angle_idx: 360 - 180,
-            sel_rot_angle_idx,
+            rot_angle_idx_min: 360 - 180,
+            rot_angle_idx_sel,
             rot_angle,
-            max_rot_angle_idx: 360 + 180,
+            rot_angle_idx_max: 360 + 180,
             // --------------------------------------------
-            min_lab_size_idx: 1,
-            sel_tip_lab_size_idx,
-            sel_int_lab_size_idx,
-            sel_brnch_lab_size_idx,
-            max_lab_size_idx: 24,
+            lab_size_idx_min: 1,
+            tip_lab_size_idx_sel,
+            int_lab_size_idx_sel,
+            brnch_lab_size_idx_sel,
+            lab_size_idx_max,
             // --------------------------------------------
-            min_lab_size,
-            tip_lab_size,
-            tip_lab_offset: 0e0,
-            int_lab_size,
-            int_lab_offset: 0e0,
-            brnch_lab_size,
-            brnch_lab_offset: 0e0,
+            lab_size_min,
+            lab_size_max,
+            lab_size_tip: tip_lab_size,
+            lab_offset_tip: 0e0,
+            lab_size_int: int_lab_size,
+            lab_offset_int: 0e0,
+            lab_size_brnch: brnch_lab_size,
+            lab_offset_brnch: 0e0,
             // --------------------------------------------
-            min_tre_cnv_h_idx: 1,
-            sel_tre_cnv_h_idx: 1,
-            max_tre_cnv_h_idx: 24,
-            min_tre_cnv_w_idx: 1,
-            sel_tre_cnv_w_idx: 1,
-            max_tre_cnv_w_idx: 24,
-            min_tre_cnv_z_idx: 1,
-            sel_tre_cnv_z_idx: 1,
-            max_tre_cnv_z_idx: 24,
-
+            tre_cnv_h_idx_min: 1,
+            tre_cnv_h_idx_sel: 1,
+            tre_cnv_h_idx_max: 24,
+            tre_cnv_w_idx_min: 1,
+            tre_cnv_w_idx_sel: 1,
+            tre_cnv_w_idx_max: 24,
+            tre_cnv_z_idx_min: 1,
+            tre_cnv_z_idx_sel: 1,
+            tre_cnv_z_idx_max: 24,
+            // --------------------------------------------
+            tre_scr_id: "tre",
+            ltt_scr_id: "ltt",
+            // --------------------------------------------
             ..Default::default()
         }
     }
 
-    fn cnv_dim_recalc(&mut self) {
-        let size_delta = 1e2;
-        match self.sel_tree_style_opt {
+    fn update_node_size(&mut self) {
+        let tip_count: usize;
+        if let Some(tree) = self.get_sel_tree() {
+            tip_count = tree.tip_count();
+        } else {
+            return;
+        }
+
+        self.node_size_min = self.tre_scr_h / tip_count as Float;
+        self.node_size_max = Float::max(self.lab_size_max * 3e0, self.node_size_min);
+        self.tre_cnv_h_idx_max = self.lab_size_idx_max;
+        if self.node_size_min == self.node_size_max {
+            self.tre_cnv_h_idx_max = self.tre_cnv_h_idx_min
+        }
+        if self.tre_cnv_h_idx_sel > self.tre_cnv_h_idx_max {
+            self.tre_cnv_h_idx_sel = self.tre_cnv_h_idx_max
+        }
+        if self.tre_cnv_h_idx_sel == self.tre_cnv_h_idx_min {
+            self.tre_cnv_vis_y0 = 0e0;
+            self.tre_cnv_vis_y1 = self.tre_cnv_vis_y0 + self.tre_scr_h;
+        }
+        if self.tre_cnv_h_idx_max > 1 {
+            self.node_size = lerp(
+                self.node_size_min,
+                self.node_size_max,
+                (self.tre_cnv_h_idx_sel - 1) as Float / (self.tre_cnv_h_idx_max - 1) as Float,
+            )
+        } else {
+            self.node_size = self.node_size_min
+        }
+        match self.tree_style_opt_sel {
             TreeStyle::Phylogram => {
-                self.max_tre_cnv_w = (self.sel_tre_cnv_w_idx - 1) as Float * size_delta;
-                self.max_tre_cnv_h = (self.sel_tre_cnv_h_idx - 1) as Float * size_delta;
+                self.tip_brnch_labs_allowed =
+                    (self.tre_scr_h / self.node_size) as usize <= self.tip_labs_to_draw_max;
             }
             TreeStyle::Fan => {
-                self.max_tre_cnv_w = (self.sel_tre_cnv_z_idx - 1) as Float * size_delta;
-                self.max_tre_cnv_h = (self.sel_tre_cnv_z_idx - 1) as Float * size_delta;
+                self.tip_brnch_labs_allowed = tip_count <= self.tip_labs_to_draw_max * 10;
             }
         }
     }
 
-    pub fn update(&mut self, tv_msg: TvMsg) {
+    fn cnv_dim_recalc(&mut self) {
+        let tip_count: usize;
+        if let Some(tree) = self.get_sel_tree_mut() {
+            tip_count = tree.tip_count()
+        } else {
+            return;
+        }
+
+        let size_delta = 1e2;
+        match self.tree_style_opt_sel {
+            TreeStyle::Phylogram => {
+                self.tre_cnv_w = (self.tre_cnv_w_idx_sel - 1) as Float * size_delta;
+                self.tre_cnv_h = self.node_size * tip_count as Float;
+            }
+            TreeStyle::Fan => {
+                self.tre_cnv_w = (self.tre_cnv_z_idx_sel - 1) as Float * size_delta;
+                self.tre_cnv_h = (self.tre_cnv_z_idx_sel - 1) as Float * size_delta;
+            }
+        }
+    }
+
+    pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
+        let mut task: Option<Task<TvMsg>> = None;
         match tv_msg {
+            TvMsg::TreCnvScrolled(vp) => {
+                self.tre_scr_w = vp.bounds().width;
+
+                if self.tre_scr_h != vp.bounds().height {
+                    self.tre_scr_h = vp.bounds().height;
+                    self.update_node_size();
+                    self.cnv_dim_recalc();
+                }
+
+                self.tre_cnv_vis_x0 = vp.absolute_offset().x;
+                self.tre_cnv_vis_x1 = self.tre_cnv_vis_x0 + self.tre_scr_w;
+
+                if self.tre_cnv_vis_y0 != vp.absolute_offset().y {
+                    self.tre_cnv_vis_y0 = vp.absolute_offset().y;
+                    self.tre_cnv_vis_y1 = self.tre_cnv_vis_y0 + self.tre_scr_h;
+                    // self.clear_cache_edge();
+                }
+
+                if self.tre_cnv_scrolled && self.tre_cnv_vis_x0 != self.ltt_cnv_vis_x0 {
+                    self.ltt_cnv_scrolled = false;
+                    let msg = TvMsg::ScrollCnvToX {
+                        receiver_id: self.ltt_scr_id,
+                        x: self.tre_cnv_vis_x0,
+                    };
+                    task = Some(Task::done(msg))
+                } else {
+                    self.tre_cnv_scrolled = true;
+                }
+            }
+
+            TvMsg::LttCnvScrolled(vp) => {
+                self.ltt_cnv_vis_x0 = vp.absolute_offset().x;
+                self.ltt_cnv_vis_y0 = vp.absolute_offset().y;
+
+                if self.ltt_cnv_scrolled && self.tre_cnv_vis_x0 != self.ltt_cnv_vis_x0 {
+                    self.tre_cnv_scrolled = false;
+                    let msg = TvMsg::ScrollCnvToX {
+                        receiver_id: self.tre_scr_id,
+                        x: self.ltt_cnv_vis_x0,
+                    };
+                    task = Some(Task::done(msg))
+                } else {
+                    self.ltt_cnv_scrolled = true;
+                }
+            }
+
+            TvMsg::ScrollCnvToX { receiver_id, x } => {
+                if self.tree_style_opt_sel == TreeStyle::Phylogram {
+                    let y = match receiver_id {
+                        id if id == self.ltt_scr_id => self.ltt_cnv_vis_y0,
+                        id if id == self.tre_scr_id => self.tre_cnv_vis_y0,
+                        _ => 0e0,
+                    };
+                    task = Some(scroll_to(receiver_id, AbsoluteOffset { x, y }))
+                }
+            }
+
+            TvMsg::ScrollTreCnvTo { x, y } => {
+                task = Some(scroll_to(
+                    self.tre_scr_id,
+                    match self.tree_style_opt_sel {
+                        TreeStyle::Phylogram => AbsoluteOffset {
+                            x: x - self.tre_scr_w / 2e0,
+                            y: y - self.tre_scr_h / 2e0,
+                        },
+                        TreeStyle::Fan => AbsoluteOffset {
+                            x: x - self.tre_scr_w / 2e0,
+                            y: y - self.tre_scr_h / 2e0,
+                        },
+                    },
+                ))
+            }
+
             // --- TvMsg::TreeUpdated -------------------------------------------------------------
             TvMsg::PrevTree => {
                 self.prev_tree();
+                self.sort();
+                self.clear_cache_edge();
             }
 
             TvMsg::NextTree => {
                 self.next_tree();
+                self.sort();
+                self.clear_cache_edge();
             }
 
             TvMsg::NodeOrdOptChanged(node_ord_opt) => {
-                self.sel_node_ord_opt = node_ord_opt;
+                self.node_ord_opt_sel = node_ord_opt;
+                self.sort();
+                self.clear_cache_edge();
             }
 
             TvMsg::Unroot => {
@@ -218,9 +388,9 @@ impl TreeView {
                 }
 
                 if !self.tree_states.is_empty() {
-                    self.sel_tree_state_idx = Some(0);
+                    self.tree_state_idx_sel = Some(0);
                 } else {
-                    self.sel_tree_state_idx = None;
+                    self.tree_state_idx_sel = None;
                 }
 
                 if let Some(_tree_pane_id) = &self.tree_pane_id {
@@ -230,26 +400,29 @@ impl TreeView {
                     self.tree_pane_id = Some(tree_pane_id)
                 }
                 self.sort();
+                self.update_node_size();
+                self.clear_cache_edge();
             }
 
             // --- TvMsg::CnvDimRecalc ------------------------------------------------------------
-            TvMsg::CnvWidthChanged(idx) => {
-                self.sel_tre_cnv_w_idx = idx;
+            TvMsg::CnvWidthSelChanged(idx) => {
+                self.tre_cnv_w_idx_sel = idx;
                 self.cnv_dim_recalc();
             }
 
-            TvMsg::CnvHeightChanged(idx) => {
-                self.sel_tre_cnv_h_idx = idx;
+            TvMsg::CnvHeightSelChanged(idx) => {
+                self.tre_cnv_h_idx_sel = idx;
+                self.update_node_size();
                 self.cnv_dim_recalc();
             }
 
-            TvMsg::CnvZoomChanged(idx) => {
-                self.sel_tre_cnv_z_idx = idx;
+            TvMsg::CnvZoomSelChanged(idx) => {
+                self.tre_cnv_z_idx_sel = idx;
                 self.cnv_dim_recalc();
             }
 
             TvMsg::TreeStyOptChanged(tree_style_opt) => {
-                self.sel_tree_style_opt = tree_style_opt;
+                self.tree_style_opt_sel = tree_style_opt;
                 self.cnv_dim_recalc();
             }
 
@@ -259,8 +432,8 @@ impl TreeView {
             }
 
             TvMsg::TipLabSizeChanged(idx) => {
-                self.sel_tip_lab_size_idx = idx;
-                self.tip_lab_size = self.min_lab_size * idx as Float;
+                self.tip_lab_size_idx_sel = idx;
+                self.lab_size_tip = self.lab_size_min * idx as Float;
             }
 
             TvMsg::IntLabVisChanged(state) => {
@@ -268,8 +441,8 @@ impl TreeView {
             }
 
             TvMsg::IntLabSizeChanged(idx) => {
-                self.sel_int_lab_size_idx = idx;
-                self.int_lab_size = self.min_lab_size * idx as Float;
+                self.int_lab_size_idx_sel = idx;
+                self.lab_size_int = self.lab_size_min * idx as Float;
             }
 
             TvMsg::BrnchLabVisChanged(state) => {
@@ -277,8 +450,8 @@ impl TreeView {
             }
 
             TvMsg::BrnchLabSizeChanged(idx) => {
-                self.sel_brnch_lab_size_idx = idx;
-                self.brnch_lab_size = self.min_lab_size * idx as Float;
+                self.brnch_lab_size_idx_sel = idx;
+                self.lab_size_brnch = self.lab_size_min * idx as Float;
             }
 
             TvMsg::SelectDeselectNode(node_id) => {
@@ -288,12 +461,12 @@ impl TreeView {
             }
 
             TvMsg::OpnAngleChanged(idx) => {
-                self.sel_opn_angle_idx = idx;
+                self.opn_angle_idx_sel = idx;
                 self.opn_angle = angle_from_idx(idx);
             }
 
             TvMsg::RotAngleChanged(idx) => {
-                self.sel_rot_angle_idx = idx;
+                self.rot_angle_idx_sel = idx;
                 self.rot_angle = angle_from_idx(idx);
             }
 
@@ -310,8 +483,14 @@ impl TreeView {
             }
 
             TvMsg::SetSidebarPos(sidebar_pos) => {
-                self.sel_sidebar_pos = sidebar_pos;
+                self.sidebar_pos_sel = sidebar_pos;
             }
+        }
+
+        // ----------------------------------------------------------------------------------------
+        match task {
+            Some(task) => task,
+            None => Task::none(),
         }
     }
 
@@ -337,7 +516,7 @@ impl TreeView {
         }
 
         if self.show_sidebar {
-            match self.sel_sidebar_pos {
+            match self.sidebar_pos_sel {
                 SidebarPos::Left => {
                     main_row = main_row.push(sidebar(self, sel_tree));
                     main_row = main_row.push(content(self, sel_tree));
@@ -357,21 +536,21 @@ impl TreeView {
     }
 
     pub(super) fn prev_tree_exists(&self) -> bool {
-        match self.sel_tree_state_idx {
+        match self.tree_state_idx_sel {
             Some(idx) => idx > 0,
             None => false,
         }
     }
 
     pub(super) fn next_tree_exists(&self) -> bool {
-        match self.sel_tree_state_idx {
+        match self.tree_state_idx_sel {
             Some(idx) => idx < self.tree_states.len() - 1,
             None => false,
         }
     }
 
     pub(super) fn get_sel_tree(&self) -> Option<&TreeState> {
-        if let Some(sel_tree_state_idx) = self.sel_tree_state_idx {
+        if let Some(sel_tree_state_idx) = self.tree_state_idx_sel {
             let sel_tree_state = &self.tree_states[sel_tree_state_idx];
             Some(sel_tree_state)
         } else {
@@ -379,8 +558,24 @@ impl TreeView {
         }
     }
 
+    fn visible_tip_idx_range(&self) -> Option<IndexRange> {
+        if let Some(tree) = self.get_sel_tree() {
+            tree.visible_tip_idx_range(self.tre_cnv_vis_y0, self.tre_cnv_vis_y1, self.node_size)
+        } else {
+            None
+        }
+    }
+
+    fn visible_node_idx_range(&self) -> Option<IndexRange> {
+        if let Some(tree) = self.get_sel_tree() {
+            tree.visible_node_idx_range(self.tre_cnv_vis_y0, self.tre_cnv_vis_y1, self.node_size)
+        } else {
+            None
+        }
+    }
+
     fn get_sel_tree_mut(&mut self) -> Option<&mut TreeState> {
-        if let Some(sel_tree_state_idx) = self.sel_tree_state_idx {
+        if let Some(sel_tree_state_idx) = self.tree_state_idx_sel {
             let sel_tree_state = &mut self.tree_states[sel_tree_state_idx];
             Some(sel_tree_state)
         } else {
@@ -388,16 +583,40 @@ impl TreeView {
         }
     }
 
+    fn clear_cache_edge(&mut self) {
+        if let Some(tree) = self.get_sel_tree_mut() {
+            tree.clear_cache_edge();
+        }
+    }
+
+    fn clear_cache_lab_tip(&mut self) {
+        if let Some(tree) = self.get_sel_tree_mut() {
+            tree.clear_cache_lab_tip();
+        }
+    }
+
+    fn clear_cache_lab_int(&mut self) {
+        if let Some(tree) = self.get_sel_tree_mut() {
+            tree.clear_cache_lab_int();
+        }
+    }
+
+    fn clear_cache_lab_brnch(&mut self) {
+        if let Some(tree) = self.get_sel_tree_mut() {
+            tree.clear_cache_lab_brnch();
+        }
+    }
+
     fn sort(&mut self) {
-        let node_ord_opt = self.sel_node_ord_opt;
+        let node_ord_opt = self.node_ord_opt_sel;
         if let Some(tree) = self.get_sel_tree_mut() {
             tree.sort(node_ord_opt);
         }
     }
 
     fn update_sel_tree_state_idx(&mut self, idx: Option<usize>) -> bool {
-        if idx != self.sel_tree_state_idx {
-            self.sel_tree_state_idx = idx;
+        if idx != self.tree_state_idx_sel {
+            self.tree_state_idx_sel = idx;
             true
         } else {
             false
@@ -405,7 +624,7 @@ impl TreeView {
     }
 
     fn prev_tree(&mut self) -> bool {
-        let prev_idx = match self.sel_tree_state_idx {
+        let prev_idx = match self.tree_state_idx_sel {
             Some(idx) => {
                 if idx > 0 {
                     Some(idx - 1)
@@ -420,7 +639,7 @@ impl TreeView {
     }
 
     fn next_tree(&mut self) -> bool {
-        let next_idx = match self.sel_tree_state_idx {
+        let next_idx = match self.tree_state_idx_sel {
             Some(idx) => {
                 if idx < self.tree_states.len() - 1 {
                     Some(idx + 1)

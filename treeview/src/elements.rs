@@ -62,16 +62,22 @@ pub(super) fn content<'a>(tv: &'a TreeView, _sel_tree: &'a TreeState) -> Element
 fn tv_pane_content<'a>(tv: &'a TreeView, tv_pane: &TvPane, size: Size) -> Element<'a, TvMsg> {
     let w = size.width;
     let h = size.height;
+    let mut cnv_w = { if tv.tre_cnv_w < w { w } else { tv.tre_cnv_w } };
+
     let scrollable = match tv_pane {
         TvPane::Tree => {
-            let cnv_w = { if tv.max_tre_cnv_w < w { w } else { tv.max_tre_cnv_w } };
-            let cnv_h = { if tv.max_tre_cnv_h < h { h } else { tv.max_tre_cnv_h } };
+            let cnv_h =
+                { if tv.tre_cnv_h_idx_sel == tv.tre_cnv_h_idx_min { h } else { tv.tre_cnv_h } };
             let cnv = Canvas::new(tv).width(cnv_w).height(cnv_h);
-            scrollable_cnv_tree(cnv, w, h)
+            scrollable_cnv_tree(tv.tre_scr_id, cnv, w, h)
         }
         TvPane::LttPlot => {
-            let cnv = Canvas::new(&tv.ltt_plot).width(w).height(h);
-            scrollable_cnv_ltt(cnv, w, h)
+            match tv.tree_style_opt_sel {
+                TreeStyle::Phylogram => (),
+                TreeStyle::Fan => cnv_w = w,
+            }
+            let cnv = Canvas::new(&tv.ltt_plot).width(cnv_w).height(h);
+            scrollable_cnv_ltt(tv.ltt_scr_id, cnv, w, h)
         }
     };
     scrollable.into()
@@ -120,7 +126,7 @@ pub(super) fn toolbar<'a>(tv: &'a TreeView, sel_tree: &'a TreeState) -> Element<
                     true => btn("Hide LTTP", Some(TvMsg::LttpVisChanged(false))),
                     false => btn("Show LTTP", Some(TvMsg::LttpVisChanged(true))),
                 },
-                match tv.sel_sidebar_pos {
+                match tv.sidebar_pos_sel {
                     SidebarPos::Left => btn("SBR", Some(TvMsg::SetSidebarPos(SidebarPos::Right))),
                     SidebarPos::Right => btn("SBL", Some(TvMsg::SetSidebarPos(SidebarPos::Left))),
                 }
@@ -187,49 +193,49 @@ pub(super) fn sidebar<'a>(tv: &'a TreeView, sel_tree: &'a TreeState) -> Element<
 
     sb_col = sb_col.push(stats(sel_tree));
     sb_col = sb_col.push(rule_h(1));
-    sb_col = sb_col.push(pick_list_tree_style(tv.sel_tree_style_opt));
-    sb_col = sb_col.push(pick_list_node_ordering(tv.sel_node_ord_opt));
+    sb_col = sb_col.push(pick_list_tree_style(tv.tree_style_opt_sel));
+    sb_col = sb_col.push(pick_list_node_ordering(tv.node_ord_opt_sel));
     sb_col = sb_col.push(rule_h(1));
 
-    match tv.sel_tree_style_opt {
+    match tv.tree_style_opt_sel {
         TreeStyle::Phylogram => {
             sb_col = sb_col.push(slider(
                 Some("Tree Width"),
-                tv.min_tre_cnv_w_idx,
-                tv.max_tre_cnv_w_idx,
-                tv.sel_tre_cnv_w_idx,
-                TvMsg::CnvWidthChanged,
+                tv.tre_cnv_w_idx_min,
+                tv.tre_cnv_w_idx_max,
+                tv.tre_cnv_w_idx_sel,
+                TvMsg::CnvWidthSelChanged,
             ));
-            if tv.min_tre_cnv_h_idx != tv.max_tre_cnv_h_idx {
+            if tv.tre_cnv_h_idx_min != tv.tre_cnv_h_idx_max {
                 sb_col = sb_col.push(slider(
                     Some("Edge Spacing"),
-                    tv.min_tre_cnv_h_idx,
-                    tv.max_tre_cnv_h_idx,
-                    tv.sel_tre_cnv_h_idx,
-                    TvMsg::CnvHeightChanged,
+                    tv.tre_cnv_h_idx_min,
+                    tv.tre_cnv_h_idx_max,
+                    tv.tre_cnv_h_idx_sel,
+                    TvMsg::CnvHeightSelChanged,
                 ));
             }
         }
         TreeStyle::Fan => {
             sb_col = sb_col.push(slider(
                 Some("Zoom"),
-                tv.min_tre_cnv_z_idx,
-                tv.max_tre_cnv_z_idx,
-                tv.sel_tre_cnv_z_idx,
-                TvMsg::CnvZoomChanged,
+                tv.tre_cnv_z_idx_min,
+                tv.tre_cnv_z_idx_max,
+                tv.tre_cnv_z_idx_sel,
+                TvMsg::CnvZoomSelChanged,
             ));
             sb_col = sb_col.push(slider(
                 Some("Opening Angle"),
-                tv.min_opn_angle_idx,
-                tv.max_opn_angle_idx,
-                tv.sel_opn_angle_idx,
+                tv.opn_angle_idx_min,
+                tv.opn_angle_idx_max,
+                tv.opn_angle_idx_sel,
                 TvMsg::OpnAngleChanged,
             ));
             sb_col = sb_col.push(slider(
                 Some("Rotation Angle"),
-                tv.min_rot_angle_idx,
-                tv.max_rot_angle_idx,
-                tv.sel_rot_angle_idx,
+                tv.rot_angle_idx_min,
+                tv.rot_angle_idx_max,
+                tv.rot_angle_idx_sel,
                 TvMsg::RotAngleChanged,
             ));
         }
@@ -242,9 +248,9 @@ pub(super) fn sidebar<'a>(tv: &'a TreeView, sel_tree: &'a TreeState) -> Element<
             toggler_label_tip(true, tv.draw_tip_labs,),
             slider(
                 None,
-                tv.min_lab_size_idx,
-                tv.max_lab_size_idx,
-                tv.sel_tip_lab_size_idx,
+                tv.lab_size_idx_min,
+                tv.lab_size_idx_max,
+                tv.tip_lab_size_idx_sel,
                 TvMsg::TipLabSizeChanged,
             )
         ])
@@ -260,9 +266,9 @@ pub(super) fn sidebar<'a>(tv: &'a TreeView, sel_tree: &'a TreeState) -> Element<
             toggler_label_branch(true, tv.draw_brnch_labs),
             slider(
                 None,
-                tv.min_lab_size_idx,
-                tv.max_lab_size_idx,
-                tv.sel_brnch_lab_size_idx,
+                tv.lab_size_idx_min,
+                tv.lab_size_idx_max,
+                tv.brnch_lab_size_idx_sel,
                 TvMsg::BrnchLabSizeChanged,
             )
         ])
@@ -278,9 +284,9 @@ pub(super) fn sidebar<'a>(tv: &'a TreeView, sel_tree: &'a TreeState) -> Element<
             toggler_label_int(true, tv.draw_int_labs),
             slider(
                 None,
-                tv.min_lab_size_idx,
-                tv.max_lab_size_idx,
-                tv.sel_int_lab_size_idx,
+                tv.lab_size_idx_min,
+                tv.lab_size_idx_max,
+                tv.int_lab_size_idx_sel,
                 TvMsg::IntLabSizeChanged,
             )
         ])
@@ -394,22 +400,24 @@ fn scrollable_common(
     s
 }
 
-fn scrollable_cnv_ltt(
-    cnv: Canvas<&PlotCnv, TvMsg>, w: impl Into<Length>, h: impl Into<Length>,
-) -> Scrollable<TvMsg> {
+fn scrollable_cnv_ltt<'a>(
+    id: &'static str, cnv: Canvas<&'a PlotCnv, TvMsg>, w: impl Into<Length>, h: impl Into<Length>,
+) -> Scrollable<'a, TvMsg> {
     let mut s: Scrollable<TvMsg> = Scrollable::new(cnv);
     s = s.direction(ScrollableDirection::Horizontal(Scrollbar::new()));
-    s = s.id("ltt");
+    s = s.id(id);
+    s = s.on_scroll(TvMsg::LttCnvScrolled);
     scrollable_common(s, w, h)
 }
 
-fn scrollable_cnv_tree(
-    cnv: Canvas<&TreeView, TvMsg>, w: impl Into<Length>, h: impl Into<Length>,
-) -> Scrollable<TvMsg> {
+fn scrollable_cnv_tree<'a>(
+    id: &'static str, cnv: Canvas<&'a TreeView, TvMsg>, w: impl Into<Length>, h: impl Into<Length>,
+) -> Scrollable<'a, TvMsg> {
     let mut s: Scrollable<TvMsg> = Scrollable::new(cnv);
     let sb = Scrollbar::new();
     s = s.direction(ScrollableDirection::Both { horizontal: sb, vertical: sb });
-    s = s.id("tre");
+    s = s.id(id);
+    s = s.on_scroll(TvMsg::TreCnvScrolled);
     scrollable_common(s, w, h)
 }
 

@@ -21,25 +21,58 @@ pub fn draw_point(point: Point, stroke: Stroke, radius: Float, frame: &mut Frame
     frame.stroke(&path, stroke);
 }
 
-pub fn tip_idx_range_vis(
-    y0: Float, y1: Float, node_size: Float, edges_tip: &[Edge], tree_style: TreeStyle,
-) -> Option<IndexRange> {
-    match tree_style {
-        TreeStyle::Phylogram => {
-            let i0: i64 = (y0 / node_size) as i64 - 3;
-            let i1: i64 = (y1 / node_size) as i64 + 3;
-            let i0: usize = i0.max(0) as usize;
-            let i1: usize = i1.min(edges_tip.len() as i64 - 1) as usize;
-            if i0 < i1 { Some(IndexRange { b: i0, e: i1 }) } else { None }
-        }
-        TreeStyle::Fan => Some(IndexRange { b: 0, e: edges_tip.len() - 1 }),
+fn edge_point(w: Float, h: Float, edge: &Edge) -> Point {
+    let x = edge.x0 as Float * w;
+    let y = edge.y as Float * h;
+    Point { x, y }
+}
+
+fn node_point(w: Float, h: Float, edge: &Edge) -> Point {
+    let x = edge.x1 as Float * w;
+    let y = edge.y as Float * h;
+    Point { x, y }
+}
+
+fn edge_points(w: Float, h: Float, edge: &Edge) -> EdgePoints {
+    let p0 = edge_point(w, h, edge);
+    let p1 = node_point(w, h, edge);
+    EdgePoints { p0, p1 }
+}
+
+fn edge_path_phylogram(w: Float, h: Float, edge: &Edge, pb: &mut PathBuilder, root_len: Float) {
+    let EdgePoints { p0, p1 } = edge_points(w, h, edge);
+    pb.move_to(p1);
+    pb.line_to(p0);
+    if let Some(y_parent) = edge.y_parent {
+        let pt_parent = Point { x: p0.x, y: y_parent as Float * h };
+        pb.line_to(pt_parent)
+    } else if edge.parent_node_id.is_none() && root_len > 0e0 {
+        let pt_parent = Point { x: root_len * -1e0, y: edge.y as Float * h };
+        pb.line_to(pt_parent)
     }
 }
 
-pub fn node_idx_range_vis(tip_idx_range: &IndexRange, edges_tip: &[Edge]) -> IndexRange {
-    let it0 = &edges_tip[tip_idx_range.b];
-    let it1 = &edges_tip[tip_idx_range.e];
-    let in0 = it0.edge_idx;
-    let in1 = it1.edge_idx;
-    IndexRange { b: in0, e: in1 }
+pub fn stroke_edges(
+    edges: &[Edge], tree_vs: &RectVals<Float>, root_len_opt: Option<Float>, f: &mut Frame,
+) {
+    let mut pb = PathBuilder::new();
+    let mut w = tree_vs.w;
+    let mut rl = 0e0;
+
+    if let Some(root_len) = root_len_opt {
+        w -= root_len;
+        rl = root_len
+    }
+
+    for e in edges {
+        edge_path_phylogram(w, tree_vs.h, e, &mut pb, rl)
+    }
+
+    let path: Path = pb.build();
+
+    f.with_save(|f| {
+        f.translate(tree_vs.trans);
+        f.translate(Vector { x: rl, y: 0e0 });
+        f.stroke(&path, STRK_EDGE);
+    })
 }

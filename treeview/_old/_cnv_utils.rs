@@ -1,8 +1,8 @@
-fn edge_point(w: Float, h: Float, edge: &Edge) -> Point {
-    let x = edge.x0 as Float * w;
-    let y = edge.y as Float * h;
-    Point { x, y }
-}
+// fn edge_point(w: Float, h: Float, edge: &Edge) -> Point {
+//     let x = edge.x0 as Float * w;
+//     let y = edge.y as Float * h;
+//     Point { x, y }
+// }
 
 fn edge_point_rad(angle: Float, center: Point, size: Float, edge: &Edge) -> Point {
     let x0 = edge.x0 as Float * angle.cos() * size;
@@ -10,11 +10,11 @@ fn edge_point_rad(angle: Float, center: Point, size: Float, edge: &Edge) -> Poin
     Point { x: center.x + x0, y: center.y + y0 }
 }
 
-fn node_point(w: Float, h: Float, edge: &Edge) -> Point {
-    let x = edge.x1 as Float * w;
-    let y = edge.y as Float * h;
-    Point { x, y }
-}
+// fn node_point(w: Float, h: Float, edge: &Edge) -> Point {
+//     let x = edge.x1 as Float * w;
+//     let y = edge.y as Float * h;
+//     Point { x, y }
+// }
 
 fn node_point_rad(angle: Float, center: Point, size: Float, edge: &Edge) -> Point {
     let x1 = edge.x1 as Float * angle.cos() * size;
@@ -22,11 +22,11 @@ fn node_point_rad(angle: Float, center: Point, size: Float, edge: &Edge) -> Poin
     Point { x: center.x + x1, y: center.y + y1 }
 }
 
-fn edge_points(w: Float, h: Float, edge: &Edge) -> EdgePoints {
-    let p0 = edge_point(w, h, edge);
-    let p1 = node_point(w, h, edge);
-    EdgePoints { p0, p1 }
-}
+// fn edge_points(w: Float, h: Float, edge: &Edge) -> EdgePoints {
+//     let p0 = edge_point(w, h, edge);
+//     let p1 = node_point(w, h, edge);
+//     EdgePoints { p0, p1 }
+// }
 
 fn edge_points_rad(angle: Float, center: Point, size: Float, edge: &Edge) -> EdgePoints {
     let p0 = edge_point_rad(angle, center, size, edge);
@@ -38,18 +38,18 @@ fn edge_angle(rot_angle: Float, opn_angle: Float, edge: &Edge) -> Float {
     rot_angle + edge.y as Float * opn_angle
 }
 
-fn edge_path_phylogram(w: Float, h: Float, edge: &Edge, pb: &mut PathBuilder, draw_root: bool) {
-    let EdgePoints { p0, p1 } = edge_points(w, h, edge);
-    pb.move_to(p1);
-    pb.line_to(p0);
-    if let Some(y_parent) = edge.y_parent {
-        let pt_parent = Point { x: p0.x, y: y_parent as Float * h };
-        pb.line_to(pt_parent)
-    } else if draw_root && edge.parent_node_id.is_none() {
-        let pt_parent = Point { x: 1e1 * -1e0, y: edge.y as Float * h };
-        pb.line_to(pt_parent)
-    }
-}
+// fn edge_path_phylogram(w: Float, h: Float, edge: &Edge, pb: &mut PathBuilder, draw_root: bool) {
+//     let EdgePoints { p0, p1 } = edge_points(w, h, edge);
+//     pb.move_to(p1);
+//     pb.line_to(p0);
+//     if let Some(y_parent) = edge.y_parent {
+//         let pt_parent = Point { x: p0.x, y: y_parent as Float * h };
+//         pb.line_to(pt_parent)
+//     } else if draw_root && edge.parent_node_id.is_none() {
+//         let pt_parent = Point { x: 1e1 * -1e0, y: edge.y as Float * h };
+//         pb.line_to(pt_parent)
+//     }
+// }
 
 fn edge_path_fan(
     rot_angle: Float, opn_angle: Float, center: Point, size: Float, edge: &Edge,

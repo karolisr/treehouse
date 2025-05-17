@@ -21,8 +21,11 @@ mod elements;
 mod treestate;
 mod treeview;
 
+use std::ops::RangeInclusive;
+
 pub(crate) use cnv_plot::PlotCnv;
 pub(crate) use cnv_utils::*;
+use dendros::Edge;
 pub(crate) use treestate::TreeState;
 pub(crate) use treeview::{NODE_ORD_OPTS, NodeOrd, TREE_STYLE_OPTS, TreeStyle, TvPane};
 pub use treeview::{SidebarPos, TreeView, TvMsg};
@@ -78,11 +81,13 @@ pub(crate) const TXT_LAB_TMPL: CanvasText = CanvasText {
     },
 };
 
-#[derive(Debug, Clone, Copy, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct IndexRange {
-    b: usize,
-    e: usize,
-}
+// #[derive(Debug, Clone, Copy, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+// pub struct IndexRange {
+//     b: usize,
+//     e: usize,
+// }
+
+pub type IndexRange = RangeInclusive<usize>;
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct NodePoint {
@@ -186,4 +191,22 @@ impl<T> From<RectVals<T>> for Rectangle<T> {
     fn from(v: RectVals<T>) -> Self {
         Rectangle { x: v.x, y: v.y, width: v.w, height: v.h }
     }
+}
+
+pub fn tip_idx_range_between_y_vals(
+    y0: Float, y1: Float, node_size: Float, tips: &[Edge],
+) -> Option<IndexRange> {
+    let i0: i64 = (y0 / node_size) as i64;
+    let i1: i64 = (y1 / node_size) as i64;
+    let idx_tip_0: usize = i0.max(0) as usize;
+    let idx_tip_1: usize = i1.min(tips.len() as i64 - 1) as usize;
+    if idx_tip_0 < idx_tip_1 { Some(IndexRange::new(idx_tip_0, idx_tip_1)) } else { None }
+}
+
+pub fn node_idx_range_for_tip_idx_range(tip_idx_range: &IndexRange, tips: &[Edge]) -> IndexRange {
+    let idx_tip_0 = &tips[*tip_idx_range.start()];
+    let idx_tip_1 = &tips[*tip_idx_range.end()];
+    let idx_node_0 = idx_tip_0.edge_idx;
+    let idx_node_1 = idx_tip_1.edge_idx;
+    IndexRange::new(idx_node_0, idx_node_1)
 }

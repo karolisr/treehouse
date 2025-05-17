@@ -113,9 +113,10 @@ impl App {
                             }
                         }
                     }
-                    treeview.update(tv_msg);
+                    treeview.update(tv_msg).map(AppMsg::TvMsg)
+                } else {
+                    Task::none()
                 }
-                Task::none()
             }
             AppMsg::OpenFile => Task::future(ops::choose_file_to_open()),
             AppMsg::PathToOpen(path_buf_opt) => {
@@ -252,8 +253,8 @@ impl App {
                     }
                     #[cfg(debug_assertions)]
                     {
-                        let path_buf = PathBuf::from("tests/data/tree02.newick");
-                        // let path_buf = PathBuf::from("tests/data/100_starting_trees.newick");
+                        // let path_buf = PathBuf::from("tests/data/tree02.newick");
+                        let path_buf = PathBuf::from("tests/data/100_starting_trees.newick");
                         let path: &std::path::Path = &path_buf.clone().into_boxed_path();
                         if path.exists() {
                             Task::done(AppMsg::PathToOpen(Some(path_buf)))

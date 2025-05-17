@@ -1,5 +1,5 @@
 use super::St;
-use crate::{STRK1, STRK2, TreeState, TreeView, draw_rect};
+use crate::{Float, STRK1, STRK2, TreeState, TreeView, draw_rect, stroke_edges};
 use iced::{Renderer, Size, widget::canvas::Geometry};
 
 pub(super) fn draw_bounds(
@@ -14,8 +14,13 @@ pub(super) fn draw_bounds(
 pub(super) fn draw_edges(
     tv: &TreeView, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
+    let root_len_opt: Option<Float> = match tst.is_rooted() {
+        true => Some(st.tree_vs.w * 0.1),
+        false => None,
+    };
     g.push(tst.cache_edge().draw(rndr, sz, |f| {
-        // code here...
+        let edges = &tst.edges();
+        stroke_edges(edges, &st.tree_vs, root_len_opt, f);
     }));
 }
 

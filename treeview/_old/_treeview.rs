@@ -14,14 +14,14 @@ pub struct TreeView {
     pub(crate) show_cursor_line: bool,
     pub(crate) show_statusbar: bool,
     pub(crate) draw_legend: bool,
-    pub(crate) ltt_cnv_scrolled: bool,
-    pub(crate) tre_cnv_scrolled: bool,
-    pub(crate) tre_cnv_x0: Float,
-    pub(crate) tre_cnv_y0: Float,
-    pub(crate) tre_cnv_y1: Float,
-    pub(crate) ltt_cnv_w: Float,
-    pub(crate) ltt_cnv_x0: Float,
-    pub(crate) ltt_cnv_y0: Float,
+    // pub(crate) ltt_cnv_scrolled: bool,
+    // pub(crate) tre_cnv_scrolled: bool,
+    // pub(crate) tre_cnv_x0: Float,
+    // pub(crate) tre_cnv_y0: Float,
+    // pub(crate) tre_cnv_y1: Float,
+    // pub(crate) ltt_cnv_w: Float,
+    // pub(crate) ltt_cnv_x0: Float,
+    // pub(crate) ltt_cnv_y0: Float,
 }
 
 #[derive(Debug, Clone)]

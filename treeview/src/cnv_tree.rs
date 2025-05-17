@@ -60,7 +60,8 @@ impl Program<TvMsg> for TreeView {
         if !self.drawing_enabled || tree_opt.is_none() {
             return None;
         }
-        let tree: &TreeState = tree_opt.unwrap();
+
+        // let tree: &TreeState = tree_opt.unwrap();
 
         if bnds != st.bnds {
             st.bnds = bnds;
@@ -68,6 +69,7 @@ impl Program<TvMsg> for TreeView {
             st.tree_vs = RectVals::tree(st.clip_vs, 1e1);
             st.clip_rect = st.clip_vs.into();
             st.tree_rect = st.tree_vs.into();
+            // return Some(Action::publish(TvMsg::TreCnvSizeChanged(bnds.size())));
         }
 
         None

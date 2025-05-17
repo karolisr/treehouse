@@ -1,4 +1,6 @@
-use crate::NodeOrd;
+use crate::{
+    Float, IndexRange, NodeOrd, node_idx_range_for_tip_idx_range, tip_idx_range_between_y_vals,
+};
 use dendros::{Edges, Node, NodeId, Tree, TreeFloat, flatten_tree};
 use iced::widget::canvas::Cache;
 use std::collections::HashSet;
@@ -36,7 +38,7 @@ pub(super) struct TreeState {
 }
 
 impl TreeState {
-    fn edges_tip(&self) -> Edges {
+    fn edges_tip_prepare(&self) -> Edges {
         let mut rv = Vec::new();
         for (i_e, edge) in self.edges.iter().enumerate() {
             if edge.is_tip {
@@ -46,6 +48,24 @@ impl TreeState {
             }
         }
         rv
+    }
+
+    // pub(super) fn edges_tip(&self) -> &Edges {
+    //     &self.edges_tip
+    // }
+
+    pub(super) fn visible_tip_idx_range(
+        &self, y0: Float, y1: Float, node_size: Float,
+    ) -> Option<IndexRange> {
+        tip_idx_range_between_y_vals(y0, y1, node_size, &self.edges_tip)
+    }
+
+    pub(super) fn visible_node_idx_range(
+        &self, y0: Float, y1: Float, node_size: Float,
+    ) -> Option<IndexRange> {
+        self.visible_tip_idx_range(y0, y1, node_size).map(|visible_tip_range| {
+            node_idx_range_for_tip_idx_range(&visible_tip_range, &self.edges_tip)
+        })
     }
 
     // Memoized Methods ---------------------------------------------------------------------------
@@ -171,7 +191,7 @@ impl TreeState {
             },
         };
 
-        self.edges_tip = self.edges_tip();
+        self.edges_tip = self.edges_tip_prepare();
     }
 
     // Selection ----------------------------------------------------------------------------------
