@@ -1,4 +1,4 @@
-use crate::TvMsg;
+use crate::*;
 use iced::{
     Event, Rectangle, Renderer, Theme,
     mouse::{Cursor, Interaction},

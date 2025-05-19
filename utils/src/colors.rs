@@ -22,4 +22,13 @@ impl Clr {
     pub const CYA_50: Color = Color { r: 0e0, g: 1e0, b: 1e0, a: 0.5 };
     pub const MAG_50: Color = Color { r: 1e0, g: 0e0, b: 1e0, a: 0.5 };
     pub const YEL_50: Color = Color { r: 1e0, g: 1e0, b: 0e0, a: 0.5 };
+
+    pub const BLK_25: Color = Color { r: 0e0, g: 0e0, b: 0e0, a: 0.25 };
+    pub const WHT_25: Color = Color { r: 1e0, g: 1e0, b: 1e0, a: 0.25 };
+    pub const RED_25: Color = Color { r: 1e0, g: 0e0, b: 0e0, a: 0.25 };
+    pub const GRN_25: Color = Color { r: 0e0, g: 1e0, b: 0e0, a: 0.25 };
+    pub const BLU_25: Color = Color { r: 0e0, g: 0e0, b: 1e0, a: 0.25 };
+    pub const CYA_25: Color = Color { r: 0e0, g: 1e0, b: 1e0, a: 0.25 };
+    pub const MAG_25: Color = Color { r: 1e0, g: 0e0, b: 1e0, a: 0.25 };
+    pub const YEL_25: Color = Color { r: 1e0, g: 1e0, b: 0e0, a: 0.25 };
 }

@@ -1,19 +1,12 @@
-use crate::{
-    NODE_ORD_OPTS, NodeOrd, PlotCnv, SidebarPos, TREE_STYLE_OPTS, TreeState, TreeStyle, TreeView,
-    TvMsg, TvPane,
-};
-
-use num_traits::FromPrimitive;
-
-use std::fmt::Display;
-
+use crate::*;
 pub use iced::widget::{Column, Row, center};
-
+use num_traits::FromPrimitive;
+use std::fmt::Display;
 use widget::toggler::Toggler;
 
 use iced::Alignment;
 use iced::Element;
-use iced::Font;
+// use iced::Font;
 use iced::Length;
 use iced::Pixels;
 use iced::Size;
@@ -62,12 +55,41 @@ pub(super) fn content<'a>(tv: &'a TreeView, _sel_tree: &'a TreeState) -> Element
 fn tv_pane_content<'a>(tv: &'a TreeView, tv_pane: &TvPane, size: Size) -> Element<'a, TvMsg> {
     let w = size.width;
     let h = size.height;
-    let mut cnv_w = { if tv.tre_cnv_w < w { w } else { tv.tre_cnv_w } };
-
+    let mut cnv_w = match tv.tree_style_opt_sel {
+        TreeStyle::Phylogram => {
+            if tv.tre_cnv_w_idx_sel == tv.tre_cnv_w_idx_min {
+                w
+            } else {
+                tv.tre_cnv_w
+            }
+        }
+        TreeStyle::Fan => {
+            if tv.tre_cnv_z_idx_sel == tv.tre_cnv_z_idx_min {
+                w
+            } else {
+                tv.tre_cnv_w
+            }
+        }
+    };
     let scrollable = match tv_pane {
         TvPane::Tree => {
-            let cnv_h =
-                { if tv.tre_cnv_h_idx_sel == tv.tre_cnv_h_idx_min { h } else { tv.tre_cnv_h } };
+            let cnv_h = match tv.tree_style_opt_sel {
+                TreeStyle::Phylogram => {
+                    if tv.tre_cnv_h_idx_sel == tv.tre_cnv_h_idx_min {
+                        h
+                    } else {
+                        tv.tre_cnv_h
+                    }
+                }
+                TreeStyle::Fan => {
+                    if tv.tre_cnv_z_idx_sel == tv.tre_cnv_z_idx_min {
+                        h
+                    } else {
+                        tv.tre_cnv_h
+                    }
+                }
+            };
+
             let cnv = Canvas::new(tv).width(cnv_w).height(cnv_h);
             scrollable_cnv_tree(tv.tre_scr_id, cnv, w, h)
         }
@@ -171,7 +193,7 @@ fn stats(sel_tree: &TreeState) -> Row<TvMsg> {
         txt_usize(sel_tree.tip_count()),
         txt_usize(sel_tree.node_count()),
         match sel_tree.has_brlen() {
-            true => txt_float(sel_tree.tree_height() as f32),
+            true => txt_float(sel_tree.tree_height() as Float),
             false => txt_usize(sel_tree.tree_height() as usize),
         },
         txt_bool(sel_tree.is_rooted()),
@@ -199,13 +221,6 @@ pub(super) fn sidebar<'a>(tv: &'a TreeView, sel_tree: &'a TreeState) -> Element<
 
     match tv.tree_style_opt_sel {
         TreeStyle::Phylogram => {
-            sb_col = sb_col.push(slider(
-                Some("Tree Width"),
-                tv.tre_cnv_w_idx_min,
-                tv.tre_cnv_w_idx_max,
-                tv.tre_cnv_w_idx_sel,
-                TvMsg::CnvWidthSelChanged,
-            ));
             if tv.tre_cnv_h_idx_min != tv.tre_cnv_h_idx_max {
                 sb_col = sb_col.push(slider(
                     Some("Edge Spacing"),
@@ -215,6 +230,13 @@ pub(super) fn sidebar<'a>(tv: &'a TreeView, sel_tree: &'a TreeState) -> Element<
                     TvMsg::CnvHeightSelChanged,
                 ));
             }
+            sb_col = sb_col.push(slider(
+                Some("Width"),
+                tv.tre_cnv_w_idx_min,
+                tv.tre_cnv_w_idx_max,
+                tv.tre_cnv_w_idx_sel,
+                TvMsg::CnvWidthSelChanged,
+            ));
         }
         TreeStyle::Fan => {
             sb_col = sb_col.push(slider(
@@ -242,6 +264,16 @@ pub(super) fn sidebar<'a>(tv: &'a TreeView, sel_tree: &'a TreeState) -> Element<
     }
 
     sb_col = sb_col.push(rule_h(1));
+
+    if sel_tree.is_rooted() {
+        sb_col = sb_col.push(slider(
+            Some("Root Length"),
+            tv.root_len_idx_min,
+            tv.root_len_idx_max,
+            tv.root_len_idx_sel,
+            TvMsg::RootLenSelChanged,
+        ));
+    }
 
     if tv.tip_brnch_labs_allowed && sel_tree.has_tip_labs() && tv.draw_tip_labs {
         sb_col = sb_col.push(column![
@@ -530,7 +562,7 @@ fn txt_bool_option(ob: Option<bool>) -> Text<'static> {
     }
 }
 
-fn txt_float(n: impl Into<f32>) -> Text<'static> {
+fn txt_float(n: impl Into<Float>) -> Text<'static> {
     let mut num_fmt = numfmt::Formatter::new();
     num_fmt = num_fmt.precision(numfmt::Precision::Decimals(3));
     num_fmt = num_fmt.separator(',').unwrap();

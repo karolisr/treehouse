@@ -1,6 +1,6 @@
 mod draw;
 
-use crate::{Float, RectVals, TreeState, TreeView, TvMsg};
+use crate::*;
 use draw::{draw_bounds, draw_edges, draw_labs_brnch, draw_labs_int, draw_labs_tip};
 use iced::{
     Event, Rectangle, Renderer, Theme,
@@ -44,11 +44,23 @@ impl Program<TvMsg> for TreeView {
         if self.drawing_enabled && tst_opt.is_some() {
             let tst: &TreeState = tst_opt.unwrap();
             let size = bnds.size();
+
+            let root_len_frac = self.root_len_idx_sel as Float / 2e2;
+            let rl: Float = match tst.is_rooted() {
+                true => match self.tree_style_opt_sel {
+                    TreeStyle::Phylogram => st.tree_vs.w * root_len_frac,
+                    TreeStyle::Fan => st.tree_vs.radius_min * root_len_frac,
+                },
+                false => 0e0,
+            };
+
             draw_bounds(self, st, tst, rndr, size, &mut geoms);
-            draw_edges(self, st, tst, rndr, size, &mut geoms);
-            draw_labs_tip(self, st, tst, rndr, size, &mut geoms);
-            draw_labs_int(self, st, tst, rndr, size, &mut geoms);
-            draw_labs_brnch(self, st, tst, rndr, size, &mut geoms);
+            draw_edges(self, st, tst, rndr, size, rl, &mut geoms);
+            if let Some(vis_nds) = self.visible_nodes() {
+                draw_labs_tip(self, st, tst, rndr, size, rl, vis_nds, &mut geoms);
+                draw_labs_int(self, st, tst, rndr, size, rl, vis_nds, &mut geoms);
+                draw_labs_brnch(self, st, tst, rndr, size, rl, vis_nds, &mut geoms);
+            }
         }
         geoms
     }
@@ -61,17 +73,15 @@ impl Program<TvMsg> for TreeView {
             return None;
         }
 
-        // let tree: &TreeState = tree_opt.unwrap();
-
         if bnds != st.bnds {
             st.bnds = bnds;
             st.clip_vs = RectVals::clip(bnds);
             st.tree_vs = RectVals::tree(st.clip_vs, 1e1);
             st.clip_rect = st.clip_vs.into();
             st.tree_rect = st.tree_vs.into();
-            // return Some(Action::publish(TvMsg::TreCnvSizeChanged(bnds.size())));
         }
 
+        let tree: &TreeState = tree_opt.unwrap();
         None
     }
 }

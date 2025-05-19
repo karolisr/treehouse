@@ -1,7 +1,4 @@
-use crate::{
-    Float, IndexRange, NodeOrd, node_idx_range_for_tip_idx_range, tip_idx_range_between_y_vals,
-};
-use dendros::{Edges, Node, NodeId, Tree, TreeFloat, flatten_tree};
+use crate::*;
 use iced::widget::canvas::Cache;
 use std::collections::HashSet;
 
@@ -15,11 +12,11 @@ pub(super) struct TreeState {
     t_srtd_asc: Option<Tree>,
     t_srtd_desc: Option<Tree>,
 
-    edges: Edges,
-    edges_tip: Edges,
-    edges_orig: Option<Edges>,
-    edges_srtd_asc: Option<Edges>,
-    edges_srtd_desc: Option<Edges>,
+    edges: Vec<Edge>,
+    edges_tip: Vec<Edge>,
+    edges_orig: Option<Vec<Edge>>,
+    edges_srtd_asc: Option<Vec<Edge>>,
+    edges_srtd_desc: Option<Vec<Edge>>,
 
     cache_edge: Cache,
     cache_lab_tip: Cache,
@@ -38,21 +35,13 @@ pub(super) struct TreeState {
 }
 
 impl TreeState {
-    fn edges_tip_prepare(&self) -> Edges {
-        let mut rv = Vec::new();
-        for (i_e, edge) in self.edges.iter().enumerate() {
-            if edge.is_tip {
-                let mut e = edge.clone();
-                e.edge_idx = i_e;
-                rv.push(e);
-            }
-        }
-        rv
+    pub(super) fn edges(&self) -> &Vec<Edge> {
+        &self.edges
     }
 
-    // pub(super) fn edges_tip(&self) -> &Edges {
-    //     &self.edges_tip
-    // }
+    pub(super) fn edges_tip(&self) -> &Vec<Edge> {
+        &self.edges_tip
+    }
 
     pub(super) fn visible_tip_idx_range(
         &self, y0: Float, y1: Float, node_size: Float,
@@ -66,6 +55,18 @@ impl TreeState {
         self.visible_tip_idx_range(y0, y1, node_size).map(|visible_tip_range| {
             node_idx_range_for_tip_idx_range(&visible_tip_range, &self.edges_tip)
         })
+    }
+
+    fn edges_tip_prepare(&self) -> Vec<Edge> {
+        let mut rv_tip = Vec::new();
+        for (i_e, edge) in self.edges.iter().enumerate() {
+            if edge.is_tip {
+                let mut e = edge.clone();
+                e.edge_idx = i_e;
+                rv_tip.push(e);
+            }
+        }
+        rv_tip
     }
 
     // Memoized Methods ---------------------------------------------------------------------------
@@ -138,11 +139,7 @@ impl TreeState {
         }
     }
 
-    // Edges & Sorting ----------------------------------------------------------------------------
-
-    pub(super) fn edges(&self) -> &Edges {
-        &self.edges
-    }
+    // Sorting ------------------------------------------------------------------------------------
 
     pub(super) fn sort(&mut self, node_ord_opt: NodeOrd) {
         match node_ord_opt {
@@ -266,6 +263,12 @@ impl TreeState {
         self.t_orig = tree;
         self.t = self.t_orig.clone();
 
+        self.edges_orig = None;
+        self.edges_srtd_asc = None;
+        self.edges_srtd_desc = None;
+        self.edges = vec![];
+        self.edges_tip = vec![];
+
         self.cache_has_brlen = None;
         self.cache_has_int_labs = None;
         self.cache_has_tip_labs = None;
@@ -284,9 +287,9 @@ impl TreeState {
         self.cache_tip_count = Some(self.tip_count());
         self.cache_tree_height = Some(self.tree_height());
 
-        self.clear_cache_edge();
-        self.clear_cache_lab_tip();
-        self.clear_cache_lab_int();
-        self.clear_cache_lab_brnch();
+        // self.clear_cache_edge();
+        // self.clear_cache_lab_tip();
+        // self.clear_cache_lab_int();
+        // self.clear_cache_lab_brnch();
     }
 }
