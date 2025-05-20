@@ -11,6 +11,7 @@ pub use muda_events::menu_events;
 use std::collections::HashMap;
 use treeview::SidebarPos;
 
+#[allow(dead_code)]
 #[derive(Default, Clone)]
 pub struct AppMenu {
     muda_menu: Option<muda::Menu>,
@@ -18,6 +19,7 @@ pub struct AppMenu {
 }
 
 impl AppMenu {
+    #[allow(dead_code)]
     pub fn enable(&mut self, id: &AppMenuItemId) {
         self.set_enabled(id, true);
     }

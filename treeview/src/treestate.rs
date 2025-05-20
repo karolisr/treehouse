@@ -1,6 +1,4 @@
 use crate::*;
-use iced::widget::canvas::Cache;
-use std::collections::HashSet;
 
 #[derive(Default, Debug)]
 pub(super) struct TreeState {
@@ -12,8 +10,10 @@ pub(super) struct TreeState {
     t_srtd_asc: Option<Tree>,
     t_srtd_desc: Option<Tree>,
 
+    edge_root: Option<Edge>,
+
     edges: Vec<Edge>,
-    edges_tip: Vec<Edge>,
+    edges_tip_idx: Vec<usize>,
     edges_orig: Option<Vec<Edge>>,
     edges_srtd_asc: Option<Vec<Edge>>,
     edges_srtd_desc: Option<Vec<Edge>>,
@@ -39,34 +39,27 @@ impl TreeState {
         &self.edges
     }
 
-    pub(super) fn edges_tip(&self) -> &Vec<Edge> {
-        &self.edges_tip
+    #[allow(dead_code)]
+    pub(super) fn edges_tip(&self) -> &Vec<usize> {
+        &self.edges_tip_idx
+    }
+
+    pub(super) fn edge_root(&self) -> Option<Edge> {
+        self.edge_root.clone()
     }
 
     pub(super) fn visible_tip_idx_range(
         &self, y0: Float, y1: Float, node_size: Float,
     ) -> Option<IndexRange> {
-        tip_idx_range_between_y_vals(y0, y1, node_size, &self.edges_tip)
+        tip_idx_range_between_y_vals(y0, y1, node_size, &self.edges_tip_idx)
     }
 
     pub(super) fn visible_node_idx_range(
         &self, y0: Float, y1: Float, node_size: Float,
     ) -> Option<IndexRange> {
         self.visible_tip_idx_range(y0, y1, node_size).map(|visible_tip_range| {
-            node_idx_range_for_tip_idx_range(&visible_tip_range, &self.edges_tip)
+            node_idx_range_for_tip_idx_range(&visible_tip_range, &self.edges_tip_idx)
         })
-    }
-
-    fn edges_tip_prepare(&self) -> Vec<Edge> {
-        let mut rv_tip = Vec::new();
-        for (i_e, edge) in self.edges.iter().enumerate() {
-            if edge.is_tip {
-                let mut e = edge.clone();
-                e.edge_idx = i_e;
-                rv_tip.push(e);
-            }
-        }
-        rv_tip
     }
 
     // Memoized Methods ---------------------------------------------------------------------------
@@ -188,7 +181,33 @@ impl TreeState {
             },
         };
 
-        self.edges_tip = self.edges_tip_prepare();
+        self.edges_tip_idx = self.edges_tip_prepare();
+        self.edge_root = self.edge_root_prepare();
+    }
+
+    fn edge_root_prepare(&mut self) -> Option<Edge> {
+        if self.is_rooted() {
+            Some(
+                self.edges
+                    .iter()
+                    .find(|j| j.parent_node_id.is_none())
+                    .expect("Should have root!")
+                    .clone(),
+            )
+        } else {
+            None
+        }
+    }
+
+    fn edges_tip_prepare(&mut self) -> Vec<usize> {
+        let mut rv_tip_idx = Vec::new();
+        for (i_e, edge) in &mut self.edges.iter_mut().enumerate() {
+            edge.edge_idx = i_e;
+            if edge.is_tip {
+                rv_tip_idx.push(i_e);
+            }
+        }
+        rv_tip_idx
     }
 
     // Selection ----------------------------------------------------------------------------------
@@ -267,7 +286,7 @@ impl TreeState {
         self.edges_srtd_asc = None;
         self.edges_srtd_desc = None;
         self.edges = vec![];
-        self.edges_tip = vec![];
+        self.edges_tip_idx = vec![];
 
         self.cache_has_brlen = None;
         self.cache_has_int_labs = None;

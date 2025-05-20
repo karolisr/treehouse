@@ -1,14 +1,6 @@
 impl TreeView {
     pub fn update(&mut self, msg: TreeViewMsg) -> Task<TreeViewMsg> {
         match msg {
-            TreeViewMsg::TreeStateMsg(tree_state_msg) => {
-                if let Some(tree) = self.tree_mut() {
-                    tree.update(tree_state_msg)
-                } else {
-                    Task::none()
-                }
-            }
-
             TreeViewMsg::PaneDragged(drag_event) => {
                 if let Some(pgs) = &mut self.panes {
                     match drag_event {
@@ -24,71 +16,6 @@ impl TreeView {
                 }
             }
 
-            // TreeViewMsg::ScrollTo { x, y } => iced::widget::scrollable::scroll_to(
-            //     "tre",
-            //     match self.sel_tree_style_opt {
-            //         TreeStyle::Phylogram => iced::widget::scrollable::AbsoluteOffset {
-            //             x: x - self.tree_scroll_w / 2e0,
-            //             y: y - self.tree_scroll_h / 2e0,
-            //         },
-            //         TreeStyle::Fan => iced::widget::scrollable::AbsoluteOffset {
-            //             x: x - self.tree_scroll_w / 2e0, // + self.tip_lab_w
-            //             y: y - self.tree_scroll_h / 2e0, // + self.tip_lab_w
-            //         },
-            //     },
-            // ),
-
-            // TreeViewMsg::ScrollToX { sender, x } => {
-            //     if self.sel_tree_style_opt == TreeStyle::Phylogram {
-            //         match sender {
-            //             "tre" => {
-            //                 self.tre_cnv_scrolled = true;
-            //                 self.ltt_cnv_scrolled = false;
-            //                 iced::widget::scrollable::scroll_to(
-            //                     "ltt",
-            //                     iced::widget::scrollable::AbsoluteOffset { x, y: self.ltt_cnv_y0 },
-            //                 )
-            //             }
-            //             "ltt" => {
-            //                 self.ltt_cnv_scrolled = true;
-            //                 self.tre_cnv_scrolled = false;
-            //                 iced::widget::scrollable::scroll_to(
-            //                     "tre",
-            //                     iced::widget::scrollable::AbsoluteOffset { x, y: self.tre_cnv_y0 },
-            //                 )
-            //             }
-            //             _ => Task::none(),
-            //         }
-            //     } else {
-            //         Task::none()
-            //     }
-            // }
-
-            // TreeViewMsg::TreCnvScrolled(vp) => {
-            //     self.tre_cnv_x0 = vp.absolute_offset().x;
-            //     self.tre_cnv_y0 = vp.absolute_offset().y;
-            //     self.tre_cnv_y1 = self.tre_cnv_y0 + vp.bounds().height;
-
-            //     if self.tre_cnv_scrolled && self.tre_cnv_x0 != self.ltt_cnv_x0 {
-            //         Task::done(TreeViewMsg::ScrollToX { sender: "tre", x: self.tre_cnv_x0 })
-            //     } else {
-            //         self.tre_cnv_scrolled = true;
-            //         Task::none()
-            //     }
-            // }
-
-            // TreeViewMsg::LttCnvScrolled(vp) => {
-            //     self.ltt_cnv_x0 = vp.absolute_offset().x;
-            //     self.ltt_cnv_y0 = vp.absolute_offset().y;
-            //     if self.ltt_cnv_scrolled && self.tre_cnv_x0 != self.ltt_cnv_x0 {
-            //         Task::done(TreeViewMsg::ScrollToX { sender: "ltt", x: self.ltt_cnv_x0 })
-            //     } else {
-            //         self.ltt_cnv_scrolled = true;
-            //         Task::none()
-            //     }
-            // }
-
-            // ------------------------------------------------------------------------------------
             TreeViewMsg::CursorOnTreCnv { x } => {
                 if let Some(tree) = self.tree_mut() {
                     tree.tre_cnv.cursor_x_fraction = None;
@@ -167,23 +94,6 @@ impl TreeView {
                 }
                 Task::none()
             }
-
-            TreeViewMsg::Init => Task::batch([
-                Task::done(TreeViewMsg::TipLabelSizeSelectionChanged(self.sel_tip_lab_size_idx)),
-                Task::done(TreeViewMsg::IntLabelSizeSelectionChanged(self.sel_int_lab_size_idx)),
-                Task::done(TreeViewMsg::BranchLabelSizeSelectionChanged(
-                    self.sel_brnch_lab_size_idx,
-                )),
-                Task::done(TreeViewMsg::OpnAngleSelectionChanged(self.sel_opn_angle_idx)),
-                Task::done(TreeViewMsg::RotAngleSelectionChanged(self.sel_rot_angle_idx)),
-            ])
-            .chain(if let Some(id) = self.win_id {
-                iced::window::get_size(id)
-                    .map(|s| TreeViewMsg::WindowResized(s.width * SF, s.height * SF))
-            } else {
-                Task::none()
-            })
-            .chain(Task::done(TreeViewMsg::EnableDrawing)),
         }
     }
 }
@@ -201,19 +111,6 @@ pub(crate) fn update_found_node_point(&mut self) {
             node_point_rad(angle, self.center, self.size, edge)
         }
     });
-}
-
-pub(crate) fn update_visible_nodes(&mut self) {
-    self.tip_idx_range = self.visible_tip_idx_range();
-    if let Some(tip_idx_range) = &self.tip_idx_range {
-        let node_points =
-            self.visible_nodes(self.tree_rect.width, self.tree_rect.height, tip_idx_range);
-        self.visible_nodes = node_points.points;
-        self.center = node_points.center;
-        self.size = node_points.size;
-    } else {
-        self.visible_nodes.clear();
-    }
 }
 
 pub(crate) fn update_rects(&mut self) {
@@ -274,60 +171,6 @@ pub(crate) fn update_tip_label_w(&mut self) {
         self.tip_lab_w = 0e0;
     }
 }
-
-// pub(crate) fn update_canvas_h(&mut self) {
-//     match self.sel_tree_style_opt {
-//         TreeStyle::Phylogram => {
-//             self.tre_cnv_h = self.node_size * self.tip_count as Float;
-//         }
-//         TreeStyle::Fan => {
-//             if self.sel_tre_cnv_w_idx == self.min_tre_cnv_w_idx {
-//                 self.tre_cnv_h = self.min_tre_cnv_h;
-//             } else {
-//                 self.tre_cnv_h = self.min_tre_cnv_h + self.sel_tre_cnv_w_idx as Float * 1e2 * SF;
-//             }
-//         }
-//     }
-// }
-
-// pub(crate) fn update_node_size(&mut self) {
-//     self.min_tre_cnv_h = self.window_h - PADDING * 5e0 - TTR_H;
-//     if self.show_ltt {
-//         self.min_tre_cnv_h -= LTT_H;
-//     }
-//     self.tree_scroll_h = self.min_tre_cnv_h;
-//     self.min_node_size = self.min_tre_cnv_h / self.tip_count as Float;
-//     self.max_node_size = Float::max(self.max_lab_size * 3e0, self.min_node_size);
-//     self.max_node_size_idx = self.max_lab_size_idx;
-//     if self.min_node_size == self.max_node_size {
-//         self.max_node_size_idx = self.min_node_size_idx
-//     }
-//     if self.sel_node_size_idx > self.max_node_size_idx {
-//         self.sel_node_size_idx = self.max_node_size_idx
-//     }
-//     if self.sel_node_size_idx == self.min_node_size_idx {
-//         self.tre_cnv_y0 = 0e0;
-//         self.tre_cnv_y1 = self.tre_cnv_y0 + self.min_tre_cnv_h;
-//     }
-//     if self.max_node_size_idx > 1 {
-//         self.node_size = lerp(
-//             self.min_node_size,
-//             self.max_node_size,
-//             (self.sel_node_size_idx - 1) as Float / self.max_node_size_idx as Float,
-//         )
-//     } else {
-//         self.node_size = self.min_node_size
-//     }
-//     match self.sel_tree_style_opt {
-//         TreeStyle::Phylogram => {
-//             self.tip_brnch_labs_allowed =
-//                 (self.min_tre_cnv_h / self.node_size) as usize <= self.max_tip_labs_to_draw;
-//         }
-//         TreeStyle::Fan => {
-//             self.tip_brnch_labs_allowed = self.tip_count <= self.max_tip_labs_to_draw * 10;
-//         }
-//     }
-// }
 
 pub(crate) fn update_extra_space_for_labels(&mut self) {
     let mut text_w = text_width(self.tip_lab_size, self.tip_lab_size, TREE_LAB_FONT_NAME);

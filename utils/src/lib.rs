@@ -18,4 +18,4 @@ mod text_width;
 
 pub use colors::Clr;
 pub use math::lerp;
-pub use text_width::text_width;
+pub use text_width::{TextWidth, text_width};

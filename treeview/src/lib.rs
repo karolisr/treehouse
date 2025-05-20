@@ -17,45 +17,47 @@
 mod cnv_plot;
 mod cnv_tree;
 mod cnv_utils;
+mod consts;
 mod edge_utils;
 mod elements;
 mod treestate;
 mod treeview;
 
-use std::ops::RangeInclusive;
-
-pub(crate) use cnv_plot::PlotCnv;
-pub(crate) use cnv_utils::*;
-pub(crate) use dendros::{Edge, Node, NodeId, Tree, TreeFloat, flatten_tree};
-pub(crate) use edge_utils::*;
-pub(crate) use treestate::TreeState;
-pub(crate) use treeview::{NODE_ORD_OPTS, NodeOrd, TREE_STYLE_OPTS, TreeStyle, TvPane};
 pub use treeview::{SidebarPos, TreeView, TvMsg};
-pub use utils::{Clr, lerp, text_width};
+pub use utils::{Clr, TextWidth, lerp, text_width};
 
-pub(crate) type Float = f32;
-pub(crate) const PI: Float = std::f32::consts::PI;
-pub(crate) const TAU: Float = std::f32::consts::TAU;
-pub(crate) const FRAC_PI_2: Float = std::f32::consts::FRAC_PI_2;
-pub(crate) const SF: Float = 1e0;
-pub(crate) const FNT_NAME: &str = "JetBrains Mono";
-pub(crate) const TXT_SIZE: Float = 13.0 * SF;
-pub(crate) const FNT_NAME_LAB: &str = FNT_NAME;
-pub(crate) const TXT_SIZE_LAB: Float = TXT_SIZE;
+use dendros::{Edge, Node, NodeId, Tree, TreeFloat, flatten_tree};
+
+use cnv_plot::PlotCnv;
+use cnv_utils::*;
+use consts::*;
+use edge_utils::*;
+use rayon::prelude::*;
+use std::collections::HashSet;
+use std::ops::RangeInclusive;
+use treestate::TreeState;
+use treeview::{NODE_ORD_OPTS, NodeOrd, TREE_STYLE_OPTS, TreeStyle, TvPane};
 
 use iced::alignment::Vertical;
 use iced::font::{Family, Stretch, Style as FontStyle, Weight};
-use iced::widget::canvas::Text as CanvasText;
+use iced::mouse::{Cursor, Event as MouseEvent, Interaction};
+use iced::widget::canvas::Cache;
+use iced::widget::canvas::path::Arc;
 use iced::widget::canvas::stroke::{LineCap, LineDash, LineJoin};
 use iced::widget::canvas::stroke::{Stroke as Strk, Style::Solid};
+use iced::widget::canvas::{Action, Frame, Geometry, Path, Program};
+#[allow(unused_imports)]
+use iced::widget::canvas::{Fill as CanvasFill, Text as CanvasText};
 use iced::widget::text::{Alignment as TextAlignment, LineHeight, Shaping};
-use iced::{Font, Pixels, Point, Rectangle, Vector};
+use iced::{Event, Font, Pixels, Point, Radians, Rectangle, Renderer, Size, Theme, Vector};
 
+pub type Float = f32;
 pub type IndexRange = RangeInclusive<usize>;
 
 #[derive(Debug, Clone, Default)]
 pub struct Label {
     text: CanvasText,
+    width: Float,
     angle: Option<Float>,
 }
 
@@ -66,25 +68,52 @@ pub struct EdgePoints {
     p1: Point,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum NodeData<'a> {
-    Phylogram(&'a [NodeDataPhylogram]),
-    Rad(&'a [NodeDataRad]),
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct NodeData {
+    edge_idx: usize,
+    points: EdgePoints,
+    angle: Option<Float>,
+    y_parent: Option<Float>,
+    angle_parent: Option<Float>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct NodeDataPhylogram {
-    edge: Edge,
+    edge_idx: usize,
     points: EdgePoints,
     y_parent: Option<Float>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct NodeDataRad {
-    edge: Edge,
+    edge_idx: usize,
     points: EdgePoints,
     angle: Float,
     angle_parent: Option<Float>,
+}
+
+impl From<NodeDataPhylogram> for NodeData {
+    fn from(nd: NodeDataPhylogram) -> Self {
+        Self {
+            edge_idx: nd.edge_idx,
+            points: nd.points,
+            y_parent: nd.y_parent,
+            angle: None,
+            angle_parent: None,
+        }
+    }
+}
+
+impl From<NodeDataRad> for NodeData {
+    fn from(nd: NodeDataRad) -> Self {
+        Self {
+            edge_idx: nd.edge_idx,
+            points: nd.points,
+            y_parent: None,
+            angle: Some(nd.angle),
+            angle_parent: nd.angle_parent,
+        }
+    }
 }
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
@@ -166,8 +195,11 @@ impl<T> From<RectVals<T>> for Rectangle<T> {
 }
 
 pub fn tip_idx_range_between_y_vals(
-    y0: Float, y1: Float, node_size: Float, tips: &[Edge],
+    y0: Float, y1: Float, node_size: Float, tips: &[usize],
 ) -> Option<IndexRange> {
+    if node_size <= 0e0 {
+        return None;
+    }
     let i0: i64 = (y0 / node_size) as i64;
     let i1: i64 = (y1 / node_size) as i64;
     let idx_tip_0: usize = i0.max(0) as usize;
@@ -175,96 +207,11 @@ pub fn tip_idx_range_between_y_vals(
     if idx_tip_0 < idx_tip_1 { Some(IndexRange::new(idx_tip_0, idx_tip_1)) } else { None }
 }
 
-pub fn node_idx_range_for_tip_idx_range(tip_idx_range: &IndexRange, tips: &[Edge]) -> IndexRange {
-    let idx_tip_0 = &tips[*tip_idx_range.start()];
-    let idx_tip_1 = &tips[*tip_idx_range.end()];
-    let idx_node_0 = idx_tip_0.edge_idx;
-    let idx_node_1 = idx_tip_1.edge_idx;
-    IndexRange::new(idx_node_0, idx_node_1)
+pub fn node_idx_range_for_tip_idx_range(tip_idx_range: &IndexRange, tips: &[usize]) -> IndexRange {
+    let idx_tip_0 = tips[*tip_idx_range.start()];
+    let idx_tip_1 = tips[*tip_idx_range.end()];
+    // let idx_node_0 = idx_tip_0.edge_idx;
+    // let idx_node_1 = idx_tip_1.edge_idx;
+    // println!("{} {} {} {}", tip_idx_range.start(), tip_idx_range.end(), idx_tip_0, idx_tip_1);
+    IndexRange::new(idx_tip_0, idx_tip_1)
 }
-
-pub(crate) const STRK_TMPL: Strk = Strk {
-    width: 1e0,
-    line_cap: LineCap::Square,
-    line_join: LineJoin::Round,
-    style: Solid(Clr::BLK),
-    line_dash: LineDash { segments: &[], offset: 0 },
-};
-
-pub(crate) const STRK_1: Strk = Strk { width: 1e0, ..STRK_TMPL };
-pub(crate) const STRK_2: Strk = Strk { width: 2e0, ..STRK_TMPL };
-pub(crate) const STRK_3: Strk = Strk { width: 3e0, ..STRK_TMPL };
-pub(crate) const STRK_4: Strk = Strk { width: 4e0, ..STRK_TMPL };
-pub(crate) const STRK_5: Strk = Strk { width: 5e0, ..STRK_TMPL };
-
-pub(crate) const STRK_EDGE: Strk = STRK_1;
-
-pub(crate) const STRK_1_BLK_25: Strk = Strk { style: Solid(Clr::BLK_25), ..STRK_1 };
-pub(crate) const STRK_1_RED_25: Strk = Strk { style: Solid(Clr::RED_25), ..STRK_1 };
-pub(crate) const STRK_1_GRN_25: Strk = Strk { style: Solid(Clr::GRN_25), ..STRK_1 };
-pub(crate) const STRK_1_BLU_25: Strk = Strk { style: Solid(Clr::BLU_25), ..STRK_1 };
-pub(crate) const STRK_1_YEL_25: Strk = Strk { style: Solid(Clr::YEL_25), ..STRK_1 };
-pub(crate) const STRK_1_CYA_25: Strk = Strk { style: Solid(Clr::CYA_25), ..STRK_1 };
-pub(crate) const STRK_1_MAG_25: Strk = Strk { style: Solid(Clr::MAG_25), ..STRK_1 };
-
-pub(crate) const STRK_1_BLK_50: Strk = Strk { style: Solid(Clr::BLK_50), ..STRK_1 };
-pub(crate) const STRK_1_RED_50: Strk = Strk { style: Solid(Clr::RED_50), ..STRK_1 };
-pub(crate) const STRK_1_GRN_50: Strk = Strk { style: Solid(Clr::GRN_50), ..STRK_1 };
-pub(crate) const STRK_1_BLU_50: Strk = Strk { style: Solid(Clr::BLU_50), ..STRK_1 };
-pub(crate) const STRK_1_YEL_50: Strk = Strk { style: Solid(Clr::YEL_50), ..STRK_1 };
-pub(crate) const STRK_1_CYA_50: Strk = Strk { style: Solid(Clr::CYA_50), ..STRK_1 };
-pub(crate) const STRK_1_MAG_50: Strk = Strk { style: Solid(Clr::MAG_50), ..STRK_1 };
-
-pub(crate) const STRK_2_BLK_25: Strk = Strk { style: Solid(Clr::BLK_25), ..STRK_2 };
-pub(crate) const STRK_2_RED_25: Strk = Strk { style: Solid(Clr::RED_25), ..STRK_2 };
-pub(crate) const STRK_2_GRN_25: Strk = Strk { style: Solid(Clr::GRN_25), ..STRK_2 };
-pub(crate) const STRK_2_BLU_25: Strk = Strk { style: Solid(Clr::BLU_25), ..STRK_2 };
-pub(crate) const STRK_2_YEL_25: Strk = Strk { style: Solid(Clr::YEL_25), ..STRK_2 };
-pub(crate) const STRK_2_CYA_25: Strk = Strk { style: Solid(Clr::CYA_25), ..STRK_2 };
-pub(crate) const STRK_2_MAG_25: Strk = Strk { style: Solid(Clr::MAG_25), ..STRK_2 };
-
-pub(crate) const STRK_2_BLK_50: Strk = Strk { style: Solid(Clr::BLK_50), ..STRK_2 };
-pub(crate) const STRK_2_RED_50: Strk = Strk { style: Solid(Clr::RED_50), ..STRK_2 };
-pub(crate) const STRK_2_GRN_50: Strk = Strk { style: Solid(Clr::GRN_50), ..STRK_2 };
-pub(crate) const STRK_2_BLU_50: Strk = Strk { style: Solid(Clr::BLU_50), ..STRK_2 };
-pub(crate) const STRK_2_YEL_50: Strk = Strk { style: Solid(Clr::YEL_50), ..STRK_2 };
-pub(crate) const STRK_2_CYA_50: Strk = Strk { style: Solid(Clr::CYA_50), ..STRK_2 };
-pub(crate) const STRK_2_MAG_50: Strk = Strk { style: Solid(Clr::MAG_50), ..STRK_2 };
-
-pub(crate) const STRK_3_BLK_25: Strk = Strk { style: Solid(Clr::BLK_25), ..STRK_3 };
-pub(crate) const STRK_3_RED_25: Strk = Strk { style: Solid(Clr::RED_25), ..STRK_3 };
-pub(crate) const STRK_3_GRN_25: Strk = Strk { style: Solid(Clr::GRN_25), ..STRK_3 };
-pub(crate) const STRK_3_BLU_25: Strk = Strk { style: Solid(Clr::BLU_25), ..STRK_3 };
-pub(crate) const STRK_3_YEL_25: Strk = Strk { style: Solid(Clr::YEL_25), ..STRK_3 };
-pub(crate) const STRK_3_CYA_25: Strk = Strk { style: Solid(Clr::CYA_25), ..STRK_3 };
-pub(crate) const STRK_3_MAG_25: Strk = Strk { style: Solid(Clr::MAG_25), ..STRK_3 };
-
-pub(crate) const STRK_3_BLK_50: Strk = Strk { style: Solid(Clr::BLK_50), ..STRK_3 };
-pub(crate) const STRK_3_RED_50: Strk = Strk { style: Solid(Clr::RED_50), ..STRK_3 };
-pub(crate) const STRK_3_GRN_50: Strk = Strk { style: Solid(Clr::GRN_50), ..STRK_3 };
-pub(crate) const STRK_3_BLU_50: Strk = Strk { style: Solid(Clr::BLU_50), ..STRK_3 };
-pub(crate) const STRK_3_YEL_50: Strk = Strk { style: Solid(Clr::YEL_50), ..STRK_3 };
-pub(crate) const STRK_3_CYA_50: Strk = Strk { style: Solid(Clr::CYA_50), ..STRK_3 };
-pub(crate) const STRK_3_MAG_50: Strk = Strk { style: Solid(Clr::MAG_50), ..STRK_3 };
-
-pub(crate) const TXT_LAB_TMPL: CanvasText = CanvasText {
-    color: Clr::BLK,
-    size: Pixels(TXT_SIZE_LAB),
-    line_height: LineHeight::Absolute(Pixels(TXT_SIZE_LAB)),
-    align_x: TextAlignment::Left,
-    align_y: Vertical::Center,
-    content: String::new(),
-    max_width: Float::INFINITY,
-    position: Point::ORIGIN,
-    shaping: Shaping::Basic,
-    font: Font {
-        family: Family::Name(FNT_NAME_LAB),
-        weight: Weight::Normal,
-        stretch: Stretch::Normal,
-        style: FontStyle::Normal,
-    },
-};
-
-// pub(crate) const TXT_LAB_TMPL: CanvasText = CanvasText {
-
-// };

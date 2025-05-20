@@ -1,65 +1,3 @@
-pub(crate) fn visible_nodes(
-    w: Float, h: Float, center: Point, size: Float, tip_idx_range: &IndexRange,
-    tree_tip_edges: &[Edge], sel_tree_style_opt: TreeStyle, rot_angle: Float, opn_angle: Float,
-    tree_edges_chunked: &[Edges],
-) -> Vec<NodePoint> {
-    let ChunkEdgeRange {
-        chnk: IndexRange { b: chnk_idx_0, e: chnk_idx_1 },
-        edge: IndexRange { b: edge_idx_0, e: edge_idx_1 },
-    } = visible_node_ranges(tip_idx_range, tree_tip_edges);
-    let tree_repr = sel_tree_style_opt;
-    let mut points: Vec<NodePoint> = Vec::new();
-    if chnk_idx_0 == chnk_idx_1 {
-        let chunk = &tree_edges_chunked[chnk_idx_0];
-        for e in &chunk[edge_idx_0..=edge_idx_1] {
-            let mut angle: Option<Float> = None;
-            let point: Point;
-            match tree_repr {
-                TreeStyle::Phylogram => {
-                    point = node_point(w, h, e);
-                }
-                TreeStyle::Fan => {
-                    let a = edge_angle(rot_angle, opn_angle, e);
-                    point = node_point_rad(a, center, size, e);
-                    angle = Some(a);
-                }
-            }
-            points.push(NodePoint { point, edge: e.clone(), angle });
-        }
-    } else {
-        for chnk_idx in chnk_idx_0..=chnk_idx_1 {
-            let chunk = &tree_edges_chunked[chnk_idx];
-            let edge_range: RangeInclusive<usize>;
-
-            if chnk_idx == chnk_idx_0 {
-                edge_range = edge_idx_0..=tree_edges_chunked[chnk_idx].len() - 1;
-            } else if chnk_idx == chnk_idx_1 {
-                edge_range = 0..=edge_idx_1
-            } else {
-                edge_range = 0..=tree_edges_chunked[chnk_idx].len() - 1;
-            }
-
-            for e in &chunk[edge_range] {
-                let mut angle: Option<Float> = None;
-                let point: Point;
-                match tree_repr {
-                    TreeStyle::Phylogram => {
-                        point = node_point(w, h, e);
-                    }
-                    TreeStyle::Fan => {
-                        let a = edge_angle(rot_angle, opn_angle, e);
-                        point = node_point_rad(a, center, size, e);
-                        angle = Some(a);
-                    }
-                }
-                points.push(NodePoint { point, edge: e.clone(), angle });
-            }
-        }
-    }
-
-    points
-}
-
 pub(crate) fn draw_scale_bar(
     tree_height: Float, stroke: Stroke, label_template: &iced::widget::canvas::Text,
     tree_rect: &Rectangle, frame: &mut Frame,
@@ -99,25 +37,6 @@ pub(crate) fn draw_scale_bar(
 
     frame.stroke(&path, stroke);
     frame.fill_text(l);
-}
-
-pub(crate) fn draw_node(
-    point: &Point, ps: Float, stroke: Stroke, fill: impl Into<iced::widget::canvas::Fill>,
-    tree_rect: &Rectangle, frame: &mut Frame,
-) {
-    frame.with_save(|f| {
-        f.translate(Vector { x: tree_rect.x, y: tree_rect.y });
-        let path_fill = Path::new(|p| {
-            p.circle(*point, ps);
-        });
-
-        let path_stroke = Path::new(|p| {
-            p.circle(*point, ps - 1e0 / 2e0);
-        });
-
-        f.fill(&path_fill, fill);
-        f.stroke(&path_stroke, stroke);
-    });
 }
 
 use iced::widget::container::Style as ContainerStyle;

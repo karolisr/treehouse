@@ -258,32 +258,18 @@ impl Program<TreeViewMsg> for TreeCnv {
 
         let palette = theme.palette();
         let palette_ex = theme.extended_palette();
-
         let color_text = palette.text;
-
-        #[cfg(debug_assertions)]
         let color_bg_weakest = palette_ex.background.weakest.color;
-        #[cfg(debug_assertions)]
         let color_bg_weak = palette_ex.background.weak.color;
-        #[cfg(debug_assertions)]
         let color_bg_base = palette_ex.background.base.color;
-        #[cfg(debug_assertions)]
         let color_bg_strong = palette_ex.background.strong.color;
-        #[cfg(debug_assertions)]
         let color_bg_strongest = palette_ex.background.strongest.color;
-
-        #[cfg(debug_assertions)]
         let color_primary_weak = palette_ex.primary.weak.color;
         let color_primary_base = palette_ex.primary.base.color;
         let color_primary_strong = palette_ex.primary.strong.color;
-
-        #[cfg(debug_assertions)]
         let color_secondary_weak = palette_ex.secondary.weak.color;
-        #[cfg(debug_assertions)]
         let color_secondary_base = palette_ex.secondary.base.color;
         let color_secondary_strong = palette_ex.secondary.strong.color;
-
-        #[cfg(debug_assertions)]
         let color_success_base = palette_ex.success.base.color;
         let color_warning_base = palette_ex.warning.base.color;
         let color_danger_base = palette_ex.danger.base.color;

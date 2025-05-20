@@ -25,6 +25,7 @@ pub fn read_text_file(path_buf: PathBuf) -> String {
     String::from_utf8(data).unwrap()
 }
 
+#[allow(dead_code)]
 pub fn write_text_file(path_buf: &PathBuf, s: &str) {
     std::fs::write(path_buf, s)
         .map_err(|e| {

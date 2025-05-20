@@ -6,7 +6,8 @@ use widget::toggler::Toggler;
 
 use iced::Alignment;
 use iced::Element;
-// use iced::Font;
+#[allow(unused_imports)]
+use iced::Font;
 use iced::Length;
 use iced::Pixels;
 use iced::Size;
@@ -33,11 +34,11 @@ use iced::widget::scrollable::Direction as ScrollableDirection;
 use iced::widget::scrollable::Scrollbar;
 use iced::widget::vertical_space;
 
-pub(super) fn content<'a>(tv: &'a TreeView, _sel_tree: &'a TreeState) -> Element<'a, TvMsg> {
+pub(super) fn content<'a>(tv: &'a TreeView, sel_tree: &'a TreeState) -> Element<'a, TvMsg> {
     let ele: Element<'a, TvMsg> = if let Some(pane_grid) = &tv.pane_grid {
         PaneGrid::new(pane_grid, |_pane_idx, tv_pane, _is_maximized| {
             PaneGridContent::new(
-                center(responsive(move |size| tv_pane_content(tv, tv_pane, size)))
+                center(responsive(move |size| tv_pane_content(tv, sel_tree, tv_pane, size)))
                     .padding(10)
                     .style(bordered_box),
             )
@@ -52,51 +53,46 @@ pub(super) fn content<'a>(tv: &'a TreeView, _sel_tree: &'a TreeState) -> Element
     center(ele).into()
 }
 
-fn tv_pane_content<'a>(tv: &'a TreeView, tv_pane: &TvPane, size: Size) -> Element<'a, TvMsg> {
+fn tv_pane_content<'a>(
+    tv: &'a TreeView, sel_tree: &'a TreeState, tv_pane: &TvPane, size: Size,
+) -> Element<'a, TvMsg> {
     let w = size.width;
     let h = size.height;
-    let mut cnv_w = match tv.tree_style_opt_sel {
+
+    let mut cnv_w = w;
+    let mut cnv_h = h;
+
+    // The calculation of dimensions is duplicated here, in view logic, intentionally.
+    match tv.tree_style_opt_sel {
         TreeStyle::Phylogram => {
-            if tv.tre_cnv_w_idx_sel == tv.tre_cnv_w_idx_min {
-                w
-            } else {
-                tv.tre_cnv_w
+            if tv.tre_cnv_w_idx_sel != tv.tre_cnv_w_idx_min {
+                let delta = (tv.tre_cnv_w_idx_sel - 1) as Float * tv.tre_cnv_size_step;
+                cnv_w = delta + w;
+            }
+            if tv.tre_cnv_h_idx_sel != tv.tre_cnv_h_idx_min {
+                let tre_cnv_size_step =
+                    tv.tre_cnv_size_step.max(sel_tree.tip_count() as Float * 1e0);
+                let delta = (tv.tre_cnv_h_idx_sel - 1) as Float * tre_cnv_size_step;
+                cnv_h = delta + h;
             }
         }
         TreeStyle::Fan => {
-            if tv.tre_cnv_z_idx_sel == tv.tre_cnv_z_idx_min {
-                w
-            } else {
-                tv.tre_cnv_w
+            if tv.tre_cnv_z_idx_sel != tv.tre_cnv_z_idx_min {
+                let delta = (tv.tre_cnv_z_idx_sel - 1) as Float * tv.tre_cnv_size_step;
+                cnv_w = delta + w;
+                cnv_h = delta + h;
             }
         }
     };
+
     let scrollable = match tv_pane {
         TvPane::Tree => {
-            let cnv_h = match tv.tree_style_opt_sel {
-                TreeStyle::Phylogram => {
-                    if tv.tre_cnv_h_idx_sel == tv.tre_cnv_h_idx_min {
-                        h
-                    } else {
-                        tv.tre_cnv_h
-                    }
-                }
-                TreeStyle::Fan => {
-                    if tv.tre_cnv_z_idx_sel == tv.tre_cnv_z_idx_min {
-                        h
-                    } else {
-                        tv.tre_cnv_h
-                    }
-                }
-            };
-
             let cnv = Canvas::new(tv).width(cnv_w).height(cnv_h);
             scrollable_cnv_tree(tv.tre_scr_id, cnv, w, h)
         }
         TvPane::LttPlot => {
-            match tv.tree_style_opt_sel {
-                TreeStyle::Phylogram => (),
-                TreeStyle::Fan => cnv_w = w,
+            if tv.tree_style_opt_sel == TreeStyle::Fan {
+                cnv_w = w;
             }
             let cnv = Canvas::new(&tv.ltt_plot).width(cnv_w).height(h);
             scrollable_cnv_ltt(tv.ltt_scr_id, cnv, w, h)
@@ -265,17 +261,7 @@ pub(super) fn sidebar<'a>(tv: &'a TreeView, sel_tree: &'a TreeState) -> Element<
 
     sb_col = sb_col.push(rule_h(1));
 
-    if sel_tree.is_rooted() {
-        sb_col = sb_col.push(slider(
-            Some("Root Length"),
-            tv.root_len_idx_min,
-            tv.root_len_idx_max,
-            tv.root_len_idx_sel,
-            TvMsg::RootLenSelChanged,
-        ));
-    }
-
-    if tv.tip_brnch_labs_allowed && sel_tree.has_tip_labs() && tv.draw_tip_labs {
+    if tv.labs_allowed && sel_tree.has_tip_labs() && tv.draw_tip_labs {
         sb_col = sb_col.push(column![
             toggler_label_tip(true, tv.draw_tip_labs,),
             slider(
@@ -287,31 +273,11 @@ pub(super) fn sidebar<'a>(tv: &'a TreeView, sel_tree: &'a TreeState) -> Element<
             )
         ])
     } else {
-        sb_col = sb_col.push(toggler_label_tip(
-            tv.tip_brnch_labs_allowed && sel_tree.has_tip_labs(),
-            tv.draw_tip_labs,
-        ))
+        sb_col = sb_col
+            .push(toggler_label_tip(tv.labs_allowed && sel_tree.has_tip_labs(), tv.draw_tip_labs))
     }
 
-    if sel_tree.has_brlen() && tv.tip_brnch_labs_allowed && tv.draw_brnch_labs {
-        sb_col = sb_col.push(column![
-            toggler_label_branch(true, tv.draw_brnch_labs),
-            slider(
-                None,
-                tv.lab_size_idx_min,
-                tv.lab_size_idx_max,
-                tv.brnch_lab_size_idx_sel,
-                TvMsg::BrnchLabSizeChanged,
-            )
-        ])
-    } else {
-        sb_col = sb_col.push(toggler_label_branch(
-            sel_tree.has_brlen() && tv.tip_brnch_labs_allowed,
-            tv.draw_brnch_labs,
-        ))
-    }
-
-    if sel_tree.has_int_labs() && tv.draw_int_labs {
+    if tv.labs_allowed && sel_tree.has_int_labs() && tv.draw_int_labs {
         sb_col = sb_col.push(column![
             toggler_label_int(true, tv.draw_int_labs),
             slider(
@@ -323,7 +289,38 @@ pub(super) fn sidebar<'a>(tv: &'a TreeView, sel_tree: &'a TreeState) -> Element<
             )
         ])
     } else {
-        sb_col = sb_col.push(toggler_label_int(sel_tree.has_int_labs(), tv.draw_int_labs))
+        sb_col = sb_col
+            .push(toggler_label_int(tv.labs_allowed && sel_tree.has_int_labs(), tv.draw_int_labs))
+    }
+
+    if sel_tree.has_brlen() && tv.labs_allowed && tv.draw_brnch_labs {
+        sb_col = sb_col.push(column![
+            toggler_label_branch(true, tv.draw_brnch_labs),
+            slider(
+                None,
+                tv.lab_size_idx_min,
+                tv.lab_size_idx_max,
+                tv.brnch_lab_size_idx_sel,
+                TvMsg::BrnchLabSizeChanged,
+            )
+        ])
+    } else {
+        sb_col = sb_col
+            .push(toggler_label_branch(tv.labs_allowed && sel_tree.has_brlen(), tv.draw_brnch_labs))
+    }
+
+    sb_col = sb_col.push(rule_h(1));
+
+    if sel_tree.is_rooted() {
+        sb_col = sb_col.push(slider(
+            Some("Root Length"),
+            tv.root_len_idx_min,
+            tv.root_len_idx_max,
+            tv.root_len_idx_sel,
+            TvMsg::RootLenSelChanged,
+        ));
+
+        sb_col = sb_col.push(rule_h(1));
     }
 
     container(container(sb_col).clip(true)).padding(10).width(220).style(bordered_box).into()
@@ -417,6 +414,7 @@ pub(crate) fn rule_h<'a>(height: impl Into<Pixels>) -> Rule<'a, Theme> {
     r
 }
 
+#[allow(dead_code)]
 pub(crate) fn rule_v<'a>(width: impl Into<Pixels>) -> Rule<'a, Theme> {
     let mut r: Rule<'_, Theme> = Rule::vertical(width);
     r = rule_common(r);
@@ -453,6 +451,7 @@ fn scrollable_cnv_tree<'a>(
     scrollable_common(s, w, h)
 }
 
+#[allow(dead_code)]
 fn scrollable_v<'a>(
     content: impl Into<Element<'a, TvMsg>>, w: impl Into<Length>, h: impl Into<Length>,
 ) -> Scrollable<'a, TvMsg> {

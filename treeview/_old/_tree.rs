@@ -23,21 +23,6 @@ impl TreeState {
         rv
     }
 
-    // fn tree_tip_edges(&self) -> Edges {
-    //     let mut rv = Vec::new();
-    //     for (i_c, chunk) in self.tree_edges_chunked.iter().enumerate() {
-    //         for (i_e, edge) in chunk.iter().enumerate() {
-    //             if edge.is_tip {
-    //                 let mut e = edge.clone();
-    //                 e.chunk_idx = i_c;
-    //                 e.edge_idx = i_e;
-    //                 rv.push(e);
-    //             }
-    //         }
-    //     }
-    //     rv
-    // }
-
     fn filter_nodes(&mut self) {
         self.found_node_ids.clear();
         self.found_edges.clear();
