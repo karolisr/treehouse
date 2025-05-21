@@ -203,6 +203,9 @@ pub fn tip_idx_range_between_y_vals(
     }
     let i0: i64 = (y0 / node_size) as i64;
     let i1: i64 = (y1 / node_size) as i64;
+    if i0 < 0 && i1 < 0 {
+        return None;
+    }
     let idx_tip_0: usize = i0.max(0) as usize;
     let idx_tip_1: usize = i1.min(tips.len() as i64 - 1) as usize;
     if idx_tip_0 < idx_tip_1 { Some(IndexRange::new(idx_tip_0, idx_tip_1)) } else { None }

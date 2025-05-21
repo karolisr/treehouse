@@ -12,7 +12,8 @@ pub(super) struct TreeState {
 
     edge_root: Option<Edge>,
 
-    edges: Vec<Edge>,
+    edges_srtd_x: Vec<Edge>,
+    edges_srtd_y: Vec<Edge>,
     edges_tip_idx: Vec<usize>,
     edges_orig: Option<Vec<Edge>>,
     edges_srtd_asc: Option<Vec<Edge>>,
@@ -35,31 +36,21 @@ pub(super) struct TreeState {
 }
 
 impl TreeState {
-    pub(super) fn edges(&self) -> &Vec<Edge> {
-        &self.edges
+    pub(super) fn edges_srtd_y(&self) -> &Vec<Edge> {
+        &self.edges_srtd_y
     }
 
     #[allow(dead_code)]
-    pub(super) fn edges_tip(&self) -> &Vec<usize> {
+    pub(super) fn edges_srtd_x(&self) -> &Vec<Edge> {
+        &self.edges_srtd_x
+    }
+
+    pub(super) fn edges_tip_idx(&self) -> &Vec<usize> {
         &self.edges_tip_idx
     }
 
     pub(super) fn edge_root(&self) -> Option<Edge> {
         self.edge_root.clone()
-    }
-
-    pub(super) fn visible_tip_idx_range(
-        &self, y0: Float, y1: Float, node_size: Float,
-    ) -> Option<IndexRange> {
-        tip_idx_range_between_y_vals(y0, y1, node_size, &self.edges_tip_idx)
-    }
-
-    pub(super) fn visible_node_idx_range(
-        &self, y0: Float, y1: Float, node_size: Float,
-    ) -> Option<IndexRange> {
-        self.visible_tip_idx_range(y0, y1, node_size).map(|visible_tip_range| {
-            node_idx_range_for_tip_idx_range(&visible_tip_range, &self.edges_tip_idx)
-        })
     }
 
     // Memoized Methods ---------------------------------------------------------------------------
@@ -138,7 +129,7 @@ impl TreeState {
         match node_ord_opt {
             NodeOrd::Unordered => {
                 self.t = self.t_orig.clone();
-                self.edges = match &self.edges_orig {
+                self.edges_srtd_y = match &self.edges_orig {
                     Some(tree_orig_edges) => tree_orig_edges.to_vec(),
                     None => {
                         let edges = flatten_tree(&self.t);
@@ -152,7 +143,7 @@ impl TreeState {
                 Some(tree_srtd_asc) => {
                     self.t = tree_srtd_asc.clone();
                     if let Some(edges_srtd_asc) = &self.edges_srtd_asc {
-                        self.edges = edges_srtd_asc.to_vec();
+                        self.edges_srtd_y = edges_srtd_asc.to_vec();
                     }
                 }
                 None => {
@@ -161,7 +152,7 @@ impl TreeState {
                     self.t = tmp.clone();
                     self.t_srtd_asc = Some(tmp);
                     let edges = flatten_tree(&self.t);
-                    self.edges = edges.to_vec();
+                    self.edges_srtd_y = edges.to_vec();
                     self.edges_srtd_asc = Some(edges);
                 }
             },
@@ -170,7 +161,7 @@ impl TreeState {
                 Some(tree_srtd_desc) => {
                     self.t = tree_srtd_desc.clone();
                     if let Some(edges_srtd_desc) = &self.edges_srtd_desc {
-                        self.edges = edges_srtd_desc.to_vec();
+                        self.edges_srtd_y = edges_srtd_desc.to_vec();
                     }
                 }
                 None => {
@@ -179,20 +170,38 @@ impl TreeState {
                     self.t = tmp.clone();
                     self.t_srtd_desc = Some(tmp);
                     let edges = flatten_tree(&self.t);
-                    self.edges = edges.to_vec();
+                    self.edges_srtd_y = edges.to_vec();
                     self.edges_srtd_desc = Some(edges);
                 }
             },
         };
 
-        self.edges_tip_idx = self.edges_tip_prepare();
-        self.edge_root = self.edge_root_prepare();
+        self.edges_tip_idx = self.edges_tip_idx_prep();
+        self.edges_srtd_x = self.edges_srtd_x_prep();
+        self.edge_root = self.edge_root_prep();
     }
 
-    fn edge_root_prepare(&mut self) -> Option<Edge> {
+    fn edges_srtd_x_prep(&mut self) -> Vec<Edge> {
+        let mut edges_srtd_by_x = self.edges_srtd_y.to_vec();
+        edges_srtd_by_x.par_sort_by(|a, b| a.x1.total_cmp(&b.x1));
+        edges_srtd_by_x
+    }
+
+    fn edges_tip_idx_prep(&mut self) -> Vec<usize> {
+        let mut rv_tip_idx = Vec::new();
+        for (i_e, edge) in &mut self.edges_srtd_y.iter_mut().enumerate() {
+            edge.edge_idx = i_e;
+            if edge.is_tip {
+                rv_tip_idx.push(i_e);
+            }
+        }
+        rv_tip_idx
+    }
+
+    fn edge_root_prep(&mut self) -> Option<Edge> {
         if self.is_rooted() {
             Some(
-                self.edges
+                self.edges_srtd_y
                     .iter()
                     .find(|j| j.parent_node_id.is_none())
                     .expect("Should have root!")
@@ -201,17 +210,6 @@ impl TreeState {
         } else {
             None
         }
-    }
-
-    fn edges_tip_prepare(&mut self) -> Vec<usize> {
-        let mut rv_tip_idx = Vec::new();
-        for (i_e, edge) in &mut self.edges.iter_mut().enumerate() {
-            edge.edge_idx = i_e;
-            if edge.is_tip {
-                rv_tip_idx.push(i_e);
-            }
-        }
-        rv_tip_idx
     }
 
     // Selection ----------------------------------------------------------------------------------
@@ -289,7 +287,7 @@ impl TreeState {
         self.edges_orig = None;
         self.edges_srtd_asc = None;
         self.edges_srtd_desc = None;
-        self.edges = vec![];
+        self.edges_srtd_y = vec![];
         self.edges_tip_idx = vec![];
 
         self.cache_has_brlen = None;

@@ -75,7 +75,8 @@ pub struct TreeView {
     pub(super) draw_tip_labs: bool,
     pub(super) draw_int_labs: bool,
     pub(super) draw_brnch_labs: bool,
-    tip_labs_vis_max: usize,
+    pub(super) tip_labs_vis_max: usize,
+    pub(super) node_labs_vis_fan_max: usize,
     pub(super) labs_allowed: bool,
     // --------------------------------------------
     pub(super) cache_bnds: Cache,
@@ -89,21 +90,21 @@ pub struct TreeView {
     pub(super) tre_padding: Float,
 
     node_size: Float,
-    tre_cnv_w: Float,
+    pub(super) tre_cnv_w: Float,
     pub(super) tre_cnv_h: Float,
 
-    tre_cnv_vis_x0: Float,
-    tre_cnv_vis_x0_rel: Float,
+    pub(super) tre_cnv_vis_x0: Float,
+    pub(super) tre_cnv_vis_x0_rel: Float,
     tre_cnv_vis_x_mid: Float,
     tre_cnv_vis_x_mid_rel: Float,
-    tre_cnv_vis_x1: Float,
-    tre_cnv_vis_x1_rel: Float,
+    pub(super) tre_cnv_vis_x1: Float,
+    pub(super) tre_cnv_vis_x1_rel: Float,
 
-    tre_cnv_vis_y0: Float,
+    pub(super) tre_cnv_vis_y0: Float,
     pub(super) tre_cnv_vis_y0_rel: Float,
     tre_cnv_vis_y_mid: Float,
     tre_cnv_vis_y_mid_rel: Float,
-    tre_cnv_vis_y1: Float,
+    pub(super) tre_cnv_vis_y1: Float,
     pub(super) tre_cnv_vis_y1_rel: Float,
 
     tre_scr_h: Float,
@@ -116,6 +117,7 @@ pub struct TreeView {
 
 #[derive(Debug, Clone)]
 pub enum TvMsg {
+    SetLabsAllowed(bool),
     // --------------------------------------------
     BrnchLabSizeChanged(u16),
     BrnchLabVisChanged(bool),
@@ -168,17 +170,18 @@ impl TreeView {
         // let lab_size_max = lab_size_min * lab_size_idx_max as Float;
 
         Self {
-            tre_padding: 5e1,
+            tre_padding: 1e1,
             sidebar_pos_sel: sel_sidebar_pos,
             is_dirty: false,
             show_toolbar: true,
             show_sidebar: true,
-            draw_tip_labs: false,
+            draw_tip_labs: true,
             draw_int_labs: false,
             draw_brnch_labs: false,
             drawing_enabled: false,
             // --------------------------------------------
-            tip_labs_vis_max: 300,
+            node_labs_vis_fan_max: 333,
+            tip_labs_vis_max: 166,
             labs_allowed: false,
             // --------------------------------------------
             tree_style_opt_sel: TreeStyle::Phylogram,
@@ -234,6 +237,13 @@ impl TreeView {
         self.is_dirty = false;
         let mut task: Option<Task<TvMsg>> = None;
         match tv_msg {
+            TvMsg::SetLabsAllowed(val) => {
+                self.labs_allowed = val;
+                self.clear_cache_lab_tip();
+                self.clear_cache_lab_int();
+                self.clear_cache_lab_brnch();
+            }
+
             TvMsg::TreCnvScrolledOrResized(vp) => {
                 self.tre_scr_w = vp.bounds().width;
                 self.tre_scr_h = vp.bounds().height;
@@ -272,6 +282,7 @@ impl TreeView {
                 self.tre_cnv_vis_y_mid_rel = self.tre_cnv_vis_y_mid / self.tre_cnv_h;
                 self.tre_cnv_vis_y1_rel = self.tre_cnv_vis_y1 / self.tre_cnv_h;
 
+                self.cache_bnds.clear();
                 self.clear_cache_lab_tip();
                 self.clear_cache_lab_int();
                 self.clear_cache_lab_brnch();
@@ -318,7 +329,7 @@ impl TreeView {
             }
 
             TvMsg::Unroot => {
-                if let Some(tree) = self.get_sel_tree_mut()
+                if let Some(tree) = self.sel_tree_mut()
                     && let Some(_node) = tree.unroot()
                 {
                     self.sort();
@@ -330,7 +341,7 @@ impl TreeView {
             }
 
             TvMsg::Root(node_id) => {
-                if let Some(tree) = self.get_sel_tree_mut()
+                if let Some(tree) = self.sel_tree_mut()
                     && let Some(_node_id) = tree.root(&node_id)
                 {
                     self.sort();
@@ -376,6 +387,7 @@ impl TreeView {
 
                 self.sort();
                 self.cnv_dim_recalc();
+                self.cache_bnds.clear();
                 self.clear_cache_edge();
                 self.clear_cache_lab_tip();
                 self.clear_cache_lab_int();
@@ -387,35 +399,24 @@ impl TreeView {
                 self.tre_cnv_w_idx_sel = idx;
                 self.cnv_dim_recalc();
                 task = self.keep_scroll_pos_w();
-                self.clear_cache_edge();
-                self.clear_cache_lab_tip();
-                self.clear_cache_lab_int();
-                self.clear_cache_lab_brnch();
             }
 
             TvMsg::CnvHeightSelChanged(idx) => {
                 self.tre_cnv_h_idx_sel = idx;
                 self.cnv_dim_recalc();
                 task = self.keep_scroll_pos_h();
-                self.clear_cache_edge();
-                self.clear_cache_lab_tip();
-                self.clear_cache_lab_int();
-                self.clear_cache_lab_brnch();
             }
 
             TvMsg::CnvZoomSelChanged(idx) => {
                 self.tre_cnv_z_idx_sel = idx;
                 self.cnv_dim_recalc();
                 task = self.keep_scroll_pos_z();
-                self.clear_cache_edge();
-                self.clear_cache_lab_tip();
-                self.clear_cache_lab_int();
-                self.clear_cache_lab_brnch();
             }
 
             TvMsg::TreeStyOptChanged(tree_style_opt) => {
                 self.tree_style_opt_sel = tree_style_opt;
                 self.cnv_dim_recalc();
+                self.cache_bnds.clear();
                 self.clear_cache_edge();
                 self.clear_cache_lab_tip();
                 self.clear_cache_lab_int();
@@ -468,7 +469,7 @@ impl TreeView {
             }
 
             TvMsg::SelectDeselectNode(node_id) => {
-                if let Some(tree) = self.get_sel_tree_mut() {
+                if let Some(tree) = self.sel_tree_mut() {
                     tree.select_deselect_node(&node_id);
                 }
             }
@@ -522,7 +523,7 @@ impl TreeView {
     pub fn view(&self) -> Element<TvMsg> {
         let sel_tree: &TreeState;
 
-        if let Some(sel_tree_opt) = self.get_sel_tree() {
+        if let Some(sel_tree_opt) = self.sel_tree() {
             sel_tree = sel_tree_opt;
         } else {
             return center(txt("No trees loaded")).into();
@@ -574,7 +575,7 @@ impl TreeView {
         }
     }
 
-    pub(super) fn get_sel_tree(&self) -> Option<&TreeState> {
+    pub(super) fn sel_tree(&self) -> Option<&TreeState> {
         if let Some(sel_tree_state_idx) = self.tree_state_idx_sel {
             let sel_tree_state = &self.tree_states[sel_tree_state_idx];
             Some(sel_tree_state)
@@ -583,7 +584,7 @@ impl TreeView {
         }
     }
 
-    fn get_sel_tree_mut(&mut self) -> Option<&mut TreeState> {
+    fn sel_tree_mut(&mut self) -> Option<&mut TreeState> {
         if let Some(sel_tree_state_idx) = self.tree_state_idx_sel {
             let sel_tree_state = &mut self.tree_states[sel_tree_state_idx];
             Some(sel_tree_state)
@@ -594,7 +595,7 @@ impl TreeView {
 
     fn sort(&mut self) {
         let node_ord_opt = self.node_ord_opt_sel;
-        if let Some(tree) = self.get_sel_tree_mut() {
+        if let Some(tree) = self.sel_tree_mut() {
             tree.sort(node_ord_opt);
         }
         self.is_dirty = true;
@@ -640,25 +641,25 @@ impl TreeView {
     }
 
     fn clear_cache_edge(&mut self) {
-        if let Some(tree) = self.get_sel_tree_mut() {
+        if let Some(tree) = self.sel_tree_mut() {
             tree.clear_cache_edge();
         }
     }
 
     fn clear_cache_lab_tip(&mut self) {
-        if let Some(tree) = self.get_sel_tree_mut() {
+        if let Some(tree) = self.sel_tree_mut() {
             tree.clear_cache_lab_tip();
         }
     }
 
     fn clear_cache_lab_int(&mut self) {
-        if let Some(tree) = self.get_sel_tree_mut() {
+        if let Some(tree) = self.sel_tree_mut() {
             tree.clear_cache_lab_int();
         }
     }
 
     fn clear_cache_lab_brnch(&mut self) {
-        if let Some(tree) = self.get_sel_tree_mut() {
+        if let Some(tree) = self.sel_tree_mut() {
             tree.clear_cache_lab_brnch();
         }
     }
@@ -681,7 +682,7 @@ impl TreeView {
     }
 
     fn tip_count(&self) -> usize {
-        if let Some(tree) = self.get_sel_tree() { tree.tip_count() } else { 1 }
+        if let Some(tree) = self.sel_tree() { tree.tip_count() } else { 1 }
     }
 
     fn cnv_dim_recalc(&mut self) {
@@ -701,8 +702,7 @@ impl TreeView {
             }
             TreeStyle::Fan => {
                 self.node_size = 1e0;
-                let tip_labs_vis = tip_count; // Hack for now.
-                self.labs_allowed = tip_labs_vis <= self.tip_labs_vis_max * 3; // Hack for now.
+                // labs_allowed for "Fan" will be set by a message from "Program".
             }
         }
     }

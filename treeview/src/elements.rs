@@ -44,7 +44,7 @@ pub(super) fn content<'a>(tv: &'a TreeView, sel_tree: &'a TreeState) -> Element<
             )
         })
         .on_resize(1e1, TvMsg::PaneResized)
-        .min_size(50)
+        .min_size(tv.tre_padding * 3e0 + 5e1)
         .spacing(5)
         .into()
     } else {

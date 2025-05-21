@@ -1,12 +1,14 @@
 use super::St;
 use crate::*;
 
+#[allow(dead_code)]
 pub(super) fn draw_bounds(
     tv: &TreeView, st: &St, crsr: &Cursor, rndr: &Renderer, bnds: Rectangle, g: &mut Vec<Geometry>,
 ) {
     g.push(tv.cache_bnds.draw(rndr, bnds.size(), |f| {
-        draw_rect(st.clip_rect, STRK_3_MAG_50, f);
-        draw_rect(st.tree_rect, STRK_3_CYA_50, f);
+        draw_rect(st.vis_rect, STRK_3_YEL, f);
+        draw_rect(st.clip_rect, STRK_2_MAG_50, f);
+        draw_rect(st.tree_rect, STRK_1_CYA_50, f);
 
         if let Some(mouse) = st.mouse {
             draw_point(mouse, STRK_3_RED_50, 20.0, f);
@@ -22,10 +24,10 @@ pub(super) fn draw_edges(
 ) {
     g.push(tst.cache_edge().draw(rndr, sz, |f| match tv.tree_style_opt_sel {
         TreeStyle::Phylogram => {
-            stroke_edges_phylogram(tst.edges(), &st.tree_vs, st.rl, tst.edge_root(), f)
+            stroke_edges_phylogram(tst.edges_srtd_y(), &st.tree_vs, st.rl, tst.edge_root(), f)
         }
         TreeStyle::Fan => stroke_edges_fan(
-            tst.edges(),
+            tst.edges_srtd_y(),
             &st.tree_vs,
             tv.rot_angle,
             tv.opn_angle,

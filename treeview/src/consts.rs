@@ -2,9 +2,9 @@
 
 use crate::*;
 
-pub(crate) const TIP_LAB_SIZE: u16 = 10;
-pub(crate) const INT_LAB_SIZE: u16 = 8;
-pub(crate) const BRNCH_LAB_SIZE: u16 = 7;
+pub(crate) const TIP_LAB_SIZE: u16 = 3;
+pub(crate) const INT_LAB_SIZE: u16 = 3;
+pub(crate) const BRNCH_LAB_SIZE: u16 = 3;
 
 pub(crate) const PI: Float = std::f32::consts::PI;
 pub(crate) const TAU: Float = std::f32::consts::TAU;

@@ -2,7 +2,7 @@ mod draw;
 mod state;
 
 use crate::*;
-use draw::{draw_bounds, draw_edges, draw_labs_brnch, draw_labs_int, draw_labs_tip};
+use draw::{draw_edges, draw_labs_brnch, draw_labs_int, draw_labs_tip};
 use state::St;
 
 impl Program<TvMsg> for TreeView {
@@ -55,7 +55,7 @@ impl Program<TvMsg> for TreeView {
             }
         }
         // ----------------------------------------------------------------------------------------
-        let tree_opt = self.get_sel_tree();
+        let tree_opt = self.sel_tree();
         if !self.drawing_enabled || tree_opt.is_none() {
             return None;
         }
@@ -67,19 +67,6 @@ impl Program<TvMsg> for TreeView {
             st.tree_vs = RectVals::tree(st.clip_vs, self.tre_padding);
             st.clip_rect = st.clip_vs.into();
             st.tree_rect = st.tree_vs.into();
-        }
-        // ----------------------------------------------------------------------------------------
-        if self.labs_allowed
-            && ((self.draw_tip_labs && tst.has_tip_labs())
-                || (self.draw_int_labs && tst.has_int_labs())
-                || (self.draw_brnch_labs && tst.has_brlen()))
-        {
-            st.update_visible_nodes(
-                self.is_dirty, tst, self.tre_cnv_h, self.tre_padding, self.tre_cnv_vis_y0_rel,
-                self.tre_cnv_vis_y1_rel,
-            );
-        } else {
-            st.visible_nodes = None;
         }
         // ----------------------------------------------------------------------------------------
         let root_len_frac = self.root_len_idx_sel as Float / 2e2;
@@ -98,6 +85,39 @@ impl Program<TvMsg> for TreeView {
                 }
                 st.rot = self.rot_angle;
                 st.trans = st.tree_vs.cntr;
+            }
+        }
+        // ----------------------------------------------------------------------------------------
+        match self.tree_style_opt_sel {
+            TreeStyle::Phylogram => {
+                st.labs_allowed = self.labs_allowed;
+                if (self.draw_tip_labs && tst.has_tip_labs())
+                    || (self.draw_int_labs && tst.has_int_labs())
+                    || (self.draw_brnch_labs && tst.has_brlen())
+                {
+                    st.update_vis_nodes_phylogram(
+                        self.tre_cnv_vis_y0_rel, self.tre_cnv_vis_y1_rel, self.tre_cnv_h,
+                        self.tre_padding, self.is_dirty, tst,
+                    );
+                }
+            }
+            TreeStyle::Fan => {
+                st.update_vis_rect(
+                    self.tre_cnv_vis_x0, self.tre_cnv_vis_x1, self.tre_cnv_vis_y0,
+                    self.tre_cnv_vis_y1,
+                );
+                st.update_vis_nodes_fan(
+                    self.tre_cnv_vis_x0_rel, self.tre_cnv_vis_x1_rel, self.tre_cnv_vis_y0_rel,
+                    self.tre_cnv_vis_y1_rel, self.opn_angle, self.tip_labs_vis_max,
+                    self.node_labs_vis_fan_max, self.is_dirty, tst,
+                );
+                if !st.labs_allowed {
+                    if self.labs_allowed {
+                        return Some(Action::publish(TvMsg::SetLabsAllowed(false)));
+                    }
+                } else if !self.labs_allowed {
+                    return Some(Action::publish(TvMsg::SetLabsAllowed(true)));
+                }
             }
         }
         // ----------------------------------------------------------------------------------------
@@ -123,7 +143,7 @@ impl Program<TvMsg> for TreeView {
         st.labs_int.clear();
         st.labs_brnch.clear();
 
-        if self.labs_allowed && !st.node_data.is_empty() {
+        if st.labs_allowed && self.labs_allowed && !st.node_data.is_empty() {
             // ------------------------------------------------------------------------------------
             if self.draw_tip_labs && tst.has_tip_labs() {
                 if st.text_w_tip.as_mut()?.font_size() != self.lab_size_tip {
@@ -131,7 +151,7 @@ impl Program<TvMsg> for TreeView {
                 }
                 node_labs(
                     &st.node_data,
-                    tst.edges(),
+                    tst.edges_srtd_y(),
                     self.lab_size_tip,
                     true,
                     false,
@@ -146,7 +166,7 @@ impl Program<TvMsg> for TreeView {
                 }
                 node_labs(
                     &st.node_data,
-                    tst.edges(),
+                    tst.edges_srtd_y(),
                     self.lab_size_int,
                     false,
                     false,
@@ -161,7 +181,7 @@ impl Program<TvMsg> for TreeView {
                 }
                 node_labs(
                     &st.node_data,
-                    tst.edges(),
+                    tst.edges_srtd_y(),
                     self.lab_size_brnch,
                     false,
                     true,
@@ -169,7 +189,6 @@ impl Program<TvMsg> for TreeView {
                     &mut st.labs_brnch,
                 );
             }
-            // ------------------------------------------------------------------------------------
         }
         // ----------------------------------------------------------------------------------------
         None
@@ -180,9 +199,9 @@ impl Program<TvMsg> for TreeView {
     }
 
     fn draw(
-        &self, st: &St, rndr: &Renderer, _thm: &Theme, bnds: Rectangle, crsr: Cursor,
+        &self, st: &St, rndr: &Renderer, _thm: &Theme, bnds: Rectangle, _crsr: Cursor,
     ) -> Vec<Geometry> {
-        let tst_opt = self.get_sel_tree();
+        let tst_opt = self.sel_tree();
         let mut geoms: Vec<Geometry> = Vec::new();
         if let Some(tst_opt) = tst_opt
             && self.drawing_enabled
@@ -190,7 +209,7 @@ impl Program<TvMsg> for TreeView {
             // ------------------------------------------------------------------------------------
             let size = bnds.size();
             let tst: &TreeState = tst_opt;
-            draw_bounds(self, st, &crsr, rndr, bnds, &mut geoms);
+            draw::draw_bounds(self, st, &_crsr, rndr, bnds, &mut geoms);
             draw_edges(self, st, tst, rndr, size, &mut geoms);
             draw_labs_tip(self, st, tst, rndr, size, &mut geoms);
             draw_labs_int(self, st, tst, rndr, size, &mut geoms);
