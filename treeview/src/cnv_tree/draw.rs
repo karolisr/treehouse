@@ -188,16 +188,16 @@ fn stroke_edges_phylogram(
         for path in &paths {
             f.stroke(path, STRK_1_RED_50);
         }
-        if let Some(root) = root {
-            if root_len > 0e0 {
-                let nd = node_data_phylogram(w, tree_vs.h, &root);
-                let root_path = Path::new(|pb| {
-                    let pt_parent = Point { x: root_len * -1e0, y: nd.points.p0.y };
-                    pb.move_to(nd.points.p0);
-                    pb.line_to(pt_parent)
-                });
-                f.stroke(&root_path, STRK_3_BLU_50);
-            };
+        if let Some(root) = root
+            && root_len > 0e0
+        {
+            let nd = node_data_phylogram(w, tree_vs.h, &root);
+            let root_path = Path::new(|pb| {
+                let pt_parent = Point { x: -root_len, y: nd.points.p0.y };
+                pb.move_to(nd.points.p0);
+                pb.line_to(pt_parent)
+            });
+            f.stroke(&root_path, STRK_3_BLU_50);
         };
     })
 }
@@ -218,15 +218,15 @@ fn stroke_edges_fan(
         for path in &paths {
             f.stroke(path, STRK_1_RED_50);
         }
-        if let Some(root) = root {
-            if root_len > 0e0 {
-                let nd = node_data_rad(opn_angle, tree_vs.radius_min, root_len, &root);
-                let root_path = Path::new(|pb| {
-                    pb.move_to(nd.points.p0);
-                    pb.line_to(Point::ORIGIN)
-                });
-                f.stroke(&root_path, STRK_3_BLU_50);
-            };
+        if let Some(root) = root
+            && root_len > 0e0
+        {
+            let nd = node_data_rad(opn_angle, tree_vs.radius_min, root_len, &root);
+            let root_path = Path::new(|pb| {
+                pb.move_to(nd.points.p0);
+                pb.line_to(Point::ORIGIN)
+            });
+            f.stroke(&root_path, STRK_3_BLU_50);
         };
     })
 }

@@ -124,10 +124,12 @@ impl Program<TvMsg> for TreeView {
     ) -> Vec<Geometry> {
         let tst_opt = self.get_sel_tree();
         let mut geoms: Vec<Geometry> = Vec::new();
-        if self.drawing_enabled && tst_opt.is_some() {
+        if let Some(tst_opt) = tst_opt
+            && self.drawing_enabled
+        {
             // ------------------------------------------------------------------------------------
             let size = bnds.size();
-            let tst: &TreeState = tst_opt.unwrap();
+            let tst: &TreeState = tst_opt;
             draw_bounds(self, st, &crsr, rndr, bnds, &mut geoms);
             draw_edges(self, st, tst, rndr, size, &mut geoms);
             draw_labs_tip(self, st, tst, rndr, size, &mut geoms);

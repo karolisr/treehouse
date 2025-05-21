@@ -101,15 +101,13 @@ impl App {
 
             AppMsg::TvMsg(tv_msg) => {
                 if let Some(treeview) = &mut self.treeview {
-                    if let Some(menu) = &mut self.menu {
-                        if let TvMsg::SetSidebarPos(sidebar_pos) = tv_msg {
-                            match sidebar_pos {
-                                SidebarPos::Left => {
-                                    menu.update(&AppMenuItemId::SetSideBarPositionLeft)
-                                }
-                                SidebarPos::Right => {
-                                    menu.update(&AppMenuItemId::SetSideBarPositionRight)
-                                }
+                    if let Some(menu) = &mut self.menu
+                        && let TvMsg::SetSidebarPos(sidebar_pos) = tv_msg
+                    {
+                        match sidebar_pos {
+                            SidebarPos::Left => menu.update(&AppMenuItemId::SetSideBarPositionLeft),
+                            SidebarPos::Right => {
+                                menu.update(&AppMenuItemId::SetSideBarPositionRight)
                             }
                         }
                     }

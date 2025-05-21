@@ -5,4 +5,3 @@ submodules/*
 .DS_Store
 .cargo/config.toml
 *.example.rs
-rust-toolchain.toml

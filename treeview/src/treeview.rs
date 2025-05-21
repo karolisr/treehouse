@@ -360,26 +360,26 @@ impl TreeView {
             }
 
             TvMsg::Unroot => {
-                if let Some(tree) = self.get_sel_tree_mut() {
-                    if let Some(_node) = tree.unroot() {
-                        self.sort();
-                        self.clear_cache_edge();
-                        self.clear_cache_lab_tip();
-                        self.clear_cache_lab_int();
-                        self.clear_cache_lab_brnch();
-                    }
+                if let Some(tree) = self.get_sel_tree_mut()
+                    && let Some(_node) = tree.unroot()
+                {
+                    self.sort();
+                    self.clear_cache_edge();
+                    self.clear_cache_lab_tip();
+                    self.clear_cache_lab_int();
+                    self.clear_cache_lab_brnch();
                 }
             }
 
             TvMsg::Root(node_id) => {
-                if let Some(tree) = self.get_sel_tree_mut() {
-                    if let Some(_node_id) = tree.root(&node_id) {
-                        self.sort();
-                        self.clear_cache_edge();
-                        self.clear_cache_lab_tip();
-                        self.clear_cache_lab_int();
-                        self.clear_cache_lab_brnch();
-                    }
+                if let Some(tree) = self.get_sel_tree_mut()
+                    && let Some(_node_id) = tree.root(&node_id)
+                {
+                    self.sort();
+                    self.clear_cache_edge();
+                    self.clear_cache_lab_tip();
+                    self.clear_cache_lab_int();
+                    self.clear_cache_lab_brnch();
                 }
             }
 
@@ -745,14 +745,12 @@ impl TreeView {
                     pane_grid.close(lttp_pane_id);
                     self.lttp_pane_id = None;
                 }
-            } else if self.show_lttp {
-                if let Some(tree_pane_id) = self.tree_pane_id {
-                    if let Some((lttp_pane_id, _split)) =
-                        pane_grid.split(Axis::Horizontal, tree_pane_id, TvPane::LttPlot)
-                    {
-                        self.lttp_pane_id = Some(lttp_pane_id);
-                    }
-                }
+            } else if self.show_lttp
+                && let Some(tree_pane_id) = self.tree_pane_id
+                && let Some((lttp_pane_id, _split)) =
+                    pane_grid.split(Axis::Horizontal, tree_pane_id, TvPane::LttPlot)
+            {
+                self.lttp_pane_id = Some(lttp_pane_id);
             }
         }
     }
@@ -811,7 +809,7 @@ pub(crate) enum TvPane {
 
 impl Display for TvPane {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 

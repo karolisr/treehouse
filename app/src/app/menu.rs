@@ -53,21 +53,20 @@ impl AppMenu {
                         mi.set_checked(true);
                         mi.set_enabled(false);
                         if let Some(miko) = self.items.get(&AppMenuItemId::SetSideBarPositionRight)
+                            && let Some(mio) = miko.as_check_menuitem()
                         {
-                            if let Some(mio) = miko.as_check_menuitem() {
-                                mio.set_checked(false);
-                                mio.set_enabled(true);
-                            }
+                            mio.set_checked(false);
+                            mio.set_enabled(true);
                         }
                     }
                     AppMenuItemId::SetSideBarPositionRight => {
                         mi.set_checked(true);
                         mi.set_enabled(false);
-                        if let Some(miko) = self.items.get(&AppMenuItemId::SetSideBarPositionLeft) {
-                            if let Some(mio) = miko.as_check_menuitem() {
-                                mio.set_checked(false);
-                                mio.set_enabled(true);
-                            }
+                        if let Some(miko) = self.items.get(&AppMenuItemId::SetSideBarPositionLeft)
+                            && let Some(mio) = miko.as_check_menuitem()
+                        {
+                            mio.set_checked(false);
+                            mio.set_enabled(true);
                         }
                     }
                     _ => (),
