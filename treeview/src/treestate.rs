@@ -142,7 +142,7 @@ impl TreeState {
                     Some(tree_orig_edges) => tree_orig_edges.to_vec(),
                     None => {
                         let edges = flatten_tree(&self.t);
-                        self.edges_orig = Some(edges.clone());
+                        self.edges_orig = Some(edges.to_vec());
                         edges
                     }
                 };
@@ -151,32 +151,36 @@ impl TreeState {
             NodeOrd::Ascending => match &self.t_srtd_asc {
                 Some(tree_srtd_asc) => {
                     self.t = tree_srtd_asc.clone();
-                    self.edges = self.edges_srtd_asc.clone().unwrap();
+                    if let Some(edges_srtd_asc) = &self.edges_srtd_asc {
+                        self.edges = edges_srtd_asc.to_vec();
+                    }
                 }
                 None => {
                     let mut tmp = self.t_orig.clone();
                     tmp.sort(false);
+                    self.t = tmp.clone();
                     self.t_srtd_asc = Some(tmp);
-                    self.t = self.t_srtd_asc.clone().unwrap();
                     let edges = flatten_tree(&self.t);
-                    self.edges_srtd_asc = Some(edges.clone());
-                    self.edges = edges;
+                    self.edges = edges.to_vec();
+                    self.edges_srtd_asc = Some(edges);
                 }
             },
 
             NodeOrd::Descending => match &self.t_srtd_desc {
                 Some(tree_srtd_desc) => {
                     self.t = tree_srtd_desc.clone();
-                    self.edges = self.edges_srtd_desc.clone().unwrap();
+                    if let Some(edges_srtd_desc) = &self.edges_srtd_desc {
+                        self.edges = edges_srtd_desc.to_vec();
+                    }
                 }
                 None => {
                     let mut tmp = self.t_orig.clone();
                     tmp.sort(true);
+                    self.t = tmp.clone();
                     self.t_srtd_desc = Some(tmp);
-                    self.t = self.t_srtd_desc.clone().unwrap();
                     let edges = flatten_tree(&self.t);
-                    self.edges_srtd_desc = Some(edges.clone());
-                    self.edges = edges;
+                    self.edges = edges.to_vec();
+                    self.edges_srtd_desc = Some(edges);
                 }
             },
         };

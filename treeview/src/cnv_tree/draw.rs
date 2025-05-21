@@ -39,34 +39,43 @@ pub(super) fn draw_edges(
 pub(super) fn draw_labs_tip(
     tv: &TreeView, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
-    if tv.labs_allowed && tv.draw_tip_labs && tst.has_tip_labs() {
-        g.push(tst.cache_lab_tip().draw(rndr, sz, |f| {
-            let labs = node_labs(&st.node_data, tst.edges(), tv.lab_size_tip, true, false);
-            draw_labels(labs, Vector { x: tv.lab_offset_tip, y: 0e0 }, Some(st.trans), st.rot, f);
-        }));
-    }
+    g.push(tst.cache_lab_tip().draw(rndr, sz, |f| {
+        draw_labels(
+            &st.labs_tip,
+            Vector { x: tv.lab_offset_tip, y: 0e0 },
+            Some(st.trans),
+            st.rot,
+            f,
+        );
+    }));
 }
 
 pub(super) fn draw_labs_int(
     tv: &TreeView, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
-    if tv.labs_allowed && tv.draw_int_labs && tst.has_int_labs() {
-        g.push(tst.cache_lab_int().draw(rndr, sz, |f| {
-            let labs = node_labs(&st.node_data, tst.edges(), tv.lab_size_int, false, false);
-            draw_labels(labs, Vector { x: tv.lab_offset_int, y: 0e0 }, Some(st.trans), st.rot, f);
-        }));
-    }
+    g.push(tst.cache_lab_int().draw(rndr, sz, |f| {
+        draw_labels(
+            &st.labs_int,
+            Vector { x: tv.lab_offset_int, y: 0e0 },
+            Some(st.trans),
+            st.rot,
+            f,
+        );
+    }));
 }
 
 pub(super) fn draw_labs_brnch(
     tv: &TreeView, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
-    if tv.labs_allowed && tv.draw_brnch_labs && tst.has_brlen() {
-        g.push(tst.cache_lab_brnch().draw(rndr, sz, |f| {
-            let labs = node_labs(&st.node_data, tst.edges(), tv.lab_size_brnch, false, true);
-            draw_labels(labs, Vector { x: 0e0, y: tv.lab_offset_brnch }, Some(st.trans), st.rot, f);
-        }));
-    }
+    g.push(tst.cache_lab_brnch().draw(rndr, sz, |f| {
+        draw_labels(
+            &st.labs_brnch,
+            Vector { x: 0e0, y: tv.lab_offset_brnch },
+            Some(st.trans),
+            st.rot,
+            f,
+        );
+    }));
 }
 
 // #[inline]
@@ -90,47 +99,7 @@ pub(super) fn draw_labs_brnch(
 // }
 
 #[inline]
-fn lab_text(txt: String, pt: Point, size: Float, template: CanvasText) -> CanvasText {
-    let mut text = template.clone();
-    text.content = txt;
-    text.position = pt;
-    text.size = size.into();
-    text
-}
-
-#[inline]
-fn node_labs(
-    nodes: &[NodeData], edges: &[Edge], size: Float, tips: bool, branch: bool,
-) -> Vec<Label> {
-    let mut text_w: TextWidth = text_width(size, size, FNT_NAME_LAB);
-    nodes
-        .iter()
-        .filter_map(|nd| {
-            let edge = &edges[nd.edge_idx];
-            if !branch && edge.name.is_some() && ((tips && edge.is_tip) || (!tips && !edge.is_tip))
-            {
-                let name = edge.name.as_ref().unwrap();
-                let width = text_w.width(name);
-                let text = lab_text(name.to_string(), nd.points.p1, size, TXT_LAB_TMPL);
-                Some(Label { text, width, angle: nd.angle })
-            } else if branch && edge.parent_node_id.is_some() {
-                let name = format!("{:.3}", edge.brlen);
-                let width = text_w.width(&name);
-                let text = lab_text(name.to_string(), nd.points.p_mid, size, TXT_LAB_TMPL_BRNCH);
-                Some(Label { text, width, angle: nd.angle })
-            } else {
-                None
-            }
-        })
-        .collect()
-}
-
-#[inline]
-fn draw_labels(
-    labels: Vec<Label>, offset: Vector, trans: Option<Vector>, rot: Float, f: &mut Frame,
-) {
-    let zero_point = Point { x: 0e0, y: 0e0 };
-
+fn draw_labels(labels: &[Label], offset: Vector, trans: Option<Vector>, rot: Float, f: &mut Frame) {
     f.push_transform();
     if let Some(trans) = trans {
         f.translate(trans);
@@ -138,8 +107,10 @@ fn draw_labels(
     f.rotate(rot);
     f.translate(offset);
 
-    for Label { mut text, width, angle } in labels {
-        if let Some(mut angle) = angle {
+    for Label { text, width, angle } in labels {
+        let mut text = text.clone();
+        if let Some(angle) = angle {
+            let mut angle = *angle;
             let mut adjust_w = 0e0;
             match text.align_x {
                 TextAlignment::Left => adjust_w = offset.x,
@@ -162,8 +133,8 @@ fn draw_labels(
                 x: text.position.x - offset.x + angle.cos() * adjust_w,
                 y: text.position.y - offset.y + angle.sin() * adjust_w,
             });
+            text.position = Point::ORIGIN;
             f.rotate(angle);
-            text.position = zero_point;
             f.fill_text(text);
             f.pop_transform();
         } else {
@@ -252,7 +223,7 @@ impl From<NodeDataRad> for Path {
             pb.move_to(node_data.points.p1);
             pb.line_to(node_data.points.p0);
             if node_data.angle_parent.is_some() {
-                let p_arc = Arc {
+                let p_arc = PathArc {
                     center: Point::ORIGIN,
                     radius: Point::ORIGIN.distance(node_data.points.p0),
                     start_angle: Radians(node_data.angle),

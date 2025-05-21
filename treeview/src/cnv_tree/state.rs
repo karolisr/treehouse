@@ -20,6 +20,13 @@ pub struct St {
     pub rl: Float,
     pub rot: Float,
     pub trans: Vector,
+
+    pub text_w_tip: Option<TextWidth<'static>>,
+    pub text_w_int: Option<TextWidth<'static>>,
+    pub text_w_brnch: Option<TextWidth<'static>>,
+    pub labs_tip: Vec<Label>,
+    pub labs_int: Vec<Label>,
+    pub labs_brnch: Vec<Label>,
 }
 
 impl Default for St {
@@ -43,24 +50,30 @@ impl Default for St {
             rl: 0e0,
             rot: 0e0,
             trans: Vector { x: 0e0, y: 0e0 },
+
+            text_w_tip: Some(text_width(TIP_LAB_SIZE as Float, FNT_NAME_LAB)),
+            text_w_int: Some(text_width(INT_LAB_SIZE as Float, FNT_NAME_LAB)),
+            text_w_brnch: Some(text_width(BRNCH_LAB_SIZE as Float, FNT_NAME_LAB)),
+
+            labs_tip: Vec::new(),
+            labs_int: Vec::new(),
+            labs_brnch: Vec::new(),
         }
     }
 }
 
 impl St {
     pub(crate) fn update_visible_nodes(
-        &mut self, is_dirty: bool, tst: &TreeState, tre_cnv_h: Float, y0_rel: Float, y1_rel: Float,
+        &mut self, is_dirty: bool, tst: &TreeState, tre_cnv_h: Float, tre_padding: Float,
+        y0_rel: Float, y1_rel: Float,
     ) {
-        let h_ratio_1 = tre_cnv_h / self.clip_vs.h;
-        let h_ratio_2 = self.clip_vs.h / tre_cnv_h;
-
+        let h_ratio_1 = (tre_cnv_h + tre_padding * 2e0) / self.clip_vs.h;
+        let h_ratio_2 = self.clip_vs.h / (tre_cnv_h + tre_padding * 2e0);
         let h_ratio_min = h_ratio_1.min(h_ratio_2);
         let h_ratio_max = h_ratio_1.max(h_ratio_2);
-
         let node_size = self.tree_vs.h / tst.tip_count() as Float;
-        let y0 = (y0_rel * h_ratio_min) * self.tree_vs.h; // + node_size * 5e0;
-        let y1 = (y1_rel * h_ratio_max) * self.tree_vs.h; // - node_size * 5e0;
-
+        let y0 = (y0_rel * h_ratio_min) * self.tree_vs.h - tre_padding - node_size * 3e0;
+        let y1 = (y1_rel * h_ratio_max) * self.tree_vs.h - tre_padding + node_size * 3e0;
         if self.prev_y0_rel != y0_rel || self.prev_y1_rel != y1_rel || is_dirty {
             if let Some(idx_range) = tst.visible_node_idx_range(y0, y1, node_size) {
                 if idx_range != self.prev_node_idx_range || is_dirty {
@@ -71,7 +84,6 @@ impl St {
             } else {
                 self.visible_nodes = None;
             }
-
             self.prev_y0_rel = y0_rel;
             self.prev_y1_rel = y1_rel;
         }

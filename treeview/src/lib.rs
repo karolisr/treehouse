@@ -1,3 +1,4 @@
+#![feature(iter_collect_into)]
 // -------------------------------------
 // #![allow(dead_code)]
 // #![allow(unused_assignments)]
@@ -42,7 +43,7 @@ use iced::alignment::Vertical;
 use iced::font::{Family, Stretch, Style as FontStyle, Weight};
 use iced::mouse::{Cursor, Event as MouseEvent, Interaction};
 use iced::widget::canvas::Cache;
-use iced::widget::canvas::path::Arc;
+use iced::widget::canvas::path::Arc as PathArc;
 use iced::widget::canvas::stroke::{LineCap, LineDash, LineJoin};
 use iced::widget::canvas::stroke::{Stroke as Strk, Style::Solid};
 use iced::widget::canvas::{Action, Frame, Geometry, Path, Program};
@@ -210,8 +211,5 @@ pub fn tip_idx_range_between_y_vals(
 pub fn node_idx_range_for_tip_idx_range(tip_idx_range: &IndexRange, tips: &[usize]) -> IndexRange {
     let idx_tip_0 = tips[*tip_idx_range.start()];
     let idx_tip_1 = tips[*tip_idx_range.end()];
-    // let idx_node_0 = idx_tip_0.edge_idx;
-    // let idx_node_1 = idx_tip_1.edge_idx;
-    // println!("{} {} {} {}", tip_idx_range.start(), tip_idx_range.end(), idx_tip_0, idx_tip_1);
     IndexRange::new(idx_tip_0, idx_tip_1)
 }

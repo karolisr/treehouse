@@ -59,19 +59,23 @@ impl Program<TvMsg> for TreeView {
         if !self.drawing_enabled || tree_opt.is_none() {
             return None;
         }
-        let tst: &TreeState = tree_opt.unwrap();
+        let tst: &TreeState = tree_opt?;
         // ----------------------------------------------------------------------------------------
         if bnds != st.bnds {
             st.bnds = bnds;
             st.clip_vs = RectVals::clip(bnds);
-            st.tree_vs = RectVals::tree(st.clip_vs, 5e1);
+            st.tree_vs = RectVals::tree(st.clip_vs, self.tre_padding);
             st.clip_rect = st.clip_vs.into();
             st.tree_rect = st.tree_vs.into();
         }
         // ----------------------------------------------------------------------------------------
-        if self.labs_allowed && (self.draw_tip_labs || self.draw_int_labs || self.draw_brnch_labs) {
+        if self.labs_allowed
+            && ((self.draw_tip_labs && tst.has_tip_labs())
+                || (self.draw_int_labs && tst.has_int_labs())
+                || (self.draw_brnch_labs && tst.has_brlen()))
+        {
             st.update_visible_nodes(
-                self.is_dirty, tst, self.tre_cnv_h, self.tre_cnv_vis_y0_rel,
+                self.is_dirty, tst, self.tre_cnv_h, self.tre_padding, self.tre_cnv_vis_y0_rel,
                 self.tre_cnv_vis_y1_rel,
             );
         } else {
@@ -79,27 +83,28 @@ impl Program<TvMsg> for TreeView {
         }
         // ----------------------------------------------------------------------------------------
         let root_len_frac = self.root_len_idx_sel as Float / 2e2;
-        st.rl = match tst.is_rooted() {
-            true => match self.tree_style_opt_sel {
-                TreeStyle::Phylogram => st.tree_vs.w * root_len_frac,
-                TreeStyle::Fan => st.tree_vs.radius_min * root_len_frac,
-            },
-            false => 0e0,
-        };
-        st.trans = match self.tree_style_opt_sel {
-            TreeStyle::Phylogram => Vector { x: st.tree_vs.trans.x + st.rl, y: st.tree_vs.trans.y },
-            TreeStyle::Fan => st.tree_vs.cntr,
-        };
+        st.rl = 0e0;
+        match self.tree_style_opt_sel {
+            TreeStyle::Phylogram => {
+                if tst.is_rooted() {
+                    st.rl = st.tree_vs.w * root_len_frac;
+                }
+                st.rot = 0e0;
+                st.trans = Vector { x: st.tree_vs.trans.x + st.rl, y: st.tree_vs.trans.y };
+            }
+            TreeStyle::Fan => {
+                if tst.is_rooted() {
+                    st.rl = st.tree_vs.radius_min * root_len_frac;
+                }
+                st.rot = self.rot_angle;
+                st.trans = st.tree_vs.cntr;
+            }
+        }
         // ----------------------------------------------------------------------------------------
-        st.rot = match self.tree_style_opt_sel {
-            TreeStyle::Phylogram => 0e0,
-            TreeStyle::Fan => self.rot_angle,
-        };
-        // ----------------------------------------------------------------------------------------
-        if let Some(vis_nds) = &st.visible_nodes {
+        if let Some(visible_nodes) = &st.visible_nodes {
             let tree_style = self.tree_style_opt_sel;
             let opn_angle = self.opn_angle;
-            vis_nds
+            visible_nodes
                 .par_iter()
                 .map(|e| match tree_style {
                     TreeStyle::Phylogram => {
@@ -110,6 +115,61 @@ impl Program<TvMsg> for TreeView {
                     }
                 })
                 .collect_into_vec(&mut st.node_data);
+        } else {
+            st.node_data.clear();
+        }
+        // ----------------------------------------------------------------------------------------
+        st.labs_tip.clear();
+        st.labs_int.clear();
+        st.labs_brnch.clear();
+
+        if self.labs_allowed && !st.node_data.is_empty() {
+            // ------------------------------------------------------------------------------------
+            if self.draw_tip_labs && tst.has_tip_labs() {
+                if st.text_w_tip.as_mut()?.font_size() != self.lab_size_tip {
+                    st.text_w_tip.as_mut()?.set_font_size(self.lab_size_tip);
+                }
+                node_labs(
+                    &st.node_data,
+                    tst.edges(),
+                    self.lab_size_tip,
+                    true,
+                    false,
+                    st.text_w_tip.as_mut()?,
+                    &mut st.labs_tip,
+                );
+            }
+            // ------------------------------------------------------------------------------------
+            if self.draw_int_labs && tst.has_int_labs() {
+                if st.text_w_int.as_mut()?.font_size() != self.lab_size_int {
+                    st.text_w_int.as_mut()?.set_font_size(self.lab_size_int);
+                }
+                node_labs(
+                    &st.node_data,
+                    tst.edges(),
+                    self.lab_size_int,
+                    false,
+                    false,
+                    st.text_w_int.as_mut()?,
+                    &mut st.labs_int,
+                );
+            }
+            // ------------------------------------------------------------------------------------
+            if self.draw_brnch_labs && tst.has_brlen() {
+                if st.text_w_brnch.as_mut()?.font_size() != self.lab_size_brnch {
+                    st.text_w_brnch.as_mut()?.set_font_size(self.lab_size_brnch);
+                }
+                node_labs(
+                    &st.node_data,
+                    tst.edges(),
+                    self.lab_size_brnch,
+                    false,
+                    true,
+                    st.text_w_brnch.as_mut()?,
+                    &mut st.labs_brnch,
+                );
+            }
+            // ------------------------------------------------------------------------------------
         }
         // ----------------------------------------------------------------------------------------
         None
@@ -139,4 +199,41 @@ impl Program<TvMsg> for TreeView {
         }
         geoms
     }
+}
+
+#[inline]
+fn lab_text(txt: String, pt: Point, size: Float, template: CanvasText) -> CanvasText {
+    let mut text = template.clone();
+    text.content = txt;
+    text.position = pt;
+    text.size = size.into();
+    text
+}
+
+#[inline]
+fn node_labs(
+    nodes: &[NodeData], edges: &[Edge], size: Float, tips: bool, branch: bool,
+    text_w: &mut TextWidth, result: &mut Vec<Label>,
+) {
+    nodes
+        .iter()
+        .filter_map(|nd| {
+            let edge = &edges[nd.edge_idx];
+            if let Some(name) = &edge.name
+                && !branch
+                && ((tips && edge.is_tip) || (!tips && !edge.is_tip))
+            {
+                let width = text_w.width(name);
+                let text = lab_text(name.to_string(), nd.points.p1, size, TXT_LAB_TMPL);
+                Some(Label { text, width, angle: nd.angle })
+            } else if branch && edge.parent_node_id.is_some() {
+                let name = format!("{:.3}", edge.brlen);
+                let width = text_w.width(&name);
+                let text = lab_text(name.to_string(), nd.points.p_mid, size, TXT_LAB_TMPL_BRNCH);
+                Some(Label { text, width, angle: nd.angle })
+            } else {
+                None
+            }
+        })
+        .collect_into(result);
 }

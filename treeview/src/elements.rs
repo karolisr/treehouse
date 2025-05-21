@@ -54,43 +54,19 @@ pub(super) fn content<'a>(tv: &'a TreeView, sel_tree: &'a TreeState) -> Element<
 }
 
 fn tv_pane_content<'a>(
-    tv: &'a TreeView, sel_tree: &'a TreeState, tv_pane: &TvPane, size: Size,
+    tv: &'a TreeView, _sel_tree: &'a TreeState, tv_pane: &TvPane, size: Size,
 ) -> Element<'a, TvMsg> {
     let w = size.width;
     let h = size.height;
-
-    let mut cnv_w = w;
-    let mut cnv_h = h;
-
-    // The calculation of dimensions is duplicated here, in view logic, intentionally.
-    match tv.tree_style_opt_sel {
-        TreeStyle::Phylogram => {
-            if tv.tre_cnv_w_idx_sel != tv.tre_cnv_w_idx_min {
-                let delta = (tv.tre_cnv_w_idx_sel - 1) as Float * tv.tre_cnv_size_step;
-                cnv_w = delta + w;
-            }
-            if tv.tre_cnv_h_idx_sel != tv.tre_cnv_h_idx_min {
-                let tre_cnv_size_step =
-                    tv.tre_cnv_size_step.max(sel_tree.tip_count() as Float * 1e0);
-                let delta = (tv.tre_cnv_h_idx_sel - 1) as Float * tre_cnv_size_step;
-                cnv_h = delta + h;
-            }
-        }
-        TreeStyle::Fan => {
-            if tv.tre_cnv_z_idx_sel != tv.tre_cnv_z_idx_min {
-                let delta = (tv.tre_cnv_z_idx_sel - 1) as Float * tv.tre_cnv_size_step;
-                cnv_w = delta + w;
-                cnv_h = delta + h;
-            }
-        }
-    };
-
+    let cnv_w = tv.calc_tre_cnv_w(w);
+    let cnv_h = tv.calc_tre_cnv_h(h);
     let scrollable = match tv_pane {
         TvPane::Tree => {
             let cnv = Canvas::new(tv).width(cnv_w).height(cnv_h);
             scrollable_cnv_tree(tv.tre_scr_id, cnv, w, h)
         }
         TvPane::LttPlot => {
+            let mut cnv_w = cnv_w;
             if tv.tree_style_opt_sel == TreeStyle::Fan {
                 cnv_w = w;
             }
@@ -447,7 +423,7 @@ fn scrollable_cnv_tree<'a>(
     let sb = Scrollbar::new();
     s = s.direction(ScrollableDirection::Both { horizontal: sb, vertical: sb });
     s = s.id(id);
-    s = s.on_scroll(TvMsg::TreCnvScrolled);
+    s = s.on_scroll(TvMsg::TreCnvScrolledOrResized);
     scrollable_common(s, w, h)
 }
 
