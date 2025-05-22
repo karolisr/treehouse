@@ -39,22 +39,6 @@ pub(crate) fn draw_scale_bar(
     frame.fill_text(l);
 }
 
-use iced::widget::container::Style as ContainerStyle;
-pub(crate) fn sty_cont(theme: &Theme) -> ContainerStyle {
-    let pb = theme.palette();
-    // let pe = theme.extended_palette();
-    ContainerStyle {
-        text_color: Some(pb.text),
-        background: None,
-        border: Border {
-            width: 3e0,
-            color: Clr::BLK.scale_alpha(0.125),
-            radius: RADIUS_WIDGET.into(),
-        },
-        ..Default::default()
-    }
-}
-
 pub(crate) fn sty_cont_main(theme: &Theme) -> ContainerStyle {
     sty_cont(theme)
     // .background(Clr::CYA)
@@ -73,35 +57,6 @@ pub(crate) fn sty_cont_toolbar(theme: &Theme) -> ContainerStyle {
 pub(crate) fn sty_cont_statusbar(theme: &Theme) -> ContainerStyle {
     sty_cont(theme)
     // .background(Clr::MAG)
-}
-
-use iced::widget::pane_grid::{
-    Highlight as PaneGridHighlight, Line as PaneGridLine, Style as PaneGridStyle,
-};
-pub(crate) fn sty_pane_grid(theme: &Theme) -> PaneGridStyle {
-    let pe = theme.extended_palette();
-    PaneGridStyle {
-        hovered_region: PaneGridHighlight {
-            background: Clr::BLK.into(),
-            border: Border {
-                width: 1e0,
-                color: pe.primary.strong.color,
-                radius: RADIUS_WIDGET.into(),
-            },
-        },
-        hovered_split: PaneGridLine { color: pe.primary.base.color, width: 2.0 },
-        picked_split: PaneGridLine { color: pe.primary.strong.color, width: 2.0 },
-    }
-}
-
-pub(crate) fn sty_pane_titlebar(theme: &Theme) -> ContainerStyle {
-    sty_cont(theme)
-    // .background(Clr::RED)
-}
-
-pub(crate) fn sty_pane_body(theme: &Theme) -> ContainerStyle {
-    sty_cont(theme)
-    // .background(Clr::GRN)
 }
 
 use iced::widget::button::{Status as ButtonStatus, Style as ButtonStyle};

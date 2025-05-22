@@ -1,6 +1,4 @@
-use iced::advanced::graphics::text::cosmic_text::{
-    Attrs, Buffer, Family, FontSystem, Metrics, Shaping,
-};
+use iced::advanced::graphics::text::cosmic_text::{Attrs, Buffer, Family, FontSystem, Metrics, Shaping};
 
 #[derive(Debug)]
 pub struct TextWidth<'a> {
@@ -10,13 +8,9 @@ pub struct TextWidth<'a> {
 }
 
 impl TextWidth<'_> {
-    pub fn font_size(&self) -> f32 {
-        self.buffer.metrics().font_size
-    }
+    pub fn font_size(&self) -> f32 { self.buffer.metrics().font_size }
 
-    pub fn line_height(&self) -> f32 {
-        self.buffer.metrics().line_height
-    }
+    pub fn line_height(&self) -> f32 { self.buffer.metrics().line_height }
 
     pub fn set_font_size(&mut self, font_size: f32) {
         let metrics = Metrics::new(font_size, font_size);

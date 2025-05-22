@@ -20,13 +20,9 @@ pub struct AppMenu {
 
 impl AppMenu {
     #[allow(dead_code)]
-    pub fn enable(&mut self, id: &AppMenuItemId) {
-        self.set_enabled(id, true);
-    }
+    pub fn enable(&mut self, id: &AppMenuItemId) { self.set_enabled(id, true); }
 
-    pub fn disable(&mut self, id: &AppMenuItemId) {
-        self.set_enabled(id, false);
-    }
+    pub fn disable(&mut self, id: &AppMenuItemId) { self.set_enabled(id, false); }
 
     fn set_enabled(&mut self, id: &AppMenuItemId, state: bool) {
         if let Some(mik) = self.items.get(id) {
@@ -111,9 +107,7 @@ impl AppMenu {
         Some(Self { muda_menu, items })
     }
 
-    fn prepare_app_menu(
-        sidebar_pos: SidebarPos,
-    ) -> (muda::Menu, HashMap<AppMenuItemId, MenuItemKind>) {
+    fn prepare_app_menu(sidebar_pos: SidebarPos) -> (muda::Menu, HashMap<AppMenuItemId, MenuItemKind>) {
         let menu = muda::Menu::default();
         let mut items: HashMap<AppMenuItemId, MenuItemKind> = HashMap::new();
 
@@ -124,8 +118,7 @@ impl AppMenu {
         let submenu_view = Submenu::with_id("sub_view", "View", true);
         let submenu_sidebar_pos = Submenu::with_id("sub_sidebar_pos", "Sidebar Position", true);
 
-        let menu_item_about =
-            muda::PredefinedMenuItem::about(None, Some(muda::AboutMetadata::default()));
+        let menu_item_about = muda::PredefinedMenuItem::about(None, Some(muda::AboutMetadata::default()));
 
         let menu_item_close_win = MenuItem::with_id(
             AppMenuItemId::CloseWindow,
@@ -134,12 +127,8 @@ impl AppMenu {
             Some(Accelerator::new(Some(modifier), Code::KeyW)),
         );
 
-        let menu_item_quit = MenuItem::with_id(
-            AppMenuItemId::Quit,
-            "Quit",
-            true,
-            Some(Accelerator::new(Some(modifier), Code::KeyQ)),
-        );
+        let menu_item_quit =
+            MenuItem::with_id(AppMenuItemId::Quit, "Quit", true, Some(Accelerator::new(Some(modifier), Code::KeyQ)));
 
         let menu_item_open = MenuItem::with_id(
             AppMenuItemId::OpenFile,
@@ -190,18 +179,9 @@ impl AppMenu {
         items.insert(menu_item_quit.clone().into(), MenuItemKind::MenuItem(menu_item_quit));
         items.insert(menu_item_open.clone().into(), MenuItemKind::MenuItem(menu_item_open));
         items.insert(menu_item_save_as.clone().into(), MenuItemKind::MenuItem(menu_item_save_as));
-        items.insert(
-            menu_item_close_win.clone().into(),
-            MenuItemKind::MenuItem(menu_item_close_win),
-        );
-        items.insert(
-            menu_item_sidebar_pos_left.clone().into(),
-            MenuItemKind::Check(menu_item_sidebar_pos_left),
-        );
-        items.insert(
-            menu_item_sidebar_pos_right.clone().into(),
-            MenuItemKind::Check(menu_item_sidebar_pos_right),
-        );
+        items.insert(menu_item_close_win.clone().into(), MenuItemKind::MenuItem(menu_item_close_win));
+        items.insert(menu_item_sidebar_pos_left.clone().into(), MenuItemKind::Check(menu_item_sidebar_pos_left));
+        items.insert(menu_item_sidebar_pos_right.clone().into(), MenuItemKind::Check(menu_item_sidebar_pos_right));
 
         (menu, items)
     }

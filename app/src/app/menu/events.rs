@@ -14,15 +14,11 @@ pub enum AppMenuItemId {
 }
 
 impl From<muda::MenuItem> for AppMenuItemId {
-    fn from(value: muda::MenuItem) -> Self {
-        value.id().0.clone().into()
-    }
+    fn from(value: muda::MenuItem) -> Self { value.id().0.clone().into() }
 }
 
 impl From<muda::CheckMenuItem> for AppMenuItemId {
-    fn from(value: muda::CheckMenuItem) -> Self {
-        value.id().0.clone().into()
-    }
+    fn from(value: muda::CheckMenuItem) -> Self { value.id().0.clone().into() }
 }
 
 impl From<String> for AppMenuItemId {
@@ -40,9 +36,7 @@ impl From<String> for AppMenuItemId {
 }
 
 impl From<AppMenuItemId> for AppMsg {
-    fn from(value: AppMenuItemId) -> Self {
-        (&value).into()
-    }
+    fn from(value: AppMenuItemId) -> Self { (&value).into() }
 }
 
 impl From<&AppMenuItemId> for AppMsg {
@@ -52,19 +46,13 @@ impl From<&AppMenuItemId> for AppMsg {
             AppMenuItemId::SaveAs => AppMsg::SaveAs,
             AppMenuItemId::Quit => AppMsg::WinCloseRequested,
             AppMenuItemId::CloseWindow => AppMsg::WinCloseRequested,
-            AppMenuItemId::SetSideBarPositionLeft => {
-                AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPos::Left))
-            }
-            AppMenuItemId::SetSideBarPositionRight => {
-                AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPos::Right))
-            }
+            AppMenuItemId::SetSideBarPositionLeft => AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPos::Left)),
+            AppMenuItemId::SetSideBarPositionRight => AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPos::Right)),
             _ => AppMsg::Other(Some(value.to_string())),
         }
     }
 }
 
 impl Display for AppMenuItemId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{self:?}")
-    }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{self:?}") }
 }

@@ -7,10 +7,7 @@ mod win;
 // use consts::*;
 use iced::{
     Element, Subscription, Task, Theme, exit,
-    window::{
-        Event as WinEvent, Id as WinId, close as close_window, events as window_events,
-        open as open_window,
-    },
+    window::{Event as WinEvent, Id as WinId, close as close_window, events as window_events, open as open_window},
 };
 use menu::{AppMenu, AppMenuItemId};
 use std::path::PathBuf;
@@ -106,9 +103,7 @@ impl App {
                     {
                         match sidebar_pos {
                             SidebarPos::Left => menu.update(&AppMenuItemId::SetSideBarPositionLeft),
-                            SidebarPos::Right => {
-                                menu.update(&AppMenuItemId::SetSideBarPositionRight)
-                            }
+                            SidebarPos::Right => menu.update(&AppMenuItemId::SetSideBarPositionRight),
                         }
                     }
                     treeview.update(tv_msg).map(AppMsg::TvMsg)
@@ -136,9 +131,9 @@ impl App {
                         FileType::Other(s) => ParsedData::Other(s),
                         FileType::Exception => ParsedData::Exception,
                         file_type => match file_type {
-                            FileType::Newick => ParsedData::Trees(dendros::parse_newick(
-                                ops::read_text_file(path_buf.clone()),
-                            )),
+                            FileType::Newick => {
+                                ParsedData::Trees(dendros::parse_newick(ops::read_text_file(path_buf.clone())))
+                            }
                             FileType::Nexus => ParsedData::Trees(None),
                             _ => ParsedData::Exception,
                         },
@@ -252,14 +247,10 @@ impl App {
                     #[cfg(debug_assertions)]
                     {
                         // let path_buf = PathBuf::from("tests/data/100_starting_trees.newick");
-                        let path_buf = PathBuf::from("tests/data/tree01.newick");
-                        // let path_buf = PathBuf::from("tests/data/tree02.newick");
+                        // let path_buf = PathBuf::from("tests/data/tree01.newick");
+                        let path_buf = PathBuf::from("tests/data/tree02.newick");
                         let path: &std::path::Path = &path_buf.clone().into_boxed_path();
-                        if path.exists() {
-                            Task::done(AppMsg::PathToOpen(Some(path_buf)))
-                        } else {
-                            Task::none()
-                        }
+                        if path.exists() { Task::done(AppMsg::PathToOpen(Some(path_buf))) } else { Task::none() }
                     }
                 }),
 
@@ -310,17 +301,11 @@ impl App {
         Subscription::batch(subs)
     }
 
-    pub fn title(&self, _: WinId) -> String {
-        String::from("App::title")
-    }
+    pub fn title(&self, _: WinId) -> String { String::from("App::title") }
 
-    pub fn scale_factor(&self, _: WinId) -> f64 {
-        1e0
-    }
+    pub fn scale_factor(&self, _: WinId) -> f64 { 1e0 }
 
-    pub fn theme(&self, _: WinId) -> Theme {
-        iced::Theme::default()
-    }
+    pub fn theme(&self, _: WinId) -> Theme { iced::Theme::default() }
 
     pub fn settings() -> iced::Settings {
         iced::Settings {

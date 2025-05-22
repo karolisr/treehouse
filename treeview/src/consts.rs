@@ -1,10 +1,11 @@
 #![allow(dead_code)]
 
+use crate::iced::*;
 use crate::*;
 
-pub(crate) const TIP_LAB_SIZE: u16 = 3;
-pub(crate) const INT_LAB_SIZE: u16 = 3;
-pub(crate) const BRNCH_LAB_SIZE: u16 = 3;
+pub(crate) const TIP_LAB_SIZE: u16 = 12;
+pub(crate) const INT_LAB_SIZE: u16 = 12;
+pub(crate) const BRNCH_LAB_SIZE: u16 = 12;
 
 pub(crate) const PI: Float = std::f32::consts::PI;
 pub(crate) const TAU: Float = std::f32::consts::TAU;
@@ -14,6 +15,60 @@ pub(crate) const FNT_NAME: &str = "JetBrains Mono";
 pub(crate) const TXT_SIZE: Float = 13.0 * SF;
 pub(crate) const FNT_NAME_LAB: &str = FNT_NAME;
 pub(crate) const TXT_SIZE_LAB: Float = TXT_SIZE;
+
+pub(crate) const TXT_LAB_TMPL: CnvText = CnvText {
+    color: Clr::BLK,
+    size: Pixels(TXT_SIZE_LAB),
+    line_height: LineHeight::Absolute(Pixels(TXT_SIZE_LAB)),
+    align_x: TextAlignment::Left,
+    align_y: Vertical::Center,
+    content: String::new(),
+    max_width: Float::INFINITY,
+    position: Point::ORIGIN,
+    shaping: Shaping::Basic,
+    font: Font {
+        family: Family::Name(FNT_NAME_LAB),
+        weight: Weight::Normal,
+        stretch: Stretch::Normal,
+        style: FontStyle::Normal,
+    },
+};
+
+pub(crate) const TXT_LAB_TMPL_INT: CnvText = CnvText {
+    color: Clr::RED,
+    size: Pixels(TXT_SIZE_LAB),
+    line_height: LineHeight::Absolute(Pixels(TXT_SIZE_LAB)),
+    align_x: TextAlignment::Left,
+    align_y: Vertical::Center,
+    content: String::new(),
+    max_width: Float::INFINITY,
+    position: Point::ORIGIN,
+    shaping: Shaping::Basic,
+    font: Font {
+        family: Family::Name(FNT_NAME_LAB),
+        weight: Weight::Normal,
+        stretch: Stretch::Normal,
+        style: FontStyle::Normal,
+    },
+};
+
+pub(crate) const TXT_LAB_TMPL_BRNCH: CnvText = CnvText {
+    color: Clr::BLU,
+    size: Pixels(TXT_SIZE_LAB),
+    line_height: LineHeight::Absolute(Pixels(TXT_SIZE_LAB)),
+    align_x: TextAlignment::Center,
+    align_y: Vertical::Bottom,
+    content: String::new(),
+    max_width: Float::INFINITY,
+    position: Point::ORIGIN,
+    shaping: Shaping::Basic,
+    font: Font {
+        family: Family::Name(FNT_NAME_LAB),
+        weight: Weight::Normal,
+        stretch: Stretch::Normal,
+        style: FontStyle::Normal,
+    },
+};
 
 pub(crate) const STRK_TMPL: Strk = Strk {
     width: 1e0,
@@ -30,6 +85,7 @@ pub(crate) const STRK_4: Strk = Strk { width: 4e0, ..STRK_TMPL };
 pub(crate) const STRK_5: Strk = Strk { width: 5e0, ..STRK_TMPL };
 
 pub(crate) const STRK_EDGE: Strk = STRK_1;
+pub(crate) const STRK_DASH: Strk = Strk { line_dash: LineDash { segments: &[2e0, 2e0], offset: 0 }, ..STRK_1 };
 
 pub(crate) const STRK_1_BLK: Strk = Strk { style: Solid(Clr::BLK), ..STRK_1 };
 pub(crate) const STRK_1_RED: Strk = Strk { style: Solid(Clr::RED), ..STRK_1 };
@@ -103,38 +159,50 @@ pub(crate) const STRK_3_YEL_50: Strk = Strk { style: Solid(Clr::YEL_50), ..STRK_
 pub(crate) const STRK_3_CYA_50: Strk = Strk { style: Solid(Clr::CYA_50), ..STRK_3 };
 pub(crate) const STRK_3_MAG_50: Strk = Strk { style: Solid(Clr::MAG_50), ..STRK_3 };
 
-pub(crate) const TXT_LAB_TMPL: CanvasText = CanvasText {
-    color: Clr::BLK,
-    size: Pixels(TXT_SIZE_LAB),
-    line_height: LineHeight::Absolute(Pixels(TXT_SIZE_LAB)),
-    align_x: TextAlignment::Left,
-    align_y: Vertical::Center,
-    content: String::new(),
-    max_width: Float::INFINITY,
-    position: Point::ORIGIN,
-    shaping: Shaping::Basic,
-    font: Font {
-        family: Family::Name(FNT_NAME_LAB),
-        weight: Weight::Normal,
-        stretch: Stretch::Normal,
-        style: FontStyle::Normal,
-    },
-};
+pub(crate) const STRK_4_BLK: Strk = Strk { style: Solid(Clr::BLK), ..STRK_4 };
+pub(crate) const STRK_4_RED: Strk = Strk { style: Solid(Clr::RED), ..STRK_4 };
+pub(crate) const STRK_4_GRN: Strk = Strk { style: Solid(Clr::GRN), ..STRK_4 };
+pub(crate) const STRK_4_BLU: Strk = Strk { style: Solid(Clr::BLU), ..STRK_4 };
+pub(crate) const STRK_4_YEL: Strk = Strk { style: Solid(Clr::YEL), ..STRK_4 };
+pub(crate) const STRK_4_CYA: Strk = Strk { style: Solid(Clr::CYA), ..STRK_4 };
+pub(crate) const STRK_4_MAG: Strk = Strk { style: Solid(Clr::MAG), ..STRK_4 };
 
-pub(crate) const TXT_LAB_TMPL_BRNCH: CanvasText = CanvasText {
-    color: Clr::BLK,
-    size: Pixels(TXT_SIZE_LAB),
-    line_height: LineHeight::Absolute(Pixels(TXT_SIZE_LAB)),
-    align_x: TextAlignment::Center,
-    align_y: Vertical::Bottom,
-    content: String::new(),
-    max_width: Float::INFINITY,
-    position: Point::ORIGIN,
-    shaping: Shaping::Basic,
-    font: Font {
-        family: Family::Name(FNT_NAME_LAB),
-        weight: Weight::Normal,
-        stretch: Stretch::Normal,
-        style: FontStyle::Normal,
-    },
-};
+pub(crate) const STRK_4_BLK_25: Strk = Strk { style: Solid(Clr::BLK_25), ..STRK_4 };
+pub(crate) const STRK_4_RED_25: Strk = Strk { style: Solid(Clr::RED_25), ..STRK_4 };
+pub(crate) const STRK_4_GRN_25: Strk = Strk { style: Solid(Clr::GRN_25), ..STRK_4 };
+pub(crate) const STRK_4_BLU_25: Strk = Strk { style: Solid(Clr::BLU_25), ..STRK_4 };
+pub(crate) const STRK_4_YEL_25: Strk = Strk { style: Solid(Clr::YEL_25), ..STRK_4 };
+pub(crate) const STRK_4_CYA_25: Strk = Strk { style: Solid(Clr::CYA_25), ..STRK_4 };
+pub(crate) const STRK_4_MAG_25: Strk = Strk { style: Solid(Clr::MAG_25), ..STRK_4 };
+
+pub(crate) const STRK_4_BLK_50: Strk = Strk { style: Solid(Clr::BLK_50), ..STRK_4 };
+pub(crate) const STRK_4_RED_50: Strk = Strk { style: Solid(Clr::RED_50), ..STRK_4 };
+pub(crate) const STRK_4_GRN_50: Strk = Strk { style: Solid(Clr::GRN_50), ..STRK_4 };
+pub(crate) const STRK_4_BLU_50: Strk = Strk { style: Solid(Clr::BLU_50), ..STRK_4 };
+pub(crate) const STRK_4_YEL_50: Strk = Strk { style: Solid(Clr::YEL_50), ..STRK_4 };
+pub(crate) const STRK_4_CYA_50: Strk = Strk { style: Solid(Clr::CYA_50), ..STRK_4 };
+pub(crate) const STRK_4_MAG_50: Strk = Strk { style: Solid(Clr::MAG_50), ..STRK_4 };
+
+pub(crate) const STRK_5_BLK: Strk = Strk { style: Solid(Clr::BLK), ..STRK_5 };
+pub(crate) const STRK_5_RED: Strk = Strk { style: Solid(Clr::RED), ..STRK_5 };
+pub(crate) const STRK_5_GRN: Strk = Strk { style: Solid(Clr::GRN), ..STRK_5 };
+pub(crate) const STRK_5_BLU: Strk = Strk { style: Solid(Clr::BLU), ..STRK_5 };
+pub(crate) const STRK_5_YEL: Strk = Strk { style: Solid(Clr::YEL), ..STRK_5 };
+pub(crate) const STRK_5_CYA: Strk = Strk { style: Solid(Clr::CYA), ..STRK_5 };
+pub(crate) const STRK_5_MAG: Strk = Strk { style: Solid(Clr::MAG), ..STRK_5 };
+
+pub(crate) const STRK_5_BLK_25: Strk = Strk { style: Solid(Clr::BLK_25), ..STRK_5 };
+pub(crate) const STRK_5_RED_25: Strk = Strk { style: Solid(Clr::RED_25), ..STRK_5 };
+pub(crate) const STRK_5_GRN_25: Strk = Strk { style: Solid(Clr::GRN_25), ..STRK_5 };
+pub(crate) const STRK_5_BLU_25: Strk = Strk { style: Solid(Clr::BLU_25), ..STRK_5 };
+pub(crate) const STRK_5_YEL_25: Strk = Strk { style: Solid(Clr::YEL_25), ..STRK_5 };
+pub(crate) const STRK_5_CYA_25: Strk = Strk { style: Solid(Clr::CYA_25), ..STRK_5 };
+pub(crate) const STRK_5_MAG_25: Strk = Strk { style: Solid(Clr::MAG_25), ..STRK_5 };
+
+pub(crate) const STRK_5_BLK_50: Strk = Strk { style: Solid(Clr::BLK_50), ..STRK_5 };
+pub(crate) const STRK_5_RED_50: Strk = Strk { style: Solid(Clr::RED_50), ..STRK_5 };
+pub(crate) const STRK_5_GRN_50: Strk = Strk { style: Solid(Clr::GRN_50), ..STRK_5 };
+pub(crate) const STRK_5_BLU_50: Strk = Strk { style: Solid(Clr::BLU_50), ..STRK_5 };
+pub(crate) const STRK_5_YEL_50: Strk = Strk { style: Solid(Clr::YEL_50), ..STRK_5 };
+pub(crate) const STRK_5_CYA_50: Strk = Strk { style: Solid(Clr::CYA_50), ..STRK_5 };
+pub(crate) const STRK_5_MAG_50: Strk = Strk { style: Solid(Clr::MAG_50), ..STRK_5 };

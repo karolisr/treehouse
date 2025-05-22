@@ -9,8 +9,8 @@ use iced::theme::palette;
 use iced::touch;
 use iced::window;
 use iced::{
-    Background, Color, Element, Event, Length, Padding, Rectangle, Shadow, Size, Theme, Vector,
-    advanced::Clipboard, advanced::Layout, advanced::Shell, advanced::Widget,
+    Background, Color, Element, Event, Length, Padding, Rectangle, Shadow, Size, Theme, Vector, advanced::Clipboard,
+    advanced::Layout, advanced::Shell, advanced::Widget,
 };
 
 #[allow(missing_debug_implementations)]
@@ -143,45 +143,29 @@ struct State {
     is_pressed: bool,
 }
 
-impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
-    for Button<'a, Message, Theme, Renderer>
+impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Button<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
     Renderer: 'a + iced::advanced::Renderer,
     Theme: Catalog,
 {
-    fn tag(&self) -> tree::Tag {
-        tree::Tag::of::<State>()
-    }
+    fn tag(&self) -> tree::Tag { tree::Tag::of::<State>() }
 
-    fn state(&self) -> tree::State {
-        tree::State::new(State::default())
-    }
+    fn state(&self) -> tree::State { tree::State::new(State::default()) }
 
-    fn children(&self) -> Vec<Tree> {
-        vec![Tree::new(&self.content)]
-    }
+    fn children(&self) -> Vec<Tree> { vec![Tree::new(&self.content)] }
 
-    fn diff(&self, tree: &mut Tree) {
-        tree.diff_children(std::slice::from_ref(&self.content));
-    }
+    fn diff(&self, tree: &mut Tree) { tree.diff_children(std::slice::from_ref(&self.content)); }
 
-    fn size(&self) -> Size<Length> {
-        Size { width: self.width, height: self.height }
-    }
+    fn size(&self) -> Size<Length> { Size { width: self.width, height: self.height } }
 
-    fn layout(
-        &self, tree: &mut Tree, renderer: &Renderer, limits: &layout::Limits,
-    ) -> layout::Node {
+    fn layout(&self, tree: &mut Tree, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
         layout::padded(limits, self.width, self.height, self.padding, |limits| {
             self.content.as_widget().layout(&mut tree.children[0], renderer, limits)
         })
     }
 
-    fn operate(
-        &self, tree: &mut Tree, layout: Layout<'_>, renderer: &Renderer,
-        operation: &mut dyn Operation,
-    ) {
+    fn operate(&self, tree: &mut Tree, layout: Layout<'_>, renderer: &Renderer, operation: &mut dyn Operation) {
         operation.container(None, layout.bounds(), &mut |operation| {
             self.content.as_widget().operate(
                 &mut tree.children[0],
@@ -193,9 +177,8 @@ where
     }
 
     fn update(
-        &mut self, tree: &mut Tree, event: &Event, layout: Layout<'_>, cursor: mouse::Cursor,
-        renderer: &Renderer, clipboard: &mut dyn Clipboard, shell: &mut Shell<'_, Message>,
-        viewport: &Rectangle,
+        &mut self, tree: &mut Tree, event: &Event, layout: Layout<'_>, cursor: mouse::Cursor, renderer: &Renderer,
+        clipboard: &mut dyn Clipboard, shell: &mut Shell<'_, Message>, viewport: &Rectangle,
     ) {
         self.content.as_widget_mut().update(
             &mut tree.children[0],
@@ -271,8 +254,8 @@ where
     }
 
     fn draw(
-        &self, tree: &Tree, renderer: &mut Renderer, theme: &Theme, _style: &renderer::Style,
-        layout: Layout<'_>, cursor: mouse::Cursor, viewport: &Rectangle,
+        &self, tree: &Tree, renderer: &mut Renderer, theme: &Theme, _style: &renderer::Style, layout: Layout<'_>,
+        cursor: mouse::Cursor, viewport: &Rectangle,
     ) {
         let bounds = layout.bounds();
         let content_layout = layout.children().next().unwrap();
@@ -285,8 +268,7 @@ where
             );
         }
 
-        let viewport =
-            if self.clip { bounds.intersection(viewport).unwrap_or(*viewport) } else { *viewport };
+        let viewport = if self.clip { bounds.intersection(viewport).unwrap_or(*viewport) } else { *viewport };
 
         self.content.as_widget().draw(
             &tree.children[0],
@@ -300,8 +282,7 @@ where
     }
 
     fn mouse_interaction(
-        &self, _tree: &Tree, layout: Layout<'_>, cursor: mouse::Cursor, _viewport: &Rectangle,
-        _renderer: &Renderer,
+        &self, _tree: &Tree, layout: Layout<'_>, cursor: mouse::Cursor, _viewport: &Rectangle, _renderer: &Renderer,
     ) -> mouse::Interaction {
         let is_mouse_over = cursor.is_over(layout.bounds());
 
@@ -313,8 +294,8 @@ where
     }
 
     fn overlay<'b>(
-        &'b mut self, tree: &'b mut Tree, layout: Layout<'b>, renderer: &Renderer,
-        viewport: &Rectangle, translation: Vector,
+        &'b mut self, tree: &'b mut Tree, layout: Layout<'b>, renderer: &Renderer, viewport: &Rectangle,
+        translation: Vector,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
         self.content.as_widget_mut().overlay(
             &mut tree.children[0],
@@ -326,21 +307,17 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<Button<'a, Message, Theme, Renderer>>
-    for Element<'a, Message, Theme, Renderer>
+impl<'a, Message, Theme, Renderer> From<Button<'a, Message, Theme, Renderer>> for Element<'a, Message, Theme, Renderer>
 where
     Message: Clone + 'a,
     Theme: Catalog + 'a,
     Renderer: iced::advanced::Renderer + 'a,
 {
-    fn from(button: Button<'a, Message, Theme, Renderer>) -> Self {
-        Self::new(button)
-    }
+    fn from(button: Button<'a, Message, Theme, Renderer>) -> Self { Self::new(button) }
 }
 
 /// The default [`Padding`] of a [`Button`].
-pub(crate) const DEFAULT_PADDING: Padding =
-    Padding { top: 5.0, bottom: 5.0, right: 10.0, left: 10.0 };
+pub(crate) const DEFAULT_PADDING: Padding = Padding { top: 5.0, bottom: 5.0, right: 10.0, left: 10.0 };
 
 /// The possible status of a [`Button`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -380,12 +357,7 @@ impl Style {
 
 impl Default for Style {
     fn default() -> Self {
-        Self {
-            background: None,
-            text_color: Color::BLACK,
-            border: Border::default(),
-            shadow: Shadow::default(),
-        }
+        Self { background: None, text_color: Color::BLACK, border: Border::default(), shadow: Shadow::default() }
     }
 }
 
@@ -406,13 +378,9 @@ pub type StyleFn<'a, Theme> = Box<dyn Fn(&Theme, Status) -> Style + 'a>;
 impl Catalog for Theme {
     type Class<'a> = StyleFn<'a, Self>;
 
-    fn default<'a>() -> Self::Class<'a> {
-        Box::new(primary)
-    }
+    fn default<'a>() -> Self::Class<'a> { Box::new(primary) }
 
-    fn style(&self, class: &Self::Class<'_>, status: Status) -> Style {
-        class(self, status)
-    }
+    fn style(&self, class: &Self::Class<'_>, status: Status) -> Style { class(self, status) }
 }
 
 /// A primary button; denoting a main action.
@@ -422,9 +390,7 @@ pub fn primary(theme: &Theme, status: Status) -> Style {
 
     match status {
         Status::Active | Status::Pressed => base,
-        Status::Hovered => {
-            Style { background: Some(Background::Color(palette.primary.strong.color)), ..base }
-        }
+        Status::Hovered => Style { background: Some(Background::Color(palette.primary.strong.color)), ..base },
         Status::Disabled => disabled(base),
     }
 }

@@ -19,16 +19,9 @@ pub fn window_settings() -> Settings {
             fullsize_content_view: false,
         },
         #[cfg(target_os = "windows")]
-        platform_specific: PlatformSpecific {
-            drag_and_drop: true,
-            skip_taskbar: false,
-            undecorated_shadow: true,
-        },
+        platform_specific: PlatformSpecific { drag_and_drop: true, skip_taskbar: false, undecorated_shadow: true },
         #[cfg(target_os = "linux")]
-        platform_specific: PlatformSpecific {
-            application_id: String::from(APP_ID),
-            override_redirect: true,
-        },
+        platform_specific: PlatformSpecific { application_id: String::from(APP_ID), override_redirect: true },
         exit_on_close_request: false,
         ..Default::default()
     }

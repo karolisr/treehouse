@@ -40,8 +40,8 @@ use iced::touch;
 use iced::widget;
 use iced::window;
 use iced::{
-    Border, Color, Element, Event, Length, Pixels, Rectangle, Size, Theme, advanced::Clipboard,
-    advanced::Layout, advanced::Shell, advanced::Widget,
+    Border, Color, Element, Event, Length, Pixels, Rectangle, Size, Theme, advanced::Clipboard, advanced::Layout,
+    advanced::Shell, advanced::Widget,
 };
 
 /// A toggler widget.
@@ -240,27 +240,18 @@ where
     }
 }
 
-impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer>
-    for Toggler<'_, Message, Theme, Renderer>
+impl<Message, Theme, Renderer> Widget<Message, Theme, Renderer> for Toggler<'_, Message, Theme, Renderer>
 where
     Theme: Catalog,
     Renderer: text::Renderer,
 {
-    fn tag(&self) -> tree::Tag {
-        tree::Tag::of::<widget::text::State<Renderer::Paragraph>>()
-    }
+    fn tag(&self) -> tree::Tag { tree::Tag::of::<widget::text::State<Renderer::Paragraph>>() }
 
-    fn state(&self) -> tree::State {
-        tree::State::new(widget::text::State::<Renderer::Paragraph>::default())
-    }
+    fn state(&self) -> tree::State { tree::State::new(widget::text::State::<Renderer::Paragraph>::default()) }
 
-    fn size(&self) -> Size<Length> {
-        Size { width: self.width, height: Length::Shrink }
-    }
+    fn size(&self) -> Size<Length> { Size { width: self.width, height: Length::Shrink } }
 
-    fn layout(
-        &self, tree: &mut Tree, renderer: &Renderer, limits: &layout::Limits,
-    ) -> layout::Node {
+    fn layout(&self, tree: &mut Tree, renderer: &Renderer, limits: &layout::Limits) -> layout::Node {
         let limits = limits.width(self.width);
 
         layout::next_to_each_other(
@@ -269,8 +260,7 @@ where
             |_| layout::Node::new(Size::new(2.0 * self.size, self.size)),
             |limits| {
                 if let Some(label) = self.label.as_deref() {
-                    let state =
-                        tree.state.downcast_mut::<widget::text::State<Renderer::Paragraph>>();
+                    let state = tree.state.downcast_mut::<widget::text::State<Renderer::Paragraph>>();
 
                     widget::text::layout(
                         state,
@@ -297,9 +287,8 @@ where
     }
 
     fn update(
-        &mut self, _state: &mut Tree, event: &Event, layout: Layout<'_>, cursor: mouse::Cursor,
-        _renderer: &Renderer, _clipboard: &mut dyn Clipboard, shell: &mut Shell<'_, Message>,
-        _viewport: &Rectangle,
+        &mut self, _state: &mut Tree, event: &Event, layout: Layout<'_>, cursor: mouse::Cursor, _renderer: &Renderer,
+        _clipboard: &mut dyn Clipboard, shell: &mut Shell<'_, Message>, _viewport: &Rectangle,
     ) {
         let Some(on_toggle) = &self.on_toggle else {
             return;
@@ -334,23 +323,18 @@ where
     }
 
     fn mouse_interaction(
-        &self, _state: &Tree, layout: Layout<'_>, cursor: mouse::Cursor, _viewport: &Rectangle,
-        _renderer: &Renderer,
+        &self, _state: &Tree, layout: Layout<'_>, cursor: mouse::Cursor, _viewport: &Rectangle, _renderer: &Renderer,
     ) -> mouse::Interaction {
         if cursor.is_over(layout.bounds()) {
-            if self.on_toggle.is_some() {
-                mouse::Interaction::Pointer
-            } else {
-                mouse::Interaction::NotAllowed
-            }
+            if self.on_toggle.is_some() { mouse::Interaction::Pointer } else { mouse::Interaction::NotAllowed }
         } else {
             mouse::Interaction::default()
         }
     }
 
     fn draw(
-        &self, tree: &Tree, renderer: &mut Renderer, theme: &Theme, style: &renderer::Style,
-        layout: Layout<'_>, _cursor: mouse::Cursor, viewport: &Rectangle,
+        &self, tree: &Tree, renderer: &mut Renderer, theme: &Theme, style: &renderer::Style, layout: Layout<'_>,
+        _cursor: mouse::Cursor, viewport: &Rectangle,
     ) {
         /// Makes sure that the border radius of the toggler looks good at every size.
         const BORDER_RADIUS_RATIO: f32 = 32.0 / 13.0;
@@ -433,16 +417,13 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<Toggler<'a, Message, Theme, Renderer>>
-    for Element<'a, Message, Theme, Renderer>
+impl<'a, Message, Theme, Renderer> From<Toggler<'a, Message, Theme, Renderer>> for Element<'a, Message, Theme, Renderer>
 where
     Message: 'a,
     Theme: Catalog + 'a,
     Renderer: text::Renderer + 'a,
 {
-    fn from(
-        toggler: Toggler<'a, Message, Theme, Renderer>,
-    ) -> Element<'a, Message, Theme, Renderer> {
+    fn from(toggler: Toggler<'a, Message, Theme, Renderer>) -> Element<'a, Message, Theme, Renderer> {
         Element::new(toggler)
     }
 }
@@ -512,13 +493,9 @@ pub type StyleFn<'a, Theme> = Box<dyn Fn(&Theme, Status) -> Style + 'a>;
 impl Catalog for Theme {
     type Class<'a> = StyleFn<'a, Self>;
 
-    fn default<'a>() -> Self::Class<'a> {
-        Box::new(default)
-    }
+    fn default<'a>() -> Self::Class<'a> { Box::new(default) }
 
-    fn style(&self, class: &Self::Class<'_>, status: Status) -> Style {
-        class(self, status)
-    }
+    fn style(&self, class: &Self::Class<'_>, status: Status) -> Style { class(self, status) }
 }
 
 /// The default style of a [`Toggler`].

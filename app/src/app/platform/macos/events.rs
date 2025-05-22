@@ -19,9 +19,7 @@ pub fn send_os_event(app_msg: AppMsg) {
         .expect("Failed: 'app::platform::macos::events::send_os_event'.");
 }
 
-pub fn os_events() -> Subscription<AppMsg> {
-    Subscription::run(macos_events_sipper)
-}
+pub fn os_events() -> Subscription<AppMsg> { Subscription::run(macos_events_sipper) }
 
 fn macos_events_sipper() -> impl Sipper<Never, AppMsg> {
     sipper(async |mut output| {

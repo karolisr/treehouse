@@ -6,9 +6,7 @@ use iced::{
     task::{Never, Sipper, sipper},
 };
 
-pub fn menu_events() -> Subscription<AppMsg> {
-    Subscription::run(menu_events_sipper)
-}
+pub fn menu_events() -> Subscription<AppMsg> { Subscription::run(menu_events_sipper) }
 
 fn menu_events_sipper() -> impl Sipper<Never, AppMsg> {
     sipper(async |mut output| {
