@@ -1,9 +1,10 @@
-#[cfg(target_os = "linux")]
-use super::consts::APP_ID;
 use iced::{
     Size,
     window::{Level, Position, Settings, settings::PlatformSpecific},
 };
+
+#[cfg(target_os = "linux")]
+use super::consts::APP_ID;
 
 pub fn window_settings() -> Settings {
     Settings {

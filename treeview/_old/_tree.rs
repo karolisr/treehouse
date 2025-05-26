@@ -10,19 +10,6 @@ pub(crate) struct TreeState {
 }
 
 impl TreeState {
-    fn tallest_tips(&self) -> Edges {
-        let n: i32 = 10;
-        let mut tmp = self.tree_tip_edges.clone();
-        let tmp_len_min: usize = 0.max(tmp.len() as i32 - n) as usize;
-        tmp.sort_by(|a, b| a.x1.total_cmp(&b.x1));
-        let mut rv = tmp[tmp_len_min..tmp.len()].to_vec();
-        tmp.sort_by(|a, b| {
-            a.name.clone().map(|name| name.len()).cmp(&b.name.clone().map(|name| name.len()))
-        });
-        rv.append(&mut tmp[tmp_len_min..tmp.len()].to_vec());
-        rv
-    }
-
     fn filter_nodes(&mut self) {
         self.found_node_ids.clear();
         self.found_edges.clear();

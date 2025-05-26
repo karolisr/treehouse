@@ -4,21 +4,16 @@ use crate::*;
 
 #[derive(Debug)]
 pub struct St {
-    // prev_x0_rel: Float,
-    // prev_x1_rel: Float,
-    // prev_y0_rel: Float,
-    // prev_y1_rel: Float,
-    // prev_node_idx_range: IndexRange,
+    pub(crate) tip_lab_extra_w: Float,
     pub(crate) mouse: Option<Point>,
     pub(crate) bnds: Rectangle<Float>,
-    pub(crate) clip_vs: RectVals<Float>,
+    pub(crate) cnv_vs: RectVals<Float>,
     pub(crate) tre_vs: RectVals<Float>,
-    pub(crate) clip_rect: Rectangle<Float>,
+    pub(crate) vis_vs: RectVals<Float>,
+    pub(crate) cnv_rect: Rectangle<Float>,
     pub(crate) tre_rect: Rectangle<Float>,
     pub(crate) vis_rect: Rectangle<Float>,
-
-    // pub(crate) labs_allowed: bool,
-    pub(crate) visible_nodes: Option<Vec<Edge>>,
+    pub(crate) vis_node_idxs: Vec<usize>,
     pub(crate) node_data: Vec<NodeData>,
     pub(crate) rl: Float,
     pub(crate) rot: Float,
@@ -34,22 +29,17 @@ pub struct St {
 impl Default for St {
     fn default() -> Self {
         Self {
-            // prev_x0_rel: 0e0,
-            // prev_x1_rel: 0e0,
-            // prev_y0_rel: 0e0,
-            // prev_y1_rel: 0e0,
-            // prev_node_idx_range: IndexRange::new(0, 0),
+            tip_lab_extra_w: 0e0,
             mouse: None,
             bnds: Default::default(),
-            clip_vs: Default::default(),
+            cnv_vs: Default::default(),
             tre_vs: Default::default(),
-            clip_rect: Default::default(),
+            vis_vs: Default::default(),
+            cnv_rect: Default::default(),
             tre_rect: Default::default(),
             vis_rect: Default::default(),
-
-            // labs_allowed: false,
-            visible_nodes: None,
-            node_data: vec![],
+            vis_node_idxs: Vec::new(),
+            node_data: Vec::new(),
             rl: 0e0,
             rot: 0e0,
             trans: Vector { x: 0e0, y: 0e0 },
@@ -64,100 +54,86 @@ impl Default for St {
 }
 
 impl St {
-    pub(super) fn update_vis_rect(&mut self, abs: RectVals<Float>) {
-        let buffer = 0e0;
-        let x0 = abs.x0.max(self.tre_vs.x0) - buffer;
-        let y0 = abs.y0.max(self.tre_vs.y0) - buffer;
-        let x1 = abs.x1.min(self.tre_vs.x0 + self.tre_vs.w) + buffer;
-        let y1 = abs.y1.min(self.tre_vs.y0 + self.tre_vs.h) + buffer;
-        let w = x1 - x0;
-        let h = y1 - y0;
-        let top_left = Point { x: x0, y: y0 };
-        let size = Size { width: w, height: h };
-        self.vis_rect = Rectangle::new(top_left, size);
+    #[inline]
+    pub(super) fn update_vis_nodes_phygrm(
+        &mut self, max_tips: usize, max_nodes: usize, node_size: Float, tip_edge_idxs: &[usize],
+    ) {
+        self.vis_node_idxs.clear();
+        if let Some(tip_idx_range) =
+            self.vis_tip_idx_range_phygrm(self.vis_vs.y0, self.vis_vs.y1, node_size, tip_edge_idxs)
+            && tip_idx_range.end() - tip_idx_range.start() <= max_tips
+        {
+            let node_idx_range = self.vis_node_idx_range_phygrm(&tip_idx_range, tip_edge_idxs);
+            if node_idx_range.end() - node_idx_range.start() <= max_nodes {
+                node_idx_range.collect_into(&mut self.vis_node_idxs);
+            }
+        }
     }
 
-    pub(super) fn update_vis_nodes_fan(
-        &mut self, rel: RectVals<Float>, opn_angle: Float, tip_max: usize, node_max: usize, tst: &TreeState,
-    ) {
-        // if self.prev_y0_rel != rel.y0
-        //     || self.prev_x0_rel != rel.x0
-        //     || self.prev_y1_rel != rel.y1
-        //     || self.prev_x1_rel != rel.x1
-        // {
-        //     self.prev_x0_rel = rel.x0;
-        //     self.prev_y0_rel = rel.y0;
-        //     self.prev_x1_rel = rel.x1;
-        //     self.prev_y1_rel = rel.y1;
+    #[inline]
+    fn vis_tip_idx_range_phygrm(
+        &self, y0: Float, y1: Float, node_size: Float, tip_edge_idxs: &[usize],
+    ) -> Option<IndexRange> {
+        tip_idx_range_between_y_vals(y0, y1, node_size, tip_edge_idxs)
+    }
 
-        let mut vis_nodes: Vec<Edge> = Vec::new();
+    #[inline]
+    fn vis_node_idx_range_phygrm(&self, tip_idx_range: &IndexRange, tip_edge_idxs: &[usize]) -> IndexRange {
+        node_idx_range_for_tip_idx_range(tip_idx_range, tip_edge_idxs)
+    }
+
+    #[inline]
+    pub(super) fn update_vis_nodes_fan(&mut self, max_tips: usize, max_nodes: usize, opn: Float, edges: &[Edge]) {
         let mut tip_count: usize = 0;
-        for e in tst.edges_srtd_y() {
-            let angle = edge_angle(opn_angle, e) + self.rot;
+        self.vis_node_idxs.clear();
+        for e in edges {
+            let angle = edge_angle(opn, e) + self.rot;
             let point = node_point_pol(angle, self.tre_vs.radius_min, self.rl, e);
             if self.vis_rect.contains(point + self.trans) {
-                vis_nodes.push(e.clone());
+                self.vis_node_idxs.push(e.edge_idx);
                 if e.is_tip {
                     tip_count += 1;
-                    if tip_count > tip_max {
-                        // self.labs_allowed = false;
-                        self.visible_nodes = None;
-                        return;
+                    if tip_count > max_tips || self.vis_node_idxs.len() > max_nodes {
+                        self.vis_node_idxs.clear();
+                        break;
                     }
                 }
             }
         }
-        if vis_nodes.is_empty() {
-            // self.labs_allowed = true;
-            self.visible_nodes = None;
-        } else if vis_nodes.len() > node_max {
-            // self.labs_allowed = false;
-            self.visible_nodes = None;
-        } else {
-            // self.labs_allowed = true;
-            self.visible_nodes = Some(vis_nodes);
+    }
+
+    #[inline]
+    pub(super) fn calc_tip_lab_extra_w(&mut self, tst: &TreeState) -> Float {
+        let mut max_w: Float = 0e0;
+        if let Some(text_w) = &mut self.text_w_tip {
+            let mut max_offset: Float = 0e0;
+            for edge in tst.edges_tip_tallest() {
+                if let Some(name) = &edge.name {
+                    let offset = edge.x1 as Float * self.tre_vs.w;
+                    if offset >= max_offset {
+                        max_offset = offset
+                    };
+                    let tip_name_w = text_w.width(name);
+                    let curr_max_w = tip_name_w + (max_offset + offset) / 2e0 - self.tre_vs.w;
+                    if curr_max_w >= max_w {
+                        max_w = curr_max_w;
+                    }
+                }
+            }
         }
-        // }
+        max_w
     }
 
-    pub(super) fn update_vis_nodes_phygrm(
-        &mut self, rel: RectVals<Float>, tre_cnv_h: Float, tre_padding: Float, tst: &TreeState,
-    ) {
-        // let h_ratio_1 = (tre_cnv_h + tre_padding * 2e0) / self.clip_vs.h;
-        // let h_ratio_2 = self.clip_vs.h / (tre_cnv_h + tre_padding * 2e0);
-
-        // let h_ratio_min = h_ratio_1.min(h_ratio_2);
-        // let h_ratio_max = h_ratio_1.max(h_ratio_2);
-
-        // let node_size = self.tre_vs.h / tst.tip_count() as Float;
-        // let y0 = (rel.y0 * h_ratio_min) * self.tre_vs.h - tre_padding; // - node_size * 3e0;
-        // let y1 = (rel.y1 * h_ratio_max) * self.tre_vs.h - tre_padding; // + node_size * 3e0;
-
-        let node_size = self.tre_vs.h / tst.tip_count() as Float;
-        let y0 = rel.y0 * self.tre_vs.h - tre_padding;
-        let y1 = rel.y1 * self.tre_vs.h - tre_padding;
-
-        // if self.prev_y0_rel != rel.y0 || self.prev_y1_rel != rel.y1 {
-        if let Some(idx_range) = self.vis_node_idx_range_phygrm(y0, y1, node_size, tst) {
-            // if idx_range != self.prev_node_idx_range {
-            // self.prev_node_idx_range = idx_range.clone();
-            let visible_nodes = &tst.edges_srtd_y()[idx_range];
-            self.visible_nodes = Some(visible_nodes.to_vec());
-            // }
-        } else {
-            self.visible_nodes = None;
-        }
-        // self.prev_y0_rel = rel.y0;
-        // self.prev_y1_rel = rel.y1;
-        // }
-    }
-
-    fn vis_tip_idx_range_phygrm(&self, y0: Float, y1: Float, node_size: Float, tst: &TreeState) -> Option<IndexRange> {
-        tip_idx_range_between_y_vals(y0, y1, node_size, tst.edges_tip_idx())
-    }
-
-    fn vis_node_idx_range_phygrm(&self, y0: Float, y1: Float, node_size: Float, tst: &TreeState) -> Option<IndexRange> {
-        self.vis_tip_idx_range_phygrm(y0, y1, node_size, tst)
-            .map(|visible_tip_range| node_idx_range_for_tip_idx_range(&visible_tip_range, tst.edges_tip_idx()))
-    }
+    // pub(super) fn update_vis_rect(&mut self, abs: RectVals<Float>) {
+    //     let buffer = 0e0;
+    //     let x0 = abs.x0.max(self.tre_vs.x0) - buffer;
+    //     let y0 = abs.y0.max(self.tre_vs.y0) - buffer;
+    //     let x1 = abs.x1.min(self.tre_vs.x0 + self.tre_vs.w) + buffer;
+    //     let y1 = abs.y1.min(self.tre_vs.y0 + self.tre_vs.h) + buffer;
+    //     let w = x1 - x0;
+    //     let h = y1 - y0;
+    //     let top_left = Point { x: x0, y: y0 };
+    //     let size = Size { width: w, height: h };
+    //     self.vis_rect = Rectangle::new(top_left, size);
+    // }
 }

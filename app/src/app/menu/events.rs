@@ -1,6 +1,8 @@
-use crate::app::AppMsg;
 use std::fmt::Display;
+
 use treeview::{SidebarPos, TvMsg};
+
+use crate::app::AppMsg;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum AppMenuItemId {

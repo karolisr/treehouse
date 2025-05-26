@@ -171,23 +171,3 @@ pub(crate) fn update_tip_label_w(&mut self) {
         self.tip_lab_w = 0e0;
     }
 }
-
-pub(crate) fn update_extra_space_for_labels(&mut self) {
-    let mut text_w = text_width(self.tip_lab_size, self.tip_lab_size, TREE_LAB_FONT_NAME);
-    let mut max_w: Float = 0e0;
-    let mut max_offset: Float = 0e0;
-    for edge in &self.tallest_tips {
-        if let Some(name) = &edge.name {
-            let offset = edge.x1 as Float * self.tre_cnv_w;
-            if offset >= max_offset {
-                max_offset = offset;
-            }
-            let tip_name_w = text_w.width(name);
-            let curr_max_w = tip_name_w + (max_offset + offset) / 2e0 - self.tre_cnv_w;
-            if curr_max_w >= max_w {
-                max_w = curr_max_w;
-            }
-        }
-    }
-    self.extra_space_for_tip_labs = max_w;
-}

@@ -5,12 +5,13 @@ mod platform;
 mod win;
 
 // use consts::*;
+use std::path::PathBuf;
+
 use iced::{
     Element, Subscription, Task, Theme, exit,
     window::{Event as WinEvent, Id as WinId, close as close_window, events as window_events, open as open_window},
 };
 use menu::{AppMenu, AppMenuItemId};
-use std::path::PathBuf;
 use treeview::{SidebarPos, TreeView, TvMsg};
 use win::window_settings;
 

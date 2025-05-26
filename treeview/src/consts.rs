@@ -24,7 +24,7 @@ pub(crate) const TXT_LAB_TMPL: CnvText = CnvText {
     align_y: Vertical::Center,
     content: String::new(),
     max_width: Float::INFINITY,
-    position: Point::ORIGIN,
+    position: ::iced::Point::ORIGIN,
     shaping: Shaping::Basic,
     font: Font {
         family: Family::Name(FNT_NAME_LAB),
@@ -42,7 +42,7 @@ pub(crate) const TXT_LAB_TMPL_INT: CnvText = CnvText {
     align_y: Vertical::Center,
     content: String::new(),
     max_width: Float::INFINITY,
-    position: Point::ORIGIN,
+    position: ::iced::Point::ORIGIN,
     shaping: Shaping::Basic,
     font: Font {
         family: Family::Name(FNT_NAME_LAB),
@@ -60,7 +60,7 @@ pub(crate) const TXT_LAB_TMPL_BRNCH: CnvText = CnvText {
     align_y: Vertical::Bottom,
     content: String::new(),
     max_width: Float::INFINITY,
-    position: Point::ORIGIN,
+    position: ::iced::Point::ORIGIN,
     shaping: Shaping::Basic,
     font: Font {
         family: Family::Name(FNT_NAME_LAB),
@@ -206,3 +206,6 @@ pub(crate) const STRK_5_BLU_50: Strk = Strk { style: Solid(Clr::BLU_50), ..STRK_
 pub(crate) const STRK_5_YEL_50: Strk = Strk { style: Solid(Clr::YEL_50), ..STRK_5 };
 pub(crate) const STRK_5_CYA_50: Strk = Strk { style: Solid(Clr::CYA_50), ..STRK_5 };
 pub(crate) const STRK_5_MAG_50: Strk = Strk { style: Solid(Clr::MAG_50), ..STRK_5 };
+
+pub(crate) const STRK_5_RED_50_DASH: Strk =
+    Strk { line_dash: LineDash { segments: &[1e1, 2e1], offset: 0 }, ..STRK_5_RED_50 };

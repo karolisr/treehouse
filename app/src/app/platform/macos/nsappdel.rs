@@ -2,8 +2,8 @@
 // Code adapted from: https://github.com/neovide/neovide/pull/2395
 // https://developer.apple.com/documentation/appkit/nsapplicationdelegate
 
-use super::send_os_event;
-use crate::app::AppMsg;
+use std::{ffi::CString, path::PathBuf};
+
 use objc2::{
     MainThreadMarker,
     declare::ClassBuilder,
@@ -14,7 +14,9 @@ use objc2::{
 };
 use objc2_app_kit::NSApplication;
 use objc2_foundation::{NSArray, NSString};
-use std::{ffi::CString, path::PathBuf};
+
+use super::send_os_event;
+use crate::app::AppMsg;
 
 pub fn register_ns_application_delegate_handlers() {
     extern "C" fn handle_application_open_files(

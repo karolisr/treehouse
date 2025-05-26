@@ -1,10 +1,11 @@
-use super::events::AppMenuItemId;
-use crate::app::AppMsg;
 use iced::{
     Subscription,
     futures::stream::StreamExt,
     task::{Never, Sipper, sipper},
 };
+
+use super::events::AppMenuItemId;
+use crate::app::AppMsg;
 
 pub fn menu_events() -> Subscription<AppMsg> { Subscription::run(menu_events_sipper) }
 

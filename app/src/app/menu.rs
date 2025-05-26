@@ -2,13 +2,14 @@
 // #[cfg(any(target_os = "windows", target_os = "macos"))]
 mod events;
 mod muda_events;
+use std::collections::HashMap;
+
 pub use events::AppMenuItemId;
 use muda::{
     CheckMenuItem, MenuItem, MenuItemKind, Submenu,
     accelerator::{Accelerator, CMD_OR_CTRL, Code},
 };
 pub use muda_events::menu_events;
-use std::collections::HashMap;
 use treeview::SidebarPos;
 
 #[allow(dead_code)]

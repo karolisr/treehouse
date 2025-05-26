@@ -1,5 +1,6 @@
-use super::AppMsg;
 use std::path::PathBuf;
+
+use super::AppMsg;
 
 pub async fn choose_file_to_open() -> AppMsg {
     let chosen = rfd::AsyncFileDialog::new()

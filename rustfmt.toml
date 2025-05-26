@@ -1,12 +1,14 @@
 edition = "2024"
 
 fn_single_line = true
-reorder_imports = true
 reorder_modules = true
+reorder_imports = true
+group_imports = "Preserve"
 fn_params_layout = "Compressed"
 use_small_heuristics = "Max"
 remove_nested_parens = true
 use_field_init_shorthand = true
+condense_wildcard_suffixes = true
 
 max_width = 120
 array_width = 120

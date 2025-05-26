@@ -2,8 +2,8 @@
 // -------------------------------------
 #![allow(dead_code)]
 // #![allow(unused_mut)]
-#![allow(unused_imports)]
-#![allow(unused_variables)]
+// #![allow(unused_imports)]
+// #![allow(unused_variables)]
 // #![allow(unused_assignments)]
 // #![allow(clippy::single_match)]
 // #![allow(clippy::collapsible_if)]
@@ -15,6 +15,7 @@
 // #![allow(clippy::needless_range_loop)]
 // -------------------------------------
 
+mod cnv_path_builder;
 mod cnv_plot;
 mod cnv_tree;
 mod cnv_utils;
@@ -29,22 +30,21 @@ mod view;
 
 pub type Float = f32;
 
-pub use treeview::{SidebarPos, TreeView, TvMsg};
-
-use cnv_plot::PlotCnv;
-use consts::*;
-use treestate::TreeState;
-use treeview::{NODE_ORD_OPTS, NodeOrd, TRE_STY_OPTS, TreSty, TvPane};
-use utils::{Clr, TextWidth, text_width};
-use widget::toggler::Toggler;
-
-use dendros::{Edge, Node, NodeId, Tree, TreeFloat, flatten_tree};
-
-use num_traits::FromPrimitive;
-use rayon::prelude::*;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter, Result};
 use std::ops::RangeInclusive;
+
+use cnv_path_builder::PathBuilder;
+use cnv_plot::PlotCnv;
+use consts::*;
+use dendros::{Edge, Node, NodeId, Tree, TreeFloat, flatten_tree};
+use num_traits::FromPrimitive;
+use rayon::prelude::*;
+use treestate::TreeState;
+use treeview::{NODE_ORD_OPTS, NodeOrd, TRE_STY_OPTS, TreSty, TvPane};
+pub use treeview::{SidebarPos, TreeView, TvMsg};
+use utils::{Clr, TextWidth, text_width};
+use widget::toggler::Toggler;
 
 pub type IndexRange = RangeInclusive<usize>;
 
@@ -87,7 +87,7 @@ struct NodeDataPol {
 }
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
-struct RectVals<T> {
+pub struct RectVals<T> {
     x0: T,
     y0: T,
     x1: T,
@@ -105,7 +105,7 @@ struct RectVals<T> {
 }
 
 impl RectVals<Float> {
-    pub fn clip(bounds: iced::Rectangle) -> Self {
+    pub fn cnv(bounds: iced::Rectangle) -> Self {
         let x = 0e0;
         let y = 0e0;
         let w = bounds.width as Float;
@@ -121,12 +121,36 @@ impl RectVals<Float> {
         iced::Rectangle { x, y, width: w, height: h }.into()
     }
 
-    pub fn corners(x0: Float, x1: Float, y0: Float, y1: Float) -> Self {
+    pub fn corners(x0: Float, y0: Float, x1: Float, y1: Float) -> Self {
         let x = x0;
         let y = y0;
         let w = x1 - x0;
         let h = y1 - y0;
         iced::Rectangle { x, y, width: w, height: h }.into()
+    }
+
+    pub fn padded(&self, left: Float, right: Float, top: Float, bottom: Float) -> RectVals<Float> {
+        let x = self.x0 + left;
+        let y = self.y0 + top;
+        let width = self.w - right - left;
+        let height = self.h - bottom - top;
+        iced::Rectangle { x, y, width, height }.into()
+    }
+
+    pub fn transfer_x_from(&self, other: &RectVals<Float>) -> RectVals<Float> {
+        let x = other.x0;
+        let y = self.y0;
+        let width = other.w;
+        let height = self.h;
+        iced::Rectangle { x, y, width, height }.into()
+    }
+
+    pub fn transfer_y_from(&self, other: &RectVals<Float>) -> RectVals<Float> {
+        let x = self.x0;
+        let y = other.y0;
+        let width = self.w;
+        let height = other.h;
+        iced::Rectangle { x, y, width, height }.into()
     }
 }
 
@@ -159,4 +183,10 @@ impl From<iced::Rectangle<Float>> for RectVals<Float> {
 
 impl<T> From<RectVals<T>> for iced::Rectangle<T> {
     fn from(v: RectVals<T>) -> Self { iced::Rectangle { x: v.x0, y: v.y0, width: v.w, height: v.h } }
+}
+
+impl Display for RectVals<Float> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "({:7.2}, {:7.2}), ({:7.2}, {:7.2})", self.x0, self.y0, self.x1, self.y1)
+    }
 }

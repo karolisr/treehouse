@@ -1,4 +1,5 @@
-use crate::app::AppMsg;
+use std::sync::OnceLock;
+
 use iced::{
     Subscription,
     futures::{
@@ -7,7 +8,8 @@ use iced::{
     },
     task::{Never, Sipper, sipper},
 };
-use std::sync::OnceLock;
+
+use crate::app::AppMsg;
 
 static SENDER: OnceLock<UnboundedSender<AppMsg>> = OnceLock::new();
 

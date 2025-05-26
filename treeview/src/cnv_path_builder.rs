@@ -1,0 +1,87 @@
+use crate::TAU;
+use crate::iced::*;
+use lyon_path::builder;
+use lyon_path::geom;
+
+pub struct PathBuilder {
+    raw: builder::WithSvg<lyon_path::path::BuilderImpl>,
+}
+
+impl PathBuilder {
+    pub fn new() -> PathBuilder { PathBuilder { raw: lyon_path::Path::builder().with_svg() } }
+
+    #[inline]
+    pub fn move_to(mut self, point: Point) -> Self {
+        let _ = self.raw.move_to(geom::Point::new(point.x, point.y));
+        self
+    }
+
+    #[inline]
+    pub fn line_to(mut self, point: Point) -> Self {
+        let _ = self.raw.line_to(geom::Point::new(point.x, point.y));
+        self
+    }
+
+    #[inline]
+    pub fn rectangle(self, rect: Rectangle) -> Self {
+        let top_left = rect.position();
+        self.move_to(top_left)
+            .line_to(Point::new(top_left.x + rect.width, top_left.y))
+            .line_to(Point::new(top_left.x + rect.width, top_left.y + rect.height))
+            .line_to(Point::new(top_left.x, top_left.y + rect.height))
+            .close()
+    }
+
+    #[inline]
+    pub fn circle(mut self, center: Point, radius: f32) -> Self {
+        self.raw.arc(
+            geom::Point::new(center.x, center.y),
+            geom::Vector::new(radius, radius),
+            geom::Angle { radians: TAU },
+            geom::Angle { radians: 0e0 },
+        );
+        self
+    }
+
+    #[inline]
+    pub fn arc(mut self, a0: f32, a1: f32, center: Point, radius: f32) -> Self {
+        let center = geom::Point::new(center.x, center.y);
+        let radii = geom::Vector::new(radius, radius);
+        let x_rotation = geom::Angle::radians(0e0);
+        let start_angle = geom::Angle::radians(a0);
+        let sweep_angle = geom::Angle::radians(a1 - a0);
+
+        let arc = geom::Arc { center, radii, start_angle, sweep_angle, x_rotation };
+
+        // arc.cast::<f64>().for_each_quadratic_bezier(&mut |curve| {
+        //     let curve = curve.cast::<f32>();
+        //     let _ = self.raw.quadratic_bezier_to(curve.ctrl, curve.to);
+        // });
+
+        // arc.cast::<f64>().for_each_cubic_bezier(&mut |curve| {
+        //     let ctrl1 = curve.ctrl1.cast::<f32>();
+        //     let ctrl2 = curve.ctrl2.cast::<f32>();
+        //     let to = curve.to.cast::<f32>();
+        //     let _ = self.raw.cubic_bezier_to(ctrl1, ctrl2, to);
+        // });
+
+        arc.cast::<f64>().for_each_flattened(0.1, &mut |to| {
+            let _ = self.raw.line_to(to.to_f32().to());
+        });
+
+        self
+    }
+
+    #[inline]
+    pub fn close(mut self) -> Self {
+        self.raw.close();
+        self
+    }
+
+    #[inline]
+    pub fn build(self) -> Path { self.raw.build().into() }
+}
+
+impl Default for PathBuilder {
+    fn default() -> Self { Self::new() }
+}

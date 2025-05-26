@@ -119,7 +119,7 @@ pub(crate) fn scrollable_cnv_tre<'a>(
     let sb = Scrollbar::new();
     s = s.direction(ScrollableDirection::Both { horizontal: sb, vertical: sb });
     s = s.id(id);
-    s = s.on_scroll(TvMsg::TreCnvScrolledOrResized);
+    s = s.on_scroll(TvMsg::TreCnvScrolled);
     scrollable_common(s, w, h)
 }
 

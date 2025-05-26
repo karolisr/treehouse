@@ -3,18 +3,13 @@ use crate::*;
 
 #[derive(Default)]
 pub struct TreeView {
-    // is_dirty: bool,
-    keep_scrl_pos_req: bool,
-    ltt_cnv_needs_scrl: bool,
-    ltt_cnv_scrolled: bool,
-    tre_cnv_scrolled: bool,
     // -------------------------------------------------------------------
     pub(super) tre_states: Vec<TreeState>,
-    tre_state_idx_sel: Option<usize>,
+    pub(super) tre_state_idx_sel: Option<usize>,
     // -------------------------------------------------------------------
     pub(super) pane_grid: Option<PgState<TvPane>>,
-    tre_pane_id: Option<Pane>,
-    ltt_pane_id: Option<Pane>,
+    pub(super) tre_pane_id: Option<Pane>,
+    pub(super) ltt_pane_id: Option<Pane>,
     // -------------------------------------------------------------------
     pub(super) ltt_plot: PlotCnv,
     pub(super) show_ltt: bool,
@@ -46,8 +41,8 @@ pub struct TreeView {
     pub(super) brnch_lab_size_idx_sel: u16,
     pub(super) lab_size_idx_max: u16,
     // -------------------------------------------------------------------
-    lab_size_min: Float,
-    lab_size_max: Float,
+    pub(super) lab_size_min: Float,
+    pub(super) lab_size_max: Float,
     pub(super) lab_size_tip: Float,
     pub(super) lab_offset_tip: Float,
     pub(super) lab_size_int: Float,
@@ -67,42 +62,43 @@ pub struct TreeView {
     pub(super) tre_style_opt_sel: TreSty,
     pub(super) node_ord_opt_sel: NodeOrd,
     pub(super) drawing_enabled: bool,
-    pub(super) draw_tip_labs: bool,
-    pub(super) draw_int_labs: bool,
-    pub(super) draw_brnch_labs: bool,
+    pub(super) draw_labs_tip: bool,
+    pub(super) draw_labs_int: bool,
+    pub(super) draw_labs_brnch: bool,
+    pub(super) draw_labs_allowed: bool,
+    // -------------------------------------------------------------------
     pub(super) tip_labs_vis_max: usize,
-    pub(super) node_labs_vis_fan_max: usize,
-    pub(super) labs_allowed: bool,
+    pub(super) node_labs_vis_max: usize,
     // -------------------------------------------------------------------
     pub(super) cache_bnds: Cache,
     // -------------------------------------------------------------------
     pub(super) ltt_scr_id: &'static str,
-    ltt_cnv_w: Float,
-    ltt_cnv_h: Float,
+    pub(super) tre_scr_id: &'static str,
+    pub(super) tre_padd: Float,
+    // -------------------------------------------------------------------
+    pub(super) stale_tre_dims: bool,
+    pub(super) stale_vis_rect: bool,
+    // -------------------------------------------------------------------
+    keep_scrl_pos_req: bool,
+    // -------------------------------------------------------------------
+    // ltt_cnv_w: Float,
+    // ltt_cnv_h: Float,
+    ltt_cnv_needs_scrl: bool,
+    ltt_cnv_scrolled: bool,
     ltt_cnv_vis_x0: Float,
     ltt_cnv_vis_y0: Float,
     // -------------------------------------------------------------------
-    tre_padd: Float,
-    node_size: Float,
-    // -------------------------------------------------------------------
-    pub(super) tre_scr_id: &'static str,
     tre_scr_h: Float,
     tre_scr_w: Float,
-    // -------------------------------------------------------------------
-    tre_cnv_w: Float,
-    tre_cnv_h: Float,
-    tre_cnv_vis_x0: Float,
-    tre_cnv_vis_x0_rel: Float,
+    tre_cnv_scrolled: bool,
+    pub(super) tre_cnv_vis_x0: Float,
+    pub(super) tre_cnv_vis_y0: Float,
+    pub(super) tre_cnv_vis_x1: Float,
+    pub(super) tre_cnv_vis_y1: Float,
     tre_cnv_vis_x_mid: Float,
-    tre_cnv_vis_x_mid_rel: Float,
-    tre_cnv_vis_x1: Float,
-    tre_cnv_vis_x1_rel: Float,
-    tre_cnv_vis_y0: Float,
-    tre_cnv_vis_y0_rel: Float,
     tre_cnv_vis_y_mid: Float,
+    tre_cnv_vis_x_mid_rel: Float,
     tre_cnv_vis_y_mid_rel: Float,
-    tre_cnv_vis_y1: Float,
-    tre_cnv_vis_y1_rel: Float,
     // -------------------------------------------------------------------
 }
 
@@ -131,9 +127,10 @@ pub enum TvMsg {
     TreesLoaded(Vec<Tree>),
     TreStyOptChanged(TreSty),
     RootLenSelChanged(u16),
-    TreCnvScrolledOrResized(Viewport),
+    TreCnvScrolled(Viewport),
     LttCnvScrolled(Viewport),
-    SetLabsAllowed(bool),
+    RefreshedVisRect(RectVals<Float>),
+    RefreshedTreeDims(RectVals<Float>),
 }
 
 impl TreeView {
@@ -159,23 +156,22 @@ impl TreeView {
         Self {
             tre_padd: 1e1,
             sidebar_pos_sel: sel_sidebar_pos,
-            // is_dirty: false,
             show_toolbar: true,
             show_sidebar: true,
-            draw_tip_labs: true,
-            draw_int_labs: true,
-            draw_brnch_labs: true,
-            drawing_enabled: false,
+            draw_labs_tip: false,
+            draw_labs_int: false,
+            draw_labs_brnch: false,
+            drawing_enabled: true,
             // -----------------------------------------------------------
-            node_labs_vis_fan_max: 2000,
-            tip_labs_vis_max: 1000,
-            labs_allowed: false,
+            tip_labs_vis_max: 200,
+            node_labs_vis_max: 400,
+            draw_labs_allowed: true,
             // -----------------------------------------------------------
-            tre_style_opt_sel: TreSty::PhyGrm,
+            tre_style_opt_sel: TreSty::Fan,
             node_ord_opt_sel: NodeOrd::Ascending,
             // -----------------------------------------------------------
-            opn_angle_idx_min: 45,
-            opn_angle_idx_max: 359,
+            opn_angle_idx_min: 0,
+            opn_angle_idx_max: 360,
             opn_angle_idx_sel,
             opn_angle,
             // -----------------------------------------------------------
@@ -201,7 +197,7 @@ impl TreeView {
             lab_size_int: int_lab_size,
             lab_offset_int: 3e0,
             lab_size_brnch: brnch_lab_size,
-            lab_offset_brnch: 0e0,
+            lab_offset_brnch: -3e0,
             // -----------------------------------------------------------
             tre_cnv_w_idx_min: 1,
             tre_cnv_w_idx_sel: 1,
@@ -216,32 +212,41 @@ impl TreeView {
             tre_scr_id: "tre",
             ltt_scr_id: "ltt",
             // -----------------------------------------------------------
+            stale_tre_dims: true,
+            stale_vis_rect: true,
+            tre_cnv_vis_x_mid_rel: 0.5,
+            tre_cnv_vis_y_mid_rel: 0.5,
+            // -----------------------------------------------------------
             ..Default::default()
         }
     }
 
     pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
-        // self.is_dirty = false;
         let mut task: Option<Task<TvMsg>> = None;
-
         // match tv_msg {
-        //     TvMsg::TreesLoaded(_) => println!("TvMsg::TreesLoaded"),
-        //     TvMsg::TreCnvScrolledOrResized(_) => println!("TvMsg::TreCnvScrolledOrResized"),
-        //     TvMsg::LttCnvScrolled(_) => println!("TvMsg::LttCnvScrolled"),
+        //     TvMsg::TreesLoaded(_) => println!("TreesLoaded"),
+        //     TvMsg::TreCnvScrolled(vp) => println!(
+        //         "TreCnvScrolled: {:7.2} {:7.2}",
+        //         vp.content_bounds().center_x(),
+        //         vp.content_bounds().center_y()
+        //     ),
+        //     TvMsg::RefreshedTreeDims(_) => {}
+        //     TvMsg::RefreshedVisRect(_) => {}
         //     _ => println!("{tv_msg:?}"),
         // }
-
         match tv_msg {
-            TvMsg::SetLabsAllowed(val) => {
-                self.labs_allowed = val;
-                self.clear_caches_lab(true, true, true);
+            TvMsg::LttpVisChanged(show_lttp) => {
+                self.show_ltt = show_lttp;
+                self.show_hide_lttp();
+                self.tre_cnv_scrolled = true;
+                self.ltt_cnv_scrolled = false;
+                self.keep_scrl_pos_req = true;
+                self.ltt_cnv_needs_scrl = true;
             }
 
-            TvMsg::TreCnvScrolledOrResized(vp) => {
+            TvMsg::TreCnvScrolled(vp) => {
                 self.tre_scr_w = vp.bounds().width;
                 self.tre_scr_h = vp.bounds().height;
-
-                self.cnv_dim_recalc();
 
                 if self.keep_scrl_pos_req {
                     task = self.keep_scroll_pos_wh();
@@ -250,13 +255,29 @@ impl TreeView {
                     self.ltt_cnv_needs_scrl = false;
                 }
 
-                self.tre_cnv_vis_x0 = vp.absolute_offset().x;
-                self.tre_cnv_vis_x1 = self.tre_cnv_vis_x0 + self.tre_scr_w;
-                self.tre_cnv_vis_x_mid = self.tre_cnv_vis_x0.midpoint(self.tre_cnv_vis_x1);
+                let x0 = vp.absolute_offset().x;
+                let y0 = vp.absolute_offset().y;
+                let x1 = x0 + self.tre_scr_w;
+                let y1 = y0 + self.tre_scr_h;
 
-                self.tre_cnv_vis_y0 = vp.absolute_offset().y;
-                self.tre_cnv_vis_y1 = self.tre_cnv_vis_y0 + self.tre_scr_h;
-                self.tre_cnv_vis_y_mid = self.tre_cnv_vis_y0.midpoint(self.tre_cnv_vis_y1);
+                if x0 != self.tre_cnv_vis_x0
+                    || y0 != self.tre_cnv_vis_y0
+                    || x1 != self.tre_cnv_vis_x1
+                    || y1 != self.tre_cnv_vis_y1
+                {
+                    // println!("TreCnvScrolled:    ({x0:7.2}, {y0:7.2}), ({x1:7.2}, {y1:7.2})",);
+                    self.stale_vis_rect = true;
+                    self.clear_cache_bnds();
+
+                    self.tre_cnv_vis_x0 = x0;
+                    self.tre_cnv_vis_y0 = y0;
+                    self.tre_cnv_vis_x1 = x1;
+                    self.tre_cnv_vis_y1 = y1;
+                    self.tre_cnv_vis_x_mid = x0.midpoint(x1);
+                    self.tre_cnv_vis_y_mid = y0.midpoint(y1);
+
+                    self.update_rel_scrl_pos();
+                }
 
                 if task.is_none() && self.tre_style_opt_sel == TreSty::PhyGrm {
                     if self.tre_cnv_scrolled && self.tre_cnv_vis_x0 != self.ltt_cnv_vis_x0 {
@@ -266,17 +287,16 @@ impl TreeView {
                         self.tre_cnv_scrolled = true;
                     }
                 }
+            }
 
-                self.tre_cnv_vis_x0_rel = self.tre_cnv_vis_x0 / self.tre_cnv_w;
-                self.tre_cnv_vis_x_mid_rel = self.tre_cnv_vis_x_mid / self.tre_cnv_w;
-                self.tre_cnv_vis_x1_rel = self.tre_cnv_vis_x1 / self.tre_cnv_w;
+            TvMsg::RefreshedVisRect(_vis_vs) => {
+                // println!("RefreshedVisRect:  {vis_vs}");
+                self.stale_vis_rect = false;
+            }
 
-                self.tre_cnv_vis_y0_rel = self.tre_cnv_vis_y0 / self.tre_cnv_h;
-                self.tre_cnv_vis_y_mid_rel = self.tre_cnv_vis_y_mid / self.tre_cnv_h;
-                self.tre_cnv_vis_y1_rel = self.tre_cnv_vis_y1 / self.tre_cnv_h;
-
-                self.clear_cache_bnds();
-                self.clear_caches_lab(true, true, true);
+            TvMsg::RefreshedTreeDims(_cnv_vs) => {
+                // println!("RefreshedTreeDims: {cnv_vs}");
+                self.stale_tre_dims = false;
             }
 
             TvMsg::LttCnvScrolled(vp) => {
@@ -295,22 +315,16 @@ impl TreeView {
             TvMsg::PrevTre => {
                 self.prev_tre();
                 self.sort();
-                self.clear_cache_edge();
-                self.clear_caches_lab(true, true, true);
             }
 
             TvMsg::NextTre => {
                 self.next_tre();
                 self.sort();
-                self.clear_cache_edge();
-                self.clear_caches_lab(true, true, true);
             }
 
             TvMsg::NodeOrdOptChanged(node_ord_opt) => {
                 self.node_ord_opt_sel = node_ord_opt;
                 self.sort();
-                self.clear_cache_edge();
-                self.clear_caches_lab(true, true, true);
             }
 
             TvMsg::Unroot => {
@@ -318,8 +332,6 @@ impl TreeView {
                     && let Some(_node) = ts.unroot()
                 {
                     self.sort();
-                    self.clear_cache_edge();
-                    self.clear_caches_lab(true, true, true);
                 }
             }
 
@@ -328,19 +340,15 @@ impl TreeView {
                     && let Some(_node_id) = ts.root(&node_id)
                 {
                     self.sort();
-                    self.clear_cache_edge();
-                    self.clear_caches_lab(true, true, true);
                 }
             }
 
             TvMsg::RootLenSelChanged(idx) => {
                 self.root_len_idx_sel = idx;
-                self.clear_cache_edge();
-                self.clear_caches_lab(true, true, true);
+                self.clear_caches_all();
             }
 
             TvMsg::TreesLoaded(tres) => {
-                self.drawing_enabled = false;
                 self.tre_states = Vec::new();
 
                 let mut i: usize = 1;
@@ -365,78 +373,63 @@ impl TreeView {
                 }
 
                 self.sort();
-                self.cnv_dim_recalc();
-                self.clear_cache_bnds();
-                self.clear_cache_edge();
-                self.clear_caches_lab(true, true, true);
-                self.drawing_enabled = true;
+                self.clear_caches_all();
             }
 
             TvMsg::CnvWidthSelChanged(idx) => {
                 self.tre_cnv_w_idx_sel = idx;
-                self.cnv_dim_recalc();
                 task = self.keep_scroll_pos_w();
             }
 
             TvMsg::CnvHeightSelChanged(idx) => {
                 self.tre_cnv_h_idx_sel = idx;
-                self.cnv_dim_recalc();
                 task = self.keep_scroll_pos_h();
             }
 
             TvMsg::CnvZoomSelChanged(idx) => {
                 self.tre_cnv_z_idx_sel = idx;
-                self.cnv_dim_recalc();
                 task = self.keep_scroll_pos_z();
             }
 
             TvMsg::TreStyOptChanged(tre_sty_opt) => {
                 self.tre_style_opt_sel = tre_sty_opt;
-                self.cnv_dim_recalc();
-                self.clear_cache_bnds();
-                self.clear_cache_edge();
-                self.clear_caches_lab(true, true, true);
+                self.update_rel_scrl_pos();
+                self.clear_caches_all();
             }
 
             TvMsg::TipLabVisChanged(state) => {
-                // self.is_dirty = true;
-                self.draw_tip_labs = state;
-                self.clear_cache_edge();
-                self.clear_caches_lab(true, true, true);
+                self.draw_labs_tip = state;
+                self.stale_tre_dims = true;
+                self.clear_caches_all();
             }
 
             TvMsg::TipLabSizeChanged(idx) => {
-                // self.is_dirty = true;
                 self.tip_lab_size_idx_sel = idx;
                 self.lab_size_tip = self.lab_size_min * idx as Float;
-                self.clear_cache_edge();
-                self.clear_caches_lab(true, true, true);
+                self.stale_tre_dims = true;
+                self.clear_caches_all();
             }
 
             TvMsg::IntLabVisChanged(state) => {
-                // self.is_dirty = true;
-                self.draw_int_labs = state;
-                self.clear_cache_lab_int();
+                self.draw_labs_int = state;
+                self.clear_caches_all();
             }
 
             TvMsg::IntLabSizeChanged(idx) => {
-                // self.is_dirty = true;
                 self.int_lab_size_idx_sel = idx;
                 self.lab_size_int = self.lab_size_min * idx as Float;
-                self.clear_cache_lab_int();
+                self.clear_caches_all();
             }
 
             TvMsg::BrnchLabVisChanged(state) => {
-                // self.is_dirty = true;
-                self.draw_brnch_labs = state;
-                self.clear_cache_lab_brnch();
+                self.draw_labs_brnch = state;
+                self.clear_caches_all();
             }
 
             TvMsg::BrnchLabSizeChanged(idx) => {
-                // self.is_dirty = true;
                 self.brnch_lab_size_idx_sel = idx;
                 self.lab_size_brnch = self.lab_size_min * idx as Float;
-                self.clear_cache_lab_brnch();
+                self.clear_caches_all();
             }
 
             TvMsg::SelectDeselectNode(node_id) => {
@@ -448,31 +441,20 @@ impl TreeView {
             TvMsg::OpnAngleChanged(idx) => {
                 self.opn_angle_idx_sel = idx;
                 self.opn_angle = angle_from_idx(idx);
-                self.clear_cache_edge();
-                self.clear_caches_lab(true, true, true);
+                self.clear_caches_all();
             }
 
             TvMsg::RotAngleChanged(idx) => {
                 self.rot_angle_idx_sel = idx;
                 self.rot_angle = angle_from_idx(idx);
-                self.clear_cache_edge();
-                self.clear_caches_lab(true, true, true);
+                self.clear_caches_all();
             }
 
             TvMsg::PaneResized(ResizeEvent { split, ratio }) => {
                 if let Some(pane_grid) = &mut self.pane_grid {
-                    // self.is_dirty = true;
                     pane_grid.resize(split, ratio);
+                    self.stale_tre_dims = true;
                 }
-            }
-
-            TvMsg::LttpVisChanged(show_lttp) => {
-                self.show_ltt = show_lttp;
-                self.tre_cnv_scrolled = true;
-                self.ltt_cnv_scrolled = false;
-                self.keep_scrl_pos_req = true;
-                self.ltt_cnv_needs_scrl = true;
-                self.show_hide_lttp();
             }
 
             TvMsg::SetSidebarPos(sidebar_pos) => {
@@ -486,19 +468,112 @@ impl TreeView {
         }
     }
 
-    pub(super) fn tre_padd(&self) -> Float { self.tre_padd }
-    // pub(super) fn is_dirty(&self) -> bool { self.is_dirty }
-    pub(super) fn tre_cnv_h(&self) -> Float { self.tre_cnv_h }
-    pub(super) fn tre_cnv_w(&self) -> Float { self.tre_cnv_w }
+    fn tre_cnv_w(&self) -> Float { self.calc_tre_cnv_w(self.tre_scr_w) }
+    fn tre_cnv_h(&self) -> Float { self.calc_tre_cnv_h(self.tre_scr_h) }
 
-    pub(super) fn tre_cnv_vis(&self) -> RectVals<Float> {
-        RectVals::corners(self.tre_cnv_vis_x0, self.tre_cnv_vis_x1, self.tre_cnv_vis_y0, self.tre_cnv_vis_y1)
+    fn update_rel_scrl_pos(&mut self) {
+        self.tre_cnv_vis_x_mid_rel = self.tre_cnv_vis_x_mid / self.tre_cnv_w();
+        self.tre_cnv_vis_y_mid_rel = self.tre_cnv_vis_y_mid / self.tre_cnv_h();
+
+        match self.tre_style_opt_sel {
+            TreSty::PhyGrm => {
+                if self.tre_cnv_vis_x1 <= self.tre_scr_w {
+                    self.tre_cnv_vis_x_mid_rel = 1.0;
+                }
+                if self.tre_cnv_vis_y1 <= self.tre_scr_h {
+                    self.tre_cnv_vis_y_mid_rel = 0.0;
+                }
+            }
+            TreSty::Fan => {
+                if self.tre_cnv_vis_x1 <= self.tre_scr_w {
+                    self.tre_cnv_vis_x_mid_rel = 0.5;
+                }
+                if self.tre_cnv_vis_y1 <= self.tre_scr_h {
+                    self.tre_cnv_vis_y_mid_rel = 0.5;
+                }
+            }
+        }
     }
 
-    pub(super) fn tre_cnv_vis_rel(&self) -> RectVals<Float> {
-        RectVals::corners(
-            self.tre_cnv_vis_x0_rel, self.tre_cnv_vis_x1_rel, self.tre_cnv_vis_y0_rel, self.tre_cnv_vis_y1_rel,
+    fn keep_scroll_pos_wh(&self) -> Option<Task<TvMsg>> {
+        self.scroll_tre_cnv(self.tre_cnv_vis_x_mid, self.tre_cnv_vis_y_mid)
+    }
+
+    fn keep_scroll_pos_w(&self) -> Option<Task<TvMsg>> {
+        let w = self.tre_cnv_w();
+        let mut x = w * self.tre_cnv_vis_x_mid_rel;
+        if self.tre_cnv_vis_x1 == w {
+            x += self.tre_scr_w / 2e0
+        } else if self.tre_cnv_vis_x0 == 0e0 {
+            x -= self.tre_scr_w / 2e0
+        }
+        self.scroll_tre_cnv(x, self.tre_cnv_vis_y_mid)
+    }
+
+    fn keep_scroll_pos_h(&self) -> Option<Task<TvMsg>> {
+        let h = self.tre_cnv_h();
+        let mut y = h * self.tre_cnv_vis_y_mid_rel;
+        if self.tre_cnv_vis_y1 == h {
+            y += self.tre_scr_h / 2e0
+        } else if self.tre_cnv_vis_y0 == 0e0 {
+            y -= self.tre_scr_h / 2e0
+        }
+        self.scroll_tre_cnv(self.tre_cnv_vis_x_mid, y)
+    }
+
+    fn keep_scroll_pos_z(&self) -> Option<Task<TvMsg>> {
+        self.scroll_tre_cnv(
+            self.tre_cnv_w() * self.tre_cnv_vis_x_mid_rel,
+            self.tre_cnv_h() * self.tre_cnv_vis_y_mid_rel,
         )
+    }
+
+    fn scroll_tre_cnv(&self, x: Float, y: Float) -> Option<Task<TvMsg>> {
+        let x = (x - self.tre_scr_w / 2e0).max(0e0);
+        let y = (y - self.tre_scr_h / 2e0).max(0e0);
+        let task1 = scroll_to(self.tre_scr_id, AbsoluteOffset { x, y });
+        if !self.ltt_cnv_needs_scrl {
+            Some(task1)
+        } else {
+            let task2 = scroll_to(self.ltt_scr_id, AbsoluteOffset { x, y: self.ltt_cnv_vis_y0 });
+            Some(Task::batch([task1, task2]))
+        }
+    }
+    fn scroll_cnv_to_x(&self, receiver_id: &'static str, x: Float) -> Option<Task<TvMsg>> {
+        let y = match receiver_id {
+            id if id == self.ltt_scr_id => self.ltt_cnv_vis_y0,
+            id if id == self.tre_scr_id => self.tre_cnv_vis_y0,
+            _ => 0e0,
+        };
+        Some(scroll_to(receiver_id, AbsoluteOffset { x, y }))
+    }
+
+    pub(super) fn clear_cache_bnds(&self) { self.cache_bnds.clear() }
+
+    pub(super) fn clear_cache_edge(&self) {
+        if let Some(ts) = self.sel_tre() {
+            ts.clear_cache_edge()
+        }
+    }
+
+    pub(super) fn clear_caches_lab(&self, tip: bool, int: bool, brnch: bool) {
+        if let Some(ts) = self.sel_tre() {
+            if tip {
+                ts.clear_cache_lab_tip()
+            };
+            if int {
+                ts.clear_cache_lab_int()
+            };
+            if brnch {
+                ts.clear_cache_lab_brnch()
+            };
+        }
+    }
+
+    pub(super) fn clear_caches_all(&self) {
+        self.clear_cache_bnds();
+        self.clear_cache_edge();
+        self.clear_caches_lab(true, true, true)
     }
 
     pub(super) fn calc_tre_cnv_w(&self, w: Float) -> Float {
@@ -581,13 +656,11 @@ impl TreeView {
         if let Some(ts) = self.sel_tre_mut() {
             ts.sort(node_ord_opt);
         }
-        // self.is_dirty = true;
     }
 
     fn update_sel_tre_st_idx(&mut self, idx: Option<usize>) -> bool {
         if idx != self.tre_state_idx_sel {
             self.tre_state_idx_sel = idx;
-            // self.is_dirty = true;
             true
         } else {
             false
@@ -605,7 +678,6 @@ impl TreeView {
             }
             None => None,
         };
-
         self.update_sel_tre_st_idx(prev_idx)
     }
 
@@ -623,45 +695,7 @@ impl TreeView {
         self.update_sel_tre_st_idx(next_idx)
     }
 
-    fn clear_cache_bnds(&self) { self.cache_bnds.clear() }
-
-    fn clear_cache_edge(&self) {
-        if let Some(ts) = self.sel_tre() {
-            ts.clear_cache_edge()
-        }
-    }
-
-    fn clear_caches_lab(&self, tip: bool, int: bool, brnch: bool) {
-        if let Some(ts) = self.sel_tre() {
-            if tip {
-                ts.clear_cache_lab_tip()
-            };
-            if int {
-                ts.clear_cache_lab_int()
-            };
-            if brnch {
-                ts.clear_cache_lab_brnch()
-            };
-        }
-    }
-
-    fn clear_cache_lab_tip(&self) {
-        if let Some(ts) = self.sel_tre() {
-            ts.clear_cache_lab_tip();
-        }
-    }
-
-    fn clear_cache_lab_int(&self) {
-        if let Some(ts) = self.sel_tre() {
-            ts.clear_cache_lab_int();
-        }
-    }
-
-    fn clear_cache_lab_brnch(&self) {
-        if let Some(ts) = self.sel_tre() {
-            ts.clear_cache_lab_brnch();
-        }
-    }
+    fn tip_count(&self) -> usize { if let Some(ts) = self.sel_tre() { ts.tip_count() } else { 1 } }
 
     fn show_hide_lttp(&mut self) {
         if let Some(pane_grid) = &mut self.pane_grid {
@@ -678,70 +712,7 @@ impl TreeView {
             }
         }
     }
-
-    fn tip_count(&self) -> usize { if let Some(ts) = self.sel_tre() { ts.tip_count() } else { 1 } }
-
-    fn cnv_dim_recalc(&mut self) {
-        self.tre_cnv_w = self.calc_tre_cnv_w(self.tre_scr_w);
-        self.tre_cnv_h = self.calc_tre_cnv_h(self.tre_scr_h);
-        self.update_node_size();
-    }
-
-    fn update_node_size(&mut self) {
-        let tip_count = self.tip_count();
-        match self.tre_style_opt_sel {
-            TreSty::PhyGrm => {
-                let padding = self.tre_padd * 2e0;
-                self.node_size = (self.tre_cnv_h - padding) / tip_count as Float;
-                let tip_labs_vis = ((self.tre_scr_h - padding) / self.node_size) as usize;
-                self.labs_allowed = tip_labs_vis <= self.tip_labs_vis_max;
-            }
-            TreSty::Fan => {
-                self.node_size = 1e0;
-                // labs_allowed for "Fan" will be set by a message from "Program".
-            }
-        }
-    }
-
-    fn keep_scroll_pos_wh(&self) -> Option<Task<TvMsg>> {
-        self.scroll_tre_cnv(self.tre_cnv_vis_x_mid, self.tre_cnv_vis_y_mid)
-    }
-
-    fn keep_scroll_pos_w(&self) -> Option<Task<TvMsg>> {
-        self.scroll_tre_cnv(self.tre_cnv_w * self.tre_cnv_vis_x_mid_rel, self.tre_cnv_vis_y_mid)
-    }
-
-    fn keep_scroll_pos_h(&self) -> Option<Task<TvMsg>> {
-        self.scroll_tre_cnv(self.tre_cnv_vis_x_mid, self.tre_cnv_h * self.tre_cnv_vis_y_mid_rel)
-    }
-
-    fn keep_scroll_pos_z(&self) -> Option<Task<TvMsg>> {
-        self.scroll_tre_cnv(self.tre_cnv_w * self.tre_cnv_vis_x_mid_rel, self.tre_cnv_h * self.tre_cnv_vis_y_mid_rel)
-    }
-
-    fn scroll_tre_cnv(&self, x: Float, y: Float) -> Option<Task<TvMsg>> {
-        let task1 =
-            scroll_to(self.tre_scr_id, AbsoluteOffset { x: x - self.tre_scr_w / 2e0, y: y - self.tre_scr_h / 2e0 });
-        if !self.ltt_cnv_needs_scrl {
-            Some(task1)
-        } else {
-            let task2 =
-                scroll_to(self.ltt_scr_id, AbsoluteOffset { x: x - self.tre_scr_w / 2e0, y: self.ltt_cnv_vis_y0 });
-            Some(Task::batch([task1, task2]))
-        }
-    }
-
-    fn scroll_cnv_to_x(&self, receiver_id: &'static str, x: Float) -> Option<Task<TvMsg>> {
-        let y = match receiver_id {
-            id if id == self.ltt_scr_id => self.ltt_cnv_vis_y0,
-            id if id == self.tre_scr_id => self.tre_cnv_vis_y0,
-            _ => 0e0,
-        };
-        Some(scroll_to(receiver_id, AbsoluteOffset { x, y }))
-    }
 }
-
-fn angle_from_idx(idx: u16) -> Float { (idx as Float).to_radians() }
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SidebarPos {
@@ -809,3 +780,5 @@ impl From<&TvPane> for String {
         }
     }
 }
+
+fn angle_from_idx(idx: u16) -> Float { (idx as Float).to_radians() }

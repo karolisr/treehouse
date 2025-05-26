@@ -54,7 +54,7 @@ fn content<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
         })
         .style(sty_pane_grid)
         .on_resize(1e1, TvMsg::PaneResized)
-        .min_size(tv.tre_padd() * 3e0 + 5e1)
+        .min_size(tv.tre_padd * 3e0 + 5e1)
         .spacing(5)
         .into()
     } else {
@@ -236,27 +236,27 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
 
     sb_col = sb_col.push(rule_h(1));
 
-    if tv.labs_allowed && ts.has_tip_labs() && tv.draw_tip_labs {
+    if ts.has_tip_labs() && tv.draw_labs_tip && tv.draw_labs_allowed {
         sb_col = sb_col.push(iced_col![
-            toggler_label_tip(true, tv.draw_tip_labs,),
+            toggler_label_tip(true, tv.draw_labs_tip,),
             slider(None, tv.lab_size_idx_min, tv.lab_size_idx_max, tv.tip_lab_size_idx_sel, TvMsg::TipLabSizeChanged,)
         ])
     } else {
-        sb_col = sb_col.push(toggler_label_tip(tv.labs_allowed && ts.has_tip_labs(), tv.draw_tip_labs))
+        sb_col = sb_col.push(toggler_label_tip(ts.has_tip_labs() && tv.draw_labs_allowed, tv.draw_labs_tip))
     }
 
-    if tv.labs_allowed && ts.has_int_labs() && tv.draw_int_labs {
+    if ts.has_int_labs() && tv.draw_labs_int && tv.draw_labs_allowed {
         sb_col = sb_col.push(iced_col![
-            toggler_label_int(true, tv.draw_int_labs),
+            toggler_label_int(true, tv.draw_labs_int),
             slider(None, tv.lab_size_idx_min, tv.lab_size_idx_max, tv.int_lab_size_idx_sel, TvMsg::IntLabSizeChanged,)
         ])
     } else {
-        sb_col = sb_col.push(toggler_label_int(tv.labs_allowed && ts.has_int_labs(), tv.draw_int_labs))
+        sb_col = sb_col.push(toggler_label_int(ts.has_int_labs() && tv.draw_labs_allowed, tv.draw_labs_int))
     }
 
-    if ts.has_brlen() && tv.labs_allowed && tv.draw_brnch_labs {
+    if ts.has_brlen() && tv.draw_labs_brnch && tv.draw_labs_allowed {
         sb_col = sb_col.push(iced_col![
-            toggler_label_branch(true, tv.draw_brnch_labs),
+            toggler_label_branch(true, tv.draw_labs_brnch),
             slider(
                 None,
                 tv.lab_size_idx_min,
@@ -266,7 +266,7 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
             )
         ])
     } else {
-        sb_col = sb_col.push(toggler_label_branch(tv.labs_allowed && ts.has_brlen(), tv.draw_brnch_labs))
+        sb_col = sb_col.push(toggler_label_branch(ts.has_brlen() && tv.draw_labs_allowed, tv.draw_labs_brnch))
     }
 
     sb_col = sb_col.push(rule_h(1));
