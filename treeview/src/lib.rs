@@ -1,6 +1,6 @@
 #![feature(iter_collect_into)]
 // -------------------------------------
-#![allow(dead_code)]
+// #![allow(dead_code)]
 // #![allow(unused_mut)]
 // #![allow(unused_imports)]
 // #![allow(unused_variables)]
@@ -44,7 +44,7 @@ use treestate::TreeState;
 use treeview::{NODE_ORD_OPTS, NodeOrd, TRE_STY_OPTS, TreSty, TvPane};
 pub use treeview::{SidebarPos, TreeView, TvMsg};
 use utils::{Clr, TextWidth, text_width};
-use widget::toggler::Toggler;
+use widget::toggler::{Status as TogglerStatus, Style as TogglerStyle, Toggler};
 
 pub type IndexRange = RangeInclusive<usize>;
 

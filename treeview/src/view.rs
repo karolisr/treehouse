@@ -54,7 +54,7 @@ fn content<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
         })
         .style(sty_pane_grid)
         .on_resize(1e1, TvMsg::PaneResized)
-        .min_size(tv.tre_padd * 3e0 + 5e1)
+        .min_size(tv.tre_padd * 1e1 + 1e2)
         .spacing(5)
         .into()
     } else {
@@ -296,6 +296,10 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
     } else {
         sb_col = sb_col.push(toggler_label_branch(ts.has_brlen() && tv.draw_labs_allowed, tv.draw_labs_brnch))
     }
+
+    sb_col = sb_col.push(iced_col![toggler_legend(ts.has_brlen(), tv.draw_legend)]);
+
+    sb_col = sb_col.push(iced_col![toggler_cursor_line(true, tv.draw_cursor_line, tv.tre_style_opt_sel)]);
 
     sb_col = sb_col.push(rule_h(1));
 

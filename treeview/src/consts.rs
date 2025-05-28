@@ -70,6 +70,24 @@ pub(crate) const TXT_LAB_TMPL_BRNCH: CnvText = CnvText {
     },
 };
 
+pub(crate) const TXT_LAB_TMPL_SCALE_BAR: CnvText = CnvText {
+    color: Clr::BLK,
+    size: Pixels(TXT_SIZE_LAB),
+    line_height: LineHeight::Absolute(Pixels(TXT_SIZE_LAB)),
+    align_x: TextAlignment::Center,
+    align_y: Vertical::Top,
+    content: String::new(),
+    max_width: Float::INFINITY,
+    position: ::iced::Point::ORIGIN,
+    shaping: Shaping::Basic,
+    font: Font {
+        family: Family::Name(FNT_NAME_LAB),
+        weight: Weight::Normal,
+        stretch: Stretch::Normal,
+        style: FontStyle::Normal,
+    },
+};
+
 pub(crate) const STRK_TMPL: Strk = Strk {
     width: 1e0,
     line_cap: LineCap::Square,

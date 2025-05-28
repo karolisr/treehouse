@@ -4,7 +4,6 @@ use crate::*;
 
 #[derive(Debug)]
 pub struct St {
-    // pub(crate) tip_lab_extra_w: Float,
     pub(crate) mouse: Option<Point>,
     pub(crate) bnds: Rectangle<Float>,
     pub(crate) cnv_vs: RectVals<Float>,
@@ -33,7 +32,6 @@ pub struct St {
 impl Default for St {
     fn default() -> Self {
         Self {
-            // tip_lab_extra_w: 0e0,
             mouse: None,
             bnds: Default::default(),
             cnv_vs: Default::default(),

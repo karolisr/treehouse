@@ -149,6 +149,7 @@ impl Program<TvMsg> for TreeView {
         if self.stale_vis_rect {
             self.clear_cache_bnds();
             self.clear_caches_lab(true, true, true);
+            self.clear_cache_sel_nodes();
             action = Some(Action::publish(TvMsg::RefreshedVisRect(st.vis_vs)))
         }
         if self.stale_tre_dims {
@@ -157,12 +158,12 @@ impl Program<TvMsg> for TreeView {
         match ev {
             Event::Mouse(mouse_ev) => match mouse_ev {
                 MouseEvent::CursorEntered => {
-                    self.clear_cache_node_hover();
+                    self.clear_cache_hovered_node();
                     st.mouse = st.update_mouse_pos(crsr);
                     st.hovered_node = None;
                 }
                 MouseEvent::CursorMoved { position: _ } => {
-                    self.clear_cache_node_hover();
+                    self.clear_cache_hovered_node();
                     st.mouse = st.update_mouse_pos(crsr);
                     action = Some(Action::request_redraw());
                     if let Some(mouse) = st.mouse {
@@ -183,11 +184,24 @@ impl Program<TvMsg> for TreeView {
                     }
                 }
                 MouseEvent::CursorLeft => {
-                    self.clear_cache_node_hover();
+                    self.clear_cache_hovered_node();
                     st.mouse = None;
                     st.hovered_node = None;
                 }
-                MouseEvent::ButtonPressed(_btn) => {}
+                MouseEvent::ButtonPressed(btn) => match btn {
+                    MouseButton::Left => {
+                        if let Some(hevered_node) = &st.hovered_node {
+                            let edge = &edges[hevered_node.edge_idx];
+                            let node_id = edge.node_id;
+                            action = Some(Action::publish(TvMsg::SelectDeselectNode(node_id)));
+                        }
+                    }
+                    MouseButton::Right => {}
+                    MouseButton::Middle => {}
+                    MouseButton::Back => {}
+                    MouseButton::Forward => {}
+                    MouseButton::Other(_) => {}
+                },
                 MouseEvent::ButtonReleased(_btn) => {}
                 _ => {}
             },
@@ -217,10 +231,12 @@ impl Program<TvMsg> for TreeView {
             let tst: &TreeState = tst_opt;
             // draw_bounds(self, st, rndr, bnds, &mut geoms);
             draw_edges(self, st, tst, rndr, size, &mut geoms);
+            draw_legend(self, st, tst, rndr, size, &mut geoms);
             draw_labs_tip(self, st, tst, rndr, size, &mut geoms);
             draw_labs_int(self, st, tst, rndr, size, &mut geoms);
             draw_labs_brnch(self, st, tst, rndr, size, &mut geoms);
-            draw_node_hover(self, st, tst, rndr, size, &mut geoms);
+            draw_selected_nodes(self, st, tst, rndr, size, &mut geoms);
+            draw_hovered_node(self, st, tst, rndr, size, &mut geoms);
             // -----------------------------------------------------------
         }
         geoms

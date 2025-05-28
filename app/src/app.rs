@@ -5,13 +5,13 @@ mod platform;
 mod win;
 
 // use consts::*;
-use std::path::PathBuf;
-
+use dendros::parse_newick;
 use iced::{
     Element, Subscription, Task, Theme, exit,
     window::{Event as WinEvent, Id as WinId, close as close_window, events as window_events, open as open_window},
 };
 use menu::{AppMenu, AppMenuItemId};
+use std::path::PathBuf;
 use treeview::{SidebarPos, TreeView, TvMsg};
 use win::window_settings;
 
@@ -19,6 +19,7 @@ pub struct App {
     winid: Option<WinId>,
     treeview: Option<TreeView>,
     menu: Option<AppMenu>,
+    title: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -64,7 +65,7 @@ impl App {
     pub fn boot() -> (Self, Task<AppMsg>) {
         #[cfg(target_os = "macos")]
         platform::register_ns_application_delegate_handlers();
-        (App { winid: None, treeview: None, menu: None }, Task::done(AppMsg::AppInitialized))
+        (App { winid: None, treeview: None, menu: None, title: None }, Task::done(AppMsg::AppInitialized))
     }
 
     pub fn view(&self, _: WinId) -> Element<AppMsg> {
@@ -115,7 +116,6 @@ impl App {
             AppMsg::OpenFile => Task::future(ops::choose_file_to_open()),
             AppMsg::PathToOpen(path_buf_opt) => {
                 if let Some(path_buf) = path_buf_opt {
-                    println!("{path_buf:?}");
                     let file_type: FileType = match path_buf.extension() {
                         Some(ext_os_str) => match ext_os_str.to_str() {
                             Some(ext) => match ext {
@@ -132,9 +132,7 @@ impl App {
                         FileType::Other(s) => ParsedData::Other(s),
                         FileType::Exception => ParsedData::Exception,
                         file_type => match file_type {
-                            FileType::Newick => {
-                                ParsedData::Trees(dendros::parse_newick(ops::read_text_file(path_buf.clone())))
-                            }
+                            FileType::Newick => ParsedData::Trees(parse_newick(ops::read_text_file(path_buf.clone()))),
                             FileType::Nexus => ParsedData::Trees(None),
                             _ => ParsedData::Exception,
                         },
@@ -142,7 +140,11 @@ impl App {
 
                     match parsed_data {
                         ParsedData::Trees(trees) => match trees {
-                            Some(trees) => Task::done(AppMsg::TvMsg(TvMsg::TreesLoaded(trees))),
+                            Some(trees) => {
+                                self.title =
+                                    Some(path_buf.file_name().unwrap_or_default().to_string_lossy().to_string());
+                                Task::done(AppMsg::TvMsg(TvMsg::TreesLoaded(trees)))
+                            }
                             None => {
                                 println!("ParsedData::Trees(None)");
                                 Task::none()
@@ -285,26 +287,21 @@ impl App {
 
     pub fn subscription(&self) -> Subscription<AppMsg> {
         let mut subs: Vec<Subscription<AppMsg>> = Vec::new();
-
         #[cfg(target_os = "macos")]
         {
             subs.push(platform::os_events());
         }
-
         #[cfg(any(target_os = "windows", target_os = "macos"))]
         subs.push(menu::menu_events());
-
         subs.push(window_events().map(|(_, e)| AppMsg::WinEvent(e)));
-
         Subscription::batch(subs)
     }
 
-    pub fn title(&self, _: WinId) -> String { String::from("App::title") }
-
+    pub fn title(&self, _: WinId) -> String {
+        if let Some(title) = &self.title { title.clone() } else { String::from("") }
+    }
     pub fn scale_factor(&self, _: WinId) -> f64 { 1e0 }
-
     pub fn theme(&self, _: WinId) -> Theme { iced::Theme::default() }
-
     pub fn settings() -> iced::Settings {
         iced::Settings {
             id: None,

@@ -27,6 +27,7 @@ pub(super) struct TreeState {
     cache_lab_tip: Cache,
     cache_lab_int: Cache,
     cache_lab_brnch: Cache,
+    cache_sel_nodes: Cache,
 
     // Memoized Values ---------------------------------------------------
     cache_tip_count: Option<usize>,
@@ -105,9 +106,14 @@ impl TreeState {
 
     pub(super) fn unroot(&mut self) -> Option<Node> {
         let mut tre = self.t_orig.clone();
-        if let Some(node) = tre.unroot() {
+        if let Some(yanked_node) = tre.unroot() {
+            if let Some(yanked_node_id) = yanked_node.node_id()
+                && self.sel_node_ids.contains(yanked_node_id)
+            {
+                self.deselect_node(yanked_node_id);
+            }
             self.init(tre);
-            Some(node)
+            Some(yanked_node)
         } else {
             None
         }
@@ -232,6 +238,8 @@ impl TreeState {
     pub(super) fn clear_cache_lab_int(&self) { self.cache_lab_int.clear(); }
     pub(super) fn cache_lab_brnch(&self) -> &Cache { &self.cache_lab_brnch }
     pub(super) fn clear_cache_lab_brnch(&self) { self.cache_lab_brnch.clear(); }
+    pub(super) fn cache_sel_nodes(&self) -> &Cache { &self.cache_sel_nodes }
+    pub(super) fn clear_cache_sel_nodes(&self) { self.cache_sel_nodes.clear(); }
 
     // Setup -------------------------------------------------------------
     pub(super) fn new(id: usize) -> Self { Self { id, ..Default::default() } }

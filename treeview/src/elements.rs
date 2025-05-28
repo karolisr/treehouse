@@ -176,6 +176,21 @@ fn toggler(label: &str, value: bool) -> Toggler<TvMsg> {
     tglr
 }
 
+pub(crate) fn toggler_cursor_line<'a>(
+    enabled: bool, draw_cursor_line: bool, sel_tre_style_opt: TreSty,
+) -> Toggler<'a, TvMsg> {
+    let lab = match sel_tre_style_opt {
+        TreSty::PhyGrm => "Cursor Tracking Line",
+        TreSty::Fan => "Cursor Tracking Circle",
+    };
+
+    let mut tglr = toggler(lab, draw_cursor_line);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::CursorLineVisChanged);
+    }
+    tglr
+}
+
 pub(crate) fn toggler_label_branch<'a>(enabled: bool, draw_brnch_labs: bool) -> Toggler<'a, TvMsg> {
     let mut tglr = toggler("Branch Lengths", enabled && draw_brnch_labs);
     if enabled {
@@ -196,6 +211,14 @@ pub(crate) fn toggler_label_tip<'a>(enabled: bool, draw_tip_labs: bool) -> Toggl
     let mut tglr = toggler("Tip Labels", enabled && draw_tip_labs);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::TipLabVisChanged);
+    }
+    tglr
+}
+
+pub(crate) fn toggler_legend<'a>(enabled: bool, draw_legend: bool) -> Toggler<'a, TvMsg> {
+    let mut tglr = toggler("Legend", enabled && draw_legend);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::LegendVisChanged);
     }
     tglr
 }

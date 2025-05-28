@@ -1577,7 +1577,6 @@ dependencies = [
 [[package]]
 name = "muda"
 version = "0.16.1"
-source = "git+https://github.com/karolisr/muda.git?branch=custom#170d13df2207f476a43eb7eec34e184cb00121b9"
 dependencies = [
  "dpi 0.1.2",
  "futures",

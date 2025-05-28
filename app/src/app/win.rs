@@ -8,8 +8,8 @@ use super::consts::APP_ID;
 
 pub fn window_settings() -> Settings {
     Settings {
-        size: Size { width: 800.0, height: 600.0 },
-        // min_size: Some(Size { width: 100.0, height: 100.0 }),
+        size: Size { width: 800.0, height: 670.0 },
+        min_size: Some(Size { width: 600.0, height: 670.0 }),
         position: Position::Centered,
         resizable: true,
         level: Level::Normal,
