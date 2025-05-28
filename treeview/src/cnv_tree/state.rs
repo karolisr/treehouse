@@ -5,6 +5,8 @@ use crate::*;
 #[derive(Debug)]
 pub struct St {
     pub(crate) mouse: Option<Point>,
+    pub(crate) hovered_node: Option<NodeData>,
+    pub(crate) cursor_tracking_point: Option<Point>,
     pub(crate) bnds: Rectangle<Float>,
     pub(crate) cnv_vs: RectVals<Float>,
     pub(crate) tre_vs: RectVals<Float>,
@@ -14,7 +16,6 @@ pub struct St {
     pub(crate) vis_rect: Rectangle<Float>,
     pub(crate) vis_node_idxs: Vec<usize>,
     pub(crate) vis_nodes: Vec<NodeData>,
-    pub(crate) hovered_node: Option<NodeData>,
     pub(crate) node_radius: Float,
     pub(crate) node_radius_hover: Float,
     pub(crate) root_len: Float,
@@ -33,6 +34,8 @@ impl Default for St {
     fn default() -> Self {
         Self {
             mouse: None,
+            hovered_node: None,
+            cursor_tracking_point: None,
             bnds: Default::default(),
             cnv_vs: Default::default(),
             tre_vs: Default::default(),
@@ -42,7 +45,6 @@ impl Default for St {
             vis_rect: Default::default(),
             vis_node_idxs: Vec::new(),
             vis_nodes: Vec::new(),
-            hovered_node: None,
             node_radius: 8.0,
             node_radius_hover: 10.0,
             root_len: 0e0,
@@ -60,7 +62,7 @@ impl Default for St {
 }
 
 impl St {
-    pub(super) fn update_mouse_pos(&mut self, crsr: Cursor) -> Option<Point<Float>> {
+    pub(super) fn mouse_point(&mut self, crsr: Cursor) -> Option<Point<Float>> {
         crsr.position_in(self.bnds).map(|mouse| {
             if self.rotation != 0e0 {
                 let mouse_dist_from_center = mouse.distance(Point { x: self.tre_vs.cntr.x, y: self.tre_vs.cntr.y });
@@ -73,6 +75,37 @@ impl St {
                 mouse - self.translation
             }
         })
+    }
+
+    pub(super) fn hovered_node(&mut self) -> Option<NodeData> {
+        let mut rv: Option<NodeData> = None;
+        if let Some(mouse) = self.mouse {
+            let closest_node = self
+                .vis_nodes
+                .iter()
+                .min_by(|&a, &b| mouse.distance(a.points.p1).total_cmp(&mouse.distance(b.points.p1)))
+                .cloned();
+            if let Some(closest_node) = closest_node
+                && mouse.distance(closest_node.points.p1) <= self.node_radius_hover
+            {
+                rv = Some(closest_node);
+            }
+        }
+        rv
+    }
+
+    pub(super) fn cursor_tracking_point(&mut self) -> Option<Point> {
+        let mut rv: Option<Point> = None;
+        if let Some(mouse) = &self.mouse {
+            let mut x = mouse.x;
+            let mut y = mouse.y;
+            if let Some(hovered_node) = &self.hovered_node {
+                x = hovered_node.points.p1.x;
+                y = hovered_node.points.p1.y;
+            }
+            rv = Some(Point { x, y })
+        }
+        rv
     }
 
     pub(super) fn update_vis_node_idxs_phygrm(

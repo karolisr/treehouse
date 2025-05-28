@@ -1,50 +1,6 @@
 impl TreeView {
     pub fn update(&mut self, msg: TreeViewMsg) -> Task<TreeViewMsg> {
         match msg {
-            TreeViewMsg::PaneDragged(drag_event) => {
-                if let Some(pgs) = &mut self.panes {
-                    match drag_event {
-                        DragEvent::Picked { pane: _pane_idx } => Task::none(),
-                        DragEvent::Dropped { pane: pane_idx, target } => {
-                            pgs.drop(pane_idx, target);
-                            Task::none()
-                        }
-                        DragEvent::Canceled { pane: _pane_idx } => Task::none(),
-                    }
-                } else {
-                    Task::none()
-                }
-            }
-
-            TreeViewMsg::CursorOnTreCnv { x } => {
-                if let Some(tree) = self.tree_mut() {
-                    tree.tre_cnv.cursor_x_fraction = None;
-                    tree.ltt_cnv.cursor_x_fraction = x;
-                }
-                Task::none()
-            }
-
-            TreeViewMsg::CursorOnLttCnv { x } => {
-                if let Some(tree) = self.tree_mut() {
-                    tree.tre_cnv.cursor_x_fraction = x;
-                    tree.ltt_cnv.cursor_x_fraction = x;
-                }
-                Task::none()
-            }
-
-            TreeViewMsg::LegendVisibilityChanged(draw_legend) => {
-                self.draw_legend = draw_legend;
-                Task::none()
-            }
-
-            TreeViewMsg::CursorLineVisibilityChanged(show_cursor_line) => {
-                self.show_cursor_line = show_cursor_line;
-                if let Some(tree) = self.tree_mut() {
-                    tree.tre_cnv.show_cursor_line = show_cursor_line;
-                }
-                Task::none()
-            }
-
             TreeViewMsg::Search(s) => {
                 self.search_string = s;
                 self.filter_nodes();

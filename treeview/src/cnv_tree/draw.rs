@@ -1,7 +1,7 @@
 use super::St;
-use crate::cnv_utils::*;
 use crate::edge_utils::*;
 use crate::iced::*;
+use crate::path_utils::*;
 use crate::*;
 
 pub(super) fn draw_bounds(tv: &TreeView, st: &St, rndr: &Renderer, bnds: Rectangle, g: &mut Vec<Geometry>) {
@@ -13,7 +13,7 @@ pub(super) fn draw_bounds(tv: &TreeView, st: &St, rndr: &Renderer, bnds: Rectang
 }
 
 pub(super) fn draw_edges(tv: &TreeView, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>) {
-    g.push(tst.cache_edge().draw(rndr, sz, |f| match tv.tre_style_opt_sel {
+    g.push(tst.cache_edge().draw(rndr, sz, |f| match tv.tre_sty_opt_sel {
         TreSty::PhyGrm => stroke_edges_phygrm(tst.edges_srtd_y(), &st.tre_vs, st.root_len, tst.edge_root(), f),
         TreSty::Fan => stroke_edges_fan(
             tst.edges_srtd_y(),
@@ -31,7 +31,7 @@ pub(super) fn draw_legend(tv: &TreeView, st: &St, tst: &TreeState, rndr: &Render
     if tst.has_brlen() && tv.draw_legend {
         g.push(tv.cache_legend.draw(rndr, sz, |f| {
             draw_scale_bar(
-                tv.tre_style_opt_sel,
+                tv.tre_sty_opt_sel,
                 &st.tre_vs,
                 tv.lab_size_brnch,
                 st.root_len,
@@ -90,6 +90,32 @@ pub(super) fn draw_hovered_node(
             f.rotate(st.rotation);
             fill_circle(hovered_node.points.p1, FILL_NODE_HOVER, st.node_radius, f);
             stroke_circle(hovered_node.points.p1, STRK_1_RED, st.node_radius, f);
+            f.pop_transform();
+        }
+    }));
+}
+
+pub(super) fn draw_cursor_line(
+    tv: &TreeView, st: &St, _tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+) {
+    g.push(tv.cache_cursor_line.draw(rndr, sz, |f| {
+        if let Some(p) = st.cursor_tracking_point
+            && tv.draw_cursor_line
+        {
+            f.push_transform();
+            f.translate(st.translation);
+            match tv.tre_sty_opt_sel {
+                TreSty::PhyGrm => {
+                    let p0 = Point { x: p.x, y: 0e0 };
+                    let p1 = Point { x: p.x, y: st.tre_vs.h };
+                    f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), STRK_1_RED_50_DASH);
+                }
+                TreSty::Fan => {
+                    let r = Point::ORIGIN.distance(p);
+                    f.rotate(st.rotation);
+                    stroke_circle(Point::ORIGIN, STRK_1_RED_50_DASH, r, f);
+                }
+            }
             f.pop_transform();
         }
     }));
@@ -252,7 +278,7 @@ fn stroke_root_phygrm(w: Float, h: Float, root_len: Float, root_edge: Option<Edg
     {
         let nd = node_data_cart(w, h, &root_edge);
         let pt_parent = Point { x: -root_len, y: nd.points.p0.y };
-        f.stroke(&PathBuilder::new().move_to(nd.points.p0).line_to(pt_parent).build(), STRK_DASH);
+        f.stroke(&PathBuilder::new().move_to(nd.points.p0).line_to(pt_parent).build(), STRK_1_BLK_DASH);
     };
 }
 
@@ -261,7 +287,7 @@ fn stroke_root_fan(radius_min: Float, opn_angle: Float, root_len: Float, root_ed
         && root_len > 0e0
     {
         let nd = node_data_rad(opn_angle, radius_min, root_len, &root_edge);
-        f.stroke(&PathBuilder::new().move_to(nd.points.p0).line_to(Point::ORIGIN).build(), STRK_DASH);
+        f.stroke(&PathBuilder::new().move_to(nd.points.p0).line_to(Point::ORIGIN).build(), STRK_1_BLK_DASH);
     };
 }
 

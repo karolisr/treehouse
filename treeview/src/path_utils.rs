@@ -1,5 +1,5 @@
-use crate::TAU;
 use crate::iced::*;
+use crate::*;
 use lyon_path::builder;
 use lyon_path::geom;
 
@@ -29,7 +29,10 @@ impl PathBuilder {
             .close()
     }
 
-    pub fn circle(self, center: Point, radius: f32) -> Self { self.arc_approx_line(0e0, TAU, center, radius) }
+    pub fn circle(self, center: Point, radius: f32) -> Self {
+        let start = Point { x: center.x + radius, y: center.y };
+        self.move_to(start).arc_approx_line(0e0, TAU, center, radius)
+    }
 
     fn arc(&self, a0: f32, a1: f32, center: Point, radius: f32) -> geom::Arc<f32> {
         let center = geom::Point::new(center.x, center.y);
@@ -78,4 +81,20 @@ impl PathBuilder {
 
 impl Default for PathBuilder {
     fn default() -> Self { Self::new() }
+}
+
+pub fn stroke_rect(rect: Rectangle, stroke: Strk, f: &mut Frame) {
+    f.stroke(&PathBuilder::new().rectangle(rect).build(), stroke);
+}
+
+pub fn fill_rect(rect: Rectangle, fill: CnvFill, f: &mut Frame) {
+    f.fill(&PathBuilder::new().rectangle(rect).build(), fill);
+}
+
+pub fn stroke_circle(point: Point, stroke: Strk, radius: Float, f: &mut Frame) {
+    f.stroke(&PathBuilder::new().circle(point, radius).build(), stroke);
+}
+
+pub fn fill_circle(point: Point, fill: CnvFill, radius: Float, f: &mut Frame) {
+    f.fill(&PathBuilder::new().circle(point, radius).build(), fill);
 }

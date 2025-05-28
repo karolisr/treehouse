@@ -22,7 +22,7 @@ impl Program<TvMsg> for TreeView {
         let tst: &TreeState = tre_opt?;
         let edges = tst.edges_srtd_y();
         let tip_edge_idxs = tst.edges_tip_idx();
-        let tre_sty = self.tre_style_opt_sel;
+        let tre_sty = self.tre_sty_opt_sel;
         let opn_angle = self.opn_angle;
         // -------------------------------------------------------------------------------------------------------------
         if st.text_w_tip.as_mut()?.font_size() != self.lab_size_tip {
@@ -40,12 +40,10 @@ impl Program<TvMsg> for TreeView {
             st.tre_vs = RectVals::tre(st.cnv_vs, self.tre_padd);
             st.cnv_rect = st.cnv_vs.into();
 
-            let mut tip_w: Float;
+            let mut tip_w: Float = 0e0;
             if self.draw_labs_tip && tst.has_tip_labs() {
                 tip_w = self.lab_offset_tip + st.calc_tip_lab_extra_w(tst);
-            } else {
-                tip_w = self.lab_offset_tip;
-            }
+            };
 
             match tre_sty {
                 TreSty::PhyGrm => {
@@ -150,43 +148,47 @@ impl Program<TvMsg> for TreeView {
             self.clear_cache_bnds();
             self.clear_caches_lab(true, true, true);
             self.clear_cache_sel_nodes();
-            action = Some(Action::publish(TvMsg::RefreshedVisRect(st.vis_vs)))
+            action = Some(Action::publish(TvMsg::RefreshedVisRect))
         }
         if self.stale_tre_dims {
-            action = Some(Action::publish(TvMsg::RefreshedTreeDims(st.cnv_vs)))
+            action = Some(Action::publish(TvMsg::RefreshedTreeDims))
         } // -----------------------------------------------------------------------------------------------------------
         match ev {
             Event::Mouse(mouse_ev) => match mouse_ev {
                 MouseEvent::CursorEntered => {
                     self.clear_cache_hovered_node();
-                    st.mouse = st.update_mouse_pos(crsr);
+                    self.clear_cache_cursor_line();
+                    st.mouse = st.mouse_point(crsr);
                     st.hovered_node = None;
+                    st.cursor_tracking_point = None;
                 }
                 MouseEvent::CursorMoved { position: _ } => {
                     self.clear_cache_hovered_node();
-                    st.mouse = st.update_mouse_pos(crsr);
-                    action = Some(Action::request_redraw());
-                    if let Some(mouse) = st.mouse {
-                        let closest_node = st
-                            .vis_nodes
-                            .iter()
-                            .min_by(|&a, &b| mouse.distance(a.points.p1).total_cmp(&mouse.distance(b.points.p1)))
-                            .cloned();
-                        if let Some(closest_node) = closest_node {
-                            if mouse.distance(closest_node.points.p1) <= st.node_radius_hover {
-                                st.hovered_node = Some(closest_node)
-                            } else {
-                                st.hovered_node = None
-                            }
+                    self.clear_cache_cursor_line();
+                    st.mouse = st.mouse_point(crsr);
+                    st.hovered_node = st.hovered_node();
+                    st.cursor_tracking_point = st.cursor_tracking_point();
+                    if let Some(pt) = st.cursor_tracking_point {
+                        let crsr_x_rel = match tre_sty {
+                            TreSty::PhyGrm => (pt.x / (st.tre_vs.w - st.root_len)).clamp(0e0, 1e0 + Float::EPSILON),
+                            TreSty::Fan => ((pt.distance(Point::ORIGIN) - st.root_len)
+                                / (st.tre_vs.radius_min - st.root_len))
+                                .clamp(0e0 - Float::EPSILON, 1e0 + Float::EPSILON),
+                        };
+                        if (0e0..=1e0).contains(&crsr_x_rel) {
+                            action = Some(Action::publish(TvMsg::CursorOnTreCnv { x: Some(crsr_x_rel) }))
+                        } else {
+                            st.cursor_tracking_point = None;
+                            action = Some(Action::publish(TvMsg::CursorOnTreCnv { x: None }))
                         }
-                    } else {
-                        st.hovered_node = None;
                     }
                 }
                 MouseEvent::CursorLeft => {
                     self.clear_cache_hovered_node();
+                    self.clear_cache_cursor_line();
                     st.mouse = None;
                     st.hovered_node = None;
+                    st.cursor_tracking_point = None;
                 }
                 MouseEvent::ButtonPressed(btn) => match btn {
                     MouseButton::Left => {
@@ -197,19 +199,25 @@ impl Program<TvMsg> for TreeView {
                         }
                     }
                     MouseButton::Right => {}
-                    MouseButton::Middle => {}
-                    MouseButton::Back => {}
-                    MouseButton::Forward => {}
-                    MouseButton::Other(_) => {}
+                    _ => {}
                 },
                 MouseEvent::ButtonReleased(_btn) => {}
                 _ => {}
             },
             Event::Keyboard(_e) => {}
-            Event::Window(WindowEvent::RedrawRequested(_e)) => {
-                // action = None
-            }
             _ => {}
+        }
+        // -------------------------------------------------------------------------------------------------------------
+        if let Some(crsr_x_rel) = self.crsr_x_rel {
+            match tre_sty {
+                TreSty::PhyGrm => {
+                    st.cursor_tracking_point = Some(Point { x: (crsr_x_rel * (st.tre_vs.w - st.root_len)), y: 0e0 })
+                }
+                TreSty::Fan => {
+                    st.cursor_tracking_point =
+                        Some(Point { x: st.root_len + crsr_x_rel * (st.tre_vs.radius_min - st.root_len), y: 0e0 })
+                }
+            }
         }
         // -------------------------------------------------------------------------------------------------------------
         st.is_new = false;
@@ -237,6 +245,7 @@ impl Program<TvMsg> for TreeView {
             draw_labs_brnch(self, st, tst, rndr, size, &mut geoms);
             draw_selected_nodes(self, st, tst, rndr, size, &mut geoms);
             draw_hovered_node(self, st, tst, rndr, size, &mut geoms);
+            draw_cursor_line(self, st, tst, rndr, size, &mut geoms);
             // -----------------------------------------------------------
         }
         geoms

@@ -59,7 +59,7 @@ pub struct TreeView {
     pub(super) opn_angle_idx_max: u16,
     pub(super) rot_angle_idx_max: u16,
     // -------------------------------------------------------------------
-    pub(super) tre_style_opt_sel: TreSty,
+    pub(super) tre_sty_opt_sel: TreSty,
     pub(super) node_ord_opt_sel: NodeOrd,
     pub(super) drawing_enabled: bool,
     pub(super) draw_labs_tip: bool,
@@ -71,8 +71,9 @@ pub struct TreeView {
     pub(super) node_labs_vis_max: usize,
     // -------------------------------------------------------------------
     pub(super) cache_bnds: Cache,
-    pub(super) cache_hovered_node: Cache,
     pub(super) cache_legend: Cache,
+    pub(super) cache_hovered_node: Cache,
+    pub(super) cache_cursor_line: Cache,
     // -------------------------------------------------------------------
     pub(super) ltt_scr_id: &'static str,
     pub(super) tre_scr_id: &'static str,
@@ -83,12 +84,14 @@ pub struct TreeView {
     // -------------------------------------------------------------------
     keep_scrl_pos_req: bool,
     // -------------------------------------------------------------------
-    // ltt_cnv_w: Float,
-    // ltt_cnv_h: Float,
+    ltt_cnv_w: Float,
+    ltt_cnv_h: Float,
     ltt_cnv_needs_scrl: bool,
     ltt_cnv_scrolled: bool,
     ltt_cnv_vis_x0: Float,
     ltt_cnv_vis_y0: Float,
+    // -------------------------------------------------------------------
+    pub(super) crsr_x_rel: Option<Float>,
     // -------------------------------------------------------------------
     pub(super) tre_scr_h: Float,
     pub(super) tre_scr_w: Float,
@@ -138,8 +141,12 @@ pub enum TvMsg {
     RootLenSelChanged(u16),
     TreCnvScrolled(Viewport),
     LttCnvScrolled(Viewport),
-    RefreshedVisRect(RectVals<Float>),
-    RefreshedTreeDims(RectVals<Float>),
+    RefreshedVisRect,
+    RefreshedTreeDims,
+    // -------------------------------------------
+    CursorOnTreCnv { x: Option<Float> },
+    CursorOnLttCnv { x: Option<Float> },
+    // -------------------------------------------
 }
 
 impl TreeView {
@@ -171,18 +178,18 @@ impl TreeView {
             draw_labs_tip: false,
             draw_labs_int: false,
             draw_labs_brnch: false,
-            draw_legend: true,
-            draw_cursor_line: true,
+            draw_legend: false,
+            draw_cursor_line: false,
             drawing_enabled: true,
             // -----------------------------------------------------------
-            tip_labs_vis_max: 800,
-            node_labs_vis_max: 1600,
+            tip_labs_vis_max: 400,
+            node_labs_vis_max: 800,
             draw_labs_allowed: true,
             // -----------------------------------------------------------
-            tre_style_opt_sel: TreSty::PhyGrm,
-            node_ord_opt_sel: NodeOrd::Ascending,
+            tre_sty_opt_sel: TreSty::PhyGrm,
+            node_ord_opt_sel: NodeOrd::Unordered,
             // -----------------------------------------------------------
-            opn_angle_idx_min: 0,
+            opn_angle_idx_min: 45,
             opn_angle_idx_max: 359,
             opn_angle_idx_sel,
             opn_angle,
@@ -199,7 +206,7 @@ impl TreeView {
             lab_size_idx_max,
             // -----------------------------------------------------------
             root_len_idx_min: 0,
-            root_len_idx_sel: 20,
+            root_len_idx_sel: 0,
             root_len_idx_max: 100,
             // -----------------------------------------------------------
             lab_size_min,
@@ -232,18 +239,22 @@ impl TreeView {
 
     pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
         let mut task: Option<Task<TvMsg>> = None;
-        // match tv_msg {
-        //     TvMsg::TreesLoaded(_) => {}
-        //     TvMsg::TreCnvScrolled(_) => {}
-        //     TvMsg::LttCnvScrolled(_) => {}
-        //     TvMsg::PaneResized(_) => {}
-        //     TvMsg::RefreshedTreeDims(_) => {}
-        //     TvMsg::RefreshedVisRect(_) => {}
-        //     _ => println!("{tv_msg:?}"),
-        // }
         match tv_msg {
             TvMsg::CursorLineVisChanged(state) => {
                 self.draw_cursor_line = state;
+                self.ltt_plot.draw_cursor_line = state;
+            }
+
+            TvMsg::CursorOnTreCnv { x } => {
+                // println!("CursorOnTreCnv: {x:?}");
+                self.crsr_x_rel = None;
+                self.ltt_plot.crsr_x_rel = x;
+            }
+
+            TvMsg::CursorOnLttCnv { x } => {
+                // println!("CursorOnLttCnv: {x:?}");
+                self.crsr_x_rel = x;
+                self.ltt_plot.crsr_x_rel = None;
             }
 
             TvMsg::LttpVisChanged(show_ltt) => {
@@ -276,8 +287,6 @@ impl TreeView {
                     || x1 != self.tre_cnv_vis_x1
                     || y1 != self.tre_cnv_vis_y1
                 {
-                    // println!("TreCnvScrolled");
-                    // println!("TreCnvScrolled:    ({x0:7.2}, {y0:7.2}), ({x1:7.2}, {y1:7.2})");
                     self.tre_cnv_vis_x0 = x0;
                     self.tre_cnv_vis_y0 = y0;
                     self.tre_cnv_vis_x1 = x1;
@@ -288,7 +297,7 @@ impl TreeView {
                     self.stale_vis_rect = true;
                 }
 
-                if task.is_none() && self.tre_style_opt_sel == TreSty::PhyGrm {
+                if task.is_none() && self.tre_sty_opt_sel == TreSty::PhyGrm {
                     if self.tre_cnv_scrolled && self.tre_cnv_vis_x0 != self.ltt_cnv_vis_x0 {
                         self.ltt_cnv_scrolled = false;
                         task = self.scroll_cnv_to_x(self.ltt_scr_id, self.tre_cnv_vis_x0);
@@ -298,21 +307,18 @@ impl TreeView {
                 }
             }
 
-            TvMsg::RefreshedVisRect(_vis_vs) => {
-                // println!("RefreshedVisRect:  {_vis_vs}");
+            TvMsg::RefreshedVisRect => {
                 self.stale_vis_rect = false;
             }
 
-            TvMsg::RefreshedTreeDims(_cnv_vs) => {
-                // println!("RefreshedTreeDims: {_cnv_vs}");
+            TvMsg::RefreshedTreeDims => {
                 self.stale_tre_dims = false;
             }
 
             TvMsg::LttCnvScrolled(vp) => {
-                // println!("LttCnvScrolled");
                 self.ltt_cnv_vis_x0 = vp.absolute_offset().x;
                 self.ltt_cnv_vis_y0 = vp.absolute_offset().y;
-                if self.tre_style_opt_sel == TreSty::PhyGrm {
+                if self.tre_sty_opt_sel == TreSty::PhyGrm {
                     if self.ltt_cnv_scrolled && self.tre_cnv_vis_x0 != self.ltt_cnv_vis_x0 {
                         self.tre_cnv_scrolled = false;
                         task = self.scroll_cnv_to_x(self.tre_scr_id, self.ltt_cnv_vis_x0);
@@ -366,8 +372,6 @@ impl TreeView {
             }
 
             TvMsg::TreesLoaded(trees) => {
-                // println!("Loaded {} trees.", &trees.len());
-
                 self.tre_states = Vec::new();
 
                 let mut i: usize = 1;
@@ -396,6 +400,8 @@ impl TreeView {
 
                 if self.is_new {
                     self.show_hide_ltt();
+                    self.ltt_plot.draw_cursor_line = self.draw_cursor_line;
+                    self.ltt_plot.tre_padd = self.tre_padd;
                     self.is_new = false;
                 }
             }
@@ -419,7 +425,7 @@ impl TreeView {
             }
 
             TvMsg::TreStyOptChanged(tre_sty_opt) => {
-                self.tre_style_opt_sel = tre_sty_opt;
+                self.tre_sty_opt_sel = tre_sty_opt;
                 self.update_rel_scrl_pos();
                 self.clear_caches_all();
                 self.stale_tre_dims = true;
@@ -495,7 +501,6 @@ impl TreeView {
             }
 
             TvMsg::PaneResized(ResizeEvent { split, ratio }) => {
-                // println!("PaneResized");
                 if let Some(pane_grid) = &mut self.pane_grid {
                     pane_grid.resize(split, ratio);
                 }
@@ -520,7 +525,7 @@ impl TreeView {
         self.tre_cnv_vis_x_mid_rel = self.tre_cnv_vis_x_mid / self.tre_cnv_w();
         self.tre_cnv_vis_y_mid_rel = self.tre_cnv_vis_y_mid / self.tre_cnv_h();
 
-        match self.tre_style_opt_sel {
+        match self.tre_sty_opt_sel {
             TreSty::PhyGrm => {
                 if self.tre_cnv_vis_x1 <= self.tre_scr_w {
                     self.tre_cnv_vis_x_mid_rel = 1.0;
@@ -594,8 +599,9 @@ impl TreeView {
     }
 
     pub(super) fn clear_cache_bnds(&self) { self.cache_bnds.clear() }
-    pub(super) fn clear_cache_hovered_node(&self) { self.cache_hovered_node.clear() }
     pub(super) fn clear_cache_legend(&self) { self.cache_legend.clear() }
+    pub(super) fn clear_cache_hovered_node(&self) { self.cache_hovered_node.clear() }
+    pub(super) fn clear_cache_cursor_line(&self) { self.cache_cursor_line.clear() }
 
     pub(super) fn clear_cache_sel_nodes(&self) {
         if let Some(ts) = self.sel_tre() {
@@ -633,7 +639,7 @@ impl TreeView {
     }
 
     pub(super) fn calc_tre_cnv_w(&self, w: Float) -> Float {
-        match self.tre_style_opt_sel {
+        match self.tre_sty_opt_sel {
             TreSty::PhyGrm => {
                 if self.tre_cnv_w_idx_sel == 1 {
                     w
@@ -652,7 +658,7 @@ impl TreeView {
     }
 
     pub(super) fn calc_tre_cnv_h(&self, h: Float) -> Float {
-        match self.tre_style_opt_sel {
+        match self.tre_sty_opt_sel {
             TreSty::PhyGrm => {
                 if self.tre_cnv_h_idx_sel == 1 {
                     h

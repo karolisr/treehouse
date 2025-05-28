@@ -75,7 +75,7 @@ fn pane_content<'a>(tv: &'a TreeView, _ts: &'a TreeState, tv_pane: &TvPane, size
         }
         TvPane::LttPlot => {
             let mut cnv_w = cnv_w;
-            if tv.tre_style_opt_sel == TreSty::Fan {
+            if tv.tre_sty_opt_sel == TreSty::Fan {
                 cnv_w = w;
             }
             let cnv = Cnv::new(&tv.ltt_plot).width(cnv_w).height(h);
@@ -186,11 +186,11 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
 
     sb_col = sb_col.push(stats(ts));
     sb_col = sb_col.push(rule_h(1));
-    sb_col = sb_col.push(pick_list_tre_sty(tv.tre_style_opt_sel));
+    sb_col = sb_col.push(pick_list_tre_sty(tv.tre_sty_opt_sel));
     sb_col = sb_col.push(pick_list_node_ordering(tv.node_ord_opt_sel));
     sb_col = sb_col.push(rule_h(1));
 
-    match tv.tre_style_opt_sel {
+    match tv.tre_sty_opt_sel {
         TreSty::PhyGrm => {
             if tv.tre_cnv_h_idx_min != tv.tre_cnv_h_idx_max {
                 sb_col = sb_col.push(slider(
@@ -299,7 +299,7 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
 
     sb_col = sb_col.push(iced_col![toggler_legend(ts.has_brlen(), tv.draw_legend)]);
 
-    sb_col = sb_col.push(iced_col![toggler_cursor_line(true, tv.draw_cursor_line, tv.tre_style_opt_sel)]);
+    sb_col = sb_col.push(iced_col![toggler_cursor_line(true, tv.draw_cursor_line, tv.tre_sty_opt_sel)]);
 
     sb_col = sb_col.push(rule_h(1));
 

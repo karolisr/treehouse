@@ -106,7 +106,11 @@ pub(crate) const STRK_4: Strk = Strk { width: 4e0, ..STRK_TMPL };
 pub(crate) const STRK_5: Strk = Strk { width: 5e0, ..STRK_TMPL };
 
 pub(crate) const STRK_EDGE: Strk = STRK_1;
-pub(crate) const STRK_DASH: Strk = Strk { line_dash: LineDash { segments: &[2e0, 2e0], offset: 0 }, ..STRK_1 };
+pub(crate) const STRK_1_BLK_DASH: Strk = Strk { line_dash: LineDash { segments: &[2e0, 2e0], offset: 0 }, ..STRK_1 };
+pub(crate) const STRK_1_RED_50_DASH: Strk =
+    Strk { line_dash: LineDash { segments: &[2e0, 2e0], offset: 0 }, ..STRK_1_RED_50 };
+pub(crate) const STRK_5_RED_50_DASH: Strk =
+    Strk { line_dash: LineDash { segments: &[1e1, 2e1], offset: 0 }, ..STRK_5_RED_50 };
 
 pub(crate) const STRK_1_BLK: Strk = Strk { style: Solid(Clr::BLK), ..STRK_1 };
 pub(crate) const STRK_1_RED: Strk = Strk { style: Solid(Clr::RED), ..STRK_1 };
@@ -227,6 +231,3 @@ pub(crate) const STRK_5_BLU_50: Strk = Strk { style: Solid(Clr::BLU_50), ..STRK_
 pub(crate) const STRK_5_YEL_50: Strk = Strk { style: Solid(Clr::YEL_50), ..STRK_5 };
 pub(crate) const STRK_5_CYA_50: Strk = Strk { style: Solid(Clr::CYA_50), ..STRK_5 };
 pub(crate) const STRK_5_MAG_50: Strk = Strk { style: Solid(Clr::MAG_50), ..STRK_5 };
-
-pub(crate) const STRK_5_RED_50_DASH: Strk =
-    Strk { line_dash: LineDash { segments: &[1e1, 2e1], offset: 0 }, ..STRK_5_RED_50 };

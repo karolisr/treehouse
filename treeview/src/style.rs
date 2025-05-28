@@ -151,8 +151,8 @@ pub(crate) fn sty_slider(theme: &Theme, status: SliderStatus) -> SliderStyle {
         },
 
         handle: SliderHandle {
-            // shape: SliderHandleShape::Circle { radius: TEXT_SIZE / 1.75 },
-            shape: SliderHandleShape::Rectangle { width: (13.0 * 1.3) as u16, border_radius: 0e0.into() },
+            shape: SliderHandleShape::Circle { radius: 13.0 / 1.75 },
+            // shape: SliderHandleShape::Rectangle { width: (13.0 * 1.3) as u16, border_radius: 0e0.into() },
             background: color.into(),
             border_color: Clr::BLK,
             border_width: 1e0 * SF,

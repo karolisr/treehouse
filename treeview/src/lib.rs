@@ -1,6 +1,6 @@
 #![feature(iter_collect_into)]
 // -------------------------------------
-// #![allow(dead_code)]
+#![allow(dead_code)]
 // #![allow(unused_mut)]
 // #![allow(unused_imports)]
 // #![allow(unused_variables)]
@@ -15,14 +15,13 @@
 // #![allow(clippy::needless_range_loop)]
 // -------------------------------------
 
-mod cnv_path;
 mod cnv_plot;
 mod cnv_tree;
-mod cnv_utils;
 mod consts;
 mod edge_utils;
 mod elements;
 mod iced;
+mod path_utils;
 mod style;
 mod treestate;
 mod treeview;
@@ -34,11 +33,11 @@ use std::collections::HashSet;
 use std::fmt::{Display, Formatter, Result};
 use std::ops::RangeInclusive;
 
-use cnv_path::PathBuilder;
 use cnv_plot::PlotCnv;
 use consts::*;
 use dendros::{Edge, Node, NodeId, Tree, TreeFloat, flatten_tree};
 use num_traits::FromPrimitive;
+use path_utils::PathBuilder;
 use rayon::prelude::*;
 use treestate::TreeState;
 use treeview::{NODE_ORD_OPTS, NodeOrd, TRE_STY_OPTS, TreSty, TvPane};
