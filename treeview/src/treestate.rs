@@ -40,51 +40,38 @@ pub(super) struct TreeState {
 }
 
 impl TreeState {
-    #[inline]
     pub(super) fn edges_srtd_y(&self) -> &Vec<Edge> { &self.edges_srtd_y }
-    // #[inline]
     // pub(super) fn edges_srtd_x(&self) -> &Vec<Edge> { &self.edges_srtd_x }
-    #[inline]
     pub(super) fn edges_tip(&self) -> &Vec<Edge> { &self.edges_tip }
-    #[inline]
     pub(super) fn edges_tip_tallest(&self) -> &Vec<Edge> { &self.edges_tip_tallest }
-    #[inline]
     pub(super) fn edges_tip_idx(&self) -> &Vec<usize> { &self.edges_tip_idx }
-    #[inline]
     pub(super) fn edge_root(&self) -> Option<Edge> { self.edge_root.clone() }
 
     // Memoized Methods --------------------------------------------------
-    #[inline]
     pub(super) fn tip_count(&self) -> usize {
         if let Some(cached) = self.cache_tip_count { cached } else { self.t.tip_count_all() }
     }
 
-    #[inline]
     pub(super) fn node_count(&self) -> usize {
         if let Some(cached) = self.cache_node_count { cached } else { self.t.node_count_all() }
     }
 
-    #[inline]
     pub(super) fn tre_height(&self) -> TreeFloat {
         if let Some(cached) = self.cache_tre_height { cached } else { self.t.height() }
     }
 
-    #[inline]
     pub(super) fn has_tip_labs(&self) -> bool {
         if let Some(cached) = self.cache_has_tip_labs { cached } else { self.t.has_tip_labels() }
     }
 
-    #[inline]
     pub(super) fn has_int_labs(&self) -> bool {
         if let Some(cached) = self.cache_has_int_labs { cached } else { self.t.has_int_labels() }
     }
 
-    #[inline]
     pub(super) fn has_brlen(&self) -> bool {
         if let Some(cached) = self.cache_has_brlen { cached } else { self.t.has_branch_lengths() }
     }
 
-    #[inline]
     pub(super) fn is_ultrametric(&self) -> Option<bool> {
         if let Some(cached) = self.cache_is_ultrametric {
             cached
@@ -94,13 +81,11 @@ impl TreeState {
         }
     }
 
-    #[inline]
     pub(super) fn is_rooted(&self) -> bool {
         if let Some(cached) = self.cache_is_rooted { cached } else { self.t.is_rooted() }
     }
 
     // Rooting -----------------------------------------------------------
-    #[inline]
     pub(super) fn can_root(&self, node_id: &NodeId) -> bool { self.t.can_root(node_id) }
 
     pub(super) fn root(&mut self, node_id: &NodeId) -> Option<NodeId> {
@@ -225,10 +210,8 @@ impl TreeState {
     }
 
     // Selection ---------------------------------------------------------
-    #[inline]
     pub(super) fn sel_node_ids(&self) -> &HashSet<dendros::NodeId> { &self.sel_node_ids }
 
-    #[inline]
     pub(super) fn select_deselect_node(&mut self, node_id: &NodeId) {
         if self.sel_node_ids.contains(node_id) {
             self.deselect_node(node_id);
@@ -241,21 +224,13 @@ impl TreeState {
     fn deselect_node(&mut self, node_id: &NodeId) { self.sel_node_ids.remove(node_id); }
 
     // Cached Geometries -------------------------------------------------
-    #[inline]
     pub(super) fn cache_edge(&self) -> &Cache { &self.cache_edge }
-    #[inline]
     pub(super) fn clear_cache_edge(&self) { self.cache_edge.clear(); }
-    #[inline]
     pub(super) fn cache_lab_tip(&self) -> &Cache { &self.cache_lab_tip }
-    #[inline]
     pub(super) fn clear_cache_lab_tip(&self) { self.cache_lab_tip.clear(); }
-    #[inline]
     pub(super) fn cache_lab_int(&self) -> &Cache { &self.cache_lab_int }
-    #[inline]
     pub(super) fn clear_cache_lab_int(&self) { self.cache_lab_int.clear(); }
-    #[inline]
     pub(super) fn cache_lab_brnch(&self) -> &Cache { &self.cache_lab_brnch }
-    #[inline]
     pub(super) fn clear_cache_lab_brnch(&self) { self.cache_lab_brnch.clear(); }
 
     // Setup -------------------------------------------------------------

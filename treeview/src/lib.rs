@@ -15,7 +15,7 @@
 // #![allow(clippy::needless_range_loop)]
 // -------------------------------------
 
-mod cnv_path_builder;
+mod cnv_path;
 mod cnv_plot;
 mod cnv_tree;
 mod cnv_utils;
@@ -34,7 +34,7 @@ use std::collections::HashSet;
 use std::fmt::{Display, Formatter, Result};
 use std::ops::RangeInclusive;
 
-use cnv_path_builder::PathBuilder;
+use cnv_path::PathBuilder;
 use cnv_plot::PlotCnv;
 use consts::*;
 use dendros::{Edge, Node, NodeId, Tree, TreeFloat, flatten_tree};

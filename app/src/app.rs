@@ -142,10 +142,7 @@ impl App {
 
                     match parsed_data {
                         ParsedData::Trees(trees) => match trees {
-                            Some(trees) => {
-                                println!("Loaded {} trees.", &trees.len());
-                                Task::done(AppMsg::TvMsg(TvMsg::TreesLoaded(trees)))
-                            }
+                            Some(trees) => Task::done(AppMsg::TvMsg(TvMsg::TreesLoaded(trees))),
                             None => {
                                 println!("ParsedData::Trees(None)");
                                 Task::none()

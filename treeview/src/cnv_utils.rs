@@ -1,12 +1,14 @@
 use crate::iced::*;
 use crate::*;
 
-#[inline]
-pub fn draw_rect(rect: Rectangle, stroke: Strk, frame: &mut Frame) {
+pub fn stroke_rect(rect: Rectangle, stroke: Strk, frame: &mut Frame) {
     frame.stroke(&PathBuilder::new().rectangle(rect).build(), stroke);
 }
 
-#[inline]
-pub fn draw_point(point: Point, stroke: Strk, radius: Float, frame: &mut Frame) {
+pub fn stroke_circle(point: Point, stroke: Strk, radius: Float, frame: &mut Frame) {
     frame.stroke(&PathBuilder::new().circle(point, radius).build(), stroke);
+}
+
+pub fn fill_circle(point: Point, fill: CnvFill, radius: Float, frame: &mut Frame) {
+    frame.fill(&PathBuilder::new().circle(point, radius).build(), fill);
 }

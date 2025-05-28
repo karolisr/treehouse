@@ -4,7 +4,7 @@ use crate::*;
 
 #[derive(Debug)]
 pub struct St {
-    pub(crate) tip_lab_extra_w: Float,
+    // pub(crate) tip_lab_extra_w: Float,
     pub(crate) mouse: Option<Point>,
     pub(crate) bnds: Rectangle<Float>,
     pub(crate) cnv_vs: RectVals<Float>,
@@ -14,22 +14,26 @@ pub struct St {
     pub(crate) tre_rect: Rectangle<Float>,
     pub(crate) vis_rect: Rectangle<Float>,
     pub(crate) vis_node_idxs: Vec<usize>,
-    pub(crate) node_data: Vec<NodeData>,
-    pub(crate) rl: Float,
-    pub(crate) rot: Float,
-    pub(crate) trans: Vector,
+    pub(crate) vis_nodes: Vec<NodeData>,
+    pub(crate) hovered_node: Option<NodeData>,
+    pub(crate) node_radius: Float,
+    pub(crate) node_radius_hover: Float,
+    pub(crate) root_len: Float,
+    pub(crate) rotation: Float,
+    pub(crate) translation: Vector,
     pub(crate) text_w_tip: Option<TextWidth<'static>>,
     pub(crate) text_w_int: Option<TextWidth<'static>>,
     pub(crate) text_w_brnch: Option<TextWidth<'static>>,
     pub(crate) labs_tip: Vec<Label>,
     pub(crate) labs_int: Vec<Label>,
     pub(crate) labs_brnch: Vec<Label>,
+    pub(crate) is_new: bool,
 }
 
 impl Default for St {
     fn default() -> Self {
         Self {
-            tip_lab_extra_w: 0e0,
+            // tip_lab_extra_w: 0e0,
             mouse: None,
             bnds: Default::default(),
             cnv_vs: Default::default(),
@@ -39,29 +43,50 @@ impl Default for St {
             tre_rect: Default::default(),
             vis_rect: Default::default(),
             vis_node_idxs: Vec::new(),
-            node_data: Vec::new(),
-            rl: 0e0,
-            rot: 0e0,
-            trans: Vector { x: 0e0, y: 0e0 },
+            vis_nodes: Vec::new(),
+            hovered_node: None,
+            node_radius: 8.0,
+            node_radius_hover: 10.0,
+            root_len: 0e0,
+            rotation: 0e0,
+            translation: Vector { x: 0e0, y: 0e0 },
             text_w_tip: Some(text_width(TIP_LAB_SIZE as Float, FNT_NAME_LAB)),
             text_w_int: Some(text_width(INT_LAB_SIZE as Float, FNT_NAME_LAB)),
             text_w_brnch: Some(text_width(BRNCH_LAB_SIZE as Float, FNT_NAME_LAB)),
             labs_tip: Vec::new(),
             labs_int: Vec::new(),
             labs_brnch: Vec::new(),
+            is_new: true, // sometimes canvas state gets recreated losing all the stored state.
         }
     }
 }
 
 impl St {
-    #[inline]
-    pub(super) fn update_vis_nodes_phygrm(
+    pub(super) fn update_mouse_pos(&mut self, crsr: Cursor) -> Option<Point<Float>> {
+        crsr.position_in(self.bnds).map(|mouse| {
+            if self.rotation != 0e0 {
+                let mouse_dist_from_center = mouse.distance(Point { x: self.tre_vs.cntr.x, y: self.tre_vs.cntr.y });
+                let mouse_x_untrans = mouse.x - self.translation.x;
+                let mouse_y_untrans = mouse.y - self.translation.y;
+                let angle = mouse_y_untrans.atan2(mouse_x_untrans) - self.rotation;
+                let (sin, cos) = angle.sin_cos();
+                Point { x: cos * mouse_dist_from_center, y: sin * mouse_dist_from_center }
+            } else {
+                mouse - self.translation
+            }
+        })
+    }
+
+    pub(super) fn update_vis_node_idxs_phygrm(
         &mut self, max_tips: usize, max_nodes: usize, node_size: Float, tip_edge_idxs: &[usize],
     ) {
         self.vis_node_idxs.clear();
-        if let Some(tip_idx_range) =
-            self.vis_tip_idx_range_phygrm(self.vis_vs.y0, self.vis_vs.y1, node_size, tip_edge_idxs)
-            && tip_idx_range.end() - tip_idx_range.start() <= max_tips
+        if let Some(tip_idx_range) = self.vis_tip_idx_range_phygrm(
+            self.vis_vs.y0 - self.tre_vs.y0,
+            self.vis_vs.y1 - self.tre_vs.y0,
+            node_size,
+            tip_edge_idxs,
+        ) && tip_idx_range.end() - tip_idx_range.start() <= max_tips
         {
             let node_idx_range = self.vis_node_idx_range_phygrm(&tip_idx_range, tip_edge_idxs);
             if node_idx_range.end() - node_idx_range.start() <= max_nodes {
@@ -70,26 +95,23 @@ impl St {
         }
     }
 
-    #[inline]
     fn vis_tip_idx_range_phygrm(
         &self, y0: Float, y1: Float, node_size: Float, tip_edge_idxs: &[usize],
     ) -> Option<IndexRange> {
         tip_idx_range_between_y_vals(y0, y1, node_size, tip_edge_idxs)
     }
 
-    #[inline]
     fn vis_node_idx_range_phygrm(&self, tip_idx_range: &IndexRange, tip_edge_idxs: &[usize]) -> IndexRange {
         node_idx_range_for_tip_idx_range(tip_idx_range, tip_edge_idxs)
     }
 
-    #[inline]
-    pub(super) fn update_vis_nodes_fan(&mut self, max_tips: usize, max_nodes: usize, opn: Float, edges: &[Edge]) {
+    pub(super) fn update_vis_node_idxs_fan(&mut self, max_tips: usize, max_nodes: usize, opn: Float, edges: &[Edge]) {
         let mut tip_count: usize = 0;
         self.vis_node_idxs.clear();
         for e in edges {
-            let angle = edge_angle(opn, e) + self.rot;
-            let point = node_point_pol(angle, self.tre_vs.radius_min, self.rl, e);
-            if self.vis_rect.contains(point + self.trans) {
+            let angle = edge_angle(opn, e) + self.rotation;
+            let point = node_point_pol(angle, self.tre_vs.radius_min, self.root_len, e);
+            if self.vis_rect.contains(point + self.translation) {
                 self.vis_node_idxs.push(e.edge_idx);
                 if e.is_tip {
                     tip_count += 1;
@@ -102,7 +124,6 @@ impl St {
         }
     }
 
-    #[inline]
     pub(super) fn calc_tip_lab_extra_w(&mut self, tst: &TreeState) -> Float {
         let mut max_w: Float = 0e0;
         if let Some(text_w) = &mut self.text_w_tip {

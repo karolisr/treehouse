@@ -132,15 +132,15 @@ fn scrollable_v<'a>(
 }
 
 pub(crate) fn slider<'a, T>(
-    lab: Option<&str>, min: T, max: T, sel: T, msg: impl 'a + Fn(T) -> TvMsg,
+    lab: Option<&str>, min: T, max: T, sel: T, step: T, shift_step: T, msg: impl 'a + Fn(T) -> TvMsg,
 ) -> Element<'a, TvMsg>
 where
     f64: From<T>,
     T: 'a + PartialOrd + From<u8> + Copy + FromPrimitive,
 {
     let mut slider: Slider<T, TvMsg> = Slider::new(min..=max, sel, msg);
-    slider = slider.step(1);
-    slider = slider.shift_step(2);
+    slider = slider.step(step);
+    slider = slider.shift_step(shift_step);
     // slider = slider.height(TEXT_SIZE * 1.2);
     // slider = slider.style(sty_slider);
 

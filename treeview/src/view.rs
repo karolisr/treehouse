@@ -198,6 +198,8 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
                     tv.tre_cnv_h_idx_min,
                     tv.tre_cnv_h_idx_max,
                     tv.tre_cnv_h_idx_sel,
+                    1,
+                    2,
                     TvMsg::CnvHeightSelChanged,
                 ));
             }
@@ -206,6 +208,8 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
                 tv.tre_cnv_w_idx_min,
                 tv.tre_cnv_w_idx_max,
                 tv.tre_cnv_w_idx_sel,
+                1,
+                2,
                 TvMsg::CnvWidthSelChanged,
             ));
         }
@@ -215,6 +219,8 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
                 tv.tre_cnv_z_idx_min,
                 tv.tre_cnv_z_idx_max,
                 tv.tre_cnv_z_idx_sel,
+                1,
+                2,
                 TvMsg::CnvZoomSelChanged,
             ));
             sb_col = sb_col.push(slider(
@@ -222,6 +228,8 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
                 tv.opn_angle_idx_min,
                 tv.opn_angle_idx_max,
                 tv.opn_angle_idx_sel,
+                1,
+                15,
                 TvMsg::OpnAngleChanged,
             ));
             sb_col = sb_col.push(slider(
@@ -229,6 +237,8 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
                 tv.rot_angle_idx_min,
                 tv.rot_angle_idx_max,
                 tv.rot_angle_idx_sel,
+                1,
+                15,
                 TvMsg::RotAngleChanged,
             ));
         }
@@ -239,7 +249,15 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
     if ts.has_tip_labs() && tv.draw_labs_tip && tv.draw_labs_allowed {
         sb_col = sb_col.push(iced_col![
             toggler_label_tip(true, tv.draw_labs_tip,),
-            slider(None, tv.lab_size_idx_min, tv.lab_size_idx_max, tv.tip_lab_size_idx_sel, TvMsg::TipLabSizeChanged,)
+            slider(
+                None,
+                tv.lab_size_idx_min,
+                tv.lab_size_idx_max,
+                tv.tip_lab_size_idx_sel,
+                1,
+                2,
+                TvMsg::TipLabSizeChanged,
+            )
         ])
     } else {
         sb_col = sb_col.push(toggler_label_tip(ts.has_tip_labs() && tv.draw_labs_allowed, tv.draw_labs_tip))
@@ -248,7 +266,15 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
     if ts.has_int_labs() && tv.draw_labs_int && tv.draw_labs_allowed {
         sb_col = sb_col.push(iced_col![
             toggler_label_int(true, tv.draw_labs_int),
-            slider(None, tv.lab_size_idx_min, tv.lab_size_idx_max, tv.int_lab_size_idx_sel, TvMsg::IntLabSizeChanged,)
+            slider(
+                None,
+                tv.lab_size_idx_min,
+                tv.lab_size_idx_max,
+                tv.int_lab_size_idx_sel,
+                1,
+                2,
+                TvMsg::IntLabSizeChanged,
+            )
         ])
     } else {
         sb_col = sb_col.push(toggler_label_int(ts.has_int_labs() && tv.draw_labs_allowed, tv.draw_labs_int))
@@ -262,6 +288,8 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
                 tv.lab_size_idx_min,
                 tv.lab_size_idx_max,
                 tv.brnch_lab_size_idx_sel,
+                1,
+                2,
                 TvMsg::BrnchLabSizeChanged,
             )
         ])
@@ -277,6 +305,8 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
             tv.root_len_idx_min,
             tv.root_len_idx_max,
             tv.root_len_idx_sel,
+            1,
+            2,
             TvMsg::RootLenSelChanged,
         ));
 

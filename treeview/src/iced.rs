@@ -1,8 +1,6 @@
 use iced as i;
 use iced::widget as w;
 
-// pub use i::widget::canvas::path::lyon_path;
-
 pub use i::alignment::{Horizontal, Vertical};
 pub use i::font::{Family, Stretch, Style as FontStyle, Weight};
 pub use i::mouse::{Cursor, Event as MouseEvent, Interaction};
@@ -12,9 +10,19 @@ pub use i::{
     Vector,
 };
 pub use w::canvas::{
-    Action, Cache, Canvas as Cnv, Frame, Geometry, Program, Text as CnvText,
-    path::{Path, lyon_path},
-    stroke::{LineCap, LineDash, LineJoin, Stroke as Strk, Style::Solid},
+    Action,
+    Cache,
+    Canvas as Cnv,
+    Frame,
+    Geometry,
+    Program,
+    // Style::Gradient,
+    Style::Solid,
+    Text as CnvText,
+    fill::Fill as CnvFill,
+    fill::Rule as FillRule,
+    path::{Path as IcedPath, lyon_path},
+    stroke::{LineCap, LineDash, LineJoin, Stroke as Strk},
 };
 pub use w::center;
 pub use w::column as iced_col;

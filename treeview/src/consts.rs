@@ -78,6 +78,9 @@ pub(crate) const STRK_TMPL: Strk = Strk {
     line_dash: LineDash { segments: &[], offset: 0 },
 };
 
+pub(crate) const FILL_TMPL: CnvFill = CnvFill { style: Solid(Clr::YEL_50), rule: FillRule::EvenOdd };
+pub(crate) const FILL_NODE_HOVER: CnvFill = CnvFill { ..FILL_TMPL };
+
 pub(crate) const STRK_1: Strk = Strk { width: 1e0, ..STRK_TMPL };
 pub(crate) const STRK_2: Strk = Strk { width: 2e0, ..STRK_TMPL };
 pub(crate) const STRK_3: Strk = Strk { width: 3e0, ..STRK_TMPL };
