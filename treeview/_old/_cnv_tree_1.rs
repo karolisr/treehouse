@@ -26,7 +26,7 @@ impl Program<TreeViewMsg> for TreeCnv {
 
         if let Some(pt) = self.found_edge_pt {
             let g_node_found_iter = self.g_node_found_iter.draw(renderer, bounds.size(), |f| {
-                let ps = self.node_radius * 1e0;
+                let ps = self.node_radius * ONE;
                 draw_node(&pt, ps, stroke, color_danger_base.scale_alpha(0.75), &state.tree_rect, f);
             });
             geoms.push(g_node_found_iter);
@@ -48,13 +48,9 @@ impl Program<TreeViewMsg> for TreeCnv {
         {
             let g_palette = self.g_palette.draw(renderer, bounds.size(), |f| {
                 let colors_bg = [color_bg_base, color_bg_weakest, color_bg_weak, color_bg_strong, color_bg_strongest];
-
                 let colors_primary = [color_primary_base, color_primary_weak, color_primary_strong, color_text];
-
                 let colors_secondary = [color_secondary_base, color_secondary_weak, color_secondary_strong];
-
                 let colors_other = [color_success_base, color_warning_base, color_danger_base];
-
                 let color_rect_size = SF * 15e0;
                 let palette_rect_w = 2e0 * PADDING + color_rect_size * 5e0;
                 let palette_rect_h = 2e0 * PADDING + color_rect_size * 4e0;
@@ -91,7 +87,7 @@ impl Program<TreeViewMsg> for TreeCnv {
                     f.fill_rectangle(
                         Point {
                             x: palette_rect_x + PADDING + color_rect_size * i as Float,
-                            y: palette_rect_y + PADDING + color_rect_size * 1e0,
+                            y: palette_rect_y + PADDING + color_rect_size * ONE,
                         },
                         iced::Size { width: color_rect_size, height: color_rect_size },
                         *c,
@@ -102,7 +98,7 @@ impl Program<TreeViewMsg> for TreeCnv {
                     f.fill_rectangle(
                         Point {
                             x: palette_rect_x + PADDING + color_rect_size * i as Float,
-                            y: palette_rect_y + PADDING + color_rect_size * 2e0,
+                            y: palette_rect_y + PADDING + color_rect_size * TWO,
                         },
                         iced::Size { width: color_rect_size, height: color_rect_size },
                         *c,

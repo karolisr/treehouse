@@ -8,7 +8,7 @@ pub(super) fn draw_bounds(tv: &TreeView, st: &St, rndr: &Renderer, bnds: Rectang
     g.push(tv.cache_bnds.draw(rndr, bnds.size(), |f| {
         stroke_rect(st.cnv_rect, STRK_5_BLU_50, f);
         stroke_rect(st.tre_rect, STRK_3_GRN_50, f);
-        stroke_rect(st.vis_rect, STRK_5_RED_50_DASH, f);
+        stroke_rect(st.vis_rect, Strk { line_dash: DASH_010, ..STRK_5_MAG_50 }, f);
     }));
 }
 
@@ -44,13 +44,13 @@ pub(super) fn draw_legend(tv: &TreeView, st: &St, tst: &TreeState, rndr: &Render
 
 pub(super) fn draw_labs_tip(tv: &TreeView, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>) {
     g.push(tst.cache_lab_tip().draw(rndr, sz, |f| {
-        draw_labels(&st.labs_tip, Vector { x: tv.lab_offset_tip, y: 0e0 }, Some(st.translation), st.rotation, f);
+        draw_labels(&st.labs_tip, Vector { x: tv.lab_offset_tip, y: ZRO }, Some(st.translation), st.rotation, f);
     }));
 }
 
 pub(super) fn draw_labs_int(tv: &TreeView, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>) {
     g.push(tst.cache_lab_int().draw(rndr, sz, |f| {
-        draw_labels(&st.labs_int, Vector { x: tv.lab_offset_int, y: 0e0 }, Some(st.translation), st.rotation, f);
+        draw_labels(&st.labs_int, Vector { x: tv.lab_offset_int, y: ZRO }, Some(st.translation), st.rotation, f);
     }));
 }
 
@@ -58,7 +58,7 @@ pub(super) fn draw_labs_brnch(
     tv: &TreeView, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_lab_brnch().draw(rndr, sz, |f| {
-        draw_labels(&st.labs_brnch, Vector { x: 0e0, y: tv.lab_offset_brnch }, Some(st.translation), st.rotation, f);
+        draw_labels(&st.labs_brnch, Vector { x: ZRO, y: tv.lab_offset_brnch }, Some(st.translation), st.rotation, f);
     }));
 }
 
@@ -106,14 +106,14 @@ pub(super) fn draw_cursor_line(
             f.translate(st.translation);
             match tv.tre_sty_opt_sel {
                 TreSty::PhyGrm => {
-                    let p0 = Point { x: p.x, y: 0e0 };
+                    let p0 = Point { x: p.x, y: ZRO };
                     let p1 = Point { x: p.x, y: st.tre_vs.h };
-                    f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), STRK_1_RED_50_DASH);
+                    f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), STRK_CRSR_LINE);
                 }
                 TreSty::Fan => {
                     let r = Point::ORIGIN.distance(p);
                     f.rotate(st.rotation);
-                    stroke_circle(Point::ORIGIN, STRK_1_RED_50_DASH, r, f);
+                    stroke_circle(Point::ORIGIN, STRK_CRSR_LINE, r, f);
                 }
             }
             f.pop_transform();
@@ -126,9 +126,9 @@ fn draw_scale_bar(
 ) {
     let mut lab_y_offset = 5e0;
     let mut lab_size = lab_size;
-    if lab_size == 1e0 {
-        lab_size = 0e0;
-        lab_y_offset = 0e0;
+    if lab_size == ONE {
+        lab_size = ZRO;
+        lab_y_offset = ZRO;
     }
 
     let w = match tre_sty {
@@ -139,7 +139,7 @@ fn draw_scale_bar(
     let a = tree_height / 3e0;
     let b = a.fract();
     let c = a - b;
-    let sb_len = if c > 0e0 { (c / 1e1).floor() * 1e1 } else { (a * 1e1).floor() / 1e1 };
+    let sb_len = if c > ZRO { (c / 1e1).floor() * 1e1 } else { (a * 1e1).floor() / 1e1 };
 
     let sb_frac = sb_len / tree_height;
     let sb_len_on_screen = sb_frac * w;
@@ -156,9 +156,9 @@ fn draw_scale_bar(
 
     f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), STRK_2_BLK);
     let text = lab_text(format!("{sb_len}"), p_lab, lab_size, TXT_LAB_TMPL_SCALE_BAR);
-    if lab_size >= 2e0 {
+    if lab_size >= TWO {
         let lab = Label { text, width: sb_len_on_screen, angle: None };
-        draw_labels(&[lab], Vector { x: 0e0, y: lab_y_offset }, None, 0e0, f);
+        draw_labels(&[lab], Vector { x: ZRO, y: lab_y_offset }, None, ZRO, f);
     }
 }
 
@@ -186,16 +186,16 @@ fn draw_labels(labels: &[Label], offset: Vector, trans: Option<Vector>, rot: Flo
     for Label { text, width, angle } in labels {
         let mut text = text.clone();
         let mut adjust_h = match text.align_y {
-            Vertical::Top => text.size.0 / 2e0 - 7e0,
-            Vertical::Center => 0e0,
-            Vertical::Bottom => -text.size.0 / 2e0 + 7e0,
+            Vertical::Top => text.size.0 / TWO - 7e0,
+            Vertical::Center => ZRO,
+            Vertical::Bottom => -text.size.0 / TWO + 7e0,
         };
         if let Some(angle) = angle {
             let mut angle = *angle;
             let mut adjust_w = match text.align_x {
                 TextAlignment::Left => offset.x,
                 TextAlignment::Right => -offset.x,
-                _ => 0e0,
+                _ => ZRO,
             };
             adjust_h += offset.y;
             // = Rotate labels on the left side of the circle by 180 degrees ============
@@ -205,7 +205,7 @@ fn draw_labels(labels: &[Label], offset: Vector, trans: Option<Vector>, rot: Flo
                 adjust_w = match text.align_x {
                     TextAlignment::Left => -width - offset.x,
                     TextAlignment::Right => width + offset.x,
-                    _ => 0e0,
+                    _ => ZRO,
                 };
             }
             // ==========================================================================
@@ -221,7 +221,7 @@ fn draw_labels(labels: &[Label], offset: Vector, trans: Option<Vector>, rot: Flo
             f.pop_transform();
         } else {
             f.push_transform();
-            f.translate(Vector { x: 0e0, y: adjust_h });
+            f.translate(Vector { x: ZRO, y: adjust_h });
             f.fill_text(text);
             f.pop_transform();
         }
@@ -241,7 +241,7 @@ fn stroke_edges_phygrm(edges: &[Edge], tre_vs: &RectVals<Float>, root_len: Float
 
     f.with_save(|f| {
         f.translate(tre_vs.trans);
-        f.translate(Vector { x: root_len, y: 0e0 });
+        f.translate(Vector { x: root_len, y: ZRO });
         f.stroke(&pb.build(), STRK_EDGE);
         stroke_root_phygrm(w, tre_vs.h, root_len, root, f);
     })
@@ -252,15 +252,15 @@ fn stroke_edges_fan(
     f: &mut Frame,
 ) {
     let mut pb: PathBuilder = PathBuilder::new();
-    if opn_angle >= 1e0_f32.to_radians() {
+    if opn_angle >= ONE.to_radians() {
         for e in edges {
             let nd = node_data_rad(opn_angle, tre_vs.radius_min, root_len, e);
             pb = edge_path_pol_pb(&nd, pb);
             pb = edge_path_arc_pol_pb(&nd, pb);
         }
     } else {
-        let p0 = Point { x: root_len, y: 0e0 };
-        let p1 = Point { x: tre_vs.radius_min, y: 0e0 };
+        let p0 = Point { x: root_len, y: ZRO };
+        let p1 = Point { x: tre_vs.radius_min, y: ZRO };
         pb = pb.move_to(p0).line_to(p1)
     }
 
@@ -274,20 +274,20 @@ fn stroke_edges_fan(
 
 fn stroke_root_phygrm(w: Float, h: Float, root_len: Float, root_edge: Option<Edge>, f: &mut Frame) {
     if let Some(root_edge) = root_edge
-        && root_len > 0e0
+        && root_len > ZRO
     {
         let nd = node_data_cart(w, h, &root_edge);
         let pt_parent = Point { x: -root_len, y: nd.points.p0.y };
-        f.stroke(&PathBuilder::new().move_to(nd.points.p0).line_to(pt_parent).build(), STRK_1_BLK_DASH);
+        f.stroke(&PathBuilder::new().move_to(nd.points.p0).line_to(pt_parent).build(), STRK_ROOT);
     };
 }
 
 fn stroke_root_fan(radius_min: Float, opn_angle: Float, root_len: Float, root_edge: Option<Edge>, f: &mut Frame) {
     if let Some(root_edge) = root_edge
-        && root_len > 0e0
+        && root_len > ZRO
     {
         let nd = node_data_rad(opn_angle, radius_min, root_len, &root_edge);
-        f.stroke(&PathBuilder::new().move_to(nd.points.p0).line_to(Point::ORIGIN).build(), STRK_1_BLK_DASH);
+        f.stroke(&PathBuilder::new().move_to(nd.points.p0).line_to(Point::ORIGIN).build(), STRK_ROOT);
     };
 }
 

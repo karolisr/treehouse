@@ -11,7 +11,7 @@ pub struct TreeView {
     pub(super) tre_pane_id: Option<Pane>,
     pub(super) ltt_pane_id: Option<Pane>,
     // -------------------------------------------------------------------
-    pub(super) ltt_plot: PlotCnv,
+    pub(super) ltt_cnv: PlotCnv,
     pub(super) show_ltt: bool,
     // -------------------------------------------------------------------
     pub(super) show_toolbar: bool,
@@ -172,14 +172,14 @@ impl TreeView {
         Self {
             tre_padd: 1e1,
             sidebar_pos_sel: sel_sidebar_pos,
-            show_ltt: false,
+            show_ltt: true,
             show_toolbar: true,
             show_sidebar: true,
             draw_labs_tip: false,
             draw_labs_int: false,
             draw_labs_brnch: false,
-            draw_legend: false,
-            draw_cursor_line: false,
+            draw_legend: true,
+            draw_cursor_line: true,
             drawing_enabled: true,
             // -----------------------------------------------------------
             tip_labs_vis_max: 400,
@@ -242,19 +242,19 @@ impl TreeView {
         match tv_msg {
             TvMsg::CursorLineVisChanged(state) => {
                 self.draw_cursor_line = state;
-                self.ltt_plot.draw_cursor_line = state;
+                self.ltt_cnv.draw_cursor_line = state;
             }
 
             TvMsg::CursorOnTreCnv { x } => {
                 // println!("CursorOnTreCnv: {x:?}");
                 self.crsr_x_rel = None;
-                self.ltt_plot.crsr_x_rel = x;
+                self.ltt_cnv.crsr_x_rel = x;
             }
 
             TvMsg::CursorOnLttCnv { x } => {
                 // println!("CursorOnLttCnv: {x:?}");
                 self.crsr_x_rel = x;
-                self.ltt_plot.crsr_x_rel = None;
+                self.ltt_cnv.crsr_x_rel = None;
             }
 
             TvMsg::LttpVisChanged(show_ltt) => {
@@ -331,6 +331,8 @@ impl TreeView {
             TvMsg::PrevTre => {
                 self.prev_tre();
                 self.sort();
+                self.set_ltt_plot_data();
+                self.ltt_cnv.clear_cache_plot();
                 self.clear_cache_edge();
                 self.stale_vis_rect = true;
             }
@@ -338,6 +340,8 @@ impl TreeView {
             TvMsg::NextTre => {
                 self.next_tre();
                 self.sort();
+                self.set_ltt_plot_data();
+                self.ltt_cnv.clear_cache_plot();
                 self.clear_cache_edge();
                 self.stale_vis_rect = true;
             }
@@ -357,6 +361,8 @@ impl TreeView {
                 }
                 self.clear_cache_edge();
                 self.clear_cache_legend();
+                self.set_ltt_plot_data();
+                self.ltt_cnv.clear_cache_plot();
                 self.stale_vis_rect = true;
             }
 
@@ -368,6 +374,8 @@ impl TreeView {
                 }
                 self.clear_cache_edge();
                 self.clear_cache_legend();
+                self.set_ltt_plot_data();
+                self.ltt_cnv.clear_cache_plot();
                 self.stale_vis_rect = true;
             }
 
@@ -396,12 +404,14 @@ impl TreeView {
                 }
                 self.sort();
                 self.clear_caches_all();
+                self.set_ltt_plot_data();
+                self.ltt_cnv.clear_cache_plot();
                 self.stale_vis_rect = true;
 
                 if self.is_new {
                     self.show_hide_ltt();
-                    self.ltt_plot.draw_cursor_line = self.draw_cursor_line;
-                    self.ltt_plot.tre_padd = self.tre_padd;
+                    self.ltt_cnv.draw_cursor_line = self.draw_cursor_line;
+                    self.ltt_cnv.tre_padd = self.tre_padd;
                     self.is_new = false;
                 }
             }
@@ -553,9 +563,9 @@ impl TreeView {
         let w = self.tre_cnv_w();
         let mut x = w * self.tre_cnv_vis_x_mid_rel;
         if self.tre_cnv_vis_x1 == w {
-            x += self.tre_scr_w / 2e0
-        } else if self.tre_cnv_vis_x0 == 0e0 {
-            x -= self.tre_scr_w / 2e0
+            x += self.tre_scr_w / TWO
+        } else if self.tre_cnv_vis_x0 == ZRO {
+            x -= self.tre_scr_w / TWO
         }
         self.scroll_tre_cnv(x, self.tre_cnv_vis_y_mid)
     }
@@ -564,9 +574,9 @@ impl TreeView {
         let h = self.tre_cnv_h();
         let mut y = h * self.tre_cnv_vis_y_mid_rel;
         if self.tre_cnv_vis_y1 == h {
-            y += self.tre_scr_h / 2e0
-        } else if self.tre_cnv_vis_y0 == 0e0 {
-            y -= self.tre_scr_h / 2e0
+            y += self.tre_scr_h / TWO
+        } else if self.tre_cnv_vis_y0 == ZRO {
+            y -= self.tre_scr_h / TWO
         }
         self.scroll_tre_cnv(self.tre_cnv_vis_x_mid, y)
     }
@@ -579,8 +589,8 @@ impl TreeView {
     }
 
     fn scroll_tre_cnv(&self, x: Float, y: Float) -> Option<Task<TvMsg>> {
-        let x = (x - self.tre_scr_w / 2e0).max(0e0);
-        let y = (y - self.tre_scr_h / 2e0).max(0e0);
+        let x = (x - self.tre_scr_w / TWO).max(ZRO);
+        let y = (y - self.tre_scr_h / TWO).max(ZRO);
         let task1 = scroll_to(self.tre_scr_id, AbsoluteOffset { x, y });
         if !self.ltt_cnv_needs_scrl {
             Some(task1)
@@ -593,9 +603,16 @@ impl TreeView {
         let y = match receiver_id {
             id if id == self.ltt_scr_id => self.ltt_cnv_vis_y0,
             id if id == self.tre_scr_id => self.tre_cnv_vis_y0,
-            _ => 0e0,
+            _ => ZRO,
         };
         Some(scroll_to(receiver_id, AbsoluteOffset { x, y }))
+    }
+
+    fn set_ltt_plot_data(&mut self) {
+        if let Some(ts) = self.sel_tre() {
+            let plot_data: Vec<PlotData> = ltt(ts.edges_srtd_y(), 1000).iter().map(|lttp| lttp.into()).collect();
+            self.ltt_cnv.set_plot_data(&plot_data);
+        }
     }
 
     pub(super) fn clear_cache_bnds(&self) { self.cache_bnds.clear() }
@@ -664,7 +681,7 @@ impl TreeView {
                     h
                 } else {
                     let tip_count = self.tip_count() as Float;
-                    if h / tip_count > 1e0 {
+                    if h / tip_count > ONE {
                         5e2 * self.tre_cnv_h_idx_sel as Float
                     } else {
                         tip_count * self.tre_cnv_h_idx_sel as Float

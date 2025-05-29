@@ -7,7 +7,7 @@ pub(crate) fn sty_cont(theme: &Theme) -> ContainerStyle {
     ContainerStyle {
         text_color: Some(pb.text),
         background: None,
-        border: Border { width: 1e0, color: Clr::BLK, radius: 0.into() },
+        border: Border { width: ONE, color: Clr::BLK, radius: 0.into() },
         ..Default::default()
     }
 }
@@ -22,10 +22,10 @@ pub(crate) fn sty_pane_grid(theme: &Theme) -> PgStyle {
     PgStyle {
         hovered_region: PgHighlight {
             background: Clr::GRN_25.into(),
-            border: Border { width: 1e0, color: pe.primary.strong.color, radius: 0.into() },
+            border: Border { width: ONE, color: pe.primary.strong.color, radius: 0.into() },
         },
-        hovered_split: PgLine { color: pe.primary.base.color, width: 1e0 },
-        picked_split: PgLine { color: pe.primary.strong.color, width: 1e0 },
+        hovered_split: PgLine { color: pe.primary.base.color, width: ONE },
+        picked_split: PgLine { color: pe.primary.strong.color, width: ONE },
     }
 }
 
@@ -38,7 +38,7 @@ pub(crate) fn sty_btn(theme: &Theme, status: ButtonStatus) -> ButtonStyle {
     let base = ButtonStyle {
         background: Some(Background::Color(palette.primary.base.color)),
         text_color: palette.primary.base.text,
-        border: Border { radius: 0e0.into(), width: 0e0, ..Default::default() },
+        border: Border { radius: ZRO.into(), width: ZRO, ..Default::default() },
         ..ButtonStyle::default()
     };
 
@@ -63,7 +63,7 @@ pub(crate) fn sty_pick_lst(theme: &Theme, status: PickListStatus) -> PickListSty
         background: palette.background.weak.color.into(),
         placeholder_color: palette.background.strong.color,
         handle_color: palette.background.weak.text,
-        border: Border { radius: 0e0.into(), width: 1e0, color: palette.background.strong.color },
+        border: Border { radius: ZRO.into(), width: ONE, color: palette.background.strong.color },
     };
 
     match status {
@@ -78,8 +78,8 @@ pub(crate) fn sty_rule(theme: &Theme) -> RuleStyle {
     let palette = theme.extended_palette();
     RuleStyle {
         color: palette.background.strong.color,
-        width: 1e0 as u16,
-        radius: 0e0.into(),
+        width: ONE as u16,
+        radius: ZRO.into(),
         fill_mode: RuleFillMode::Percent(1e2),
     }
 }
@@ -89,10 +89,10 @@ pub(crate) fn sty_scrlbl(theme: &Theme, status: ScrollableStatus) -> ScrollableS
 
     let scrollbar = ScrollBarRail {
         background: Some(palette.background.weak.color.into()),
-        border: Border { radius: 0e0.into(), width: 1e0, ..Default::default() },
+        border: Border { radius: ZRO.into(), width: ONE, ..Default::default() },
         scroller: Scroller {
             color: palette.background.strong.color,
-            border: Border { radius: 0e0.into(), width: 1e0, ..Default::default() },
+            border: Border { radius: ZRO.into(), width: ONE, ..Default::default() },
         },
     };
 
@@ -147,15 +147,15 @@ pub(crate) fn sty_slider(theme: &Theme, status: SliderStatus) -> SliderStyle {
         rail: SliderRail {
             backgrounds: (Clr::WHT.into(), Clr::WHT.into()),
             width: 6e0,
-            border: Border { radius: 0e0.into(), width: 1e0 * SF, color: Clr::BLK },
+            border: Border { radius: ZRO.into(), width: ONE * SF, color: Clr::BLK },
         },
 
         handle: SliderHandle {
             shape: SliderHandleShape::Circle { radius: 13.0 / 1.75 },
-            // shape: SliderHandleShape::Rectangle { width: (13.0 * 1.3) as u16, border_radius: 0e0.into() },
+            // shape: SliderHandleShape::Rectangle { width: (13.0 * 1.3) as u16, border_radius: ZRO.into() },
             background: color.into(),
             border_color: Clr::BLK,
-            border_width: 1e0 * SF,
+            border_width: ONE * SF,
         },
     }
 }
@@ -176,10 +176,10 @@ pub(crate) fn sty_toggler(theme: &Theme, status: TogglerStatus) -> TogglerStyle 
 
     TogglerStyle {
         background: Clr::WHT,
-        background_border_width: 1e0,
+        background_border_width: ONE,
         background_border_color: Clr::BLK,
         foreground: color,
-        foreground_border_width: 0e0,
+        foreground_border_width: ZRO,
         foreground_border_color: Clr::TRN,
     }
 }

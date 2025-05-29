@@ -14,6 +14,15 @@ impl Clr {
     pub const MAG: Color = Color { r: 1e0, g: 0e0, b: 1e0, a: 1e0 };
     pub const YEL: Color = Color { r: 1e0, g: 1e0, b: 0e0, a: 1e0 };
 
+    pub const BLK_75: Color = Color { r: 0e0, g: 0e0, b: 0e0, a: 0.75 };
+    pub const WHT_75: Color = Color { r: 1e0, g: 1e0, b: 1e0, a: 0.75 };
+    pub const RED_75: Color = Color { r: 1e0, g: 0e0, b: 0e0, a: 0.75 };
+    pub const GRN_75: Color = Color { r: 0e0, g: 1e0, b: 0e0, a: 0.75 };
+    pub const BLU_75: Color = Color { r: 0e0, g: 0e0, b: 1e0, a: 0.75 };
+    pub const CYA_75: Color = Color { r: 0e0, g: 1e0, b: 1e0, a: 0.75 };
+    pub const MAG_75: Color = Color { r: 1e0, g: 0e0, b: 1e0, a: 0.75 };
+    pub const YEL_75: Color = Color { r: 1e0, g: 1e0, b: 0e0, a: 0.75 };
+
     pub const BLK_50: Color = Color { r: 0e0, g: 0e0, b: 0e0, a: 0.5 };
     pub const WHT_50: Color = Color { r: 1e0, g: 1e0, b: 1e0, a: 0.5 };
     pub const RED_50: Color = Color { r: 1e0, g: 0e0, b: 0e0, a: 0.5 };

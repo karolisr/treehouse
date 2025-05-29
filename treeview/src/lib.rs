@@ -33,9 +33,9 @@ use std::collections::HashSet;
 use std::fmt::{Display, Formatter, Result};
 use std::ops::RangeInclusive;
 
-use cnv_plot::PlotCnv;
+use cnv_plot::{PlotCnv, PlotData};
 use consts::*;
-use dendros::{Edge, Node, NodeId, Tree, TreeFloat, flatten_tree};
+use dendros::{Edge, LttPoint, Node, NodeId, Tree, TreeFloat, flatten_tree, ltt};
 use num_traits::FromPrimitive;
 use path_utils::PathBuilder;
 use rayon::prelude::*;
@@ -105,8 +105,8 @@ pub struct RectVals<T> {
 
 impl RectVals<Float> {
     pub fn cnv(bounds: iced::Rectangle) -> Self {
-        let x = 0e0;
-        let y = 0e0;
+        let x = ZRO;
+        let y = ZRO;
         let w = bounds.width as Float;
         let h = bounds.height as Float;
         iced::Rectangle { x, y, width: w, height: h }.into()
@@ -115,8 +115,8 @@ impl RectVals<Float> {
     pub fn tre(clip: RectVals<Float>, padding: Float) -> Self {
         let x = clip.x0 + padding;
         let y = clip.y0 + padding;
-        let w = clip.w - padding * 2e0;
-        let h = clip.h - padding * 2e0;
+        let w = clip.w - padding * TWO;
+        let h = clip.h - padding * TWO;
         iced::Rectangle { x, y, width: w, height: h }.into()
     }
 
@@ -164,11 +164,11 @@ impl From<iced::Rectangle<Float>> for RectVals<Float> {
 
         let dim_min = w.min(h);
         let dim_max = w.max(h);
-        let radius_min = dim_min / 2e0;
+        let radius_min = dim_min / TWO;
         let radius_max = dim_min.hypot(dim_max);
 
-        let cntr_untrans_x = w / 2e0;
-        let cntr_untrans_y = h / 2e0;
+        let cntr_untrans_x = w / TWO;
+        let cntr_untrans_y = h / TWO;
 
         let cntr_x = cntr_untrans_x + x0;
         let cntr_y = cntr_untrans_y + y0;

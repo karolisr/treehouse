@@ -47,9 +47,9 @@ impl Default for St {
             vis_nodes: Vec::new(),
             node_radius: 8.0,
             node_radius_hover: 10.0,
-            root_len: 0e0,
-            rotation: 0e0,
-            translation: Vector { x: 0e0, y: 0e0 },
+            root_len: ZRO,
+            rotation: ZRO,
+            translation: Vector { x: ZRO, y: ZRO },
             text_w_tip: Some(text_width(TIP_LAB_SIZE as Float, FNT_NAME_LAB)),
             text_w_int: Some(text_width(INT_LAB_SIZE as Float, FNT_NAME_LAB)),
             text_w_brnch: Some(text_width(BRNCH_LAB_SIZE as Float, FNT_NAME_LAB)),
@@ -64,7 +64,7 @@ impl Default for St {
 impl St {
     pub(super) fn mouse_point(&mut self, crsr: Cursor) -> Option<Point<Float>> {
         crsr.position_in(self.bnds).map(|mouse| {
-            if self.rotation != 0e0 {
+            if self.rotation != ZRO {
                 let mouse_dist_from_center = mouse.distance(Point { x: self.tre_vs.cntr.x, y: self.tre_vs.cntr.y });
                 let mouse_x_untrans = mouse.x - self.translation.x;
                 let mouse_y_untrans = mouse.y - self.translation.y;
@@ -156,9 +156,9 @@ impl St {
     }
 
     pub(super) fn calc_tip_lab_extra_w(&mut self, tst: &TreeState) -> Float {
-        let mut max_w: Float = 0e0;
+        let mut max_w: Float = ZRO;
         if let Some(text_w) = &mut self.text_w_tip {
-            let mut max_offset: Float = 0e0;
+            let mut max_offset: Float = ZRO;
             for edge in tst.edges_tip_tallest() {
                 if let Some(name) = &edge.name {
                     let offset = edge.x1 as Float * self.tre_vs.w;
@@ -166,7 +166,7 @@ impl St {
                         max_offset = offset
                     };
                     let tip_name_w = text_w.width(name);
-                    let curr_max_w = tip_name_w + (max_offset + offset) / 2e0 - self.tre_vs.w;
+                    let curr_max_w = tip_name_w + (max_offset + offset) / TWO - self.tre_vs.w;
                     if curr_max_w >= max_w {
                         max_w = curr_max_w;
                     }
@@ -177,7 +177,7 @@ impl St {
     }
 
     // pub(super) fn update_vis_rect(&mut self, abs: RectVals<Float>) {
-    //     let buffer = 0e0;
+    //     let buffer = ZRO;
     //     let x0 = abs.x0.max(self.tre_vs.x0) - buffer;
     //     let y0 = abs.y0.max(self.tre_vs.y0) - buffer;
     //     let x1 = abs.x1.min(self.tre_vs.x0 + self.tre_vs.w) + buffer;

@@ -18,7 +18,7 @@ impl TreeView {
 
         main_col = main_col.padding(0);
         main_col = main_col.spacing(0);
-        main_row = main_row.padding(Padding { top: 0e0, right: 5e0, bottom: 5e0, left: 5e0 });
+        main_row = main_row.padding(Padding { top: ZRO, right: 5e0, bottom: 5e0, left: 5e0 });
         main_row = main_row.spacing(5);
 
         if self.show_toolbar {
@@ -78,7 +78,7 @@ fn pane_content<'a>(tv: &'a TreeView, _ts: &'a TreeState, tv_pane: &TvPane, size
             if tv.tre_sty_opt_sel == TreSty::Fan {
                 cnv_w = w;
             }
-            let cnv = Cnv::new(&tv.ltt_plot).width(cnv_w).height(h);
+            let cnv = Cnv::new(&tv.ltt_cnv).width(cnv_w).height(h);
             scrollable_cnv_ltt(tv.ltt_scr_id, cnv, w, h)
         }
     };

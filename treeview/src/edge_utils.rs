@@ -54,7 +54,7 @@ pub fn edge_path_arc_pol_pb(nd: &NodeDataPol, pb: PathBuilder) -> PathBuilder {
 }
 
 pub fn tip_idx_range_between_y_vals(y0: Float, y1: Float, node_size: Float, tips: &[usize]) -> Option<IndexRange> {
-    if node_size <= 0e0 {
+    if node_size <= ZRO {
         return None;
     }
     let i0: i64 = (y0 / node_size) as i64;

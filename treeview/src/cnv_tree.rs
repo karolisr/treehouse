@@ -40,23 +40,23 @@ impl Program<TvMsg> for TreeView {
             st.tre_vs = RectVals::tre(st.cnv_vs, self.tre_padd);
             st.cnv_rect = st.cnv_vs.into();
 
-            let mut tip_w: Float = 0e0;
+            let mut tip_w: Float = ZRO;
             if self.draw_labs_tip && tst.has_tip_labs() {
                 tip_w = self.lab_offset_tip + st.calc_tip_lab_extra_w(tst);
             };
 
             match tre_sty {
                 TreSty::PhyGrm => {
-                    tip_w = tip_w.min(st.tre_vs.w / 2e0);
+                    tip_w = tip_w.min(st.tre_vs.w / TWO);
                     st.tre_vs = st.tre_vs.padded(
-                        0e0,
+                        ZRO,
                         tip_w,
                         -self.lab_offset_brnch + self.lab_size_max,
-                        self.lab_size_max / 2e0,
+                        self.lab_size_max / TWO,
                     );
                 }
                 TreSty::Fan => {
-                    tip_w = tip_w.min(st.tre_vs.radius_min / 2e0);
+                    tip_w = tip_w.min(st.tre_vs.radius_min / TWO);
                     st.tre_vs = st.tre_vs.padded(tip_w, tip_w, tip_w, tip_w);
                 }
             }
@@ -84,14 +84,14 @@ impl Program<TvMsg> for TreeView {
         }
         st.vis_rect = st.vis_vs.into();
         // -----------------------------------------------------------------------------------------------------------
-        st.root_len = 0e0;
+        st.root_len = ZRO;
         let root_len_frac = self.root_len_idx_sel as Float / 2e2;
         match tre_sty {
             TreSty::PhyGrm => {
                 if tst.is_rooted() {
                     st.root_len = st.tre_vs.w * root_len_frac;
                 }
-                st.rotation = 0e0;
+                st.rotation = ZRO;
                 st.translation = Vector { x: st.tre_vs.trans.x + st.root_len, y: st.tre_vs.trans.y };
             }
             TreSty::Fan => {
@@ -168,14 +168,16 @@ impl Program<TvMsg> for TreeView {
                     st.mouse = st.mouse_point(crsr);
                     st.hovered_node = st.hovered_node();
                     st.cursor_tracking_point = st.cursor_tracking_point();
+
                     if let Some(pt) = st.cursor_tracking_point {
                         let crsr_x_rel = match tre_sty {
-                            TreSty::PhyGrm => (pt.x / (st.tre_vs.w - st.root_len)).clamp(0e0, 1e0 + Float::EPSILON),
-                            TreSty::Fan => ((pt.distance(Point::ORIGIN) - st.root_len)
-                                / (st.tre_vs.radius_min - st.root_len))
-                                .clamp(0e0 - Float::EPSILON, 1e0 + Float::EPSILON),
+                            TreSty::PhyGrm => pt.x / (st.tre_vs.w - st.root_len),
+                            TreSty::Fan => {
+                                (pt.distance(Point::ORIGIN) - st.root_len) / (st.tre_vs.radius_min - st.root_len)
+                            }
                         };
-                        if (0e0..=1e0).contains(&crsr_x_rel) {
+
+                        if (ZRO - EPSILON..=ONE + EPSILON).contains(&crsr_x_rel) {
                             action = Some(Action::publish(TvMsg::CursorOnTreCnv { x: Some(crsr_x_rel) }))
                         } else {
                             st.cursor_tracking_point = None;
@@ -211,11 +213,11 @@ impl Program<TvMsg> for TreeView {
         if let Some(crsr_x_rel) = self.crsr_x_rel {
             match tre_sty {
                 TreSty::PhyGrm => {
-                    st.cursor_tracking_point = Some(Point { x: (crsr_x_rel * (st.tre_vs.w - st.root_len)), y: 0e0 })
+                    st.cursor_tracking_point = Some(Point { x: (crsr_x_rel * (st.tre_vs.w - st.root_len)), y: ZRO })
                 }
                 TreSty::Fan => {
                     st.cursor_tracking_point =
-                        Some(Point { x: st.root_len + crsr_x_rel * (st.tre_vs.radius_min - st.root_len), y: 0e0 })
+                        Some(Point { x: st.root_len + crsr_x_rel * (st.tre_vs.radius_min - st.root_len), y: ZRO })
                 }
             }
         }
