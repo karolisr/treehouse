@@ -67,12 +67,10 @@ impl Program<TvMsg> for TreeView {
         // ---------------------------------------------------------------------
         if st.is_new || self.stale_vis_rect {
             st.vis_vs = RectVals::corners(
-                (self.tre_cnv_vis_x0 - self.tre_scr_w).min(ZRO),
-                (self.tre_cnv_vis_y0 - self.tre_scr_h).min(ZRO),
-                (self.tre_cnv_vis_x1 - self.tre_padd_r + TRE_PADD + self.tre_scr_w)
-                    .max(st.cnv_vs.x1),
-                (self.tre_cnv_vis_y1 - self.tre_padd_b + TRE_PADD + self.tre_scr_h)
-                    .max(st.cnv_vs.y1),
+                self.tre_cnv_vis_x0,
+                self.tre_cnv_vis_y0,
+                self.tre_cnv_vis_x1 - self.tre_padd_r + TRE_PADD,
+                self.tre_cnv_vis_y1 - self.tre_padd_b + TRE_PADD,
             );
         }
         match tre_sty {
@@ -280,7 +278,7 @@ impl Program<TvMsg> for TreeView {
             // -----------------------------------------------------------------
             let size = bnds.size();
             let tst: &TreeState = tst_opt;
-            draw_bounds(self, st, rndr, bnds, &mut geoms);
+            // draw_bounds(self, st, rndr, bnds, &mut geoms);
             draw_edges(self, st, tst, rndr, size, &mut geoms);
             draw_legend(self, st, tst, rndr, size, &mut geoms);
             draw_labs_tip(self, st, tst, rndr, size, &mut geoms);

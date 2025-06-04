@@ -161,8 +161,8 @@ impl TreeView {
             draw_cursor_line: false,
             drawing_enabled: false,
             // -----------------------------------------------------------
-            tip_labs_vis_max: 200,
-            node_labs_vis_max: 500,
+            tip_labs_vis_max: 400,
+            node_labs_vis_max: 900,
             draw_labs_allowed: false,
             // -----------------------------------------------------------
             tre_sty_opt_sel: TreSty::Fan,
@@ -454,7 +454,7 @@ impl TreeView {
                 let tip_labs_vis = (self.tre_scr_h / node_size).floor() as usize;
                 tip_labs_vis <= self.tip_labs_vis_max
             }
-            TreSty::Fan => self.tip_count() <= self.tip_labs_vis_max * 4,
+            TreSty::Fan => self.tip_count() <= self.tip_labs_vis_max * 2,
         };
     }
 
@@ -471,11 +471,13 @@ impl TreeView {
 
                 let tre_scr_w = vp.bounds().width;
                 let tre_scr_h = vp.bounds().height;
+
                 // RESIZED -----------------------------------------------------
+                // let mut resized = false;
                 if tre_scr_w != self.tre_scr_w || tre_scr_h != self.tre_scr_h {
                     self.tre_scr_w = tre_scr_w;
                     self.tre_scr_h = tre_scr_h;
-                    self.clear_cache_edge();
+                    // resized = true;
                 } // -----------------------------------------------------------
 
                 if self.keep_scrl_pos_req {
@@ -501,11 +503,16 @@ impl TreeView {
                         self.tre_cnv_scrolled = true;
                     }
                 }
+
+                // if resized {
+                // RESIZED...
+                // } else {
                 self.update_draw_labs_allowed();
                 self.stale_vis_rect = true;
                 self.clear_caches_lab(true, true, true);
                 self.clear_cache_sel_nodes();
                 self.clear_cache_filtered_nodes();
+                // }
             }
 
             TvMsg::LttCnvScrolledOrResized(vp) => {
@@ -639,6 +646,15 @@ impl TreeView {
                 task = self.keep_scroll_pos_w();
                 self.stale_vis_rect = true;
                 self.stale_edge_cache = true;
+                // ---------------------------------------------------------------------------------
+                self.tre_cnv_vis_x_mid = self.tre_cnv_w() * self.tre_cnv_vis_x_mid_rel;
+                self.tre_cnv_vis_x0 = (self.tre_cnv_vis_x_mid - self.tre_scr_w)
+                    .min(self.tre_cnv_w() - self.tre_scr_w)
+                    .max(ZRO);
+                self.tre_cnv_vis_x1 = (self.tre_cnv_vis_x_mid + self.tre_scr_w)
+                    .max(self.tre_scr_w)
+                    .min(self.tre_cnv_w());
+                // ---------------------------------------------------------------------------------
             }
 
             TvMsg::CnvHeightSelChanged(idx) => {
@@ -647,6 +663,15 @@ impl TreeView {
                 task = self.keep_scroll_pos_h();
                 self.stale_vis_rect = true;
                 self.stale_edge_cache = true;
+                // ---------------------------------------------------------------------------------
+                self.tre_cnv_vis_y_mid = self.tre_cnv_h() * self.tre_cnv_vis_y_mid_rel;
+                self.tre_cnv_vis_y0 = (self.tre_cnv_vis_y_mid - self.tre_scr_h)
+                    .min(self.tre_cnv_h() - self.tre_scr_h)
+                    .max(ZRO);
+                self.tre_cnv_vis_y1 = (self.tre_cnv_vis_y_mid + self.tre_scr_h)
+                    .max(self.tre_scr_h)
+                    .min(self.tre_cnv_h());
+                // ---------------------------------------------------------------------------------
             }
 
             TvMsg::CnvZoomSelChanged(idx) => {
@@ -655,6 +680,23 @@ impl TreeView {
                 task = self.keep_scroll_pos_z();
                 self.stale_vis_rect = true;
                 self.stale_edge_cache = true;
+                // ---------------------------------------------------------------------------------
+                self.tre_cnv_vis_x_mid = self.tre_cnv_w() * self.tre_cnv_vis_x_mid_rel;
+                self.tre_cnv_vis_x0 = (self.tre_cnv_vis_x_mid - self.tre_scr_w)
+                    .min(self.tre_cnv_w() - self.tre_scr_w)
+                    .max(ZRO);
+                self.tre_cnv_vis_x1 = (self.tre_cnv_vis_x_mid + self.tre_scr_w)
+                    .max(self.tre_scr_w)
+                    .min(self.tre_cnv_w());
+                // ---------------------------------------------------------------------------------
+                self.tre_cnv_vis_y_mid = self.tre_cnv_h() * self.tre_cnv_vis_y_mid_rel;
+                self.tre_cnv_vis_y0 = (self.tre_cnv_vis_y_mid - self.tre_scr_h)
+                    .min(self.tre_cnv_h() - self.tre_scr_h)
+                    .max(ZRO);
+                self.tre_cnv_vis_y1 = (self.tre_cnv_vis_y_mid + self.tre_scr_h)
+                    .max(self.tre_scr_h)
+                    .min(self.tre_cnv_h());
+                // ---------------------------------------------------------------------------------
             }
 
             TvMsg::TreStyOptChanged(tre_sty_opt) => {
@@ -743,7 +785,20 @@ impl TreeView {
             TvMsg::PaneResized(ResizeEvent { split, ratio }) => {
                 if let Some(pane_grid) = &mut self.pane_grid {
                     pane_grid.resize(split, ratio);
+                    // -----------------------------------------------------------------------------
+                    self.tre_cnv_vis_y_mid = self.tre_cnv_h() * self.tre_cnv_vis_y_mid_rel;
+                    self.tre_cnv_vis_y0 = (self.tre_cnv_vis_y_mid - self.tre_scr_h)
+                        .min(self.tre_cnv_h() - self.tre_scr_h)
+                        .max(ZRO);
+                    self.tre_cnv_vis_y1 = (self.tre_cnv_vis_y_mid + self.tre_scr_h)
+                        .max(self.tre_scr_h)
+                        .min(self.tre_cnv_h());
+                    // -----------------------------------------------------------------------------
                     self.stale_vis_rect = true;
+                    self.update_draw_labs_allowed();
+                    self.clear_caches_lab(true, true, true);
+                    self.clear_cache_sel_nodes();
+                    self.clear_cache_filtered_nodes();
                 }
             }
 
