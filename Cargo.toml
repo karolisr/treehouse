@@ -1,5 +1,5 @@
 [workspace]
-members = ["app", "utils", "treeview", "widget"]
+members = ["app", "utils", "treeview"]
 resolver = "3"
 
 [workspace.package]
@@ -28,9 +28,9 @@ categories = [
 [profile.dev]
 debug-assertions = true
 incremental = true      # Compile your binary in smaller steps.
-codegen-units = 2       # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
+codegen-units = 6       # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
 lto = false             # Enables link-time-optimizations. Use false for faster compile time.
-opt-level = 1           # "s" prioritizes small binary size. Use 3 for faster compile time.
+opt-level = 1           # "s" prioritizes small binary size. Use 0 for faster compile time.
 panic = "abort"         # Higher performance by disabling panic handlers.
 strip = false           # Ensures debug symbols are removed.
 debug = true
@@ -53,14 +53,14 @@ rpath = false
 # --------------------------------------------------------------------------
 [profile.release]
 debug-assertions = false
-incremental = true       # Compile your binary in smaller steps.
+incremental = false      # Compile your binary in smaller steps.
 codegen-units = 1        # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
 lto = true               # Enables link-time-optimizations. Use false for faster compile time.
-opt-level = 3            # "s" prioritizes small binary size. Use 3 for faster compile time.
+opt-level = 3            # "s" prioritizes small binary size. Use 0 for faster compile time.
 panic = "abort"          # Higher performance by disabling panic handlers.
 strip = true             # Ensures debug symbols are removed.
 debug = false
-overflow-checks = false
+overflow-checks = true
 rpath = false
 
 # Defaults ---------------
@@ -188,4 +188,6 @@ features = [
     # "image",
     ### Enables the "svg" widget
     # "svg",
+    ### Enables pixel snapping for crisp edges by default (can cause jitter!)
+    # "crisp",
 ]

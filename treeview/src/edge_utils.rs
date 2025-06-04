@@ -3,7 +3,13 @@ use crate::*;
 
 impl From<NodeDataCart> for NodeData {
     fn from(nd: NodeDataCart) -> Self {
-        Self { edge_idx: nd.edge_idx, points: nd.points, y_parent: nd.y_parent, angle: None, angle_parent: None }
+        Self {
+            edge_idx: nd.edge_idx,
+            points: nd.points,
+            y_parent: nd.y_parent,
+            angle: None,
+            angle_parent: None,
+        }
     }
 }
 
@@ -19,17 +25,23 @@ impl From<NodeDataPol> for NodeData {
     }
 }
 
-pub fn edge_path_cart(nd: &NodeDataCart) -> IcedPath { edge_path_cart_pb(nd, PathBuilder::new()).build() }
+pub fn edge_path_cart(nd: &NodeDataCart) -> IcedPath {
+    edge_path_cart_pb(nd, PathBuilder::new()).build()
+}
 pub fn edge_path_cart_pb(nd: &NodeDataCart, pb: PathBuilder) -> PathBuilder {
     pb.move_to(nd.points.p1).line_to(nd.points.p0)
 }
 
-pub fn edge_path_pol(nd: &NodeDataPol) -> IcedPath { edge_path_pol_pb(nd, PathBuilder::new()).build() }
+pub fn edge_path_pol(nd: &NodeDataPol) -> IcedPath {
+    edge_path_pol_pb(nd, PathBuilder::new()).build()
+}
 pub fn edge_path_pol_pb(nd: &NodeDataPol, pb: PathBuilder) -> PathBuilder {
     pb.move_to(nd.points.p1).line_to(nd.points.p0)
 }
 
-pub fn edge_path_vert_cart(nd: &NodeDataCart) -> IcedPath { edge_path_vert_cart_pb(nd, PathBuilder::new()).build() }
+pub fn edge_path_vert_cart(nd: &NodeDataCart) -> IcedPath {
+    edge_path_vert_cart_pb(nd, PathBuilder::new()).build()
+}
 pub fn edge_path_vert_cart_pb(nd: &NodeDataCart, pb: PathBuilder) -> PathBuilder {
     if let Some(y_parent) = nd.y_parent {
         let pt_parent = Point { x: nd.points.p0.x, y: y_parent };
@@ -39,7 +51,9 @@ pub fn edge_path_vert_cart_pb(nd: &NodeDataCart, pb: PathBuilder) -> PathBuilder
     }
 }
 
-pub fn edge_path_arc_pol(nd: &NodeDataPol) -> IcedPath { edge_path_arc_pol_pb(nd, PathBuilder::new()).build() }
+pub fn edge_path_arc_pol(nd: &NodeDataPol) -> IcedPath {
+    edge_path_arc_pol_pb(nd, PathBuilder::new()).build()
+}
 pub fn edge_path_arc_pol_pb(nd: &NodeDataPol, pb: PathBuilder) -> PathBuilder {
     if let Some(angle_parent) = nd.angle_parent {
         pb.move_to(nd.points.p0).arc_approx_line(
@@ -53,7 +67,9 @@ pub fn edge_path_arc_pol_pb(nd: &NodeDataPol, pb: PathBuilder) -> PathBuilder {
     }
 }
 
-pub fn tip_idx_range_between_y_vals(y0: Float, y1: Float, node_size: Float, tips: &[usize]) -> Option<IndexRange> {
+pub fn tip_idx_range_between_y_vals(
+    y0: Float, y1: Float, node_size: Float, tips: &[usize],
+) -> Option<IndexRange> {
     if node_size <= ZRO {
         return None;
     }
@@ -86,13 +102,17 @@ pub fn point_cart(w: Float, h: Float, edge_x: Float, edge_y: Float) -> Point {
     Point { x, y }
 }
 
-pub fn edge_point_cart(w: Float, h: Float, edge: &Edge) -> Point { point_cart(w, h, edge.x0 as Float, edge.y as Float) }
+pub fn edge_point_cart(w: Float, h: Float, edge: &Edge) -> Point {
+    point_cart(w, h, edge.x0 as Float, edge.y as Float)
+}
 
 pub fn edge_midpoint_cart(w: Float, h: Float, edge: &Edge) -> Point {
     point_cart(w, h, edge.x_mid as Float, edge.y as Float)
 }
 
-pub fn node_point_cart(w: Float, h: Float, edge: &Edge) -> Point { point_cart(w, h, edge.x1 as Float, edge.y as Float) }
+pub fn node_point_cart(w: Float, h: Float, edge: &Edge) -> Point {
+    point_cart(w, h, edge.x1 as Float, edge.y as Float)
+}
 
 pub fn edge_points_cart(w: Float, h: Float, edge: &Edge) -> EdgePoints {
     let p0 = edge_point_cart(w, h, edge);

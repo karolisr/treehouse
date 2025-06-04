@@ -65,7 +65,8 @@ impl St {
     pub(super) fn mouse_point(&mut self, crsr: Cursor) -> Option<Point<Float>> {
         crsr.position_in(self.bnds).map(|mouse| {
             if self.rotation != ZRO {
-                let mouse_dist_from_center = mouse.distance(Point { x: self.tre_vs.cntr.x, y: self.tre_vs.cntr.y });
+                let mouse_dist_from_center =
+                    mouse.distance(Point { x: self.tre_vs.cntr.x, y: self.tre_vs.cntr.y });
                 let mouse_x_untrans = mouse.x - self.translation.x;
                 let mouse_y_untrans = mouse.y - self.translation.y;
                 let angle = mouse_y_untrans.atan2(mouse_x_untrans) - self.rotation;
@@ -83,7 +84,9 @@ impl St {
             let closest_node = self
                 .vis_nodes
                 .iter()
-                .min_by(|&a, &b| mouse.distance(a.points.p1).total_cmp(&mouse.distance(b.points.p1)))
+                .min_by(|&a, &b| {
+                    mouse.distance(a.points.p1).total_cmp(&mouse.distance(b.points.p1))
+                })
                 .cloned();
             if let Some(closest_node) = closest_node
                 && mouse.distance(closest_node.points.p1) <= self.node_radius_hover
@@ -132,11 +135,15 @@ impl St {
         tip_idx_range_between_y_vals(y0, y1, node_size, tip_edge_idxs)
     }
 
-    fn vis_node_idx_range_phygrm(&self, tip_idx_range: &IndexRange, tip_edge_idxs: &[usize]) -> IndexRange {
+    fn vis_node_idx_range_phygrm(
+        &self, tip_idx_range: &IndexRange, tip_edge_idxs: &[usize],
+    ) -> IndexRange {
         node_idx_range_for_tip_idx_range(tip_idx_range, tip_edge_idxs)
     }
 
-    pub(super) fn update_vis_node_idxs_fan(&mut self, max_tips: usize, max_nodes: usize, opn: Float, edges: &[Edge]) {
+    pub(super) fn update_vis_node_idxs_fan(
+        &mut self, max_tips: usize, max_nodes: usize, opn: Float, edges: &[Edge],
+    ) {
         let mut tip_count: usize = 0;
         self.vis_node_idxs.clear();
         for e in edges {
@@ -154,38 +161,4 @@ impl St {
             }
         }
     }
-
-    pub(super) fn calc_tip_lab_extra_w(&mut self, tst: &TreeState) -> Float {
-        let mut max_w: Float = ZRO;
-        if let Some(text_w) = &mut self.text_w_tip {
-            let mut max_offset: Float = ZRO;
-            for edge in tst.edges_tip_tallest() {
-                if let Some(name) = &edge.name {
-                    let offset = edge.x1 as Float * self.tre_vs.w;
-                    if offset >= max_offset {
-                        max_offset = offset
-                    };
-                    let tip_name_w = text_w.width(name);
-                    let curr_max_w = tip_name_w + (max_offset + offset) / TWO - self.tre_vs.w;
-                    if curr_max_w >= max_w {
-                        max_w = curr_max_w;
-                    }
-                }
-            }
-        }
-        max_w
-    }
-
-    // pub(super) fn update_vis_rect(&mut self, abs: RectVals<Float>) {
-    //     let buffer = ZRO;
-    //     let x0 = abs.x0.max(self.tre_vs.x0) - buffer;
-    //     let y0 = abs.y0.max(self.tre_vs.y0) - buffer;
-    //     let x1 = abs.x1.min(self.tre_vs.x0 + self.tre_vs.w) + buffer;
-    //     let y1 = abs.y1.min(self.tre_vs.y0 + self.tre_vs.h) + buffer;
-    //     let w = x1 - x0;
-    //     let h = y1 - y0;
-    //     let top_left = Point { x: x0, y: y0 };
-    //     let size = Size { width: w, height: h };
-    //     self.vis_rect = Rectangle::new(top_left, size);
-    // }
 }

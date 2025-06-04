@@ -13,57 +13,52 @@ pub struct Simple {
     y: Float,
 }
 
-// impl From<PlotData> for Point {
-//     fn from(pd: PlotData) -> Self {
-//         match pd {
-//             PlotData::Simple(simple) => Point { x: simple.x, y: simple.y },
-//         }
-//     }
-// }
-
-// impl From<&PlotData> for Point {
-//     fn from(pd: &PlotData) -> Self { (*pd).into() }
-// }
-
 impl From<LttPoint> for PlotData {
     fn from(lttp: LttPoint) -> Self { (&lttp).into() }
 }
 
 impl From<&LttPoint> for PlotData {
-    fn from(lttp: &LttPoint) -> Self { PlotData::Simple(Simple { x: lttp.time as Float, y: lttp.count as Float }) }
+    fn from(lttp: &LttPoint) -> Self {
+        PlotData::Simple(Simple { x: lttp.time as Float, y: lttp.count as Float })
+    }
 }
 
 #[derive(Debug, Default)]
 pub(super) struct PlotCnv {
     plot_data: Vec<PlotData>,
     pub(super) draw_cursor_line: bool,
-    pub(super) tre_padd: Float,
     pub(super) crsr_x_rel: Option<Float>,
     pub(super) cache_bnds: Cache,
     pub(super) cache_cursor_line: Cache,
     pub(super) cache_plot: Cache,
+    pub(super) plt_padd_l: Float,
+    pub(super) plt_padd_r: Float,
+    pub(super) plt_padd_t: Float,
+    pub(super) plt_padd_b: Float,
 }
 
 impl PlotCnv {
     pub(super) fn clear_cache_bnds(&self) { self.cache_bnds.clear() }
     pub(super) fn clear_cache_plot(&self) { self.cache_plot.clear() }
     pub(super) fn clear_cache_cursor_line(&self) { self.cache_cursor_line.clear() }
-    pub fn set_plot_data(&mut self, data: &[PlotData]) { self.plot_data = data.to_vec(); }
-    pub fn clear_plot_data(&mut self) { self.plot_data.clear(); }
+    pub(super) fn set_plot_data(&mut self, data: &[PlotData]) {
+        self.clear_cache_plot();
+        self.plot_data = data.to_vec();
+    }
+    pub(super) fn clear_plot_data(&mut self) { self.plot_data.clear(); }
 }
 
 #[derive(Debug, Default)]
 pub struct St {
-    pub(crate) bnds: Rectangle<Float>,
-
-    pub(crate) cursor_tracking_point: Option<Point>,
-    pub(crate) translation: Vector,
-
-    pub(crate) cnv_vs: RectVals<Float>,
-    pub(crate) cnv_rect: Rectangle<Float>,
-
-    pub(crate) plt_vs: RectVals<Float>,
-    pub(crate) plt_rect: Rectangle<Float>,
+    pub(super) bnds: Rectangle<Float>,
+    pub(super) cursor_tracking_point: Option<Point>,
+    pub(super) translation: Vector,
+    pub(super) plt_vs: RectVals<Float>,
+    pub(super) plt_rect: Rectangle<Float>,
+    pub(super) plt_padd_l: Float,
+    pub(super) plt_padd_r: Float,
+    pub(super) plt_padd_t: Float,
+    pub(super) plt_padd_b: Float,
 }
 
 impl St {
@@ -89,17 +84,31 @@ impl St {
 
 impl Program<TvMsg> for PlotCnv {
     type State = St;
-    fn mouse_interaction(&self, _st: &St, _bnds: Rectangle, _crsr: Cursor) -> Interaction { Interaction::default() }
-    fn update(&self, st: &mut St, ev: &Event, bnds: Rectangle, crsr: Cursor) -> Option<Action<TvMsg>> {
+    fn mouse_interaction(&self, _st: &St, _bnds: Rectangle, _crsr: Cursor) -> Interaction {
+        Interaction::default()
+    }
+    fn update(
+        &self, st: &mut St, ev: &Event, bnds: Rectangle, crsr: Cursor,
+    ) -> Option<Action<TvMsg>> {
         // -------------------------------------------------------------------------------------------------------------
         let mut action: Option<Action<TvMsg>> = None;
         // -------------------------------------------------------------------------------------------------------------
-        if bnds != st.bnds {
+        if bnds != st.bnds
+            || st.plt_padd_l != self.plt_padd_l
+            || st.plt_padd_r != self.plt_padd_r
+            || st.plt_padd_t != self.plt_padd_t
+            || st.plt_padd_b != self.plt_padd_b
+        {
+            self.clear_cache_bnds();
+            self.clear_cache_plot();
             st.bnds = bnds;
-            st.cnv_vs = RectVals::cnv(bnds);
-            st.plt_vs = RectVals::tre(st.cnv_vs, self.tre_padd);
-            st.cnv_rect = st.cnv_vs.into();
+            st.plt_vs = RectVals::cnv(bnds)
+                .padded(self.plt_padd_l, self.plt_padd_r, self.plt_padd_t, self.plt_padd_b);
             st.plt_rect = st.plt_vs.into();
+            st.plt_padd_l = self.plt_padd_l;
+            st.plt_padd_r = self.plt_padd_r;
+            st.plt_padd_t = self.plt_padd_t;
+            st.plt_padd_b = self.plt_padd_b;
         }
 
         st.translation = st.plt_vs.trans;
@@ -129,13 +138,15 @@ impl Program<TvMsg> for PlotCnv {
         action
     }
 
-    fn draw(&self, st: &St, rndr: &Renderer, _thm: &Theme, bnds: Rectangle, _crsr: Cursor) -> Vec<Geometry> {
+    fn draw(
+        &self, st: &St, rndr: &Renderer, _thm: &Theme, bnds: Rectangle, _crsr: Cursor,
+    ) -> Vec<Geometry> {
         let mut geoms: Vec<Geometry> = Vec::new();
         // -----------------------------------------------------------
         let size = bnds.size();
         draw_bounds(self, st, rndr, bnds, &mut geoms);
-        draw_cursor_line(self, st, rndr, size, &mut geoms);
         draw_plot(self, st, rndr, size, &mut geoms);
+        draw_cursor_line(self, st, rndr, size, &mut geoms);
         // -----------------------------------------------------------
         geoms
     }
@@ -143,7 +154,6 @@ impl Program<TvMsg> for PlotCnv {
 
 fn draw_bounds(plt: &PlotCnv, st: &St, rndr: &Renderer, bnds: Rectangle, g: &mut Vec<Geometry>) {
     g.push(plt.cache_bnds.draw(rndr, bnds.size(), |f| {
-        stroke_rect(st.cnv_rect, STRK_5_BLU_50, f);
         stroke_rect(st.plt_rect, STRK_3_GRN_50, f);
     }));
 }
@@ -172,8 +182,9 @@ fn draw_plot(plt: &PlotCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut Vec<Geom
             max_count = max_count.max(*y)
         }
 
-        let calc_y =
-            |count: Float| st.plt_vs.h - (((count as Float).log10() / (max_count as Float).log10()) * st.plt_vs.h);
+        let calc_y = |count: Float| {
+            st.plt_vs.h - (((count as Float).log10() / (max_count as Float).log10()) * st.plt_vs.h)
+        };
 
         let PlotData::Simple(Simple { x: x0, y: y0 }) = &plt.plot_data[0];
         let pt0 = Point { x: *x0 * st.plt_vs.w, y: calc_y(*y0) };

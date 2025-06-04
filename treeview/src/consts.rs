@@ -11,20 +11,25 @@ pub(crate) const EPSILON: Float = Float::EPSILON;
 pub(crate) const ZRO: Float = 0e0;
 pub(crate) const ONE: Float = 1e0;
 pub(crate) const TWO: Float = 2e0;
+pub(crate) const TEN: Float = 1e1;
 pub(crate) const PI: Float = std::f32::consts::PI;
 pub(crate) const TAU: Float = std::f32::consts::TAU;
 pub(crate) const FRAC_PI_2: Float = std::f32::consts::FRAC_PI_2;
 pub(crate) const SF: Float = ONE;
 pub(crate) const FNT_NAME: &str = "JetBrains Mono";
-pub(crate) const TXT_SIZE: Float = 13.0 * SF;
+pub(crate) const TXT_SIZE: Float = SF * 13.0;
 pub(crate) const FNT_NAME_LAB: &str = FNT_NAME;
 pub(crate) const TXT_SIZE_LAB: Float = TXT_SIZE;
+pub(crate) const SIDEBAR_W: Float = SF * 220.0;
+pub(crate) const SCRLBAR_W: Float = SF * TEN;
+pub(crate) const TRE_PADD: Float = SF * ZRO;
 
-pub(crate) const STRK_EDGE: Strk = STRK_1;
+pub(crate) const STRK_EDGE: Strk = STRK_1_RED_75;
 pub(crate) const STRK_NODE_HOVER: Strk = STRK_1;
-pub(crate) const FILL_NODE_HOVER: CnvFill = CnvFill { style: Solid(Clr::YEL_50), rule: FillRule::EvenOdd };
+pub(crate) const FILL_NODE_HOVER: CnvFill =
+    CnvFill { style: Solid(Clr::YEL_50), rule: FillRule::EvenOdd };
 pub(crate) const STRK_ROOT: Strk = Strk { line_dash: DASH_002, ..STRK_1 };
-pub(crate) const STRK_CRSR_LINE: Strk = Strk { line_dash: DASH_006, ..STRK_3_BLU_50 };
+pub(crate) const STRK_CRSR_LINE: Strk = STRK_1_BLU_50;
 
 pub(crate) const TXT_LAB_TMPL: CnvText = CnvText {
     color: Clr::BLK,

@@ -13,7 +13,6 @@ pub(super) struct TreeState {
 
     edge_root: Option<Edge>,
 
-    // edges_srtd_x: Vec<Edge>,
     edges_srtd_y: Vec<Edge>,
     edges_tip: Vec<Edge>,
     edges_tip_idx: Vec<usize>,
@@ -28,6 +27,7 @@ pub(super) struct TreeState {
     cache_lab_int: Cache,
     cache_lab_brnch: Cache,
     cache_sel_nodes: Cache,
+    cache_filtered_nodes: Cache,
 
     // Memoized Values ---------------------------------------------------
     cache_tip_count: Option<usize>,
@@ -38,17 +38,99 @@ pub(super) struct TreeState {
     cache_has_brlen: Option<bool>,
     cache_is_ultrametric: Option<Option<bool>>,
     cache_is_rooted: Option<bool>,
+
+    // Search & Filter ---------------------------------------------------
+    vec_idx_to_found_edge_idxs: usize,
+    found_edge_idxs: Vec<usize>,
+    found_node_ids: HashSet<NodeId>,
+    tmp_found_node_id: Option<NodeId>,
 }
 
 impl TreeState {
+    // Search & Filter -----------------------------------------------------------------------------
+    pub(super) fn found_edge_idxs(&self) -> &Vec<usize> { &self.found_edge_idxs }
+    pub(super) fn found_node_ids(&self) -> &HashSet<NodeId> { &self.found_node_ids }
+    pub(super) fn found_edge_idx(&self) -> usize { self.vec_idx_to_found_edge_idxs }
+
+    pub(super) fn current_found_edge(&self) -> Option<&Edge> {
+        if !self.found_edge_idxs.is_empty() {
+            let edge = &self.edges_srtd_y[self.found_edge_idxs[self.vec_idx_to_found_edge_idxs]];
+            Some(edge)
+        } else {
+            None
+        }
+    }
+
+    pub(super) fn current_found_node_id(&self) -> Option<NodeId> {
+        self.current_found_edge().map(|e| e.node_id)
+    }
+
+    pub(super) fn prev_result(&mut self) -> Option<&Edge> {
+        self.clear_cache_filtered_nodes();
+        if self.vec_idx_to_found_edge_idxs > 0 {
+            self.vec_idx_to_found_edge_idxs -= 1;
+        }
+        self.current_found_edge()
+    }
+
+    pub(super) fn next_result(&mut self) -> Option<&Edge> {
+        self.clear_cache_filtered_nodes();
+        if self.vec_idx_to_found_edge_idxs < self.found_edge_idxs.len() - 1 {
+            self.vec_idx_to_found_edge_idxs += 1;
+        }
+        self.current_found_edge()
+    }
+
+    pub(super) fn add_found_to_sel(&mut self) {
+        let max_capacity = self.sel_node_ids.len() + self.found_node_ids.len();
+        let mut sel_node_ids: HashSet<NodeId> = HashSet::with_capacity(max_capacity);
+        self.sel_node_ids.union(&self.found_node_ids).collect_into(&mut sel_node_ids);
+        self.sel_node_ids = sel_node_ids;
+        self.clear_cache_sel_nodes();
+    }
+
+    pub(super) fn rem_found_from_sel(&mut self) {
+        let mut sel_node_ids: HashSet<NodeId> = HashSet::with_capacity(self.sel_node_ids.len());
+        self.sel_node_ids.difference(&self.found_node_ids).collect_into(&mut sel_node_ids);
+        self.sel_node_ids = sel_node_ids;
+        self.clear_cache_sel_nodes();
+    }
+
+    pub(super) fn filter_nodes(&mut self, query: String, tips_only: bool) -> &Vec<usize> {
+        self.found_node_ids.clear();
+        self.found_edge_idxs.clear();
+        self.clear_cache_filtered_nodes();
+        self.vec_idx_to_found_edge_idxs = 0;
+
+        if query.len() < 3 {
+            return &self.found_edge_idxs;
+        };
+
+        let edges_to_search = match tips_only {
+            true => &self.edges_tip,
+            false => &self.edges_srtd_y,
+        };
+
+        for e in edges_to_search {
+            if let Some(n) = &e.name
+                && let Some(_) = n.to_lowercase().find(&query.to_lowercase())
+            {
+                self.found_node_ids.insert(e.node_id);
+                self.found_edge_idxs.push(e.edge_idx);
+            }
+        }
+
+        &self.found_edge_idxs
+    }
+
+    // Accessors -----------------------------------------------------------------------------------
     pub(super) fn edges_srtd_y(&self) -> &Vec<Edge> { &self.edges_srtd_y }
-    // pub(super) fn edges_srtd_x(&self) -> &Vec<Edge> { &self.edges_srtd_x }
     pub(super) fn edges_tip(&self) -> &Vec<Edge> { &self.edges_tip }
     pub(super) fn edges_tip_tallest(&self) -> &Vec<Edge> { &self.edges_tip_tallest }
     pub(super) fn edges_tip_idx(&self) -> &Vec<usize> { &self.edges_tip_idx }
     pub(super) fn edge_root(&self) -> Option<Edge> { self.edge_root.clone() }
 
-    // Memoized Methods --------------------------------------------------
+    // Memoized Methods ----------------------------------------------------------------------------
     pub(super) fn tip_count(&self) -> usize {
         if let Some(cached) = self.cache_tip_count { cached } else { self.t.tip_count_all() }
     }
@@ -86,10 +168,11 @@ impl TreeState {
         if let Some(cached) = self.cache_is_rooted { cached } else { self.t.is_rooted() }
     }
 
-    // Rooting -----------------------------------------------------------
+    // Rooting -------------------------------------------------------------------------------------
     pub(super) fn can_root(&self, node_id: &NodeId) -> bool { self.t.can_root(node_id) }
 
     pub(super) fn root(&mut self, node_id: &NodeId) -> Option<NodeId> {
+        self.tmp_found_node_id = self.current_found_node_id();
         let mut tre = self.t.clone();
         let rslt = tre.root(*node_id);
         match rslt {
@@ -105,6 +188,7 @@ impl TreeState {
     }
 
     pub(super) fn unroot(&mut self) -> Option<Node> {
+        self.tmp_found_node_id = self.current_found_node_id();
         let mut tre = self.t_orig.clone();
         if let Some(yanked_node) = tre.unroot() {
             if let Some(yanked_node_id) = yanked_node.node_id()
@@ -119,8 +203,16 @@ impl TreeState {
         }
     }
 
-    // Sorting -----------------------------------------------------------
+    // Sorting -------------------------------------------------------------------------------------
     pub(super) fn sort(&mut self, node_ord_opt: NodeOrd) {
+        let current_found_node_id;
+        if let Some(node_id) = self.tmp_found_node_id {
+            current_found_node_id = Some(node_id);
+        } else {
+            current_found_node_id = self.current_found_node_id();
+        }
+        self.tmp_found_node_id = None;
+
         match node_ord_opt {
             NodeOrd::Unordered => {
                 self.t = self.t_orig.clone();
@@ -173,15 +265,32 @@ impl TreeState {
 
         (self.edges_tip, self.edges_tip_idx) = self.edges_tip_prep();
         self.edges_tip_tallest = self.edges_tip_tallest_prep();
-        // self.edges_srtd_x = self.edges_srtd_x_prep();
         self.edge_root = self.edge_root_prep();
+        self.update_filter_results(current_found_node_id);
+        self.clear_caches_all();
     }
 
-    // fn edges_srtd_x_prep(&self) -> Vec<Edge> {
-    //     let mut edges_srtd_by_x = self.edges_srtd_y.to_vec();
-    //     edges_srtd_by_x.par_sort_by(|a, b| a.x1.total_cmp(&b.x1));
-    //     edges_srtd_by_x
-    // }
+    fn update_filter_results(&mut self, current_found_node_id: Option<NodeId>) {
+        self.vec_idx_to_found_edge_idxs = 0;
+        self.found_edge_idxs.clear();
+        if let Some(current_found_node_id) = current_found_node_id {
+            let found_node_ids = self.found_node_ids.to_owned();
+            self.found_node_ids.clear();
+            let mut idx: usize = 0;
+            for e in &self.edges_srtd_y {
+                if found_node_ids.contains(&e.node_id) {
+                    self.found_node_ids.insert(e.node_id);
+                    self.found_edge_idxs.push(e.edge_idx);
+                    if e.node_id == current_found_node_id {
+                        self.vec_idx_to_found_edge_idxs = idx;
+                    }
+                    idx += 1;
+                }
+            }
+        } else {
+            self.found_node_ids.clear();
+        }
+    }
 
     fn edges_tip_prep(&mut self) -> (Vec<Edge>, Vec<usize>) {
         let mut rv_tip = Vec::new();
@@ -202,21 +311,29 @@ impl TreeState {
         let tmp_len_min: usize = 0.max(tmp.len() as i32 - n) as usize;
         tmp.sort_by(|a, b| a.x1.total_cmp(&b.x1));
         let mut rv = tmp[tmp_len_min..tmp.len()].to_vec();
-        tmp.sort_by(|a, b| a.name.clone().map(|name| name.len()).cmp(&b.name.clone().map(|name| name.len())));
+        tmp.sort_by(|a, b| {
+            a.name.clone().map(|name| name.len()).cmp(&b.name.clone().map(|name| name.len()))
+        });
         rv.append(&mut tmp[tmp_len_min..tmp.len()].to_vec());
         rv
     }
 
     fn edge_root_prep(&mut self) -> Option<Edge> {
         if self.is_rooted() {
-            Some(self.edges_srtd_y.iter().find(|j| j.parent_node_id.is_none()).expect("Should have root!").clone())
+            Some(
+                self.edges_srtd_y
+                    .iter()
+                    .find(|j| j.parent_node_id.is_none())
+                    .expect("Should have root!")
+                    .clone(),
+            )
         } else {
             None
         }
     }
 
-    // Selection ---------------------------------------------------------
-    pub(super) fn sel_node_ids(&self) -> &HashSet<dendros::NodeId> { &self.sel_node_ids }
+    // Selection -----------------------------------------------------------------------------------
+    pub(super) fn sel_node_ids(&self) -> &HashSet<NodeId> { &self.sel_node_ids }
 
     pub(super) fn select_deselect_node(&mut self, node_id: &NodeId) {
         if self.sel_node_ids.contains(node_id) {
@@ -226,22 +343,40 @@ impl TreeState {
         }
     }
 
-    fn select_node(&mut self, node_id: &NodeId) { self.sel_node_ids.insert(*node_id); }
-    fn deselect_node(&mut self, node_id: &NodeId) { self.sel_node_ids.remove(node_id); }
+    pub(super) fn select_node(&mut self, node_id: &NodeId) {
+        self.sel_node_ids.insert(*node_id);
+        self.clear_cache_sel_nodes();
+    }
+    pub(super) fn deselect_node(&mut self, node_id: &NodeId) {
+        self.sel_node_ids.remove(node_id);
+        self.clear_cache_sel_nodes();
+    }
 
-    // Cached Geometries -------------------------------------------------
+    // Cached Geometries ---------------------------------------------------------------------------
     pub(super) fn cache_edge(&self) -> &Cache { &self.cache_edge }
-    pub(super) fn clear_cache_edge(&self) { self.cache_edge.clear(); }
     pub(super) fn cache_lab_tip(&self) -> &Cache { &self.cache_lab_tip }
-    pub(super) fn clear_cache_lab_tip(&self) { self.cache_lab_tip.clear(); }
     pub(super) fn cache_lab_int(&self) -> &Cache { &self.cache_lab_int }
-    pub(super) fn clear_cache_lab_int(&self) { self.cache_lab_int.clear(); }
     pub(super) fn cache_lab_brnch(&self) -> &Cache { &self.cache_lab_brnch }
-    pub(super) fn clear_cache_lab_brnch(&self) { self.cache_lab_brnch.clear(); }
     pub(super) fn cache_sel_nodes(&self) -> &Cache { &self.cache_sel_nodes }
-    pub(super) fn clear_cache_sel_nodes(&self) { self.cache_sel_nodes.clear(); }
+    pub(super) fn cache_filtered_nodes(&self) -> &Cache { &self.cache_filtered_nodes }
 
-    // Setup -------------------------------------------------------------
+    pub(super) fn clear_cache_edge(&self) { self.cache_edge.clear(); }
+    pub(super) fn clear_cache_lab_tip(&self) { self.cache_lab_tip.clear(); }
+    pub(super) fn clear_cache_lab_int(&self) { self.cache_lab_int.clear(); }
+    pub(super) fn clear_cache_lab_brnch(&self) { self.cache_lab_brnch.clear(); }
+    pub(super) fn clear_cache_sel_nodes(&self) { self.cache_sel_nodes.clear(); }
+    pub(super) fn clear_cache_filtered_nodes(&self) { self.cache_filtered_nodes.clear(); }
+
+    pub(super) fn clear_caches_all(&self) {
+        self.clear_cache_edge();
+        self.clear_cache_lab_tip();
+        self.clear_cache_lab_int();
+        self.clear_cache_lab_brnch();
+        self.clear_cache_sel_nodes();
+        self.clear_cache_filtered_nodes();
+    }
+
+    // Setup ---------------------------------------------------------------------------------------
     pub(super) fn new(id: usize) -> Self { Self { id, ..Default::default() } }
     pub(super) fn id(&self) -> usize { self.id }
 
@@ -275,5 +410,8 @@ impl TreeState {
         self.cache_node_count = Some(self.node_count());
         self.cache_tip_count = Some(self.tip_count());
         self.cache_tre_height = Some(self.tre_height());
+
+        self.clear_caches_all();
+        self.sort(NodeOrd::Unordered);
     }
 }

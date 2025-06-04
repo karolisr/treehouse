@@ -48,8 +48,12 @@ impl From<&AppMenuItemId> for AppMsg {
             AppMenuItemId::SaveAs => AppMsg::SaveAs,
             AppMenuItemId::Quit => AppMsg::WinCloseRequested,
             AppMenuItemId::CloseWindow => AppMsg::WinCloseRequested,
-            AppMenuItemId::SetSideBarPositionLeft => AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPos::Left)),
-            AppMenuItemId::SetSideBarPositionRight => AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPos::Right)),
+            AppMenuItemId::SetSideBarPositionLeft => {
+                AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPos::Left))
+            }
+            AppMenuItemId::SetSideBarPositionRight => {
+                AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPos::Right))
+            }
             _ => AppMsg::Other(Some(value.to_string())),
         }
     }

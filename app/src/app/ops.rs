@@ -12,7 +12,8 @@ pub async fn choose_file_to_open() -> AppMsg {
 }
 
 pub async fn choose_file_to_save() -> AppMsg {
-    let chosen = rfd::AsyncFileDialog::new().add_filter("newick", &["newick", "tre"]).save_file().await;
+    let chosen =
+        rfd::AsyncFileDialog::new().add_filter("newick", &["newick", "tre"]).save_file().await;
     AppMsg::PathToSave(chosen.map(|pb| pb.path().into()))
 }
 

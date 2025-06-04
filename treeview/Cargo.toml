@@ -12,10 +12,9 @@ categories.workspace = true
 crate-type = ["rlib"]
 
 [dependencies]
-iced = { workspace = true, features = ["canvas", "lazy"] }
+iced = { workspace = true, features = ["canvas", "lazy", "crisp"] }
 numfmt = { workspace = true }
 dendros = { workspace = true }
 utils = { workspace = true }
-widget = { workspace = true }
 num-traits = { workspace = true }
 rayon = { workspace = true }

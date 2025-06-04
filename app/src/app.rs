@@ -8,7 +8,10 @@ mod win;
 use dendros::parse_newick;
 use iced::{
     Element, Subscription, Task, Theme, exit,
-    window::{Event as WinEvent, Id as WinId, close as close_window, events as window_events, open as open_window},
+    window::{
+        Event as WinEvent, Id as WinId, close as close_window, events as window_events,
+        open as open_window,
+    },
 };
 use menu::{AppMenu, AppMenuItemId};
 use std::path::PathBuf;
@@ -65,7 +68,10 @@ impl App {
     pub fn boot() -> (Self, Task<AppMsg>) {
         #[cfg(target_os = "macos")]
         platform::register_ns_application_delegate_handlers();
-        (App { winid: None, treeview: None, menu: None, title: None }, Task::done(AppMsg::AppInitialized))
+        (
+            App { winid: None, treeview: None, menu: None, title: None },
+            Task::done(AppMsg::AppInitialized),
+        )
     }
 
     pub fn view(&self, _: WinId) -> Element<AppMsg> {
@@ -105,7 +111,9 @@ impl App {
                     {
                         match sidebar_pos {
                             SidebarPos::Left => menu.update(&AppMenuItemId::SetSideBarPositionLeft),
-                            SidebarPos::Right => menu.update(&AppMenuItemId::SetSideBarPositionRight),
+                            SidebarPos::Right => {
+                                menu.update(&AppMenuItemId::SetSideBarPositionRight)
+                            }
                         }
                     }
                     treeview.update(tv_msg).map(AppMsg::TvMsg)
@@ -132,7 +140,9 @@ impl App {
                         FileType::Other(s) => ParsedData::Other(s),
                         FileType::Exception => ParsedData::Exception,
                         file_type => match file_type {
-                            FileType::Newick => ParsedData::Trees(parse_newick(ops::read_text_file(path_buf.clone()))),
+                            FileType::Newick => ParsedData::Trees(parse_newick(
+                                ops::read_text_file(path_buf.clone()),
+                            )),
                             FileType::Nexus => ParsedData::Trees(None),
                             _ => ParsedData::Exception,
                         },
@@ -141,8 +151,13 @@ impl App {
                     match parsed_data {
                         ParsedData::Trees(trees) => match trees {
                             Some(trees) => {
-                                self.title =
-                                    Some(path_buf.file_name().unwrap_or_default().to_string_lossy().to_string());
+                                self.title = Some(
+                                    path_buf
+                                        .file_name()
+                                        .unwrap_or_default()
+                                        .to_string_lossy()
+                                        .to_string(),
+                                );
                                 Task::done(AppMsg::TvMsg(TvMsg::TreesLoaded(trees)))
                             }
                             None => {
@@ -247,10 +262,14 @@ impl App {
                     #[cfg(debug_assertions)]
                     {
                         // let path_buf = PathBuf::from("tests/data/100_starting_trees.newick");
-                        // let path_buf = PathBuf::from("tests/data/tree01.newick");
-                        let path_buf = PathBuf::from("tests/data/tree02.newick");
+                        let path_buf = PathBuf::from("tests/data/tree01.newick");
+                        // let path_buf = PathBuf::from("tests/data/tree02.newick");
                         let path: &std::path::Path = &path_buf.clone().into_boxed_path();
-                        if path.exists() { Task::done(AppMsg::PathToOpen(Some(path_buf))) } else { Task::none() }
+                        if path.exists() {
+                            Task::done(AppMsg::PathToOpen(Some(path_buf)))
+                        } else {
+                            Task::none()
+                        }
                     }
                 }),
 

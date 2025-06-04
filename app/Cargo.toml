@@ -28,7 +28,7 @@ deb_depends = []
 [dependencies]
 utils = { workspace = true }
 treeview = { workspace = true }
-iced = { workspace = true, features = ["wgpu", "thread-pool", "sipper"] }
+iced = { workspace = true, features = ["wgpu", "thread-pool", "sipper", "crisp", "auto-detect-theme"] }
 dendros = { workspace = true }
 # tracing-subscriber = { workspace = true }
 

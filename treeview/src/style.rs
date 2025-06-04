@@ -44,9 +44,10 @@ pub(crate) fn sty_btn(theme: &Theme, status: ButtonStatus) -> ButtonStyle {
 
     match status {
         ButtonStatus::Active | ButtonStatus::Pressed => base,
-        ButtonStatus::Hovered => {
-            ButtonStyle { background: Some(Background::Color(palette.primary.strong.color)), ..base }
-        }
+        ButtonStatus::Hovered => ButtonStyle {
+            background: Some(Background::Color(palette.primary.strong.color)),
+            ..base
+        },
         ButtonStatus::Disabled => ButtonStyle {
             background: base.background.map(|background| background.scale_alpha(0.5)),
             text_color: base.text_color.scale_alpha(0.5),
@@ -68,9 +69,10 @@ pub(crate) fn sty_pick_lst(theme: &Theme, status: PickListStatus) -> PickListSty
 
     match status {
         PickListStatus::Active => active,
-        PickListStatus::Hovered | PickListStatus::Opened { .. } => {
-            PickListStyle { border: Border { color: palette.primary.strong.color, ..active.border }, ..active }
-        }
+        PickListStatus::Hovered | PickListStatus::Opened { .. } => PickListStyle {
+            border: Border { color: palette.primary.strong.color, ..active.border },
+            ..active
+        },
     }
 }
 
@@ -81,6 +83,7 @@ pub(crate) fn sty_rule(theme: &Theme) -> RuleStyle {
         width: ONE as u16,
         radius: ZRO.into(),
         fill_mode: RuleFillMode::Percent(1e2),
+        snap: true,
     }
 }
 
@@ -104,7 +107,11 @@ pub(crate) fn sty_scrlbl(theme: &Theme, status: ScrollableStatus) -> ScrollableS
             gap: None,
         },
 
-        ScrollableStatus::Hovered { is_horizontal_scrollbar_hovered, is_vertical_scrollbar_hovered, .. } => {
+        ScrollableStatus::Hovered {
+            is_horizontal_scrollbar_hovered,
+            is_vertical_scrollbar_hovered,
+            ..
+        } => {
             let hovered_scrollbar = ScrollBarRail {
                 scroller: Scroller { color: palette.primary.strong.color, ..scrollbar.scroller },
                 ..scrollbar
@@ -112,13 +119,25 @@ pub(crate) fn sty_scrlbl(theme: &Theme, status: ScrollableStatus) -> ScrollableS
 
             ScrollableStyle {
                 container: container::Style::default(),
-                vertical_rail: if is_vertical_scrollbar_hovered { hovered_scrollbar } else { scrollbar },
-                horizontal_rail: if is_horizontal_scrollbar_hovered { hovered_scrollbar } else { scrollbar },
+                vertical_rail: if is_vertical_scrollbar_hovered {
+                    hovered_scrollbar
+                } else {
+                    scrollbar
+                },
+                horizontal_rail: if is_horizontal_scrollbar_hovered {
+                    hovered_scrollbar
+                } else {
+                    scrollbar
+                },
                 gap: None,
             }
         }
 
-        ScrollableStatus::Dragged { is_horizontal_scrollbar_dragged, is_vertical_scrollbar_dragged, .. } => {
+        ScrollableStatus::Dragged {
+            is_horizontal_scrollbar_dragged,
+            is_vertical_scrollbar_dragged,
+            ..
+        } => {
             let dragged_scrollbar = ScrollBarRail {
                 scroller: Scroller { color: palette.primary.base.color, ..scrollbar.scroller },
                 ..scrollbar
@@ -126,8 +145,16 @@ pub(crate) fn sty_scrlbl(theme: &Theme, status: ScrollableStatus) -> ScrollableS
 
             ScrollableStyle {
                 container: container::Style::default(),
-                vertical_rail: if is_vertical_scrollbar_dragged { dragged_scrollbar } else { scrollbar },
-                horizontal_rail: if is_horizontal_scrollbar_dragged { dragged_scrollbar } else { scrollbar },
+                vertical_rail: if is_vertical_scrollbar_dragged {
+                    dragged_scrollbar
+                } else {
+                    scrollbar
+                },
+                horizontal_rail: if is_horizontal_scrollbar_dragged {
+                    dragged_scrollbar
+                } else {
+                    scrollbar
+                },
                 gap: None,
             }
         }

@@ -1,6 +1,6 @@
 #![feature(iter_collect_into)]
 // -------------------------------------
-#![allow(dead_code)]
+// #![allow(dead_code)]
 // #![allow(unused_mut)]
 // #![allow(unused_imports)]
 // #![allow(unused_variables)]
@@ -43,7 +43,6 @@ use treestate::TreeState;
 use treeview::{NODE_ORD_OPTS, NodeOrd, TRE_STY_OPTS, TreSty, TvPane};
 pub use treeview::{SidebarPos, TreeView, TvMsg};
 use utils::{Clr, TextWidth, text_width};
-use widget::toggler::{Status as TogglerStatus, Style as TogglerStyle, Toggler};
 
 pub type IndexRange = RangeInclusive<usize>;
 
@@ -112,11 +111,9 @@ impl RectVals<Float> {
         iced::Rectangle { x, y, width: w, height: h }.into()
     }
 
-    pub fn tre(clip: RectVals<Float>, padding: Float) -> Self {
-        let x = clip.x0 + padding;
-        let y = clip.y0 + padding;
-        let w = clip.w - padding * TWO;
-        let h = clip.h - padding * TWO;
+    pub fn wh(w: Float, h: Float) -> Self {
+        let x = ZRO;
+        let y = ZRO;
         iced::Rectangle { x, y, width: w, height: h }.into()
     }
 
@@ -176,12 +173,29 @@ impl From<iced::Rectangle<Float>> for RectVals<Float> {
 
         let trans = iced::Vector { x: x0, y: y0 };
 
-        RectVals { x0, y0, x1, y1, w, h, dim_min, dim_max, radius_min, radius_max, cntr_x, cntr_y, cntr, trans }
+        RectVals {
+            x0,
+            y0,
+            x1,
+            y1,
+            w,
+            h,
+            dim_min,
+            dim_max,
+            radius_min,
+            radius_max,
+            cntr_x,
+            cntr_y,
+            cntr,
+            trans,
+        }
     }
 }
 
 impl<T> From<RectVals<T>> for iced::Rectangle<T> {
-    fn from(v: RectVals<T>) -> Self { iced::Rectangle { x: v.x0, y: v.y0, width: v.w, height: v.h } }
+    fn from(v: RectVals<T>) -> Self {
+        iced::Rectangle { x: v.x0, y: v.y0, width: v.w, height: v.h }
+    }
 }
 
 impl Display for RectVals<Float> {

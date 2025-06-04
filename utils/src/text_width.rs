@@ -1,4 +1,6 @@
-use iced::advanced::graphics::text::cosmic_text::{Attrs, Buffer, Family, FontSystem, Metrics, Shaping};
+use iced::advanced::graphics::text::cosmic_text::{
+    Attrs, Buffer, Family, FontSystem, Metrics, Shaping,
+};
 
 #[derive(Debug)]
 pub struct TextWidth<'a> {

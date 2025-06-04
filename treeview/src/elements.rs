@@ -57,9 +57,9 @@ pub(crate) fn btn_unroot(sel_tre: &TreeState) -> Button<TvMsg> {
 fn pick_list_common<'a, T: PartialEq + Display + Clone>(
     pl: PickList<'a, T, &[T], T, TvMsg>,
 ) -> PickList<'a, T, &'a [T], T, TvMsg> {
-    // let h: PickListHandle<Font> = PickListHandle::Arrow { size: Some(Pixels(TEXT_SIZE)) };
-    // let mut pl = pl;
-    // pl = pl.handle(h);
+    let h: PickListHandle<Font> = PickListHandle::Arrow { size: Some(Pixels(TXT_SIZE)) };
+    let mut pl = pl;
+    pl = pl.handle(h);
     // pl = pl.style(sty_pick_lst);
     pl
 }
@@ -95,7 +95,9 @@ pub(crate) fn rule_v<'a>(width: impl Into<Pixels>) -> Rule<'a, Theme> {
     r
 }
 
-fn scrollable_common(scrl: Scrollable<TvMsg>, w: impl Into<Length>, h: impl Into<Length>) -> Scrollable<TvMsg> {
+fn scrollable_common(
+    scrl: Scrollable<TvMsg>, w: impl Into<Length>, h: impl Into<Length>,
+) -> Scrollable<TvMsg> {
     let mut s = scrl;
     s = s.width(w.into());
     s = s.height(h.into());
@@ -108,7 +110,7 @@ pub(crate) fn scrollable_cnv_ltt<'a>(
     let mut s: Scrollable<TvMsg> = Scrollable::new(cnv);
     s = s.direction(ScrollableDirection::Horizontal(Scrollbar::new()));
     s = s.id(id);
-    s = s.on_scroll(TvMsg::LttCnvScrolled);
+    s = s.on_scroll(TvMsg::LttCnvScrolledOrResized);
     scrollable_common(s, w, h)
 }
 
@@ -119,7 +121,7 @@ pub(crate) fn scrollable_cnv_tre<'a>(
     let sb = Scrollbar::new();
     s = s.direction(ScrollableDirection::Both { horizontal: sb, vertical: sb });
     s = s.id(id);
-    s = s.on_scroll(TvMsg::TreCnvScrolled);
+    s = s.on_scroll(TvMsg::TreCnvScrolledOrResized);
     scrollable_common(s, w, h)
 }
 
@@ -132,7 +134,8 @@ fn scrollable_v<'a>(
 }
 
 pub(crate) fn slider<'a, T>(
-    lab: Option<&str>, min: T, max: T, sel: T, step: T, shift_step: T, msg: impl 'a + Fn(T) -> TvMsg,
+    lab: Option<&str>, min: T, max: T, sel: T, step: T, shift_step: T,
+    msg: impl 'a + Fn(T) -> TvMsg,
 ) -> Element<'a, TvMsg>
 where
     f64: From<T>,
@@ -141,7 +144,7 @@ where
     let mut slider: Slider<T, TvMsg> = Slider::new(min..=max, sel, msg);
     slider = slider.step(step);
     slider = slider.shift_step(shift_step);
-    // slider = slider.height(TEXT_SIZE * 1.2);
+    slider = slider.height(TXT_SIZE);
     // slider = slider.style(sty_slider);
 
     if let Some(lab) = lab {
@@ -154,24 +157,27 @@ where
         c = c.push(lab);
         c = c.push(slider);
         c = c.align_x(Horizontal::Center);
-        // c = c.spacing(3e0);
+        c = c.spacing(ZRO);
         c.into()
     } else {
         slider.into()
     }
 }
 
-pub(crate) fn space_h(w: impl Into<Length>, h: impl Into<Length>) -> Space { horizontal_space().width(w).height(h) }
-pub(crate) fn space_v(w: impl Into<Length>, h: impl Into<Length>) -> Space { vertical_space().width(w).height(h) }
+pub(crate) fn space_h(w: impl Into<Length>, h: impl Into<Length>) -> Space {
+    horizontal_space().width(w).height(h)
+}
+pub(crate) fn space_v(w: impl Into<Length>, h: impl Into<Length>) -> Space {
+    vertical_space().width(w).height(h)
+}
 
 fn toggler(label: &str, value: bool) -> Toggler<TvMsg> {
     let mut tglr: Toggler<TvMsg> = Toggler::new(value);
     tglr = tglr.label(label);
-    // tglr = tglr.text_size(TEXT_SIZE);
-    // tglr = tglr.size(TEXT_SIZE * 1.5);
+    tglr = tglr.text_size(TXT_SIZE);
+    tglr = tglr.size(TXT_SIZE);
     tglr = tglr.text_alignment(Alignment::End);
     tglr = tglr.width(Length::Fill);
-    // tglr = tglr.roundness(TogglerRoundness::Radius(RADIUS_WIDGET));
     // tglr = tglr.style(sty_toggler);
     tglr
 }
@@ -183,7 +189,6 @@ pub(crate) fn toggler_cursor_line<'a>(
         TreSty::PhyGrm => "Cursor Tracking Line",
         TreSty::Fan => "Cursor Tracking Circle",
     };
-
     let mut tglr = toggler(lab, draw_cursor_line);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::CursorLineVisChanged);
