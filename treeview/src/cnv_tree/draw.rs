@@ -5,7 +5,7 @@ use crate::path_utils::*;
 use crate::*;
 
 pub(super) fn draw_bounds(
-    tv: &TreeView, st: &St, rndr: &Renderer, bnds: Rectangle, g: &mut Vec<Geometry>,
+    tv: &TreeCnv, st: &St, rndr: &Renderer, bnds: Rectangle, g: &mut Vec<Geometry>,
 ) {
     g.push(tv.cache_bnds.draw(rndr, bnds.size(), |f| {
         stroke_rect(st.cnv_rect, STRK_5_BLU_50, f);
@@ -15,9 +15,9 @@ pub(super) fn draw_bounds(
 }
 
 pub(super) fn draw_edges(
-    tv: &TreeView, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
-    g.push(tst.cache_edge().draw(rndr, sz, |f| match tv.tre_sty_opt_sel {
+    g.push(tst.cache_edge().draw(rndr, sz, |f| match tv.tre_sty {
         TreSty::PhyGrm => {
             stroke_edges_phygrm(tst.edges_srtd_y(), &st.tre_vs, st.root_len, tst.edge_root(), f)
         }
@@ -34,12 +34,12 @@ pub(super) fn draw_edges(
 }
 
 pub(super) fn draw_legend(
-    tv: &TreeView, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
     if tst.has_brlen() && tv.draw_legend {
         g.push(tv.cache_legend.draw(rndr, sz, |f| {
             draw_scale_bar(
-                tv.tre_sty_opt_sel,
+                tv.tre_sty,
                 &st.tre_vs,
                 &st.cnv_vs,
                 tv.lab_size_brnch,
@@ -53,12 +53,12 @@ pub(super) fn draw_legend(
 }
 
 pub(super) fn draw_labs_tip(
-    tv: &TreeView, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_lab_tip().draw(rndr, sz, |f| {
         draw_labels(
             &st.labs_tip,
-            Vector { x: tv.lab_offset_tip, y: ZRO },
+            Vector { x: tv.lab_offset_tip + tv.lab_size_tip / TWO, y: ZRO },
             Some(st.translation),
             st.rotation,
             f,
@@ -67,12 +67,12 @@ pub(super) fn draw_labs_tip(
 }
 
 pub(super) fn draw_labs_int(
-    tv: &TreeView, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_lab_int().draw(rndr, sz, |f| {
         draw_labels(
             &st.labs_int,
-            Vector { x: tv.lab_offset_int, y: ZRO },
+            Vector { x: tv.lab_offset_int + tv.lab_size_tip / TWO, y: ZRO },
             Some(st.translation),
             st.rotation,
             f,
@@ -81,7 +81,7 @@ pub(super) fn draw_labs_int(
 }
 
 pub(super) fn draw_labs_brnch(
-    tv: &TreeView, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_lab_brnch().draw(rndr, sz, |f| {
         draw_labels(
@@ -95,55 +95,36 @@ pub(super) fn draw_labs_brnch(
 }
 
 pub(super) fn draw_selected_nodes(
-    _tv: &TreeView, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_sel_nodes().draw(rndr, sz, |f| {
-        let edges = tst.edges_srtd_y();
-        let sel_node_ids = tst.sel_node_ids();
-        let points: Vec<Point> = st
-            .vis_nodes
-            .par_iter()
-            .filter_map(|nd| {
-                let edge = &edges[nd.edge_idx];
-                if sel_node_ids.contains(&edge.node_id) { Some(nd.points.p1) } else { None }
-            })
-            .collect();
-        draw_nodes(&points, st.node_radius, Some(st.translation), st.rotation, f);
+        let points: Vec<Point> = st.selected_nodes.par_iter().map(|nd| nd.points.p1).collect();
+        draw_nodes(&points, tv.lab_size_tip / TWO, Some(st.translation), st.rotation, f);
     }));
 }
 
 pub(super) fn draw_filtered_nodes(
-    tv: &TreeView, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_filtered_nodes().draw(rndr, sz, |f| {
-        let edges = tst.edges_srtd_y();
-        let found_node_ids = tst.found_node_ids();
-        let points: Vec<Point> = st
-            .vis_nodes
-            .par_iter()
-            .filter_map(|nd| {
-                let edge = &edges[nd.edge_idx];
-                if found_node_ids.contains(&edge.node_id) { Some(nd.points.p1) } else { None }
-            })
-            .collect();
-
-        draw_nodes(&points, st.node_radius, Some(st.translation), st.rotation, f);
+        let points: Vec<Point> = st.filtered_nodes.par_iter().map(|nd| nd.points.p1).collect();
+        draw_nodes(&points, tv.lab_size_tip / TWO, Some(st.translation), st.rotation, f);
 
         if let Some(edge) = tst.current_found_edge() {
-            let pt = match tv.tre_sty_opt_sel {
-                TreSty::PhyGrm => node_point_cart(st.tre_vs.w, st.tre_vs.h, edge),
+            let pt = match tv.tre_sty {
+                TreSty::PhyGrm => node_point_cart(st.tre_vs.w - st.root_len, st.tre_vs.h, &edge),
                 TreSty::Fan => {
-                    let angle = edge_angle(tv.opn_angle, edge);
-                    node_point_pol(angle, st.tre_vs.radius_min, st.root_len, edge)
+                    let angle = edge_angle(tv.opn_angle, &edge);
+                    node_point_pol(angle, st.tre_vs.radius_min, st.root_len, &edge)
                 }
             };
-            draw_nodes(&[pt], st.node_radius - TWO, Some(st.translation), st.rotation, f);
+            draw_nodes(&[pt], st.node_radius, Some(st.translation), st.rotation, f);
         }
     }));
 }
 
 pub(super) fn draw_hovered_node(
-    tv: &TreeView, st: &St, _tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tv: &TreeCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
     g.push(tv.cache_hovered_node.draw(rndr, sz, |f| {
         if let Some(hovered_node) = &st.hovered_node {
@@ -158,7 +139,7 @@ pub(super) fn draw_hovered_node(
 }
 
 pub(super) fn draw_cursor_line(
-    tv: &TreeView, st: &St, _tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tv: &TreeCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
     g.push(tv.cache_cursor_line.draw(rndr, sz, |f| {
         if let Some(p) = st.cursor_tracking_point
@@ -166,19 +147,114 @@ pub(super) fn draw_cursor_line(
         {
             f.push_transform();
             f.translate(st.translation);
-            match tv.tre_sty_opt_sel {
+            match tv.tre_sty {
                 TreSty::PhyGrm => {
                     let p0 = Point { x: p.x, y: ZRO };
                     let p1 = Point { x: p.x, y: st.tre_vs.h };
                     f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), STRK_CRSR_LINE);
                 }
                 TreSty::Fan => {
-                    let r = Point::ORIGIN.distance(p);
+                    let r = ORIGIN.distance(p);
                     f.rotate(st.rotation);
-                    stroke_circle(Point::ORIGIN, STRK_CRSR_LINE, r, f);
+                    stroke_circle(ORIGIN, STRK_CRSR_LINE, r, f);
                 }
             }
             f.pop_transform();
+        }
+    }));
+}
+
+pub(super) fn draw_palette(
+    tv: &TreeCnv, st: &St, thm: &Theme, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+) {
+    let palette = thm.palette();
+    let palette_ex = thm.extended_palette();
+    let color_text = palette.text;
+    let color_bg_weakest = palette_ex.background.weakest.color;
+    let color_bg_weak = palette_ex.background.weak.color;
+    let color_bg_base = palette_ex.background.base.color;
+    let color_bg_strong = palette_ex.background.strong.color;
+    let color_bg_strongest = palette_ex.background.strongest.color;
+    let color_primary_weak = palette_ex.primary.weak.color;
+    let color_primary_base = palette_ex.primary.base.color;
+    let color_primary_strong = palette_ex.primary.strong.color;
+    let color_secondary_weak = palette_ex.secondary.weak.color;
+    let color_secondary_base = palette_ex.secondary.base.color;
+    let color_secondary_strong = palette_ex.secondary.strong.color;
+    let color_success_base = palette_ex.success.base.color;
+    let color_warning_base = palette_ex.warning.base.color;
+    let color_danger_base = palette_ex.danger.base.color;
+
+    g.push(tv.cache_palette.draw(rndr, sz, |f| {
+        let colors_bg =
+            [color_bg_base, color_bg_weakest, color_bg_weak, color_bg_strong, color_bg_strongest];
+        let colors_primary =
+            [color_primary_base, color_primary_weak, color_primary_strong, color_text];
+        let colors_secondary = [color_secondary_base, color_secondary_weak, color_secondary_strong];
+        let colors_other = [color_success_base, color_warning_base, color_danger_base];
+        let color_rect_size = SF * 15e0;
+        let palette_rect_w = 2e0 * TEN + color_rect_size * 5e0;
+        let palette_rect_h = 2e0 * TEN + color_rect_size * 4e0;
+        let palette_rect_x = st.cnv_vs.x0 + TEN;
+        let palette_rect_y = st.cnv_vs.y0 + st.cnv_vs.h - palette_rect_h - TEN - TEN * TWO * TWO;
+
+        f.fill_rectangle(
+            Point { x: palette_rect_x, y: palette_rect_y },
+            iced::Size { width: palette_rect_w, height: palette_rect_h },
+            color_bg_base,
+        );
+
+        f.stroke_rectangle(
+            Point { x: palette_rect_x + SF / 2e0, y: palette_rect_y + SF / 2e0 },
+            iced::Size {
+                width: 2e0 * TEN + color_rect_size * 5e0 - SF,
+                height: 2e0 * TEN + color_rect_size * 4e0 - SF,
+            },
+            STRK_1_BLK,
+        );
+
+        for (i, c) in colors_bg.iter().enumerate() {
+            f.fill_rectangle(
+                Point {
+                    x: palette_rect_x + TEN + color_rect_size * i as Float,
+                    y: palette_rect_y + TEN,
+                },
+                iced::Size { width: color_rect_size, height: color_rect_size },
+                *c,
+            );
+        }
+
+        for (i, c) in colors_primary.iter().enumerate() {
+            f.fill_rectangle(
+                Point {
+                    x: palette_rect_x + TEN + color_rect_size * i as Float,
+                    y: palette_rect_y + TEN + color_rect_size * ONE,
+                },
+                iced::Size { width: color_rect_size, height: color_rect_size },
+                *c,
+            );
+        }
+
+        for (i, c) in colors_secondary.iter().enumerate() {
+            f.fill_rectangle(
+                Point {
+                    x: palette_rect_x + TEN + color_rect_size * i as Float,
+                    y: palette_rect_y + TEN + color_rect_size * TWO,
+                },
+                iced::Size { width: color_rect_size, height: color_rect_size },
+                *c,
+            );
+        }
+
+        for (i, c) in colors_other.iter().enumerate() {
+            f.fill_rectangle(
+                Point {
+                    x: palette_rect_x + TEN + color_rect_size * i as Float,
+                    y: palette_rect_y + TEN + color_rect_size * 3e0,
+                },
+                iced::Size { width: color_rect_size, height: color_rect_size },
+                *c,
+            );
         }
     }));
 }
@@ -275,7 +351,7 @@ fn draw_labels(labels: &[Label], offset: Vector, trans: Option<Vector>, rot: Flo
                 x: text.position.x - offset.x + cos * adjust_w - sin * adjust_h,
                 y: text.position.y - offset.y + sin * adjust_w + cos * adjust_h,
             });
-            text.position = Point::ORIGIN;
+            text.position = ORIGIN;
             f.rotate(angle);
             f.fill_text(text);
             f.pop_transform();
@@ -316,7 +392,7 @@ fn stroke_edges_fan(
     let mut pb: PathBuilder = PathBuilder::new();
     if opn_angle >= ONE.to_radians() {
         for e in edges {
-            let nd = node_data_rad(opn_angle, tre_vs.radius_min, root_len, e);
+            let nd = node_data_rad(opn_angle, ZRO, tre_vs.radius_min, root_len, e);
             pb = edge_path_pol_pb(&nd, pb);
             pb = edge_path_arc_pol_pb(&nd, pb);
         }
@@ -350,11 +426,8 @@ fn stroke_root_fan(
     if let Some(root_edge) = root_edge
         && root_len > ZRO
     {
-        let nd = node_data_rad(opn_angle, radius_min, root_len, &root_edge);
-        f.stroke(
-            &PathBuilder::new().move_to(nd.points.p0).line_to(Point::ORIGIN).build(),
-            STRK_ROOT,
-        );
+        let nd = node_data_rad(opn_angle, ZRO, radius_min, root_len, &root_edge);
+        f.stroke(&PathBuilder::new().move_to(nd.points.p0).line_to(ORIGIN).build(), STRK_ROOT);
     };
 }
 
@@ -368,7 +441,7 @@ fn lab_text(txt: String, pt: Point, size: Float, template: CnvText) -> CnvText {
 
 pub(super) fn node_labs(
     nodes: &[NodeData], edges: &[Edge], size: Float, tips: bool, branch: bool,
-    text_w: &mut TextWidth, result: &mut Vec<Label>,
+    text_w: &mut TextWidth, results: &mut Vec<Label>,
 ) {
     nodes
         .iter()
@@ -394,5 +467,5 @@ pub(super) fn node_labs(
                 None
             }
         })
-        .collect_into(result);
+        .collect_into(results);
 }

@@ -7,7 +7,7 @@ pub(crate) const TIP_LAB_SIZE: u16 = 12;
 pub(crate) const INT_LAB_SIZE: u16 = 12;
 pub(crate) const BRNCH_LAB_SIZE: u16 = 12;
 
-pub(crate) const EPSILON: Float = Float::EPSILON;
+pub(crate) const EPS: Float = Float::EPSILON;
 pub(crate) const ZRO: Float = 0e0;
 pub(crate) const ONE: Float = 1e0;
 pub(crate) const TWO: Float = 2e0;
@@ -24,6 +24,8 @@ pub(crate) const SIDEBAR_W: Float = SF * 220.0;
 pub(crate) const SCRLBAR_W: Float = SF * TEN;
 pub(crate) const TRE_PADD: Float = SF * ZRO;
 
+pub(crate) const ORIGIN: Point = Point::ORIGIN;
+
 pub(crate) const STRK_EDGE: Strk = STRK_1_RED_75;
 pub(crate) const STRK_NODE_HOVER: Strk = STRK_1;
 pub(crate) const FILL_NODE_HOVER: CnvFill =
@@ -39,7 +41,7 @@ pub(crate) const TXT_LAB_TMPL: CnvText = CnvText {
     align_y: Vertical::Center,
     content: String::new(),
     max_width: Float::INFINITY,
-    position: ::iced::Point::ORIGIN,
+    position: ORIGIN,
     shaping: Shaping::Basic,
     font: Font {
         family: Family::Name(FNT_NAME_LAB),
@@ -57,7 +59,7 @@ pub(crate) const TXT_LAB_TMPL_INT: CnvText = CnvText {
     align_y: Vertical::Center,
     content: String::new(),
     max_width: Float::INFINITY,
-    position: ::iced::Point::ORIGIN,
+    position: ORIGIN,
     shaping: Shaping::Basic,
     font: Font {
         family: Family::Name(FNT_NAME_LAB),
@@ -75,7 +77,7 @@ pub(crate) const TXT_LAB_TMPL_BRNCH: CnvText = CnvText {
     align_y: Vertical::Bottom,
     content: String::new(),
     max_width: Float::INFINITY,
-    position: ::iced::Point::ORIGIN,
+    position: ORIGIN,
     shaping: Shaping::Basic,
     font: Font {
         family: Family::Name(FNT_NAME_LAB),
@@ -93,7 +95,7 @@ pub(crate) const TXT_LAB_TMPL_SCALE_BAR: CnvText = CnvText {
     align_y: Vertical::Top,
     content: String::new(),
     max_width: Float::INFINITY,
-    position: ::iced::Point::ORIGIN,
+    position: ORIGIN,
     shaping: Shaping::Basic,
     font: Font {
         family: Family::Name(FNT_NAME_LAB),

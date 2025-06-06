@@ -30,7 +30,7 @@ pub(crate) fn btn_next_tre<'a>(enabled: bool) -> Button<'a, TvMsg> {
     )
 }
 
-pub(crate) fn btn_root(sel_tre: &TreeState) -> Button<TvMsg> {
+pub(crate) fn btn_root(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
     btn("Root", {
         if sel_tre.sel_node_ids().len() == 1 {
             let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
@@ -44,7 +44,7 @@ pub(crate) fn btn_root(sel_tre: &TreeState) -> Button<TvMsg> {
     })
 }
 
-pub(crate) fn btn_unroot(sel_tre: &TreeState) -> Button<TvMsg> {
+pub(crate) fn btn_unroot(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
     btn(
         "Unroot",
         match sel_tre.is_rooted() {
@@ -64,16 +64,16 @@ fn pick_list_common<'a, T: PartialEq + Display + Clone>(
     pl
 }
 
-pub(crate) fn pick_list_node_ordering<'a>(sel_node_ord_opt: NodeOrd) -> Row<'a, TvMsg> {
+pub(crate) fn pick_list_node_ordering<'a>(node_ord: NodeOrd) -> Row<'a, TvMsg> {
     let mut pl: PickList<NodeOrd, &[NodeOrd], NodeOrd, TvMsg> =
-        PickList::new(&NODE_ORD_OPTS, Some(sel_node_ord_opt), TvMsg::NodeOrdOptChanged);
+        PickList::new(&NODE_ORD_OPTS, Some(node_ord), TvMsg::NodeOrdOptChanged);
     pl = pick_list_common(pl);
     iced_row![txt("Node Order").width(Length::Fill), pl].align_y(Vertical::Center)
 }
 
-pub(crate) fn pick_list_tre_sty<'a>(sel_tre_style_opt: TreSty) -> Row<'a, TvMsg> {
+pub(crate) fn pick_list_tre_sty<'a>(tre_sty: TreSty) -> Row<'a, TvMsg> {
     let mut pl: PickList<TreSty, &[TreSty], TreSty, TvMsg> =
-        PickList::new(&TRE_STY_OPTS, Some(sel_tre_style_opt), TvMsg::TreStyOptChanged);
+        PickList::new(&TRE_STY_OPTS, Some(tre_sty), TvMsg::TreStyOptChanged);
     pl = pick_list_common(pl);
     iced_row![txt("Style").width(Length::Fill), pl].align_y(Vertical::Center)
 }
@@ -115,7 +115,7 @@ pub(crate) fn scrollable_cnv_ltt<'a>(
 }
 
 pub(crate) fn scrollable_cnv_tre<'a>(
-    id: &'static str, cnv: Cnv<&'a TreeView, TvMsg>, w: impl Into<Length>, h: impl Into<Length>,
+    id: &'static str, cnv: Cnv<&'a TreeCnv, TvMsg>, w: impl Into<Length>, h: impl Into<Length>,
 ) -> Scrollable<'a, TvMsg> {
     let mut s: Scrollable<TvMsg> = Scrollable::new(cnv);
     let sb = Scrollbar::new();
@@ -183,9 +183,9 @@ fn toggler(label: &str, value: bool) -> Toggler<TvMsg> {
 }
 
 pub(crate) fn toggler_cursor_line<'a>(
-    enabled: bool, draw_cursor_line: bool, sel_tre_style_opt: TreSty,
+    enabled: bool, draw_cursor_line: bool, tre_sty: TreSty,
 ) -> Toggler<'a, TvMsg> {
-    let lab = match sel_tre_style_opt {
+    let lab = match tre_sty {
         TreSty::PhyGrm => "Cursor Tracking Line",
         TreSty::Fan => "Cursor Tracking Circle",
     };

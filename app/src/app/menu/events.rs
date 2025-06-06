@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use treeview::{SidebarPos, TvMsg};
+use treeview::{SidebarPosition, TvMsg};
 
 use crate::app::AppMsg;
 
@@ -49,10 +49,10 @@ impl From<&AppMenuItemId> for AppMsg {
             AppMenuItemId::Quit => AppMsg::WinCloseRequested,
             AppMenuItemId::CloseWindow => AppMsg::WinCloseRequested,
             AppMenuItemId::SetSideBarPositionLeft => {
-                AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPos::Left))
+                AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPosition::Left))
             }
             AppMenuItemId::SetSideBarPositionRight => {
-                AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPos::Right))
+                AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPosition::Right))
             }
             _ => AppMsg::Other(Some(value.to_string())),
         }

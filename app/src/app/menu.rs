@@ -10,19 +10,16 @@ use muda::{
     accelerator::{Accelerator, CMD_OR_CTRL, Code},
 };
 pub use muda_events::menu_events;
-use treeview::SidebarPos;
+use treeview::SidebarPosition;
 
-#[allow(dead_code)]
 #[derive(Default, Clone)]
 pub struct AppMenu {
-    muda_menu: Option<muda::Menu>,
+    _muda_menu: Option<muda::Menu>,
     items: HashMap<AppMenuItemId, MenuItemKind>,
 }
 
 impl AppMenu {
-    #[allow(dead_code)]
     pub fn enable(&mut self, id: &AppMenuItemId) { self.set_enabled(id, true); }
-
     pub fn disable(&mut self, id: &AppMenuItemId) { self.set_enabled(id, false); }
 
     fn set_enabled(&mut self, id: &AppMenuItemId, state: bool) {
@@ -82,7 +79,7 @@ impl AppMenu {
         };
     }
 
-    pub fn new(sidebar_pos: SidebarPos) -> Option<Self> {
+    pub fn new(sidebar_pos: SidebarPosition) -> Option<Self> {
         let menu: muda::Menu;
         let muda_menu: Option<muda::Menu>;
         let items: HashMap<AppMenuItemId, MenuItemKind>;
@@ -105,11 +102,11 @@ impl AppMenu {
             muda_menu = Some(menu);
         }
 
-        Some(Self { muda_menu, items })
+        Some(Self { _muda_menu: muda_menu, items })
     }
 
     fn prepare_app_menu(
-        sidebar_pos: SidebarPos,
+        sidebar_pos: SidebarPosition,
     ) -> (muda::Menu, HashMap<AppMenuItemId, MenuItemKind>) {
         let menu = muda::Menu::default();
         let mut items: HashMap<AppMenuItemId, MenuItemKind> = HashMap::new();
@@ -155,16 +152,16 @@ impl AppMenu {
         let menu_item_sidebar_pos_left = CheckMenuItem::with_id(
             AppMenuItemId::SetSideBarPositionLeft,
             "Left",
-            sidebar_pos != SidebarPos::Left,
-            sidebar_pos == SidebarPos::Left,
+            sidebar_pos != SidebarPosition::Left,
+            sidebar_pos == SidebarPosition::Left,
             Some(Accelerator::new(Some(modifier), Code::BracketLeft)),
         );
 
         let menu_item_sidebar_pos_right = CheckMenuItem::with_id(
             AppMenuItemId::SetSideBarPositionRight,
             "Right",
-            sidebar_pos != SidebarPos::Right,
-            sidebar_pos == SidebarPos::Right,
+            sidebar_pos != SidebarPosition::Right,
+            sidebar_pos == SidebarPosition::Right,
             Some(Accelerator::new(Some(modifier), Code::BracketRight)),
         );
 

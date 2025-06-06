@@ -4,6 +4,7 @@ use crate::*;
 #[derive(Default, Debug)]
 pub(super) struct TreeState {
     id: usize,
+    sel_edge_idxs: Vec<usize>,
     sel_node_ids: HashSet<NodeId>,
 
     t: Tree,
@@ -47,15 +48,18 @@ pub(super) struct TreeState {
 }
 
 impl TreeState {
+    pub fn tree(&self) -> &Tree { &self.t }
+    pub fn tree_original(&self) -> &Tree { &self.t_orig }
+
     // Search & Filter -----------------------------------------------------------------------------
     pub(super) fn found_edge_idxs(&self) -> &Vec<usize> { &self.found_edge_idxs }
     pub(super) fn found_node_ids(&self) -> &HashSet<NodeId> { &self.found_node_ids }
     pub(super) fn found_edge_idx(&self) -> usize { self.vec_idx_to_found_edge_idxs }
 
-    pub(super) fn current_found_edge(&self) -> Option<&Edge> {
+    pub(super) fn current_found_edge(&self) -> Option<Edge> {
         if !self.found_edge_idxs.is_empty() {
             let edge = &self.edges_srtd_y[self.found_edge_idxs[self.vec_idx_to_found_edge_idxs]];
-            Some(edge)
+            Some(edge.clone())
         } else {
             None
         }
@@ -65,20 +69,18 @@ impl TreeState {
         self.current_found_edge().map(|e| e.node_id)
     }
 
-    pub(super) fn prev_result(&mut self) -> Option<&Edge> {
+    pub(super) fn prev_result(&mut self) {
         self.clear_cache_filtered_nodes();
         if self.vec_idx_to_found_edge_idxs > 0 {
             self.vec_idx_to_found_edge_idxs -= 1;
         }
-        self.current_found_edge()
     }
 
-    pub(super) fn next_result(&mut self) -> Option<&Edge> {
+    pub(super) fn next_result(&mut self) {
         self.clear_cache_filtered_nodes();
         if self.vec_idx_to_found_edge_idxs < self.found_edge_idxs.len() - 1 {
             self.vec_idx_to_found_edge_idxs += 1;
         }
-        self.current_found_edge()
     }
 
     pub(super) fn add_found_to_sel(&mut self) {
@@ -86,6 +88,7 @@ impl TreeState {
         let mut sel_node_ids: HashSet<NodeId> = HashSet::with_capacity(max_capacity);
         self.sel_node_ids.union(&self.found_node_ids).collect_into(&mut sel_node_ids);
         self.sel_node_ids = sel_node_ids;
+        self.sel_edge_idxs = self.sel_edge_idxs_prep();
         self.clear_cache_sel_nodes();
     }
 
@@ -93,10 +96,11 @@ impl TreeState {
         let mut sel_node_ids: HashSet<NodeId> = HashSet::with_capacity(self.sel_node_ids.len());
         self.sel_node_ids.difference(&self.found_node_ids).collect_into(&mut sel_node_ids);
         self.sel_node_ids = sel_node_ids;
+        self.sel_edge_idxs = self.sel_edge_idxs_prep();
         self.clear_cache_sel_nodes();
     }
 
-    pub(super) fn filter_nodes(&mut self, query: String, tips_only: bool) -> &Vec<usize> {
+    pub(super) fn filter_nodes(&mut self, query: &str, tips_only: bool) -> &Vec<usize> {
         self.found_node_ids.clear();
         self.found_edge_idxs.clear();
         self.clear_cache_filtered_nodes();
@@ -267,6 +271,7 @@ impl TreeState {
         self.edges_tip_tallest = self.edges_tip_tallest_prep();
         self.edge_root = self.edge_root_prep();
         self.update_filter_results(current_found_node_id);
+        self.sel_edge_idxs = self.sel_edge_idxs_prep();
         self.clear_caches_all();
     }
 
@@ -333,7 +338,20 @@ impl TreeState {
     }
 
     // Selection -----------------------------------------------------------------------------------
+    pub(super) fn sel_edge_idxs(&self) -> &Vec<usize> { &self.sel_edge_idxs }
     pub(super) fn sel_node_ids(&self) -> &HashSet<NodeId> { &self.sel_node_ids }
+
+    fn sel_edge_idxs_prep(&self) -> Vec<usize> {
+        let sel_node_ids = &self.sel_node_ids;
+        let rv_edge_idx: Vec<usize> = self
+            .edges_srtd_y
+            .par_iter()
+            .filter_map(|edge| {
+                if sel_node_ids.contains(&edge.node_id) { Some(edge.edge_idx) } else { None }
+            })
+            .collect();
+        rv_edge_idx
+    }
 
     pub(super) fn select_deselect_node(&mut self, node_id: &NodeId) {
         if self.sel_node_ids.contains(node_id) {
@@ -341,6 +359,7 @@ impl TreeState {
         } else {
             self.select_node(node_id);
         }
+        self.sel_edge_idxs = self.sel_edge_idxs_prep();
     }
 
     pub(super) fn select_node(&mut self, node_id: &NodeId) {

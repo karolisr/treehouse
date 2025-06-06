@@ -32,16 +32,18 @@ pub type Float = f32;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter, Result};
 use std::ops::RangeInclusive;
+use std::rc::Rc;
 
 use cnv_plot::{PlotCnv, PlotData};
+use cnv_tree::TreeCnv;
 use consts::*;
-use dendros::{Edge, LttPoint, Node, NodeId, Tree, TreeFloat, flatten_tree, ltt};
+use dendros::{Edge, LttPoint, Node, NodeId, Tree, TreeFloat, flatten_tree, ltt, write_newick};
 use num_traits::FromPrimitive;
 use path_utils::PathBuilder;
 use rayon::prelude::*;
 use treestate::TreeState;
 use treeview::{NODE_ORD_OPTS, NodeOrd, TRE_STY_OPTS, TreSty, TvPane};
-pub use treeview::{SidebarPos, TreeView, TvMsg};
+pub use treeview::{SidebarPosition, TreeView, TvMsg};
 use utils::{Clr, TextWidth, text_width};
 
 pub type IndexRange = RangeInclusive<usize>;

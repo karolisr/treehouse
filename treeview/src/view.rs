@@ -5,7 +5,7 @@ use crate::*;
 
 impl TreeView {
     pub fn view(&self) -> Element<TvMsg> {
-        let ts: &TreeState;
+        let ts: Rc<TreeState>;
 
         if let Some(sel_ts_opt) = self.sel_tre() {
             ts = sel_ts_opt;
@@ -23,19 +23,19 @@ impl TreeView {
         main_row = main_row.spacing(ZRO);
 
         if self.show_toolbar {
-            toolbar_content_col = toolbar_content_col.push(toolbar(self, ts));
+            toolbar_content_col = toolbar_content_col.push(toolbar(self, ts.clone()));
         }
-        toolbar_content_col = toolbar_content_col.push(find_bar(self, ts));
-        toolbar_content_col = toolbar_content_col.push(content(self, ts));
+        toolbar_content_col = toolbar_content_col.push(find_bar(self, ts.clone()));
+        toolbar_content_col = toolbar_content_col.push(content(self));
 
         if self.show_sidebar {
             let sb = sidebar(self, ts);
-            match self.sidebar_pos_sel {
-                SidebarPos::Left => {
+            match self.sidebar_pos {
+                SidebarPosition::Left => {
                     main_row = main_row.push(sb);
                     main_row = main_row.push(toolbar_content_col);
                 }
-                SidebarPos::Right => {
+                SidebarPosition::Right => {
                     main_row = main_row.push(toolbar_content_col);
                     main_row = main_row.push(sb);
                 }
@@ -49,7 +49,7 @@ impl TreeView {
     }
 }
 
-fn find_bar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Container<'a, TvMsg> {
+fn find_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     let mut ttc: Column<TvMsg> = Column::new();
     let mut ttr1: Row<TvMsg> = Row::new();
     let mut ttr2: Row<TvMsg> = Row::new();
@@ -118,15 +118,15 @@ fn find_bar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Container<'a, TvMsg> {
         .align_y(Vertical::Center)
 }
 
-fn content<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
+fn content<'a>(tv: &'a TreeView) -> Element<'a, TvMsg> {
     let ele: Element<'a, TvMsg> = if let Some(pane_grid) = &tv.pane_grid {
         PaneGrid::new(pane_grid, |_pane_idx, tv_pane, _is_maximized| {
-            PgContent::new(center(responsive(move |size| pane_content(tv, ts, tv_pane, size))))
+            PgContent::new(center(responsive(move |size| pane_content(tv, tv_pane, size))))
                 .style(sty_pane_body)
         })
         .style(sty_pane_grid)
         .on_resize(ZRO, TvMsg::PaneResized)
-        .min_size(tv.tre_padd_t + tv.tre_padd_b)
+        .min_size(150)
         .spacing(TEN)
         .into()
     } else {
@@ -135,21 +135,19 @@ fn content<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
     center(ele).into()
 }
 
-fn pane_content<'a>(
-    tv: &'a TreeView, _ts: &'a TreeState, tv_pane: &TvPane, size: Size,
-) -> Element<'a, TvMsg> {
+fn pane_content<'a>(tv: &'a TreeView, tv_pane: &TvPane, size: Size) -> Element<'a, TvMsg> {
     let w = size.width;
     let h = size.height;
     let cnv_w = tv.calc_tre_cnv_w(w);
     let cnv_h = tv.calc_tre_cnv_h(h);
     let scrollable = match tv_pane {
         TvPane::Tree => {
-            let cnv = Cnv::new(tv).width(cnv_w).height(cnv_h);
+            let cnv = Cnv::new(&tv.tre_cnv).width(cnv_w).height(cnv_h);
             scrollable_cnv_tre(tv.tre_scr_id, cnv, w, h)
         }
         TvPane::LttPlot => {
             let mut cnv_w = cnv_w;
-            if tv.tre_sty_opt_sel == TreSty::Fan {
+            if tv.tre_cnv.tre_sty == TreSty::Fan {
                 cnv_w = w;
             }
             let cnv = Cnv::new(&tv.ltt_cnv).width(cnv_w).height(h);
@@ -159,14 +157,18 @@ fn pane_content<'a>(
     scrollable.into()
 }
 
-fn toolbar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Container<'a, TvMsg> {
+fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     let mut tb_row: Row<TvMsg> = Row::new();
 
     tb_row = tb_row.push(
-        center(iced_row![btn_unroot(ts), btn_root(ts)].align_y(Vertical::Center).spacing(0))
-            .width(Length::Shrink)
-            .height(Length::Shrink)
-            .padding(ZRO),
+        center(
+            iced_row![btn_unroot(ts.clone()), btn_root(ts.clone())]
+                .align_y(Vertical::Center)
+                .spacing(0),
+        )
+        .width(Length::Shrink)
+        .height(Length::Shrink)
+        .padding(ZRO),
     );
 
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
@@ -200,9 +202,11 @@ fn toolbar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Container<'a, TvMsg> {
                     true => btn("LTTH", Some(TvMsg::LttVisChanged(false))),
                     false => btn("LTTV", Some(TvMsg::LttVisChanged(true))),
                 },
-                match tv.sidebar_pos_sel {
-                    SidebarPos::Left => btn("SBR", Some(TvMsg::SetSidebarPos(SidebarPos::Right))),
-                    SidebarPos::Right => btn("SBL", Some(TvMsg::SetSidebarPos(SidebarPos::Left))),
+                match tv.sidebar_pos {
+                    SidebarPosition::Left =>
+                        btn("SBR", Some(TvMsg::SetSidebarPos(SidebarPosition::Right))),
+                    SidebarPosition::Right =>
+                        btn("SBL", Some(TvMsg::SetSidebarPos(SidebarPosition::Left))),
                 }
             ]
             .align_y(Vertical::Center)
@@ -224,7 +228,7 @@ fn toolbar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Container<'a, TvMsg> {
         .align_y(Vertical::Center)
 }
 
-fn stats(ts: &TreeState) -> Row<TvMsg> {
+fn stats(ts: Rc<TreeState>) -> Row<'static, TvMsg> {
     let mut stats_row: Row<TvMsg> = Row::new();
 
     let lc: Column<TvMsg> = iced_col![
@@ -255,27 +259,27 @@ fn stats(ts: &TreeState) -> Row<TvMsg> {
     stats_row
 }
 
-fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
+fn sidebar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
     let mut sb_col: Column<TvMsg> = Column::new();
 
     sb_col = sb_col.spacing(ZRO);
     sb_col = sb_col.width(Length::Fill);
     sb_col = sb_col.height(Length::Fill);
 
-    sb_col = sb_col.push(stats(ts));
+    sb_col = sb_col.push(stats(ts.clone()));
     sb_col = sb_col.push(rule_h(ONE));
-    sb_col = sb_col.push(pick_list_tre_sty(tv.tre_sty_opt_sel));
-    sb_col = sb_col.push(pick_list_node_ordering(tv.node_ord_opt_sel));
+    sb_col = sb_col.push(pick_list_tre_sty(tv.tre_cnv.tre_sty));
+    sb_col = sb_col.push(pick_list_node_ordering(tv.node_ord_opt));
     sb_col = sb_col.push(rule_h(ONE));
 
-    match tv.tre_sty_opt_sel {
+    match tv.tre_cnv.tre_sty {
         TreSty::PhyGrm => {
-            if tv.tre_cnv_h_idx_min != tv.tre_cnv_h_idx_max {
+            if tv.tre_cnv_size_idx_min != tv.tre_cnv_size_idx_max {
                 sb_col = sb_col.push(slider(
                     Some("Edge Spacing"),
-                    tv.tre_cnv_h_idx_min,
-                    tv.tre_cnv_h_idx_max,
-                    tv.tre_cnv_h_idx_sel,
+                    tv.tre_cnv_size_idx_min,
+                    tv.tre_cnv_size_idx_max,
+                    tv.tre_cnv_h_idx,
                     1,
                     2,
                     TvMsg::CnvHeightSelChanged,
@@ -283,9 +287,9 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
             }
             sb_col = sb_col.push(slider(
                 Some("Width"),
-                tv.tre_cnv_w_idx_min,
-                tv.tre_cnv_w_idx_max,
-                tv.tre_cnv_w_idx_sel,
+                tv.tre_cnv_size_idx_min,
+                tv.tre_cnv_size_idx_max,
+                tv.tre_cnv_w_idx,
                 1,
                 2,
                 TvMsg::CnvWidthSelChanged,
@@ -294,9 +298,9 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
         TreSty::Fan => {
             sb_col = sb_col.push(slider(
                 Some("Zoom"),
-                tv.tre_cnv_z_idx_min,
-                tv.tre_cnv_z_idx_max,
-                tv.tre_cnv_z_idx_sel,
+                tv.tre_cnv_size_idx_min,
+                tv.tre_cnv_size_idx_max,
+                tv.tre_cnv_z_idx,
                 1,
                 2,
                 TvMsg::CnvZoomSelChanged,
@@ -305,7 +309,7 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
                 Some("Opening Angle"),
                 tv.opn_angle_idx_min,
                 tv.opn_angle_idx_max,
-                tv.opn_angle_idx_sel,
+                tv.opn_angle_idx,
                 1,
                 15,
                 TvMsg::OpnAngleChanged,
@@ -314,7 +318,7 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
                 Some("Rotation Angle"),
                 tv.rot_angle_idx_min,
                 tv.rot_angle_idx_max,
-                tv.rot_angle_idx_sel,
+                tv.rot_angle_idx,
                 1,
                 15,
                 TvMsg::RotAngleChanged,
@@ -324,63 +328,70 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
 
     sb_col = sb_col.push(rule_h(ONE));
 
-    if ts.has_tip_labs() && tv.draw_labs_tip && tv.draw_labs_allowed {
+    if ts.has_tip_labs() && tv.tre_cnv.draw_labs_tip && tv.tre_cnv.draw_labs_allowed {
         sb_col = sb_col.push(iced_col![
-            toggler_label_tip(true, tv.draw_labs_tip,),
+            toggler_label_tip(true, tv.tre_cnv.draw_labs_tip,),
             slider(
                 None,
                 tv.lab_size_idx_min,
                 tv.lab_size_idx_max,
-                tv.tip_lab_size_idx_sel,
+                tv.lab_size_idx_tip,
                 1,
                 2,
                 TvMsg::TipLabSizeChanged,
             )
         ])
     } else {
-        sb_col = sb_col
-            .push(toggler_label_tip(ts.has_tip_labs() && tv.draw_labs_allowed, tv.draw_labs_tip))
+        sb_col = sb_col.push(toggler_label_tip(
+            ts.has_tip_labs() && tv.tre_cnv.draw_labs_allowed,
+            tv.tre_cnv.draw_labs_tip,
+        ))
     }
 
-    if ts.has_int_labs() && tv.draw_labs_int && tv.draw_labs_allowed {
+    if ts.has_int_labs() && tv.tre_cnv.draw_labs_int && tv.tre_cnv.draw_labs_allowed {
         sb_col = sb_col.push(iced_col![
-            toggler_label_int(true, tv.draw_labs_int),
+            toggler_label_int(true, tv.tre_cnv.draw_labs_int),
             slider(
                 None,
                 tv.lab_size_idx_min,
                 tv.lab_size_idx_max,
-                tv.int_lab_size_idx_sel,
+                tv.lab_size_idx_int,
                 1,
                 2,
                 TvMsg::IntLabSizeChanged,
             )
         ])
     } else {
-        sb_col = sb_col
-            .push(toggler_label_int(ts.has_int_labs() && tv.draw_labs_allowed, tv.draw_labs_int))
+        sb_col = sb_col.push(toggler_label_int(
+            ts.has_int_labs() && tv.tre_cnv.draw_labs_allowed,
+            tv.tre_cnv.draw_labs_int,
+        ))
     }
 
-    if ts.has_brlen() && tv.draw_labs_brnch && tv.draw_labs_allowed {
+    if ts.has_brlen() && tv.tre_cnv.draw_labs_brnch && tv.tre_cnv.draw_labs_allowed {
         sb_col = sb_col.push(iced_col![
-            toggler_label_branch(true, tv.draw_labs_brnch),
+            toggler_label_branch(true, tv.tre_cnv.draw_labs_brnch),
             slider(
                 None,
                 tv.lab_size_idx_min,
                 tv.lab_size_idx_max,
-                tv.brnch_lab_size_idx_sel,
+                tv.lab_size_idx_brnch,
                 1,
                 2,
                 TvMsg::BrnchLabSizeChanged,
             )
         ])
     } else {
-        sb_col = sb_col
-            .push(toggler_label_branch(ts.has_brlen() && tv.draw_labs_allowed, tv.draw_labs_brnch))
+        sb_col = sb_col.push(toggler_label_branch(
+            ts.has_brlen() && tv.tre_cnv.draw_labs_allowed,
+            tv.tre_cnv.draw_labs_brnch,
+        ))
     }
 
-    sb_col = sb_col.push(iced_col![toggler_legend(ts.has_brlen(), tv.draw_legend)]);
-    sb_col =
-        sb_col.push(iced_col![toggler_cursor_line(true, tv.draw_cursor_line, tv.tre_sty_opt_sel)]);
+    sb_col = sb_col.push(iced_col![toggler_legend(ts.has_brlen(), tv.tre_cnv.draw_legend)]);
+    sb_col = sb_col.push(iced_col![toggler_cursor_line(
+        true, tv.tre_cnv.draw_cursor_line, tv.tre_cnv.tre_sty
+    )]);
     sb_col = sb_col.push(rule_h(ONE));
 
     if ts.is_rooted() {
@@ -388,7 +399,7 @@ fn sidebar<'a>(tv: &'a TreeView, ts: &'a TreeState) -> Element<'a, TvMsg> {
             Some("Root Length"),
             tv.root_len_idx_min,
             tv.root_len_idx_max,
-            tv.root_len_idx_sel,
+            tv.root_len_idx,
             1,
             2,
             TvMsg::RootLenSelChanged,

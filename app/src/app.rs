@@ -15,7 +15,7 @@ use iced::{
 };
 use menu::{AppMenu, AppMenuItemId};
 use std::path::PathBuf;
-use treeview::{SidebarPos, TreeView, TvMsg};
+use treeview::{SidebarPosition, TreeView, TvMsg};
 use win::window_settings;
 
 pub struct App {
@@ -110,8 +110,10 @@ impl App {
                         && let TvMsg::SetSidebarPos(sidebar_pos) = tv_msg
                     {
                         match sidebar_pos {
-                            SidebarPos::Left => menu.update(&AppMenuItemId::SetSideBarPositionLeft),
-                            SidebarPos::Right => {
+                            SidebarPosition::Left => {
+                                menu.update(&AppMenuItemId::SetSideBarPositionLeft)
+                            }
+                            SidebarPosition::Right => {
                                 menu.update(&AppMenuItemId::SetSideBarPositionRight)
                             }
                         }
@@ -158,18 +160,32 @@ impl App {
                                         .to_string_lossy()
                                         .to_string(),
                                 );
+                                if let Some(menu) = &mut self.menu {
+                                    menu.enable(&AppMenuItemId::SaveAs);
+                                };
                                 Task::done(AppMsg::TvMsg(TvMsg::TreesLoaded(trees)))
                             }
                             None => {
                                 println!("ParsedData::Trees(None)");
+                                if let Some(menu) = &mut self.menu {
+                                    menu.disable(&AppMenuItemId::SaveAs);
+                                };
                                 Task::none()
                             }
                         },
                         ParsedData::Other(s) => {
                             println!("ParsedData::Other({s})");
+                            if let Some(menu) = &mut self.menu {
+                                menu.disable(&AppMenuItemId::SaveAs);
+                            };
                             Task::none()
                         }
-                        ParsedData::Exception => Task::none(),
+                        ParsedData::Exception => {
+                            if let Some(menu) = &mut self.menu {
+                                menu.disable(&AppMenuItemId::SaveAs);
+                            };
+                            Task::none()
+                        }
                     }
                 } else {
                     Task::none()
@@ -196,8 +212,21 @@ impl App {
                         FileType::Other(_) => Task::none(),
                         FileType::Exception => Task::none(),
                         file_type => match file_type {
-                            FileType::Newick => Task::none(), // Save Newick file
-                            FileType::Nexus => Task::none(),  // Save Nexus file
+                            FileType::Newick => {
+                                if let Some(tv) = &self.treeview {
+                                    let newick_string = &tv.newick_string();
+                                    ops::write_text_file(&path_buf, newick_string);
+                                    self.title = Some(
+                                        path_buf
+                                            .file_name()
+                                            .unwrap_or_default()
+                                            .to_string_lossy()
+                                            .to_string(),
+                                    );
+                                }
+                                Task::none()
+                            }
+                            FileType::Nexus => Task::none(), // Save Nexus file
                             _ => Task::none(),
                         },
                     }
