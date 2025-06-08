@@ -52,92 +52,6 @@ pub(super) fn draw_legend(
     }
 }
 
-pub(super) fn draw_labs_tip(
-    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
-) {
-    g.push(tst.cache_lab_tip().draw(rndr, sz, |f| {
-        draw_labels(
-            &st.labs_tip,
-            Vector { x: tv.lab_offset_tip + tv.lab_size_tip / TWO, y: ZRO },
-            Some(st.translation),
-            st.rotation,
-            f,
-        );
-    }));
-}
-
-pub(super) fn draw_labs_int(
-    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
-) {
-    g.push(tst.cache_lab_int().draw(rndr, sz, |f| {
-        draw_labels(
-            &st.labs_int,
-            Vector { x: tv.lab_offset_int + tv.lab_size_tip / TWO, y: ZRO },
-            Some(st.translation),
-            st.rotation,
-            f,
-        );
-    }));
-}
-
-pub(super) fn draw_labs_brnch(
-    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
-) {
-    g.push(tst.cache_lab_brnch().draw(rndr, sz, |f| {
-        draw_labels(
-            &st.labs_brnch,
-            Vector { x: ZRO, y: tv.lab_offset_brnch },
-            Some(st.translation),
-            st.rotation,
-            f,
-        );
-    }));
-}
-
-pub(super) fn draw_selected_nodes(
-    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
-) {
-    g.push(tst.cache_sel_nodes().draw(rndr, sz, |f| {
-        let points: Vec<Point> = st.selected_nodes.par_iter().map(|nd| nd.points.p1).collect();
-        draw_nodes(&points, tv.lab_size_tip / TWO, Some(st.translation), st.rotation, f);
-    }));
-}
-
-pub(super) fn draw_filtered_nodes(
-    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
-) {
-    g.push(tst.cache_filtered_nodes().draw(rndr, sz, |f| {
-        let points: Vec<Point> = st.filtered_nodes.par_iter().map(|nd| nd.points.p1).collect();
-        draw_nodes(&points, tv.lab_size_tip / TWO, Some(st.translation), st.rotation, f);
-
-        if let Some(edge) = tst.current_found_edge() {
-            let pt = match tv.tre_sty {
-                TreSty::PhyGrm => node_point_cart(st.tre_vs.w - st.root_len, st.tre_vs.h, &edge),
-                TreSty::Fan => {
-                    let angle = edge_angle(tv.opn_angle, &edge);
-                    node_point_pol(angle, st.tre_vs.radius_min, st.root_len, &edge)
-                }
-            };
-            draw_nodes(&[pt], st.node_radius, Some(st.translation), st.rotation, f);
-        }
-    }));
-}
-
-pub(super) fn draw_hovered_node(
-    tv: &TreeCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
-) {
-    g.push(tv.cache_hovered_node.draw(rndr, sz, |f| {
-        if let Some(hovered_node) = &st.hovered_node {
-            f.push_transform();
-            f.translate(st.translation);
-            f.rotate(st.rotation);
-            fill_circle(hovered_node.points.p1, FILL_NODE_HOVER, st.node_radius, f);
-            stroke_circle(hovered_node.points.p1, STRK_1_RED, st.node_radius, f);
-            f.pop_transform();
-        }
-    }));
-}
-
 pub(super) fn draw_cursor_line(
     tv: &TreeCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
@@ -164,96 +78,114 @@ pub(super) fn draw_cursor_line(
     }));
 }
 
-pub(super) fn draw_palette(
-    tv: &TreeCnv, st: &St, thm: &Theme, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+pub(super) fn draw_labs_tip(
+    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
-    let palette = thm.palette();
-    let palette_ex = thm.extended_palette();
-    let color_text = palette.text;
-    let color_bg_weakest = palette_ex.background.weakest.color;
-    let color_bg_weak = palette_ex.background.weak.color;
-    let color_bg_base = palette_ex.background.base.color;
-    let color_bg_strong = palette_ex.background.strong.color;
-    let color_bg_strongest = palette_ex.background.strongest.color;
-    let color_primary_weak = palette_ex.primary.weak.color;
-    let color_primary_base = palette_ex.primary.base.color;
-    let color_primary_strong = palette_ex.primary.strong.color;
-    let color_secondary_weak = palette_ex.secondary.weak.color;
-    let color_secondary_base = palette_ex.secondary.base.color;
-    let color_secondary_strong = palette_ex.secondary.strong.color;
-    let color_success_base = palette_ex.success.base.color;
-    let color_warning_base = palette_ex.warning.base.color;
-    let color_danger_base = palette_ex.danger.base.color;
+    g.push(tst.cache_lab_tip().draw(rndr, sz, |f| {
+        draw_labels(
+            &st.labs_tip,
+            Vector { x: tv.lab_offset_tip, y: ZRO },
+            Some(st.translation),
+            st.rotation,
+            f,
+        );
+    }));
+}
 
-    g.push(tv.cache_palette.draw(rndr, sz, |f| {
-        let colors_bg =
-            [color_bg_base, color_bg_weakest, color_bg_weak, color_bg_strong, color_bg_strongest];
-        let colors_primary =
-            [color_primary_base, color_primary_weak, color_primary_strong, color_text];
-        let colors_secondary = [color_secondary_base, color_secondary_weak, color_secondary_strong];
-        let colors_other = [color_success_base, color_warning_base, color_danger_base];
-        let color_rect_size = SF * 15e0;
-        let palette_rect_w = 2e0 * TEN + color_rect_size * 5e0;
-        let palette_rect_h = 2e0 * TEN + color_rect_size * 4e0;
-        let palette_rect_x = st.cnv_vs.x0 + TEN;
-        let palette_rect_y = st.cnv_vs.y0 + st.cnv_vs.h - palette_rect_h - TEN - TEN * TWO * TWO;
+pub(super) fn draw_labs_int(
+    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+) {
+    g.push(tst.cache_lab_int().draw(rndr, sz, |f| {
+        draw_labels(
+            &st.labs_int,
+            Vector { x: tv.lab_offset_int, y: ZRO },
+            Some(st.translation),
+            st.rotation,
+            f,
+        );
+    }));
+}
 
-        f.fill_rectangle(
-            Point { x: palette_rect_x, y: palette_rect_y },
-            iced::Size { width: palette_rect_w, height: palette_rect_h },
-            color_bg_base,
+pub(super) fn draw_labs_brnch(
+    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+) {
+    g.push(tst.cache_lab_brnch().draw(rndr, sz, |f| {
+        draw_labels(
+            &st.labs_brnch,
+            Vector { x: ZRO, y: tv.lab_offset_brnch },
+            Some(st.translation),
+            st.rotation,
+            f,
+        );
+    }));
+}
+
+pub(super) fn draw_hovered_node(
+    tv: &TreeCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+) {
+    g.push(tv.cache_hovered_node.draw(rndr, sz, |f| {
+        if let Some(hovered_node) = &st.hovered_node {
+            draw_nodes(
+                &[hovered_node.points.p1],
+                st.node_radius + SF * 4e0,
+                STRK_NODE_HOVER,
+                FILL_NODE_HOVER,
+                Some(st.translation),
+                st.rotation,
+                f,
+            );
+        }
+    }));
+}
+
+pub(super) fn draw_selected_nodes(
+    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+) {
+    g.push(tst.cache_sel_nodes().draw(rndr, sz, |f| {
+        let points: Vec<Point> = st.selected_nodes.par_iter().map(|nd| nd.points.p1).collect();
+        draw_nodes(
+            &points,
+            st.node_radius + SF * 3e0,
+            STRK_NODE_SELECTED,
+            FILL_NODE_SELECTED,
+            Some(st.translation),
+            st.rotation,
+            f,
+        );
+    }));
+}
+
+pub(super) fn draw_filtered_nodes(
+    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+) {
+    g.push(tst.cache_filtered_nodes().draw(rndr, sz, |f| {
+        let points: Vec<Point> = st.filtered_nodes.par_iter().map(|nd| nd.points.p1).collect();
+        draw_nodes(
+            &points,
+            st.node_radius + SF * 2e0,
+            STRK_NODE_FILTERED,
+            FILL_NODE_FILTERED,
+            Some(st.translation),
+            st.rotation,
+            f,
         );
 
-        f.stroke_rectangle(
-            Point { x: palette_rect_x + SF / 2e0, y: palette_rect_y + SF / 2e0 },
-            iced::Size {
-                width: 2e0 * TEN + color_rect_size * 5e0 - SF,
-                height: 2e0 * TEN + color_rect_size * 4e0 - SF,
-            },
-            STRK_1_BLK,
-        );
-
-        for (i, c) in colors_bg.iter().enumerate() {
-            f.fill_rectangle(
-                Point {
-                    x: palette_rect_x + TEN + color_rect_size * i as Float,
-                    y: palette_rect_y + TEN,
-                },
-                iced::Size { width: color_rect_size, height: color_rect_size },
-                *c,
-            );
-        }
-
-        for (i, c) in colors_primary.iter().enumerate() {
-            f.fill_rectangle(
-                Point {
-                    x: palette_rect_x + TEN + color_rect_size * i as Float,
-                    y: palette_rect_y + TEN + color_rect_size * ONE,
-                },
-                iced::Size { width: color_rect_size, height: color_rect_size },
-                *c,
-            );
-        }
-
-        for (i, c) in colors_secondary.iter().enumerate() {
-            f.fill_rectangle(
-                Point {
-                    x: palette_rect_x + TEN + color_rect_size * i as Float,
-                    y: palette_rect_y + TEN + color_rect_size * TWO,
-                },
-                iced::Size { width: color_rect_size, height: color_rect_size },
-                *c,
-            );
-        }
-
-        for (i, c) in colors_other.iter().enumerate() {
-            f.fill_rectangle(
-                Point {
-                    x: palette_rect_x + TEN + color_rect_size * i as Float,
-                    y: palette_rect_y + TEN + color_rect_size * 3e0,
-                },
-                iced::Size { width: color_rect_size, height: color_rect_size },
-                *c,
+        if let Some(edge) = tst.current_found_edge() {
+            let pt = match tv.tre_sty {
+                TreSty::PhyGrm => node_point_cart(st.tre_vs.w - st.root_len, st.tre_vs.h, &edge),
+                TreSty::Fan => {
+                    let angle = edge_angle(tv.opn_angle, &edge);
+                    node_point_pol(angle, st.tre_vs.radius_min, st.root_len, &edge)
+                }
+            };
+            draw_nodes(
+                &[pt],
+                st.node_radius + SF * 1e0,
+                STRK_NODE_CURRENT,
+                FILL_NODE_CURRENT,
+                Some(st.translation),
+                st.rotation,
+                f,
             );
         }
     }));
@@ -263,7 +195,7 @@ fn draw_scale_bar(
     tre_sty: TreSty, tre_vs: &RectVals<Float>, cnv_vs: &RectVals<Float>, lab_size: Float,
     lab_y_offset: Float, root_len: Float, tre_height: Float, f: &mut Frame,
 ) {
-    let stroke = STRK_1_MAG;
+    let stroke = STRK_2_BLK;
     let w = match tre_sty {
         TreSty::PhyGrm => tre_vs.w - root_len,
         TreSty::Fan => tre_vs.radius_min - root_len,
@@ -287,20 +219,23 @@ fn draw_scale_bar(
     let p_lab = Point { x: x.midpoint(p1.x), y };
 
     f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), stroke);
-    let text = lab_text(format!("{sb_len}"), p_lab, lab_size, TXT_LAB_TMPL_SCALE_BAR);
+    let text = lab_text(format!("{sb_len}"), p_lab, lab_size, TEMPLATE_TXT_LAB_SCALEBAR);
     let lab = Label { text, width: sb_len_on_screen, angle: None };
     draw_labels(&[lab], Vector { x: ZRO, y: lab_y_offset }, None, ZRO, f);
 }
 
-fn draw_nodes(points: &[Point], radius: Float, trans: Option<Vector>, rot: Float, f: &mut Frame) {
+fn draw_nodes(
+    points: &[Point], radius: Float, stroke: Strk, fill: CnvFill, trans: Option<Vector>,
+    rot: Float, f: &mut Frame,
+) {
     f.push_transform();
     if let Some(trans) = trans {
         f.translate(trans);
     }
     f.rotate(rot);
     for &pt in points {
-        fill_circle(pt, FILL_NODE_HOVER, radius, f);
-        stroke_circle(pt, STRK_1_RED, radius, f);
+        fill_circle(pt, fill, radius, f);
+        stroke_circle(pt, stroke, radius, f);
     }
     f.pop_transform();
 }
@@ -315,7 +250,7 @@ fn draw_labels(labels: &[Label], offset: Vector, trans: Option<Vector>, rot: Flo
 
     for Label { text, width, angle } in labels {
         let mut text = text.clone();
-        // ------------------------------------------------------------------------------
+        // -----------------------------------------------------------------------------------------
         let magic = text.size.0 / 8.75;
         let adjust_h_base = text.size.0 / TWO - magic;
         let mut adjust_h = match text.align_y {
@@ -324,8 +259,7 @@ fn draw_labels(labels: &[Label], offset: Vector, trans: Option<Vector>, rot: Flo
             Vertical::Bottom => -adjust_h_base.ceil(),
         };
         text.align_y = Vertical::Center;
-        // ------------------------------------------------------------------------------
-
+        // -----------------------------------------------------------------------------------------
         if let Some(angle) = angle {
             let mut angle = *angle;
             let mut adjust_w = match text.align_x {
@@ -334,7 +268,7 @@ fn draw_labels(labels: &[Label], offset: Vector, trans: Option<Vector>, rot: Flo
                 _ => ZRO,
             };
             adjust_h += offset.y;
-            // = Rotate labels on the left side of the circle by 180 degrees ============
+            // = Rotate labels on the left side of the circle by 180 degrees =======================
             let a = (angle + rot) % TAU;
             if a > FRAC_PI_2 && a < PI + FRAC_PI_2 {
                 angle += PI;
@@ -343,8 +277,7 @@ fn draw_labels(labels: &[Label], offset: Vector, trans: Option<Vector>, rot: Flo
                     TextAlignment::Right => width + offset.x,
                     _ => ZRO,
                 };
-            }
-            // ==========================================================================
+            } // ===================================================================================
             f.push_transform();
             let (sin, cos) = angle.sin_cos();
             f.translate(Vector {
@@ -416,7 +349,7 @@ fn stroke_root_phygrm(w: Float, h: Float, root_len: Float, root_edge: Option<Edg
     {
         let nd = node_data_cart(w, h, &root_edge);
         let pt_parent = Point { x: -root_len, y: nd.points.p0.y };
-        f.stroke(&PathBuilder::new().move_to(nd.points.p0).line_to(pt_parent).build(), STRK_ROOT);
+        f.stroke(&PathBuilder::new().move_to(pt_parent).line_to(nd.points.p0).build(), STRK_ROOT);
     };
 }
 
@@ -427,7 +360,7 @@ fn stroke_root_fan(
         && root_len > ZRO
     {
         let nd = node_data_rad(opn_angle, ZRO, radius_min, root_len, &root_edge);
-        f.stroke(&PathBuilder::new().move_to(nd.points.p0).line_to(ORIGIN).build(), STRK_ROOT);
+        f.stroke(&PathBuilder::new().move_to(ORIGIN).line_to(nd.points.p0).build(), STRK_ROOT);
     };
 }
 
@@ -451,9 +384,9 @@ pub(super) fn node_labs(
                 && !branch
                 && ((tips && edge.is_tip) || (!tips && !edge.is_tip))
             {
-                let mut txt_lab_tmpl: CnvText = TXT_LAB_TMPL;
+                let mut txt_lab_tmpl: CnvText = TEMPLATE_TXT_LAB_TIP;
                 if !tips {
-                    txt_lab_tmpl = TXT_LAB_TMPL_INT;
+                    txt_lab_tmpl = TEMPLATE_TXT_LAB_INTERNAL;
                 }
                 let width = text_w.width(name);
                 let text = lab_text(name.to_string(), nd.points.p1, size, txt_lab_tmpl);
@@ -461,11 +394,107 @@ pub(super) fn node_labs(
             } else if branch && edge.parent_node_id.is_some() {
                 let name = format!("{:.3}", edge.brlen);
                 let width = text_w.width(&name);
-                let text = lab_text(name.to_string(), nd.points.p_mid, size, TXT_LAB_TMPL_BRNCH);
+                let text =
+                    lab_text(name.to_string(), nd.points.p_mid, size, TEMPLATE_TXT_LAB_BRANCH);
                 Some(Label { text, width, angle: nd.angle })
             } else {
                 None
             }
         })
         .collect_into(results);
+}
+
+pub(super) fn draw_palette(
+    tv: &TreeCnv, st: &St, thm: &Theme, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+) {
+    let palette = thm.palette();
+    let palette_ex = thm.extended_palette();
+    let color_text = palette.text;
+    let color_bg_weakest = palette_ex.background.weakest.color;
+    let color_bg_weak = palette_ex.background.weak.color;
+    let color_bg_base = palette_ex.background.base.color;
+    let color_bg_strong = palette_ex.background.strong.color;
+    let color_bg_strongest = palette_ex.background.strongest.color;
+    let color_primary_weak = palette_ex.primary.weak.color;
+    let color_primary_base = palette_ex.primary.base.color;
+    let color_primary_strong = palette_ex.primary.strong.color;
+    let color_secondary_weak = palette_ex.secondary.weak.color;
+    let color_secondary_base = palette_ex.secondary.base.color;
+    let color_secondary_strong = palette_ex.secondary.strong.color;
+    let color_success_base = palette_ex.success.base.color;
+    let color_warning_base = palette_ex.warning.base.color;
+    let color_danger_base = palette_ex.danger.base.color;
+
+    g.push(tv.cache_palette.draw(rndr, sz, |f| {
+        let colors_bg =
+            [color_bg_base, color_bg_weakest, color_bg_weak, color_bg_strong, color_bg_strongest];
+        let colors_primary =
+            [color_primary_base, color_primary_weak, color_primary_strong, color_text];
+        let colors_secondary = [color_secondary_base, color_secondary_weak, color_secondary_strong];
+        let colors_other = [color_success_base, color_warning_base, color_danger_base];
+        let color_rect_size = SF * 15e0;
+        let palette_rect_w = TWO * PADDING + color_rect_size * 5e0;
+        let palette_rect_h = TWO * PADDING + color_rect_size * 4e0;
+        let palette_rect_x = st.cnv_vs.x0 + PADDING * 5e0;
+        let palette_rect_y = st.cnv_vs.y0 + st.cnv_vs.h - palette_rect_h - PADDING * 5e0;
+
+        f.fill_rectangle(
+            Point { x: palette_rect_x, y: palette_rect_y },
+            iced::Size { width: palette_rect_w, height: palette_rect_h },
+            color_bg_base,
+        );
+
+        f.stroke_rectangle(
+            Point { x: palette_rect_x + SF / TWO, y: palette_rect_y + SF / TWO },
+            iced::Size {
+                width: TWO * PADDING + color_rect_size * 5e0 - SF,
+                height: TWO * PADDING + color_rect_size * 4e0 - SF,
+            },
+            STRK_1_BLK,
+        );
+
+        for (i, c) in colors_bg.iter().enumerate() {
+            f.fill_rectangle(
+                Point {
+                    x: palette_rect_x + PADDING + color_rect_size * i as Float,
+                    y: palette_rect_y + PADDING,
+                },
+                iced::Size { width: color_rect_size, height: color_rect_size },
+                *c,
+            );
+        }
+
+        for (i, c) in colors_primary.iter().enumerate() {
+            f.fill_rectangle(
+                Point {
+                    x: palette_rect_x + PADDING + color_rect_size * i as Float,
+                    y: palette_rect_y + PADDING + color_rect_size * 1e0,
+                },
+                iced::Size { width: color_rect_size, height: color_rect_size },
+                *c,
+            );
+        }
+
+        for (i, c) in colors_secondary.iter().enumerate() {
+            f.fill_rectangle(
+                Point {
+                    x: palette_rect_x + PADDING + color_rect_size * i as Float,
+                    y: palette_rect_y + PADDING + color_rect_size * 2e0,
+                },
+                iced::Size { width: color_rect_size, height: color_rect_size },
+                *c,
+            );
+        }
+
+        for (i, c) in colors_other.iter().enumerate() {
+            f.fill_rectangle(
+                Point {
+                    x: palette_rect_x + PADDING + color_rect_size * i as Float,
+                    y: palette_rect_y + PADDING + color_rect_size * 3e0,
+                },
+                iced::Size { width: color_rect_size, height: color_rect_size },
+                *c,
+            );
+        }
+    }));
 }

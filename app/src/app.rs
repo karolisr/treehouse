@@ -4,7 +4,7 @@ mod ops;
 mod platform;
 mod win;
 
-// use consts::*;
+use consts::*;
 use dendros::parse_newick;
 use iced::{
     Element, Subscription, Task, Theme, exit,
@@ -74,9 +74,16 @@ impl App {
         )
     }
 
-    pub fn view(&self, _: WinId) -> Element<AppMsg> {
+    pub fn view(&'_ self, _: WinId) -> Element<'_, AppMsg> {
         if let Some(treeview) = &self.treeview {
-            treeview.view().map(AppMsg::TvMsg)
+            #[cfg(debug_assertions)]
+            {
+                treeview.view().explain(iced::Color::from_rgb(1e0, 0e0, 0e0)).map(AppMsg::TvMsg)
+            }
+            #[cfg(not(debug_assertions))]
+            {
+                treeview.view().map(AppMsg::TvMsg)
+            }
         } else {
             iced::widget::container(iced::widget::text!("App::view"))
                 .width(iced::Fill)
@@ -348,14 +355,14 @@ impl App {
     pub fn title(&self, _: WinId) -> String {
         if let Some(title) = &self.title { title.clone() } else { String::from("") }
     }
-    pub fn scale_factor(&self, _: WinId) -> f64 { 1e0 }
+    pub fn scale_factor(&self, _: WinId) -> f64 { APP_SCALE_FACTOR }
     pub fn theme(&self, _: WinId) -> Theme { iced::Theme::default() }
     pub fn settings() -> iced::Settings {
         iced::Settings {
             id: None,
             fonts: vec![],
             default_font: iced::Font::DEFAULT,
-            default_text_size: iced::Pixels(13e0),
+            default_text_size: iced::Pixels(TXT_SIZE),
             antialiasing: true,
             #[cfg(target_os = "macos")]
             allows_automatic_window_tabbing: false,

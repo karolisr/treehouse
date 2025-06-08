@@ -20,7 +20,6 @@ pub struct St {
     pub(crate) filtered_nodes: Vec<NodeData>,
     pub(crate) selected_nodes: Vec<NodeData>,
     pub(crate) node_radius: Float,
-    pub(crate) node_radius_hover: Float,
     pub(crate) root_len: Float,
     pub(crate) rotation: Float,
     pub(crate) translation: Vector,
@@ -46,19 +45,18 @@ impl Default for St {
             cnv_rect: Default::default(),
             tre_rect: Default::default(),
             vis_rect: Default::default(),
-            stale_vis_rect: true,
+            stale_vis_rect: false,
             vis_node_idxs: Vec::new(),
             vis_nodes: Vec::new(),
             filtered_nodes: Vec::new(),
             selected_nodes: Vec::new(),
-            node_radius: 8.0,
-            node_radius_hover: 10.0,
+            node_radius: SF * 5e0,
             root_len: ZRO,
             rotation: ZRO,
             translation: Vector { x: ZRO, y: ZRO },
-            text_w_tip: Some(text_width(TIP_LAB_SIZE as Float, FNT_NAME_LAB)),
-            text_w_int: Some(text_width(INT_LAB_SIZE as Float, FNT_NAME_LAB)),
-            text_w_brnch: Some(text_width(BRNCH_LAB_SIZE as Float, FNT_NAME_LAB)),
+            text_w_tip: Some(text_width(SF * TIP_LAB_SIZE_IDX as Float, FNT_NAME_LAB)),
+            text_w_int: Some(text_width(SF * INTERNAL_LAB_SIZE_IDX as Float, FNT_NAME_LAB)),
+            text_w_brnch: Some(text_width(SF * BRANCH_LAB_SIZE_IDX as Float, FNT_NAME_LAB)),
             labs_tip: Vec::new(),
             labs_int: Vec::new(),
             labs_brnch: Vec::new(),
@@ -95,7 +93,7 @@ impl St {
                 })
                 .cloned();
             if let Some(closest_node) = closest_node
-                && mouse.distance(closest_node.points.p1) <= self.node_radius_hover
+                && mouse.distance(closest_node.points.p1) <= self.node_radius + SF * TWO * TWO
             {
                 rv = Some(closest_node);
             }

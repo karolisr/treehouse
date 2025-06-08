@@ -4,7 +4,7 @@ use crate::style::*;
 use crate::*;
 
 impl TreeView {
-    pub fn view(&self) -> Element<TvMsg> {
+    pub fn view(&'_ self) -> Element<'_, TvMsg> {
         let ts: Rc<TreeState>;
 
         if let Some(sel_ts_opt) = self.sel_tre() {
@@ -13,121 +13,59 @@ impl TreeView {
             return center(txt("No trees loaded")).into();
         }
 
-        let mut main_col: Column<TvMsg> = Column::new();
         let mut main_row: Row<TvMsg> = Row::new();
-        let mut toolbar_content_col: Column<TvMsg> = Column::new();
+        let mut tool_bar_and_content_col: Column<TvMsg> = Column::new();
 
-        main_col = main_col.padding(ZRO);
-        main_col = main_col.spacing(ZRO);
-        main_row = main_row.padding(Padding { top: ZRO, right: ZRO, bottom: ZRO, left: ZRO });
-        main_row = main_row.spacing(ZRO);
+        main_row = main_row.padding(Padding {
+            top: PADDING,
+            right: PADDING,
+            bottom: PADDING,
+            left: PADDING,
+        });
 
-        if self.show_toolbar {
-            toolbar_content_col = toolbar_content_col.push(toolbar(self, ts.clone()));
+        main_row = main_row.spacing(PADDING);
+
+        tool_bar_and_content_col = tool_bar_and_content_col.spacing(PADDING);
+
+        if self.show_tool_bar {
+            tool_bar_and_content_col = tool_bar_and_content_col.push(tool_bar(self, ts.clone()));
         }
-        toolbar_content_col = toolbar_content_col.push(find_bar(self, ts.clone()));
-        toolbar_content_col = toolbar_content_col.push(content(self));
 
-        if self.show_sidebar {
-            let sb = sidebar(self, ts);
+        tool_bar_and_content_col = tool_bar_and_content_col.push(search_bar(self, ts.clone()));
+        tool_bar_and_content_col = tool_bar_and_content_col.push(content(self));
+
+        if self.show_side_bar {
+            let sb = side_bar(self, ts);
             match self.sidebar_pos {
                 SidebarPosition::Left => {
                     main_row = main_row.push(sb);
-                    main_row = main_row.push(toolbar_content_col);
+                    main_row = main_row.push(tool_bar_and_content_col);
                 }
                 SidebarPosition::Right => {
-                    main_row = main_row.push(toolbar_content_col);
+                    main_row = main_row.push(tool_bar_and_content_col);
                     main_row = main_row.push(sb);
                 }
             }
         } else {
-            main_row = main_row.push(toolbar_content_col);
+            main_row = main_row.push(tool_bar_and_content_col);
         }
 
-        main_col = main_col.push(main_row);
-        main_col.into()
+        main_row.into()
     }
-}
-
-fn find_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
-    let mut ttc: Column<TvMsg> = Column::new();
-    let mut ttr1: Row<TvMsg> = Row::new();
-    let mut ttr2: Row<TvMsg> = Row::new();
-
-    ttr1 = ttr1.push(TextInput::new("Search", &tv.search_string).on_input(TvMsg::Search));
-
-    let add_rem_btn_row = iced_row![
-        btn("+", {
-            match ts.found_node_ids().is_empty() {
-                true => None,
-                false => Some(TvMsg::AddFoundToSelection),
-            }
-        }),
-        btn("-", {
-            match ts.found_node_ids().is_empty() {
-                true => None,
-                false => Some(TvMsg::RemFoundFromSelection),
-            }
-        })
-    ];
-
-    let nxt_prv_btn_row = iced_row![
-        btn("<", {
-            match ts.found_edge_idxs().is_empty() {
-                true => None,
-                false => {
-                    if ts.found_edge_idx() > 0 {
-                        Some(TvMsg::PrevResult)
-                    } else {
-                        None
-                    }
-                }
-            }
-        }),
-        btn(">", {
-            match ts.found_edge_idxs().is_empty() {
-                true => None,
-                false => {
-                    if ts.found_edge_idx() < ts.found_edge_idxs().len() - 1 {
-                        Some(TvMsg::NextResult)
-                    } else {
-                        None
-                    }
-                }
-            }
-        })
-    ];
-
-    ttr1 = ttr1.push(add_rem_btn_row);
-    ttr1 = ttr1.push(nxt_prv_btn_row);
-    ttr2 = ttr2
-        .push(checkbox("Tips Only", tv.tip_only_search).on_toggle(TvMsg::TipOnlySearchSelChanged));
-
-    ttr1 = ttr1.spacing(ZRO).align_y(Vertical::Center);
-    ttr2 = ttr2.spacing(ZRO);
-
-    ttc = ttc.push(ttr1);
-    ttc = ttc.push(ttr2);
-
-    ttc = ttc.spacing(ZRO);
-
-    container(ttc)
-        .width(Length::Fill)
-        .height(Length::Shrink)
-        .align_x(Horizontal::Center)
-        .align_y(Vertical::Center)
 }
 
 fn content<'a>(tv: &'a TreeView) -> Element<'a, TvMsg> {
     let ele: Element<'a, TvMsg> = if let Some(pane_grid) = &tv.pane_grid {
         PaneGrid::new(pane_grid, |_pane_idx, tv_pane, _is_maximized| {
-            PgContent::new(center(responsive(move |size| pane_content(tv, tv_pane, size))))
-                .style(sty_pane_body)
+            PgContent::new(
+                center(responsive(move |size| pane_content(tv, tv_pane, size))).padding(PADDING),
+            )
+            .style(sty_pane_body)
         })
         .style(sty_pane_grid)
         .on_resize(ZRO, TvMsg::PaneResized)
-        .min_size(150)
-        .spacing(TEN)
+        .min_size(SF * 2e2)
+        .spacing(PADDING)
         .into()
     } else {
         space_v(ZRO, ZRO).into()
@@ -157,7 +95,7 @@ fn pane_content<'a>(tv: &'a TreeView, tv_pane: &TvPane, size: Size) -> Element<'
     scrollable.into()
 }
 
-fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
+fn tool_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     let mut tb_row: Row<TvMsg> = Row::new();
 
     tb_row = tb_row.push(
@@ -180,9 +118,9 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         center(
             iced_row![
                 btn_prev_tre(tv.prev_tre_exists()),
-                txt(i).align_x(Alignment::Center).width(Length::Fixed(3e1)),
-                txt(s).align_x(Alignment::Center).width(Length::Fixed(1e1)),
-                txt(n).align_x(Alignment::Center).width(Length::Fixed(3e1)),
+                txt(i).align_x(Alignment::Center).width(Length::Fixed(3e1 * SF)),
+                txt(s).align_x(Alignment::Center).width(Length::Fixed(1e1 * SF)),
+                txt(n).align_x(Alignment::Center).width(Length::Fixed(3e1 * SF)),
                 btn_next_tre(tv.next_tre_exists())
             ]
             .align_y(Vertical::Center)
@@ -201,13 +139,15 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
                 match tv.show_ltt {
                     true => btn("LTTH", Some(TvMsg::LttVisChanged(false))),
                     false => btn("LTTV", Some(TvMsg::LttVisChanged(true))),
-                },
+                }
+                .width(height_of_btn() * TWO),
                 match tv.sidebar_pos {
                     SidebarPosition::Left =>
                         btn("SBR", Some(TvMsg::SetSidebarPos(SidebarPosition::Right))),
                     SidebarPosition::Right =>
                         btn("SBL", Some(TvMsg::SetSidebarPos(SidebarPosition::Left))),
                 }
+                .width(height_of_btn() * TWO)
             ]
             .align_y(Vertical::Center)
             .spacing(ZRO),
@@ -218,10 +158,92 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     );
 
     tb_row = tb_row.align_y(Vertical::Center);
-    tb_row = tb_row.spacing(ZRO);
-    tb_row = tb_row.padding(ZRO);
+    tb_row = tb_row.spacing(PADDING);
+    tb_row = tb_row.padding(PADDING);
 
     container(tb_row)
+        .style(sty_cont_tool_bar)
+        .width(Length::Fill)
+        .height(Length::Shrink)
+        .align_x(Horizontal::Center)
+        .align_y(Vertical::Center)
+}
+
+fn search_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
+    let mut main_col: Column<TvMsg> = Column::new();
+    let mut row1: Row<TvMsg> = Row::new();
+    let mut row2: Row<TvMsg> = Row::new();
+
+    row1 = row1.push(
+        TextInput::new("Search", &tv.search_string).on_input(TvMsg::Search).padding(PADDING / TWO),
+    );
+
+    let add_rem_btn_row = iced_row![
+        btn("+", {
+            match ts.found_node_ids().is_empty() {
+                true => None,
+                false => Some(TvMsg::AddFoundToSelection),
+            }
+        }),
+        btn("-", {
+            match ts.found_node_ids().is_empty() {
+                true => None,
+                false => Some(TvMsg::RemFoundFromSelection),
+            }
+        })
+    ]
+    .align_y(Alignment::Center);
+
+    let nxt_prv_btn_row = iced_row![
+        btn("<", {
+            match ts.found_edge_idxs().is_empty() {
+                true => None,
+                false => {
+                    if ts.found_edge_idx() > 0 {
+                        Some(TvMsg::PrevResult)
+                    } else {
+                        None
+                    }
+                }
+            }
+        }),
+        btn(">", {
+            match ts.found_edge_idxs().is_empty() {
+                true => None,
+                false => {
+                    if ts.found_edge_idx() < ts.found_edge_idxs().len() - 1 {
+                        Some(TvMsg::NextResult)
+                    } else {
+                        None
+                    }
+                }
+            }
+        })
+    ]
+    .align_y(Alignment::Center);
+
+    row1 = row1.push(add_rem_btn_row);
+    row1 = row1.push(nxt_prv_btn_row);
+    row2 = row2.push(
+        checkbox("Tips Only", tv.tip_only_search)
+            .on_toggle(TvMsg::TipOnlySearchSelChanged)
+            .size(height_of_some_widgets() - SF * TWO)
+            .spacing(PADDING)
+            .text_size(TXT_SIZE)
+            .text_line_height(TXT_LINE_HEIGHT),
+    );
+
+    row1 = row1.spacing(PADDING).align_y(Vertical::Center);
+    row2 = row2.spacing(PADDING).align_y(Vertical::Center);
+
+    main_col = main_col.push(row1);
+    main_col = main_col.push(row2);
+
+    main_col = main_col.spacing(PADDING);
+    main_col = main_col.padding(PADDING);
+
+    container(main_col)
+        .style(sty_cont_search_bar)
         .width(Length::Fill)
         .height(Length::Shrink)
         .align_x(Horizontal::Center)
@@ -259,18 +281,18 @@ fn stats(ts: Rc<TreeState>) -> Row<'static, TvMsg> {
     stats_row
 }
 
-fn sidebar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
+fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
     let mut sb_col: Column<TvMsg> = Column::new();
 
-    sb_col = sb_col.spacing(ZRO);
+    sb_col = sb_col.spacing(PADDING);
     sb_col = sb_col.width(Length::Fill);
     sb_col = sb_col.height(Length::Fill);
 
     sb_col = sb_col.push(stats(ts.clone()));
-    sb_col = sb_col.push(rule_h(ONE));
+    sb_col = sb_col.push(rule_h(SF));
     sb_col = sb_col.push(pick_list_tre_sty(tv.tre_cnv.tre_sty));
     sb_col = sb_col.push(pick_list_node_ordering(tv.node_ord_opt));
-    sb_col = sb_col.push(rule_h(ONE));
+    sb_col = sb_col.push(rule_h(SF));
 
     match tv.tre_cnv.tre_sty {
         TreSty::PhyGrm => {
@@ -326,7 +348,7 @@ fn sidebar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
         }
     }
 
-    sb_col = sb_col.push(rule_h(ONE));
+    sb_col = sb_col.push(rule_h(SF));
 
     if ts.has_tip_labs() && tv.tre_cnv.draw_labs_tip && tv.tre_cnv.draw_labs_allowed {
         sb_col = sb_col.push(iced_col![
@@ -392,7 +414,7 @@ fn sidebar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
     sb_col = sb_col.push(iced_col![toggler_cursor_line(
         true, tv.tre_cnv.draw_cursor_line, tv.tre_cnv.tre_sty
     )]);
-    sb_col = sb_col.push(rule_h(ONE));
+    sb_col = sb_col.push(rule_h(SF));
 
     if ts.is_rooted() {
         sb_col = sb_col.push(slider(
@@ -404,8 +426,12 @@ fn sidebar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
             2,
             TvMsg::RootLenSelChanged,
         ));
-        sb_col = sb_col.push(rule_h(ONE));
+        sb_col = sb_col.push(rule_h(SF));
     }
 
-    container(container(sb_col).clip(true)).padding(ZRO).width(SIDEBAR_W).into()
+    container(container(sb_col).clip(true))
+        .style(sty_cont_side_bar)
+        .padding(PADDING)
+        .width(SIDE_BAR_W)
+        .into()
 }

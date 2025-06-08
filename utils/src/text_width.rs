@@ -11,7 +11,6 @@ pub struct TextWidth<'a> {
 
 impl TextWidth<'_> {
     pub fn font_size(&self) -> f32 { self.buffer.metrics().font_size }
-
     pub fn line_height(&self) -> f32 { self.buffer.metrics().line_height }
 
     pub fn set_font_size(&mut self, font_size: f32) {
@@ -34,7 +33,7 @@ impl TextWidth<'_> {
     }
 }
 
-pub fn text_width(font_size: f32, font_name: &str) -> TextWidth {
+pub fn text_width(font_size: f32, font_name: &'_ str) -> TextWidth<'_> {
     let mut font_system = FontSystem::new();
     let metrics = Metrics::new(font_size, font_size);
     let buffer = Buffer::new(&mut font_system, metrics);
@@ -43,7 +42,9 @@ pub fn text_width(font_size: f32, font_name: &str) -> TextWidth {
     TextWidth { attrs, buffer, font_system }
 }
 
-pub fn text_width_line_height(font_size: f32, line_height: f32, font_name: &str) -> TextWidth {
+pub fn text_width_line_height(
+    font_size: f32, line_height: f32, font_name: &'_ str,
+) -> TextWidth<'_> {
     let mut font_system = FontSystem::new();
     let metrics = Metrics::new(font_size, line_height);
     let buffer = Buffer::new(&mut font_system, metrics);

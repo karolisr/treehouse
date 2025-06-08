@@ -72,10 +72,10 @@ impl TreeCnv {
         Self {
             tre_sty: TreSty::PhyGrm,
             // -------------------------------------------------------------------------------------
-            padd_l: TRE_PADD,
-            padd_r: TRE_PADD,
-            padd_t: TRE_PADD,
-            padd_b: TRE_PADD,
+            padd_l: TREE_PADDING,
+            padd_r: TREE_PADDING,
+            padd_t: TREE_PADDING,
+            padd_b: TREE_PADDING,
             // -------------------------------------------------------------------------------------
             drawing_enabled: false,
             draw_labs_allowed: false,
@@ -91,16 +91,17 @@ impl TreeCnv {
             opn_angle: ZRO,
             rot_angle: ZRO,
             // -------------------------------------------------------------------------------------
-            lab_size_min: ONE,
-            lab_size_max: ONE,
-            lab_size_tip: ONE,
-            lab_size_int: ONE,
-            lab_size_brnch: ONE,
-            lab_offset_tip: ONE,
-            lab_offset_int: ONE,
-            lab_offset_brnch: -ONE,
+            lab_size_min: SF,
+            lab_size_max: SF,
+            lab_size_tip: SF,
+            lab_size_int: SF,
+            lab_size_brnch: SF,
             // -------------------------------------------------------------------------------------
-            text_w_tip: Some(text_width(TIP_LAB_SIZE as Float, FNT_NAME_LAB)),
+            lab_offset_tip: ZRO,
+            lab_offset_int: ZRO,
+            lab_offset_brnch: ZRO,
+            // -------------------------------------------------------------------------------------
+            text_w_tip: Some(text_width(SF * TIP_LAB_SIZE_IDX as Float, FNT_NAME_LAB)),
             // -------------------------------------------------------------------------------------
             cache_bnds: Default::default(),
             cache_legend: Default::default(),
@@ -174,8 +175,8 @@ impl Program<TvMsg> for TreeCnv {
         st.stale_vis_rect = false;
         let vis_x0 = self.vis_x0;
         let vis_y0 = self.vis_y0;
-        let vis_x1 = self.vis_x1 - self.padd_r + TRE_PADD;
-        let vis_y1 = self.vis_y1 - self.padd_b + TRE_PADD;
+        let vis_x1 = self.vis_x1 - self.padd_r + TREE_PADDING;
+        let vis_y1 = self.vis_y1 - self.padd_b + TREE_PADDING;
         if vis_x0 != st.vis_vs.x0
             || vis_y0 != st.vis_vs.y0
             || vis_x1 != st.vis_vs.x1
@@ -418,13 +419,13 @@ impl Program<TvMsg> for TreeCnv {
             draw_bounds(self, st, rndr, bnds, &mut geoms);
             draw_edges(self, st, tst, rndr, size, &mut geoms);
             draw_legend(self, st, tst, rndr, size, &mut geoms);
+            draw_cursor_line(self, st, rndr, size, &mut geoms);
             draw_labs_tip(self, st, tst, rndr, size, &mut geoms);
             draw_labs_int(self, st, tst, rndr, size, &mut geoms);
             draw_labs_brnch(self, st, tst, rndr, size, &mut geoms);
+            draw_hovered_node(self, st, rndr, size, &mut geoms);
             draw_selected_nodes(self, st, tst, rndr, size, &mut geoms);
             draw_filtered_nodes(self, st, tst, rndr, size, &mut geoms);
-            draw_hovered_node(self, st, rndr, size, &mut geoms);
-            draw_cursor_line(self, st, rndr, size, &mut geoms);
             #[cfg(debug_assertions)]
             draw_palette(self, st, thm, rndr, size, &mut geoms);
             // -------------------------------------------------------------------------------------

@@ -15,8 +15,8 @@ pub struct TreeView {
     pub(super) ltt_cnv: PlotCnv,
     pub(super) show_ltt: bool,
     // -------------------------------------------------------------------
-    pub(super) show_toolbar: bool,
-    pub(super) show_sidebar: bool,
+    pub(super) show_tool_bar: bool,
+    pub(super) show_side_bar: bool,
     // -------------------------------------------------------------------
     pub(super) sidebar_pos: SidebarPosition,
     // -------------------------------------------------------------------
@@ -79,8 +79,8 @@ impl TreeView {
             sidebar_pos: sidebar_position,
             // -----------------------------------------------------------
             show_ltt: false,
-            show_toolbar: true,
-            show_sidebar: true,
+            show_tool_bar: true,
+            show_side_bar: true,
             // -----------------------------------------------------------
             node_ord_opt: NodeOrd::Unordered,
             // -----------------------------------------------------------
@@ -93,9 +93,9 @@ impl TreeView {
             rot_angle_idx_max: 360 + 180,
             // -----------------------------------------------------------
             lab_size_idx_min: 8,
-            lab_size_idx_tip: TIP_LAB_SIZE,
-            lab_size_idx_int: INT_LAB_SIZE,
-            lab_size_idx_brnch: BRNCH_LAB_SIZE,
+            lab_size_idx_tip: TIP_LAB_SIZE_IDX,
+            lab_size_idx_int: INTERNAL_LAB_SIZE_IDX,
+            lab_size_idx_brnch: BRANCH_LAB_SIZE_IDX,
             lab_size_idx_max: 22,
             // -----------------------------------------------------------
             root_len_idx_min: 0,
@@ -138,7 +138,7 @@ impl TreeView {
                 if self.tre_cnv_w_idx <= self.tre_cnv_size_idx_min {
                     w
                 } else {
-                    let tmp = 7e2 * self.tre_cnv_w_idx as Float;
+                    let tmp = TREE_CANVAS_SIZE_DELTA * self.tre_cnv_w_idx as Float;
                     if tmp < w { w } else { tmp }
                 }
             }
@@ -146,7 +146,7 @@ impl TreeView {
                 if self.tre_cnv_z_idx <= self.tre_cnv_size_idx_min {
                     w
                 } else {
-                    let tmp = 5e2 * self.tre_cnv_z_idx as Float;
+                    let tmp = TREE_CANVAS_SIZE_DELTA * self.tre_cnv_z_idx as Float;
                     if tmp < w { w } else { tmp }
                 }
             }
@@ -161,7 +161,7 @@ impl TreeView {
                 } else {
                     let tip_count = self.tip_count() as Float;
                     let tmp = if h / tip_count > ONE {
-                        5e2 * self.tre_cnv_h_idx as Float
+                        TREE_CANVAS_SIZE_DELTA * self.tre_cnv_h_idx as Float
                     } else {
                         tip_count * self.tre_cnv_h_idx as Float
                     };
@@ -172,7 +172,7 @@ impl TreeView {
                 if self.tre_cnv_z_idx <= self.tre_cnv_size_idx_min {
                     h
                 } else {
-                    let tmp = 5e2 * self.tre_cnv_z_idx as Float;
+                    let tmp = TREE_CANVAS_SIZE_DELTA * self.tre_cnv_z_idx as Float;
                     if tmp < h { h } else { tmp }
                 }
             }
@@ -181,24 +181,27 @@ impl TreeView {
 
     fn update_tree_rect_padding(&mut self) {
         if self.calc_tre_cnv_w(self.tre_scr_w) <= self.tre_scr_w {
-            self.tre_cnv.padd_b = TRE_PADD;
+            self.tre_cnv.padd_b = TREE_PADDING;
         } else {
-            self.tre_cnv.padd_b = TRE_PADD + SCRLBAR_W;
+            self.tre_cnv.padd_b = TREE_PADDING + SCROLL_BAR_W;
         }
 
         if self.calc_tre_cnv_h(self.tre_scr_h) <= self.tre_scr_h {
-            self.tre_cnv.padd_r = TRE_PADD;
+            self.tre_cnv.padd_r = TREE_PADDING;
         } else {
-            self.tre_cnv.padd_r = TRE_PADD + SCRLBAR_W;
+            self.tre_cnv.padd_r = TREE_PADDING + SCROLL_BAR_W;
         }
 
         if self.tre_cnv.tre_sty == TreSty::PhyGrm {
             self.ltt_cnv.padd_b = self.tre_cnv.padd_b;
             self.ltt_cnv.padd_r = self.tre_cnv.padd_r;
         } else {
-            self.ltt_cnv.padd_b = TRE_PADD;
-            self.ltt_cnv.padd_r = TRE_PADD;
+            self.ltt_cnv.padd_b = TREE_PADDING;
+            self.ltt_cnv.padd_r = TREE_PADDING;
         }
+
+        self.ltt_cnv.padd_t = self.tre_cnv.padd_t;
+        self.ltt_cnv.padd_l = self.tre_cnv.padd_l;
     }
 
     fn update_rel_scrl_pos(&mut self) {
@@ -593,9 +596,9 @@ impl TreeView {
                     self.tre_cnv.lab_size_brnch = lab_size_min * self.lab_size_idx_brnch as Float;
                     self.tre_cnv.lab_size_max = lab_size_min * self.lab_size_idx_max as Float;
 
-                    self.tre_cnv.lab_offset_tip = 3e0;
-                    self.tre_cnv.lab_offset_int = 3e0;
-                    self.tre_cnv.lab_offset_brnch = -3e0;
+                    self.tre_cnv.lab_offset_tip = self.tre_cnv.lab_size_tip / 3e0;
+                    self.tre_cnv.lab_offset_int = self.tre_cnv.lab_size_int / 3e0;
+                    self.tre_cnv.lab_offset_brnch = -self.tre_cnv.lab_size_brnch / 3e0;
 
                     self.show_hide_ltt();
                     self.ltt_cnv.draw_cursor_line = self.tre_cnv.draw_cursor_line;
@@ -671,6 +674,7 @@ impl TreeView {
             TvMsg::TipLabSizeChanged(idx) => {
                 self.lab_size_idx_tip = idx;
                 self.tre_cnv.lab_size_tip = self.tre_cnv.lab_size_min * idx as Float;
+                self.tre_cnv.lab_offset_tip = self.tre_cnv.lab_size_tip / 3e0;
                 // -------------------------------------------------------------
                 if let Some(text_w_tip) = &mut self.tre_cnv.text_w_tip
                     && text_w_tip.font_size() != self.tre_cnv.lab_size_tip
@@ -690,6 +694,7 @@ impl TreeView {
             TvMsg::IntLabSizeChanged(idx) => {
                 self.lab_size_idx_int = idx;
                 self.tre_cnv.lab_size_int = self.tre_cnv.lab_size_min * idx as Float;
+                self.tre_cnv.lab_offset_int = self.tre_cnv.lab_size_int / 3e0;
                 self.clear_cache_lab_int();
             }
 
@@ -701,6 +706,7 @@ impl TreeView {
             TvMsg::BrnchLabSizeChanged(idx) => {
                 self.lab_size_idx_brnch = idx;
                 self.tre_cnv.lab_size_brnch = self.tre_cnv.lab_size_min * idx as Float;
+                self.tre_cnv.lab_offset_brnch = -self.tre_cnv.lab_size_brnch / 3e0;
                 self.clear_cache_lab_brnch();
                 self.tre_cnv.clear_cache_legend();
             }

@@ -1,12 +1,17 @@
 use crate::iced::*;
+use crate::style::*;
 use crate::*;
 
-pub(crate) fn btn(lab: &str, msg: Option<TvMsg>) -> Button<TvMsg> {
+pub(crate) fn btn(lab: &'_ str, msg: Option<TvMsg>) -> Button<'_, TvMsg> {
     let mut txt = Text::new(lab);
     txt = txt.align_x(Horizontal::Center);
     txt = txt.align_y(Vertical::Center);
     let mut btn = Button::new(txt);
     btn = btn.on_press_maybe(msg);
+    btn = btn.padding(PADDING / TWO);
+    btn = btn.width(height_of_btn());
+    btn = btn.height(height_of_btn());
+    btn = btn.style(sty_btn);
     btn
 }
 
@@ -18,6 +23,7 @@ pub(crate) fn btn_prev_tre<'a>(enabled: bool) -> Button<'a, TvMsg> {
             false => None,
         },
     )
+    .width(height_of_btn() * TWO)
 }
 
 pub(crate) fn btn_next_tre<'a>(enabled: bool) -> Button<'a, TvMsg> {
@@ -28,6 +34,7 @@ pub(crate) fn btn_next_tre<'a>(enabled: bool) -> Button<'a, TvMsg> {
             false => None,
         },
     )
+    .width(height_of_btn() * TWO)
 }
 
 pub(crate) fn btn_root(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
@@ -42,6 +49,7 @@ pub(crate) fn btn_root(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
             None
         }
     })
+    .width(height_of_btn() * TWO)
 }
 
 pub(crate) fn btn_unroot(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
@@ -52,15 +60,20 @@ pub(crate) fn btn_unroot(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
             false => None,
         },
     )
+    .width(height_of_btn() * TWO)
 }
 
 fn pick_list_common<'a, T: PartialEq + Display + Clone>(
     pl: PickList<'a, T, &[T], T, TvMsg>,
 ) -> PickList<'a, T, &'a [T], T, TvMsg> {
-    let h: PickListHandle<Font> = PickListHandle::Arrow { size: Some(Pixels(TXT_SIZE)) };
     let mut pl = pl;
+    let h: PickListHandle<Font> = PickListHandle::Arrow { size: Some(Pixels(TXT_SIZE)) };
     pl = pl.handle(h);
-    // pl = pl.style(sty_pick_lst);
+    pl = pl.text_line_height(Pixels(TXT_SIZE));
+    pl = pl.text_size(TXT_SIZE);
+    pl = pl.padding(PADDING);
+    pl = pl.width(Length::FillPortion(10));
+    pl = pl.style(sty_pick_lst);
     pl
 }
 
@@ -68,20 +81,17 @@ pub(crate) fn pick_list_node_ordering<'a>(node_ord: NodeOrd) -> Row<'a, TvMsg> {
     let mut pl: PickList<NodeOrd, &[NodeOrd], NodeOrd, TvMsg> =
         PickList::new(&NODE_ORD_OPTS, Some(node_ord), TvMsg::NodeOrdOptChanged);
     pl = pick_list_common(pl);
-    iced_row![txt("Node Order").width(Length::Fill), pl].align_y(Vertical::Center)
+    iced_row![txt("Node Order").width(Length::FillPortion(9)), pl].align_y(Vertical::Center)
 }
 
 pub(crate) fn pick_list_tre_sty<'a>(tre_sty: TreSty) -> Row<'a, TvMsg> {
     let mut pl: PickList<TreSty, &[TreSty], TreSty, TvMsg> =
         PickList::new(&TRE_STY_OPTS, Some(tre_sty), TvMsg::TreStyOptChanged);
     pl = pick_list_common(pl);
-    iced_row![txt("Style").width(Length::Fill), pl].align_y(Vertical::Center)
+    iced_row![txt("Style").width(Length::FillPortion(9)), pl].align_y(Vertical::Center)
 }
 
-pub(crate) fn rule_common(rule: Rule<Theme>) -> Rule<Theme> {
-    // let rule = rule.style(sty_rule);
-    rule
-}
+pub(crate) fn rule_common(rule: Rule<Theme>) -> Rule<Theme> { rule.style(sty_rule) }
 
 pub(crate) fn rule_h<'a>(height: impl Into<Pixels>) -> Rule<'a, Theme> {
     let mut r: Rule<'_, Theme> = Rule::horizontal(height);
@@ -90,7 +100,7 @@ pub(crate) fn rule_h<'a>(height: impl Into<Pixels>) -> Rule<'a, Theme> {
 }
 
 pub(crate) fn rule_v<'a>(width: impl Into<Pixels>) -> Rule<'a, Theme> {
-    let mut r: Rule<'_, Theme> = Rule::vertical(width);
+    let mut r: Rule<'a, Theme> = Rule::vertical(width);
     r = rule_common(r);
     r
 }
@@ -101,14 +111,22 @@ fn scrollable_common(
     let mut s = scrl;
     s = s.width(w.into());
     s = s.height(h.into());
+    s = s.style(sty_scrlbl);
     s
+}
+
+fn scroll_bar() -> Scrollbar {
+    let mut sb = Scrollbar::new();
+    sb = sb.width(SCROLL_BAR_W);
+    sb = sb.scroller_width(SCROLL_BAR_W);
+    sb
 }
 
 pub(crate) fn scrollable_cnv_ltt<'a>(
     id: &'static str, cnv: Cnv<&'a PlotCnv, TvMsg>, w: impl Into<Length>, h: impl Into<Length>,
 ) -> Scrollable<'a, TvMsg> {
     let mut s: Scrollable<TvMsg> = Scrollable::new(cnv);
-    s = s.direction(ScrollableDirection::Horizontal(Scrollbar::new()));
+    s = s.direction(ScrollableDirection::Horizontal(scroll_bar()));
     s = s.id(id);
     s = s.on_scroll(TvMsg::LttCnvScrolledOrResized);
     scrollable_common(s, w, h)
@@ -118,8 +136,7 @@ pub(crate) fn scrollable_cnv_tre<'a>(
     id: &'static str, cnv: Cnv<&'a TreeCnv, TvMsg>, w: impl Into<Length>, h: impl Into<Length>,
 ) -> Scrollable<'a, TvMsg> {
     let mut s: Scrollable<TvMsg> = Scrollable::new(cnv);
-    let sb = Scrollbar::new();
-    s = s.direction(ScrollableDirection::Both { horizontal: sb, vertical: sb });
+    s = s.direction(ScrollableDirection::Both { horizontal: scroll_bar(), vertical: scroll_bar() });
     s = s.id(id);
     s = s.on_scroll(TvMsg::TreCnvScrolledOrResized);
     scrollable_common(s, w, h)
@@ -129,7 +146,7 @@ fn scrollable_v<'a>(
     content: impl Into<Element<'a, TvMsg>>, w: impl Into<Length>, h: impl Into<Length>,
 ) -> Scrollable<'a, TvMsg> {
     let mut s: Scrollable<TvMsg> = Scrollable::new(content);
-    s = s.direction(ScrollableDirection::Vertical(Scrollbar::new()));
+    s = s.direction(ScrollableDirection::Vertical(scroll_bar()));
     scrollable_common(s, w, h)
 }
 
@@ -142,10 +159,11 @@ where
     T: 'a + PartialOrd + From<u8> + Copy + FromPrimitive,
 {
     let mut slider: Slider<T, TvMsg> = Slider::new(min..=max, sel, msg);
+
+    slider = slider.height(height_of_some_widgets());
     slider = slider.step(step);
     slider = slider.shift_step(shift_step);
-    slider = slider.height(TXT_SIZE);
-    // slider = slider.style(sty_slider);
+    slider = slider.style(sty_slider);
 
     if let Some(lab) = lab {
         let mut lab = container(txt(lab));
@@ -171,14 +189,16 @@ pub(crate) fn space_v(w: impl Into<Length>, h: impl Into<Length>) -> Space {
     vertical_space().width(w).height(h)
 }
 
-fn toggler(label: &str, value: bool) -> Toggler<TvMsg> {
+fn toggler(label: &'_ str, value: bool) -> Toggler<'_, TvMsg> {
     let mut tglr: Toggler<TvMsg> = Toggler::new(value);
+    tglr = tglr.size(height_of_some_widgets());
     tglr = tglr.label(label);
     tglr = tglr.text_size(TXT_SIZE);
-    tglr = tglr.size(TXT_SIZE);
-    tglr = tglr.text_alignment(Alignment::End);
+    tglr = tglr.text_line_height(TXT_LINE_HEIGHT);
+    tglr = tglr.text_alignment(TextAlignment::Left);
     tglr = tglr.width(Length::Fill);
-    // tglr = tglr.style(sty_toggler);
+    tglr = tglr.spacing(PADDING);
+    tglr = tglr.style(sty_toggler);
     tglr
 }
 

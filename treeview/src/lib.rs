@@ -1,4 +1,5 @@
 #![feature(iter_collect_into)]
+#![feature(const_float_round_methods)]
 // -------------------------------------
 // #![allow(dead_code)]
 // #![allow(unused_mut)]
@@ -29,6 +30,9 @@ mod view;
 
 pub type Float = f32;
 
+pub use consts::{SF, TXT_SIZE};
+pub use treeview::{SidebarPosition, TreeView, TvMsg};
+
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter, Result};
 use std::ops::RangeInclusive;
@@ -43,10 +47,16 @@ use path_utils::PathBuilder;
 use rayon::prelude::*;
 use treestate::TreeState;
 use treeview::{NODE_ORD_OPTS, NodeOrd, TRE_STY_OPTS, TreSty, TvPane};
-pub use treeview::{SidebarPosition, TreeView, TvMsg};
 use utils::{Clr, TextWidth, text_width};
 
 pub type IndexRange = RangeInclusive<usize>;
+
+fn height_of_some_widgets() -> f32 {
+    let size = TXT_LINE_HEIGHT.0 - SF * TWO;
+    if (size as usize) % 2 == 0 { (size - ONE).floor() } else { size.floor() }
+}
+
+fn height_of_btn() -> f32 { (height_of_some_widgets() * 1.5 - SF).floor() }
 
 #[derive(Debug, Clone, Default)]
 struct Label {

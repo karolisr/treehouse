@@ -6,8 +6,8 @@ pub use i::font::{Family, Stretch, Style as FontStyle, Weight};
 pub use i::mouse::{Button as MouseButton, Cursor, Event as MouseEvent, Interaction};
 pub use i::window::Event as WindowEvent;
 pub use i::{
-    Alignment, Background, Border, Element, Event, Font, Length, Padding, Pixels, Point, Rectangle,
-    Renderer, Size, Task, Theme, Vector,
+    Alignment, Background, Border, Color, Element, Event, Font, Length, Padding, Pixels, Point,
+    Rectangle, Renderer, Size, Task, Theme, Vector,
 };
 
 pub use w::button::{Status as ButtonStatus, Style as ButtonStyle};
