@@ -8,6 +8,7 @@ use consts::*;
 use dendros::parse_newick;
 use iced::{
     Element, Subscription, Task, Theme, exit,
+    keyboard::{Key, Modifiers, on_key_press},
     window::{
         Event as WinEvent, Id as WinId, close as close_window, events as window_events,
         open as open_window,
@@ -46,6 +47,8 @@ pub enum AppMsg {
     WinCloseRequested,
     WinClose,
     WinClosed,
+    // --------------------------------
+    KeysPressed(Key, Modifiers),
     // --------------------------------
     #[cfg(target_os = "windows")]
     AddMenuForHwnd(u64),
@@ -105,6 +108,54 @@ impl App {
 
     pub fn update(&mut self, app_msg: AppMsg) -> Task<AppMsg> {
         match app_msg {
+            AppMsg::KeysPressed(key, modifiers) => match modifiers {
+                Modifiers::CTRL => match key {
+                    Key::Character(k) => {
+                        #[cfg(any(target_os = "windows", target_os = "linux"))]
+                        {
+                            let k: &str = k.as_str();
+                            match k {
+                                "o" => Task::done(AppMsg::MenuEvent(AppMenuItemId::OpenFile)),
+                                "s" => Task::done(AppMsg::MenuEvent(AppMenuItemId::SaveAs)),
+                                "w" => Task::done(AppMsg::MenuEvent(AppMenuItemId::CloseWindow)),
+                                "q" => Task::done(AppMsg::MenuEvent(AppMenuItemId::Quit)),
+                                "[" => Task::done(AppMsg::MenuEvent(
+                                    AppMenuItemId::SetSideBarPositionLeft,
+                                )),
+                                "]" => Task::done(AppMsg::MenuEvent(
+                                    AppMenuItemId::SetSideBarPositionRight,
+                                )),
+                                _ => Task::none(),
+                            }
+                        }
+                        #[cfg(target_os = "macos")]
+                        {
+                            println!("Ctrl + {k}");
+                            Task::none()
+                        }
+                    }
+                    _ => Task::none(),
+                },
+                // Modifiers::COMMAND => match key {
+                //     Key::Character(k) => {
+                //         #[cfg(target_os = "macos")]
+                //         {
+                //             let k: &str = k.as_str();
+                //             match k {
+                //                 _ => Task::none(),
+                //             }
+                //         }
+                //         #[cfg(any(target_os = "windows", target_os = "linux"))]
+                //         {
+                //             println!("Cmd + {k}");
+                //             Task::none()
+                //         }
+                //     }
+                //     _ => Task::none(),
+                // },
+                _ => Task::none(),
+            },
+
             AppMsg::Other(opt_msg) => {
                 if let Some(msg) = opt_msg {
                     println!("AppMsg::Other({msg})");
@@ -351,7 +402,7 @@ impl App {
     }
 
     pub fn subscription(&self) -> Subscription<AppMsg> {
-        let mut subs: Vec<Subscription<AppMsg>> = Vec::with_capacity(3);
+        let mut subs: Vec<Subscription<AppMsg>> = Vec::with_capacity(4);
         #[cfg(target_os = "macos")]
         {
             subs.push(platform::os_events());
@@ -359,6 +410,7 @@ impl App {
         #[cfg(any(target_os = "windows", target_os = "macos"))]
         subs.push(menu::menu_events());
         subs.push(window_events().map(|(_, e)| AppMsg::WinEvent(e)));
+        subs.push(on_key_press(|key, mods| Some(AppMsg::KeysPressed(key, mods))));
         Subscription::batch(subs)
     }
 
