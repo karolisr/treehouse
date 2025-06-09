@@ -63,12 +63,12 @@ fn content<'a>(tv: &'a TreeView) -> Element<'a, TvMsg> {
             .style(sty_pane_body)
         })
         .style(sty_pane_grid)
-        .on_resize(ZRO, TvMsg::PaneResized)
+        .on_resize(ZERO, TvMsg::PaneResized)
         .min_size(SF * 2e2)
         .spacing(PADDING)
         .into()
     } else {
-        space_v(ZRO, ZRO).into()
+        space_v(ZERO, ZERO).into()
     };
     center(ele).into()
 }
@@ -106,7 +106,7 @@ fn tool_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         )
         .width(Length::Shrink)
         .height(Length::Shrink)
-        .padding(ZRO),
+        .padding(ZERO),
     );
 
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
@@ -124,11 +124,11 @@ fn tool_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
                 btn_next_tre(tv.next_tre_exists())
             ]
             .align_y(Vertical::Center)
-            .spacing(ZRO),
+            .spacing(ZERO),
         )
         .width(Length::Shrink)
         .height(Length::Shrink)
-        .padding(ZRO),
+        .padding(ZERO),
     );
 
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
@@ -137,24 +137,24 @@ fn tool_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         center(
             iced_row![
                 match tv.show_ltt {
-                    true => btn("LTTH", Some(TvMsg::LttVisChanged(false))),
-                    false => btn("LTTV", Some(TvMsg::LttVisChanged(true))),
+                    true => btn("H", Some(TvMsg::LttVisChanged(false))),
+                    false => btn("V", Some(TvMsg::LttVisChanged(true))),
                 }
-                .width(height_of_btn() * TWO),
+                .width(BTN_H),
                 match tv.sidebar_pos {
                     SidebarPosition::Left =>
-                        btn("SBR", Some(TvMsg::SetSidebarPos(SidebarPosition::Right))),
+                        btn("R", Some(TvMsg::SetSidebarPos(SidebarPosition::Right))),
                     SidebarPosition::Right =>
-                        btn("SBL", Some(TvMsg::SetSidebarPos(SidebarPosition::Left))),
+                        btn("L", Some(TvMsg::SetSidebarPos(SidebarPosition::Left))),
                 }
-                .width(height_of_btn() * TWO)
+                .width(BTN_H)
             ]
             .align_y(Vertical::Center)
-            .spacing(ZRO),
+            .spacing(ZERO),
         )
         .width(Length::Shrink)
         .height(Length::Shrink)
-        .padding(ZRO),
+        .padding(ZERO),
     );
 
     tb_row = tb_row.align_y(Vertical::Center);
@@ -227,7 +227,7 @@ fn search_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     row2 = row2.push(
         checkbox("Tips Only", tv.tip_only_search)
             .on_toggle(TvMsg::TipOnlySearchSelChanged)
-            .size(height_of_some_widgets() - SF * TWO)
+            .size(CHECKBOX_H)
             .spacing(PADDING)
             .text_size(TXT_SIZE)
             .text_line_height(TXT_LINE_HEIGHT),

@@ -9,15 +9,15 @@
 # export RUSTFLAGS
 
 cargo fmt &&
-    cargo check --profile release &&
-    cargo check --profile dev &&
-    cargo clippy --profile release &&
-    cargo clippy --profile dev &&
+    # cargo check --profile dev &&
+    # cargo clippy --profile dev &&
+    # cargo build --profile dev &&
+    # cargo check --profile release &&
+    # cargo clippy --profile release &&
     cargo build --profile release &&
-    cargo build --profile dev
 
-cargo install cargo-bundle
-cargo-bundle bundle --profile release
+    # cargo install cargo-bundle
+    cargo-bundle bundle --profile release
 
 BUNDLE_PATH="./target/release/bundle/osx/TreeHouse.app/Contents"
 FILE="${BUNDLE_PATH}/Info.plist"

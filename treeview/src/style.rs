@@ -3,7 +3,6 @@ use crate::*;
 
 pub(crate) fn sty_cont(theme: &Theme) -> ContainerStyle {
     let pb = theme.palette();
-    let pe = theme.extended_palette();
     ContainerStyle {
         text_color: Some(pb.text),
         background: None,
@@ -12,7 +11,6 @@ pub(crate) fn sty_cont(theme: &Theme) -> ContainerStyle {
     }
 }
 
-pub(crate) fn sty_cont_main(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
 pub(crate) fn sty_cont_tool_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
 pub(crate) fn sty_cont_search_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
 pub(crate) fn sty_cont_side_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
@@ -95,10 +93,10 @@ pub(crate) fn sty_scrlbl(theme: &Theme, status: ScrollableStatus) -> ScrollableS
 
     let scrollbar = ScrollBarRail {
         background: Some(palette.background.weak.color.into()),
-        border: Border { radius: WIDGET_RADIUS.into(), width: ZRO, color: Clr::TRN },
+        border: Border { radius: WIDGET_RADIUS.into(), width: ZERO, color: Clr::TRN },
         scroller: Scroller {
             color: palette.background.strong.color,
-            border: Border { radius: WIDGET_RADIUS.into(), width: ZRO, color: Clr::TRN },
+            border: Border { radius: WIDGET_RADIUS.into(), width: ZERO, color: Clr::TRN },
         },
     };
 
@@ -173,17 +171,15 @@ pub(crate) fn sty_slider(theme: &Theme, status: SliderStatus) -> SliderStyle {
         SliderStatus::Dragged => palette.primary.weak.color,
     };
 
-    let h = height_of_some_widgets();
-
     SliderStyle {
         rail: SliderRail {
             backgrounds: (color.into(), palette.background.strong.color.into()),
-            width: h / 3e0,
+            width: SLIDER_H / THREE,
             border: Border { radius: WIDGET_RADIUS.into(), width: BORDER_W, color: Clr::TRN },
         },
 
         handle: SliderHandle {
-            shape: SliderHandleShape::Circle { radius: (h / 2.4) },
+            shape: SliderHandleShape::Circle { radius: SLIDER_H / THREE + SF * TWO },
             background: color.into(),
             border_color: Clr::TRN,
             border_width: BORDER_W,

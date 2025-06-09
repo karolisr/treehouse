@@ -9,32 +9,30 @@ pub(crate) fn btn(lab: &'_ str, msg: Option<TvMsg>) -> Button<'_, TvMsg> {
     let mut btn = Button::new(txt);
     btn = btn.on_press_maybe(msg);
     btn = btn.padding(PADDING / TWO);
-    btn = btn.width(height_of_btn());
-    btn = btn.height(height_of_btn());
+    btn = btn.width(BTN_H);
+    btn = btn.height(BTN_H);
     btn = btn.style(sty_btn);
     btn
 }
 
 pub(crate) fn btn_prev_tre<'a>(enabled: bool) -> Button<'a, TvMsg> {
     btn(
-        "Prev",
+        "<",
         match enabled {
             true => Some(TvMsg::PrevTre),
             false => None,
         },
     )
-    .width(height_of_btn() * TWO)
 }
 
 pub(crate) fn btn_next_tre<'a>(enabled: bool) -> Button<'a, TvMsg> {
     btn(
-        "Next",
+        ">",
         match enabled {
             true => Some(TvMsg::NextTre),
             false => None,
         },
     )
-    .width(height_of_btn() * TWO)
 }
 
 pub(crate) fn btn_root(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
@@ -49,7 +47,7 @@ pub(crate) fn btn_root(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
             None
         }
     })
-    .width(height_of_btn() * TWO)
+    .width(BTN_H * TWO)
 }
 
 pub(crate) fn btn_unroot(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
@@ -60,7 +58,7 @@ pub(crate) fn btn_unroot(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
             false => None,
         },
     )
-    .width(height_of_btn() * TWO)
+    .width(BTN_H * TWO)
 }
 
 fn pick_list_common<'a, T: PartialEq + Display + Clone>(
@@ -160,7 +158,7 @@ where
 {
     let mut slider: Slider<T, TvMsg> = Slider::new(min..=max, sel, msg);
 
-    slider = slider.height(height_of_some_widgets());
+    slider = slider.height(SLIDER_H);
     slider = slider.step(step);
     slider = slider.shift_step(shift_step);
     slider = slider.style(sty_slider);
@@ -175,7 +173,7 @@ where
         c = c.push(lab);
         c = c.push(slider);
         c = c.align_x(Horizontal::Center);
-        c = c.spacing(ZRO);
+        c = c.spacing(SF);
         c.into()
     } else {
         slider.into()
@@ -191,7 +189,7 @@ pub(crate) fn space_v(w: impl Into<Length>, h: impl Into<Length>) -> Space {
 
 fn toggler(label: &'_ str, value: bool) -> Toggler<'_, TvMsg> {
     let mut tglr: Toggler<TvMsg> = Toggler::new(value);
-    tglr = tglr.size(height_of_some_widgets());
+    tglr = tglr.size(TOGGLER_H);
     tglr = tglr.label(label);
     tglr = tglr.text_size(TXT_SIZE);
     tglr = tglr.text_line_height(TXT_LINE_HEIGHT);

@@ -5,9 +5,9 @@ use crate::path_utils::*;
 use crate::*;
 
 pub(super) fn draw_bounds(
-    tv: &TreeCnv, st: &St, rndr: &Renderer, bnds: Rectangle, g: &mut Vec<Geometry>,
+    tc: &TreeCnv, st: &St, rndr: &Renderer, bnds: Rectangle, g: &mut Vec<Geometry>,
 ) {
-    g.push(tv.cache_bnds.draw(rndr, bnds.size(), |f| {
+    g.push(tc.cache_bnds.draw(rndr, bnds.size(), |f| {
         stroke_rect(st.cnv_rect, STRK_5_BLU_50, f);
         stroke_rect(st.tre_rect, STRK_3_GRN_50, f);
         stroke_rect(st.vis_rect, Strk { line_dash: DASH_010, ..STRK_5_MAG_50 }, f);
@@ -15,17 +15,17 @@ pub(super) fn draw_bounds(
 }
 
 pub(super) fn draw_edges(
-    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
-    g.push(tst.cache_edge().draw(rndr, sz, |f| match tv.tre_sty {
+    g.push(tst.cache_edge().draw(rndr, sz, |f| match tc.tre_sty {
         TreSty::PhyGrm => {
             stroke_edges_phygrm(tst.edges_srtd_y(), &st.tre_vs, st.root_len, tst.edge_root(), f)
         }
         TreSty::Fan => stroke_edges_fan(
             tst.edges_srtd_y(),
             &st.tre_vs,
-            tv.rot_angle,
-            tv.opn_angle,
+            tc.rot_angle,
+            tc.opn_angle,
             st.root_len,
             tst.edge_root(),
             f,
@@ -34,16 +34,16 @@ pub(super) fn draw_edges(
 }
 
 pub(super) fn draw_legend(
-    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
-    if tst.has_brlen() && tv.draw_legend {
-        g.push(tv.cache_legend.draw(rndr, sz, |f| {
+    if tst.has_brlen() && tc.draw_legend {
+        g.push(tc.cache_legend.draw(rndr, sz, |f| {
             draw_scale_bar(
-                tv.tre_sty,
+                tc.tre_sty,
                 &st.tre_vs,
                 &st.cnv_vs,
-                tv.lab_size_brnch,
-                -tv.lab_offset_brnch,
+                tc.lab_size_brnch,
+                -tc.lab_offset_brnch,
                 st.root_len,
                 tst.tre_height() as Float,
                 f,
@@ -53,17 +53,17 @@ pub(super) fn draw_legend(
 }
 
 pub(super) fn draw_cursor_line(
-    tv: &TreeCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
-    g.push(tv.cache_cursor_line.draw(rndr, sz, |f| {
+    g.push(tc.cache_cursor_line.draw(rndr, sz, |f| {
         if let Some(p) = st.cursor_tracking_point
-            && tv.draw_cursor_line
+            && tc.draw_cursor_line
         {
             f.push_transform();
             f.translate(st.translation);
-            match tv.tre_sty {
+            match tc.tre_sty {
                 TreSty::PhyGrm => {
-                    let p0 = Point { x: p.x, y: ZRO };
+                    let p0 = Point { x: p.x, y: ZERO };
                     let p1 = Point { x: p.x, y: st.tre_vs.h };
                     f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), STRK_CRSR_LINE);
                 }
@@ -79,12 +79,12 @@ pub(super) fn draw_cursor_line(
 }
 
 pub(super) fn draw_labs_tip(
-    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_lab_tip().draw(rndr, sz, |f| {
         draw_labels(
             &st.labs_tip,
-            Vector { x: tv.lab_offset_tip, y: ZRO },
+            Vector { x: tc.lab_offset_tip, y: ZERO },
             Some(st.translation),
             st.rotation,
             f,
@@ -93,12 +93,12 @@ pub(super) fn draw_labs_tip(
 }
 
 pub(super) fn draw_labs_int(
-    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_lab_int().draw(rndr, sz, |f| {
         draw_labels(
             &st.labs_int,
-            Vector { x: tv.lab_offset_int, y: ZRO },
+            Vector { x: tc.lab_offset_int, y: ZERO },
             Some(st.translation),
             st.rotation,
             f,
@@ -107,12 +107,12 @@ pub(super) fn draw_labs_int(
 }
 
 pub(super) fn draw_labs_brnch(
-    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_lab_brnch().draw(rndr, sz, |f| {
         draw_labels(
             &st.labs_brnch,
-            Vector { x: ZRO, y: tv.lab_offset_brnch },
+            Vector { x: ZERO, y: tc.lab_offset_brnch },
             Some(st.translation),
             st.rotation,
             f,
@@ -121,9 +121,9 @@ pub(super) fn draw_labs_brnch(
 }
 
 pub(super) fn draw_hovered_node(
-    tv: &TreeCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
-    g.push(tv.cache_hovered_node.draw(rndr, sz, |f| {
+    g.push(tc.cache_hovered_node.draw(rndr, sz, |f| {
         if let Some(hovered_node) = &st.hovered_node {
             draw_nodes(
                 &[hovered_node.points.p1],
@@ -139,7 +139,7 @@ pub(super) fn draw_hovered_node(
 }
 
 pub(super) fn draw_selected_nodes(
-    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_sel_nodes().draw(rndr, sz, |f| {
         let points: Vec<Point> = st.selected_nodes.par_iter().map(|nd| nd.points.p1).collect();
@@ -156,7 +156,7 @@ pub(super) fn draw_selected_nodes(
 }
 
 pub(super) fn draw_filtered_nodes(
-    tv: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_filtered_nodes().draw(rndr, sz, |f| {
         let points: Vec<Point> = st.filtered_nodes.par_iter().map(|nd| nd.points.p1).collect();
@@ -171,10 +171,10 @@ pub(super) fn draw_filtered_nodes(
         );
 
         if let Some(edge) = tst.current_found_edge() {
-            let pt = match tv.tre_sty {
+            let pt = match tc.tre_sty {
                 TreSty::PhyGrm => node_point_cart(st.tre_vs.w - st.root_len, st.tre_vs.h, &edge),
                 TreSty::Fan => {
-                    let angle = edge_angle(tv.opn_angle, &edge);
+                    let angle = edge_angle(tc.opn_angle, &edge);
                     node_point_pol(angle, st.tre_vs.radius_min, st.root_len, &edge)
                 }
             };
@@ -204,7 +204,7 @@ fn draw_scale_bar(
     let a = tre_height / 3.25;
     let b = a.fract();
     let c = a - b;
-    let sb_len = if c > ZRO { (c / TEN).floor() * TEN } else { (a * TEN).floor() / TEN };
+    let sb_len = if c > ZERO { (c / TEN).floor() * TEN } else { (a * TEN).floor() / TEN };
     let sb_frac = sb_len / tre_height;
     let sb_len_on_screen = sb_frac * w;
 
@@ -221,7 +221,7 @@ fn draw_scale_bar(
     f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), stroke);
     let text = lab_text(format!("{sb_len}"), p_lab, lab_size, TEMPLATE_TXT_LAB_SCALEBAR);
     let lab = Label { text, width: sb_len_on_screen, angle: None };
-    draw_labels(&[lab], Vector { x: ZRO, y: lab_y_offset }, None, ZRO, f);
+    draw_labels(&[lab], Vector { x: ZERO, y: lab_y_offset }, None, ZERO, f);
 }
 
 fn draw_nodes(
@@ -255,7 +255,7 @@ fn draw_labels(labels: &[Label], offset: Vector, trans: Option<Vector>, rot: Flo
         let adjust_h_base = text.size.0 / TWO - magic;
         let mut adjust_h = match text.align_y {
             Vertical::Top => adjust_h_base.floor() + TWO - magic / 3.15,
-            Vertical::Center => ZRO,
+            Vertical::Center => ZERO,
             Vertical::Bottom => -adjust_h_base.ceil(),
         };
         text.align_y = Vertical::Center;
@@ -265,7 +265,7 @@ fn draw_labels(labels: &[Label], offset: Vector, trans: Option<Vector>, rot: Flo
             let mut adjust_w = match text.align_x {
                 TextAlignment::Left => offset.x,
                 TextAlignment::Right => -offset.x,
-                _ => ZRO,
+                _ => ZERO,
             };
             adjust_h += offset.y;
             // = Rotate labels on the left side of the circle by 180 degrees =======================
@@ -275,7 +275,7 @@ fn draw_labels(labels: &[Label], offset: Vector, trans: Option<Vector>, rot: Flo
                 adjust_w = match text.align_x {
                     TextAlignment::Left => -width - offset.x,
                     TextAlignment::Right => width + offset.x,
-                    _ => ZRO,
+                    _ => ZERO,
                 };
             } // ===================================================================================
             f.push_transform();
@@ -290,7 +290,7 @@ fn draw_labels(labels: &[Label], offset: Vector, trans: Option<Vector>, rot: Flo
             f.pop_transform();
         } else {
             f.push_transform();
-            f.translate(Vector { x: ZRO, y: adjust_h });
+            f.translate(Vector { x: ZERO, y: adjust_h });
             f.fill_text(text);
             f.pop_transform();
         }
@@ -306,13 +306,13 @@ fn stroke_edges_phygrm(
     let mut pb: PathBuilder = PathBuilder::new();
     for e in edges {
         let nd = node_data_cart(w, tre_vs.h, e);
-        pb = edge_path_cart_pb(&nd, pb);
-        pb = edge_path_vert_cart_pb(&nd, pb);
+        pb = edge_path_cart(&nd, pb);
+        pb = edge_path_vert_cart(&nd, pb);
     }
 
     f.with_save(|f| {
         f.translate(tre_vs.trans);
-        f.translate(Vector { x: root_len, y: ZRO });
+        f.translate(Vector { x: root_len, y: ZERO });
         f.stroke(&pb.build(), STRK_EDGE);
         stroke_root_phygrm(w, tre_vs.h, root_len, root, f);
     })
@@ -325,13 +325,13 @@ fn stroke_edges_fan(
     let mut pb: PathBuilder = PathBuilder::new();
     if opn_angle >= ONE.to_radians() {
         for e in edges {
-            let nd = node_data_rad(opn_angle, ZRO, tre_vs.radius_min, root_len, e);
-            pb = edge_path_pol_pb(&nd, pb);
-            pb = edge_path_arc_pol_pb(&nd, pb);
+            let nd = node_data_rad(opn_angle, ZERO, tre_vs.radius_min, root_len, e);
+            pb = edge_path_pol(&nd, pb);
+            pb = edge_path_arc_pol(&nd, pb);
         }
     } else {
-        let p0 = Point { x: root_len, y: ZRO };
-        let p1 = Point { x: tre_vs.radius_min, y: ZRO };
+        let p0 = Point { x: root_len, y: ZERO };
+        let p1 = Point { x: tre_vs.radius_min, y: ZERO };
         pb = pb.move_to(p0).line_to(p1)
     }
 
@@ -345,7 +345,7 @@ fn stroke_edges_fan(
 
 fn stroke_root_phygrm(w: Float, h: Float, root_len: Float, root_edge: Option<Edge>, f: &mut Frame) {
     if let Some(root_edge) = root_edge
-        && root_len > ZRO
+        && root_len > ZERO
     {
         let nd = node_data_cart(w, h, &root_edge);
         let pt_parent = Point { x: -root_len, y: nd.points.p0.y };
@@ -357,9 +357,9 @@ fn stroke_root_fan(
     radius_min: Float, opn_angle: Float, root_len: Float, root_edge: Option<Edge>, f: &mut Frame,
 ) {
     if let Some(root_edge) = root_edge
-        && root_len > ZRO
+        && root_len > ZERO
     {
-        let nd = node_data_rad(opn_angle, ZRO, radius_min, root_len, &root_edge);
+        let nd = node_data_rad(opn_angle, ZERO, radius_min, root_len, &root_edge);
         f.stroke(&PathBuilder::new().move_to(ORIGIN).line_to(nd.points.p0).build(), STRK_ROOT);
     };
 }

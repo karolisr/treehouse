@@ -1,7 +1,7 @@
 #![feature(iter_collect_into)]
 #![feature(const_float_round_methods)]
 // -------------------------------------
-// #![allow(dead_code)]
+#![allow(dead_code)]
 // #![allow(unused_mut)]
 // #![allow(unused_imports)]
 // #![allow(unused_variables)]
@@ -34,6 +34,7 @@ pub use consts::{SF, TXT_SIZE};
 pub use treeview::{SidebarPosition, TreeView, TvMsg};
 
 use std::collections::HashSet;
+use std::f32 as float;
 use std::fmt::{Display, Formatter, Result};
 use std::ops::RangeInclusive;
 use std::rc::Rc;
@@ -50,13 +51,6 @@ use treeview::{NODE_ORD_OPTS, NodeOrd, TRE_STY_OPTS, TreSty, TvPane};
 use utils::{Clr, TextWidth, text_width};
 
 pub type IndexRange = RangeInclusive<usize>;
-
-fn height_of_some_widgets() -> f32 {
-    let size = TXT_LINE_HEIGHT.0 - SF * TWO;
-    if (size as usize) % 2 == 0 { (size - ONE).floor() } else { size.floor() }
-}
-
-fn height_of_btn() -> f32 { (height_of_some_widgets() * 1.5 - SF).floor() }
 
 #[derive(Debug, Clone, Default)]
 struct Label {
@@ -116,16 +110,16 @@ pub struct RectVals<T> {
 
 impl RectVals<Float> {
     pub fn cnv(bounds: iced::Rectangle) -> Self {
-        let x = ZRO;
-        let y = ZRO;
+        let x = ZERO;
+        let y = ZERO;
         let w = bounds.width as Float;
         let h = bounds.height as Float;
         iced::Rectangle { x, y, width: w, height: h }.into()
     }
 
     pub fn wh(w: Float, h: Float) -> Self {
-        let x = ZRO;
-        let y = ZRO;
+        let x = ZERO;
+        let y = ZERO;
         iced::Rectangle { x, y, width: w, height: h }.into()
     }
 

@@ -10,14 +10,12 @@
 
 # cargo install cargo-bundle
 
-cargo fmt && \
-
-cargo check --profile dev && \
-cargo clippy --profile dev && \
-cargo build --profile dev && \
-
-cargo check --profile release && \
-cargo clippy --profile release && \
-cargo build --profile release
+cargo fmt &&
+    # cargo check --profile dev && \
+    # cargo clippy --profile dev && \
+    # cargo build --profile dev && \
+    # cargo check --profile release && \
+    # cargo clippy --profile release && \
+    cargo build --profile release
 
 # cargo-bundle bundle --profile release

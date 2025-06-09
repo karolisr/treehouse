@@ -48,8 +48,8 @@ pub(super) struct TreeState {
 }
 
 impl TreeState {
-    pub fn tree(&self) -> &Tree { &self.t }
-    pub fn tree_original(&self) -> &Tree { &self.t_orig }
+    pub(super) fn tree(&self) -> &Tree { &self.t }
+    pub(super) fn tree_original(&self) -> &Tree { &self.t_orig }
 
     // Search & Filter -----------------------------------------------------------------------------
     pub(super) fn found_edge_idxs(&self) -> &Vec<usize> { &self.found_edge_idxs }

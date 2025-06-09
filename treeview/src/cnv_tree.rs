@@ -36,6 +36,7 @@ pub(super) struct TreeCnv {
     pub(super) vis_x_mid_rel: Float,
     pub(super) vis_y_mid_rel: Float,
     // ---------------------------------------------------------------------------------------------
+    pub(super) draw_debug: bool,
     pub(super) draw_cursor_line: bool,
     pub(super) draw_labs_allowed: bool,
     pub(super) draw_labs_brnch: bool,
@@ -77,19 +78,20 @@ impl TreeCnv {
             padd_t: TREE_PADDING,
             padd_b: TREE_PADDING,
             // -------------------------------------------------------------------------------------
+            draw_debug: false,
             drawing_enabled: false,
             draw_labs_allowed: false,
             draw_labs_tip: false,
             draw_labs_int: false,
             draw_labs_brnch: false,
-            draw_legend: false,
-            draw_cursor_line: false,
+            draw_legend: true,
+            draw_cursor_line: true,
             // -------------------------------------------------------------------------------------
             tip_labs_vis_max: 400,
             node_labs_vis_max: 900,
             // -------------------------------------------------------------------------------------
-            opn_angle: ZRO,
-            rot_angle: ZRO,
+            opn_angle: ZERO,
+            rot_angle: ZERO,
             // -------------------------------------------------------------------------------------
             lab_size_min: SF,
             lab_size_max: SF,
@@ -97,9 +99,9 @@ impl TreeCnv {
             lab_size_int: SF,
             lab_size_brnch: SF,
             // -------------------------------------------------------------------------------------
-            lab_offset_tip: ZRO,
-            lab_offset_int: ZRO,
-            lab_offset_brnch: ZRO,
+            lab_offset_tip: ZERO,
+            lab_offset_int: ZERO,
+            lab_offset_brnch: ZERO,
             // -------------------------------------------------------------------------------------
             text_w_tip: Some(text_width(SF * TIP_LAB_SIZE_IDX as Float, FNT_NAME_LAB)),
             // -------------------------------------------------------------------------------------
@@ -111,17 +113,17 @@ impl TreeCnv {
             // -------------------------------------------------------------------------------------
             crsr_x_rel: None,
             // -------------------------------------------------------------------------------------
-            vis_x0: ZRO,
-            vis_y0: ZRO,
-            vis_x1: ZRO,
-            vis_y1: ZRO,
-            vis_x_mid: ZRO,
-            vis_y_mid: ZRO,
-            vis_x_mid_rel: ZRO,
-            vis_y_mid_rel: ZRO,
+            vis_x0: ZERO,
+            vis_y0: ZERO,
+            vis_x1: ZERO,
+            vis_y1: ZERO,
+            vis_x_mid: ZERO,
+            vis_y_mid: ZERO,
+            vis_x_mid_rel: ZERO,
+            vis_y_mid_rel: ZERO,
             // -------------------------------------------------------------------------------------
             tre_vs: RectVals::default(),
-            root_len_frac: ZRO,
+            root_len_frac: ZERO,
             stale_tre_rect: false,
             // -------------------------------------------------------------------------------------
             tree_state: None,
@@ -141,6 +143,29 @@ impl TreeCnv {
         self.clear_cache_cursor_line();
         self.clear_cache_hovered_node();
         self.clear_cache_legend();
+    }
+
+    pub(super) fn calc_tre_vs(&self, tip_w: Float, tre_vs: RectVals<Float>) -> RectVals<Float> {
+        match self.tre_sty {
+            TreSty::PhyGrm => {
+                let mut offset_due_to_brnch_lab = ZERO;
+                let mut offset_due_to_tip_lab = ZERO;
+
+                if self.draw_labs_allowed && self.draw_labs_tip {
+                    offset_due_to_tip_lab = self.lab_size_tip / TWO;
+                }
+
+                if self.draw_labs_allowed && self.draw_labs_brnch {
+                    offset_due_to_brnch_lab = self.lab_size_brnch + self.lab_offset_brnch.abs();
+                }
+
+                let top = (offset_due_to_tip_lab).max(offset_due_to_brnch_lab);
+                let bottom = offset_due_to_tip_lab;
+
+                tre_vs.padded(ZERO, tip_w, top, bottom)
+            }
+            TreSty::Fan => tre_vs.padded(tip_w, tip_w, tip_w, tip_w),
+        }
     }
 }
 
@@ -191,7 +216,7 @@ impl Program<TvMsg> for TreeCnv {
             st.cnv_rect = st.cnv_vs.into();
             st.tre_vs = st.cnv_vs.padded(self.padd_l, self.padd_r, self.padd_t, self.padd_b);
 
-            let mut tip_w: Float = ZRO;
+            let mut tip_w: Float = ZERO;
             if self.draw_labs_tip && self.draw_labs_allowed {
                 tip_w = calc_tip_w(
                     tre_sty,
@@ -202,9 +227,7 @@ impl Program<TvMsg> for TreeCnv {
                 );
             }
 
-            st.tre_vs =
-                calc_tre_vs(tip_w, st.tre_vs, tre_sty, self.lab_offset_brnch, self.lab_size_max);
-
+            st.tre_vs = self.calc_tre_vs(tip_w, st.tre_vs);
             st.tre_rect = st.tre_vs.into();
             st.bnds = bnds;
             // -------------------------------------------------------------------------------------
@@ -213,13 +236,13 @@ impl Program<TvMsg> for TreeCnv {
             tst.clear_cache_lab_int();
             tst.clear_cache_lab_brnch();
         } // ---------------------------------------------------------------------------------------
-        st.root_len = ZRO;
+        st.root_len = ZERO;
         match tre_sty {
             TreSty::PhyGrm => {
                 if tst.is_rooted() {
                     st.root_len = st.tre_vs.w * self.root_len_frac;
                 }
-                st.rotation = ZRO;
+                st.rotation = ZERO;
                 st.translation =
                     Vector { x: st.tre_vs.trans.x + st.root_len, y: st.tre_vs.trans.y };
             }
@@ -253,7 +276,7 @@ impl Program<TvMsg> for TreeCnv {
                     node_data_cart(st.tre_vs.w - st.root_len, st.tre_vs.h, &edges[idx]).into()
                 }
                 TreSty::Fan => {
-                    node_data_rad(opn_angle, ZRO, st.tre_vs.radius_min, st.root_len, &edges[idx])
+                    node_data_rad(opn_angle, ZERO, st.tre_vs.radius_min, st.root_len, &edges[idx])
                         .into()
                 }
             })
@@ -266,7 +289,7 @@ impl Program<TvMsg> for TreeCnv {
                     node_data_cart(st.tre_vs.w - st.root_len, st.tre_vs.h, &edges[idx]).into()
                 }
                 TreSty::Fan => {
-                    node_data_rad(opn_angle, ZRO, st.tre_vs.radius_min, st.root_len, &edges[idx])
+                    node_data_rad(opn_angle, ZERO, st.tre_vs.radius_min, st.root_len, &edges[idx])
                         .into()
                 }
             })
@@ -279,7 +302,7 @@ impl Program<TvMsg> for TreeCnv {
                     node_data_cart(st.tre_vs.w - st.root_len, st.tre_vs.h, &edges[idx]).into()
                 }
                 TreSty::Fan => {
-                    node_data_rad(opn_angle, ZRO, st.tre_vs.radius_min, st.root_len, &edges[idx])
+                    node_data_rad(opn_angle, ZERO, st.tre_vs.radius_min, st.root_len, &edges[idx])
                         .into()
                 }
             })
@@ -346,7 +369,7 @@ impl Program<TvMsg> for TreeCnv {
                                 }
                             };
 
-                            if (ZRO - EPS..=ONE + EPS).contains(&crsr_x_rel) {
+                            if (ZERO - EPSILON..=ONE + EPSILON).contains(&crsr_x_rel) {
                                 action = Some(Action::publish(TvMsg::CursorOnTreCnv {
                                     x: Some(crsr_x_rel),
                                 }))
@@ -385,15 +408,19 @@ impl Program<TvMsg> for TreeCnv {
             match tre_sty {
                 TreSty::PhyGrm => {
                     st.cursor_tracking_point =
-                        Some(Point { x: (crsr_x_rel * (st.tre_vs.w - st.root_len)), y: ZRO })
+                        Some(Point { x: (crsr_x_rel * (st.tre_vs.w - st.root_len)), y: ZERO })
                 }
                 TreSty::Fan => {
                     st.cursor_tracking_point = Some(Point {
                         x: st.root_len + crsr_x_rel * (st.tre_vs.radius_min - st.root_len),
-                        y: ZRO,
+                        y: ZERO,
                     })
                 }
             }
+        }
+        // -----------------------------------------------------------------------------------------
+        if self.stale_tre_rect {
+            action = Some(Action::publish(TvMsg::TreeRectNoLongerStale));
         }
         // -----------------------------------------------------------------------------------------
         st.is_new = false;
@@ -415,8 +442,9 @@ impl Program<TvMsg> for TreeCnv {
             // -------------------------------------------------------------------------------------
             let size = bnds.size();
             let tst: &TreeState = tree_state_opt;
-            #[cfg(debug_assertions)]
-            draw_bounds(self, st, rndr, bnds, &mut geoms);
+            if self.draw_debug {
+                draw_bounds(self, st, rndr, bnds, &mut geoms);
+            }
             draw_edges(self, st, tst, rndr, size, &mut geoms);
             draw_legend(self, st, tst, rndr, size, &mut geoms);
             draw_cursor_line(self, st, rndr, size, &mut geoms);
@@ -424,25 +452,14 @@ impl Program<TvMsg> for TreeCnv {
             draw_labs_int(self, st, tst, rndr, size, &mut geoms);
             draw_labs_brnch(self, st, tst, rndr, size, &mut geoms);
             draw_hovered_node(self, st, rndr, size, &mut geoms);
-            draw_selected_nodes(self, st, tst, rndr, size, &mut geoms);
+            draw_selected_nodes(st, tst, rndr, size, &mut geoms);
             draw_filtered_nodes(self, st, tst, rndr, size, &mut geoms);
-            #[cfg(debug_assertions)]
-            draw_palette(self, st, thm, rndr, size, &mut geoms);
+            if self.draw_debug {
+                draw_palette(self, st, thm, rndr, size, &mut geoms);
+            }
             // -------------------------------------------------------------------------------------
         }
         geoms
-    }
-}
-
-pub(super) fn calc_tre_vs(
-    tip_w: Float, tre_vs: RectVals<Float>, tre_sty: TreSty, lab_offset_brnch: Float,
-    lab_size_max: Float,
-) -> RectVals<Float> {
-    match tre_sty {
-        TreSty::PhyGrm => {
-            tre_vs.padded(ZRO, tip_w, -lab_offset_brnch + lab_size_max, lab_size_max / TWO)
-        }
-        TreSty::Fan => tre_vs.padded(tip_w, tip_w, tip_w, tip_w),
     }
 }
 
@@ -462,8 +479,8 @@ pub(super) fn calc_tip_w(
 fn calc_tip_lab_extra_w(
     tre_vs_w: Float, edges_tip_tallest: &[Edge], text_w_tip: &mut TextWidth,
 ) -> Float {
-    let mut max_w: Float = ZRO;
-    let mut max_offset: Float = ZRO;
+    let mut max_w: Float = ZERO;
+    let mut max_offset: Float = ZERO;
     for edge in edges_tip_tallest {
         if let Some(name) = &edge.name {
             let offset = edge.x1 as Float * tre_vs_w;

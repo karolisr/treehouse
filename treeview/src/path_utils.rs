@@ -31,13 +31,13 @@ impl PathBuilder {
 
     pub fn circle(self, center: Point, radius: f32) -> Self {
         let start = Point { x: center.x + radius, y: center.y };
-        self.move_to(start).arc_approx_line(ZRO, TAU, center, radius)
+        self.move_to(start).arc_approx_line(ZERO, TAU, center, radius)
     }
 
     fn arc(&self, a0: f32, a1: f32, center: Point, radius: f32) -> geom::Arc<f32> {
         let center = geom::Point::new(center.x, center.y);
         let radii = geom::Vector::new(radius, radius);
-        let x_rotation = geom::Angle::radians(ZRO);
+        let x_rotation = geom::Angle::radians(ZERO);
         let start_angle = geom::Angle::radians(a0);
         let sweep_angle = geom::Angle::radians(a1 - a0);
         geom::Arc { center, radii, start_angle, sweep_angle, x_rotation }

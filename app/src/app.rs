@@ -24,6 +24,7 @@ pub struct App {
     treeview: Option<TreeView>,
     menu: Option<AppMenu>,
     title: Option<String>,
+    explain: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -68,18 +69,20 @@ pub enum ParsedData {
 }
 
 impl App {
+    fn toggle_explain(&mut self) { self.explain = !self.explain; }
+
     pub fn boot() -> (Self, Task<AppMsg>) {
         #[cfg(target_os = "macos")]
         platform::register_ns_application_delegate_handlers();
         (
-            App { winid: None, treeview: None, menu: None, title: None },
+            App { winid: None, treeview: None, menu: None, title: None, explain: false },
             Task::done(AppMsg::AppInitialized),
         )
     }
 
     pub fn view(&'_ self, _: WinId) -> Element<'_, AppMsg> {
         if let Some(treeview) = &self.treeview {
-            if !treeview.any_trees_are_loaded() {
+            if !treeview.are_any_trees_loaded() {
                 iced::widget::container(
                     iced::widget::button("Open a Tree File...").on_press(AppMsg::OpenFile),
                 )
@@ -87,15 +90,10 @@ impl App {
                 .height(iced::Fill)
                 .center(iced::Fill)
                 .into()
+            } else if self.explain {
+                treeview.view().explain(iced::Color::from_rgb(1e0, 0e0, 0e0)).map(AppMsg::TvMsg)
             } else {
-                #[cfg(debug_assertions)]
-                {
-                    treeview.view().explain(iced::Color::from_rgb(1e0, 0e0, 0e0)).map(AppMsg::TvMsg)
-                }
-                #[cfg(not(debug_assertions))]
-                {
-                    treeview.view().map(AppMsg::TvMsg)
-                }
+                treeview.view().map(AppMsg::TvMsg)
             }
         } else {
             iced::widget::container(iced::widget::text!("App::view"))
@@ -108,53 +106,81 @@ impl App {
 
     pub fn update(&mut self, app_msg: AppMsg) -> Task<AppMsg> {
         match app_msg {
-            AppMsg::KeysPressed(key, modifiers) => match modifiers {
-                Modifiers::CTRL => match key {
-                    Key::Character(k) => {
-                        #[cfg(any(target_os = "windows", target_os = "linux"))]
-                        {
+            AppMsg::KeysPressed(key, modifiers) => {
+                if modifiers.contains(Modifiers::CTRL) && modifiers.contains(Modifiers::SHIFT) {
+                    match key {
+                        Key::Character(k) => {
                             let k: &str = k.as_str();
                             match k {
-                                "o" => Task::done(AppMsg::MenuEvent(AppMenuItemId::OpenFile)),
-                                "s" => Task::done(AppMsg::MenuEvent(AppMenuItemId::SaveAs)),
-                                "w" => Task::done(AppMsg::MenuEvent(AppMenuItemId::CloseWindow)),
-                                "q" => Task::done(AppMsg::MenuEvent(AppMenuItemId::Quit)),
-                                "[" => Task::done(AppMsg::MenuEvent(
-                                    AppMenuItemId::SetSideBarPositionLeft,
-                                )),
-                                "]" => Task::done(AppMsg::MenuEvent(
-                                    AppMenuItemId::SetSideBarPositionRight,
-                                )),
+                                "d" => {
+                                    if let Some(treeview) = &mut self.treeview {
+                                        treeview.toggle_draw_debug();
+                                    }
+                                    Task::none()
+                                }
+                                "e" => {
+                                    self.toggle_explain();
+                                    Task::none()
+                                }
                                 _ => Task::none(),
                             }
                         }
-                        #[cfg(target_os = "macos")]
-                        {
-                            println!("Ctrl + {k}");
-                            Task::none()
-                        }
+                        _ => Task::none(),
                     }
-                    _ => Task::none(),
-                },
-                // Modifiers::COMMAND => match key {
-                //     Key::Character(k) => {
-                //         #[cfg(target_os = "macos")]
-                //         {
-                //             let k: &str = k.as_str();
-                //             match k {
-                //                 _ => Task::none(),
-                //             }
-                //         }
-                //         #[cfg(any(target_os = "windows", target_os = "linux"))]
-                //         {
-                //             println!("Cmd + {k}");
-                //             Task::none()
-                //         }
-                //     }
-                //     _ => Task::none(),
-                // },
-                _ => Task::none(),
-            },
+                } else {
+                    match modifiers {
+                        Modifiers::CTRL => match key {
+                            Key::Character(k) => {
+                                #[cfg(any(target_os = "windows", target_os = "linux"))]
+                                {
+                                    let k: &str = k.as_str();
+                                    match k {
+                                        "o" => {
+                                            Task::done(AppMsg::MenuEvent(AppMenuItemId::OpenFile))
+                                        }
+                                        "s" => Task::done(AppMsg::MenuEvent(AppMenuItemId::SaveAs)),
+                                        "w" => Task::done(AppMsg::MenuEvent(
+                                            AppMenuItemId::CloseWindow,
+                                        )),
+                                        "q" => Task::done(AppMsg::MenuEvent(AppMenuItemId::Quit)),
+                                        "[" => Task::done(AppMsg::MenuEvent(
+                                            AppMenuItemId::SetSideBarPositionLeft,
+                                        )),
+                                        "]" => Task::done(AppMsg::MenuEvent(
+                                            AppMenuItemId::SetSideBarPositionRight,
+                                        )),
+                                        _ => Task::none(),
+                                    }
+                                }
+                                #[cfg(target_os = "macos")]
+                                {
+                                    println!("Ctrl + {k}");
+                                    Task::none()
+                                }
+                            }
+                            _ => Task::none(),
+                        },
+                        // Modifiers::COMMAND => match key {
+                        //     Key::Character(k) => {
+                        //         #[cfg(target_os = "macos")]
+                        //         {
+                        //             let k: &str = k.as_str();
+                        //             match k {
+                        //                 _ => Task::none(),
+                        //             }
+                        //         }
+                        //         #[cfg(any(target_os = "windows", target_os = "linux"))]
+                        //         {
+                        //             println!("Cmd + {k}");
+                        //             Task::none()
+                        //         }
+                        //     }
+                        //     _ => Task::none(),
+                        // },
+                        _ => Task::none(),
+                    }
+                }
+            }
 
             AppMsg::Other(opt_msg) => {
                 if let Some(msg) = opt_msg {

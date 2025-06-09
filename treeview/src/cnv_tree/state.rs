@@ -51,9 +51,9 @@ impl Default for St {
             filtered_nodes: Vec::new(),
             selected_nodes: Vec::new(),
             node_radius: SF * 5e0,
-            root_len: ZRO,
-            rotation: ZRO,
-            translation: Vector { x: ZRO, y: ZRO },
+            root_len: ZERO,
+            rotation: ZERO,
+            translation: Vector { x: ZERO, y: ZERO },
             text_w_tip: Some(text_width(SF * TIP_LAB_SIZE_IDX as Float, FNT_NAME_LAB)),
             text_w_int: Some(text_width(SF * INTERNAL_LAB_SIZE_IDX as Float, FNT_NAME_LAB)),
             text_w_brnch: Some(text_width(SF * BRANCH_LAB_SIZE_IDX as Float, FNT_NAME_LAB)),
@@ -68,7 +68,7 @@ impl Default for St {
 impl St {
     pub(super) fn mouse_point(&mut self, crsr: Cursor) -> Option<Point<Float>> {
         crsr.position_in(self.bnds).map(|mouse| {
-            if self.rotation != ZRO {
+            if self.rotation != ZERO {
                 let mouse_dist_from_center =
                     mouse.distance(Point { x: self.tre_vs.cntr.x, y: self.tre_vs.cntr.y });
                 let mouse_x_untrans = mouse.x - self.translation.x;

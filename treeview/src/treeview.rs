@@ -65,17 +65,7 @@ pub struct TreeView {
     // -------------------------------------------------------------------
 }
 
-fn angle_from_idx(idx: u16) -> Float { (idx as Float).to_radians() }
-
 impl TreeView {
-    pub fn any_trees_are_loaded(&self) -> bool { !self.tre_states.is_empty() }
-
-    pub fn newick_string(&self) -> String {
-        let trees: Vec<Tree> = self.tre_states.iter().map(|ts| ts.tree().clone()).collect();
-        // let trees: Vec<Tree> = self.tre_states.iter().map(|ts| ts.tree_original().clone()).collect();
-        write_newick(&trees)
-    }
-
     pub fn new(sidebar_position: SidebarPosition) -> Self {
         Self {
             sidebar_pos: sidebar_position,
@@ -84,7 +74,7 @@ impl TreeView {
             show_tool_bar: true,
             show_side_bar: true,
             // -----------------------------------------------------------
-            node_ord_opt: NodeOrd::Unordered,
+            node_ord_opt: NodeOrd::Ascending,
             // -----------------------------------------------------------
             opn_angle_idx_min: 45,
             opn_angle_idx: 359,
@@ -101,7 +91,7 @@ impl TreeView {
             lab_size_idx_max: 22,
             // -----------------------------------------------------------
             root_len_idx_min: 0,
-            root_len_idx: 0,
+            root_len_idx: 5,
             root_len_idx_max: 100,
             // -----------------------------------------------------------
             tre_cnv_size_idx_min: 1,
@@ -126,11 +116,489 @@ impl TreeView {
             keep_scroll_position_requested: false,
             ltt_cnv_needs_to_be_scrolled: false,
             ltt_cnv_scrolled: false,
-            tre_scr_h: ZRO,
-            tre_scr_w: ZRO,
+            tre_scr_h: ZERO,
+            tre_scr_w: ZERO,
             tre_cnv_scrolled: false,
             search_string: String::new(),
             // -----------------------------------------------------------
+        }
+    }
+
+    pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
+        let mut task: Option<Task<TvMsg>> = None;
+        match tv_msg {
+            TvMsg::TreeRectNoLongerStale => {
+                self.tre_cnv.stale_tre_rect = false;
+            }
+
+            TvMsg::TreCnvScrolledOrResized(vp) => {
+                // tree canvas scrollable was resized ----------------------------------------------
+                if vp.bounds().width != self.tre_scr_w || vp.bounds().height != self.tre_scr_h {
+                    self.tre_scr_w = vp.bounds().width;
+                    self.tre_scr_h = vp.bounds().height;
+                } // -------------------------------------------------------------------------------
+
+                if self.keep_scroll_position_requested {
+                    task = self.scroll_tre_cnv(self.tre_cnv.vis_x_mid, self.tre_cnv.vis_y_mid);
+                    self.tre_cnv_scrolled = true;
+                    self.keep_scroll_position_requested = false;
+                }
+
+                self.tre_cnv.vis_x_mid = vp.absolute_offset().x + vp.bounds().width / TWO;
+                self.tre_cnv.vis_y_mid = vp.absolute_offset().y + vp.bounds().height / TWO;
+                self.update_rel_scrl_pos();
+                self.update_vis_x();
+                self.update_vis_y();
+
+                if task.is_none() && self.tre_cnv.tre_sty == TreSty::PhyGrm {
+                    if self.tre_cnv_scrolled && self.tre_cnv.vis_x0 != self.ltt_cnv.vis_x0 {
+                        self.ltt_cnv_scrolled = false;
+                        task = self.scroll_cnv_to_x(self.ltt_scr_id, self.tre_cnv.vis_x0);
+                    } else {
+                        self.tre_cnv_scrolled = true;
+                    }
+                }
+
+                self.update_draw_labs_allowed();
+                self.clear_cache_sel_nodes();
+                self.clear_cache_filtered_nodes();
+            }
+
+            TvMsg::LttCnvScrolledOrResized(vp) => {
+                if self.ltt_cnv.vis_x0 != vp.absolute_offset().x {
+                    self.ltt_cnv.vis_x0 = vp.absolute_offset().x;
+                    self.ltt_cnv.vis_y0 = vp.absolute_offset().y;
+                    if self.tre_cnv.tre_sty == TreSty::PhyGrm {
+                        if self.ltt_cnv_scrolled && self.tre_cnv.vis_x0 != self.ltt_cnv.vis_x0 {
+                            self.tre_cnv_scrolled = false;
+                            task = self.scroll_cnv_to_x(self.tre_scr_id, self.ltt_cnv.vis_x0);
+                        } else {
+                            self.ltt_cnv_scrolled = true;
+                        }
+                    }
+                }
+            }
+
+            TvMsg::LttVisChanged(show_ltt) => {
+                self.show_ltt = show_ltt;
+                self.show_hide_ltt();
+                let x = (self.tre_cnv.vis_x_mid - self.tre_scr_w / TWO).max(ZERO);
+                task =
+                    Some(scroll_to(self.ltt_scr_id, AbsoluteOffset { x, y: self.ltt_cnv.vis_y0 }));
+            }
+
+            TvMsg::PrevTre => {
+                self.prev_tre();
+                self.sort();
+                self.set_ltt_plot_data();
+                self.update_draw_labs_allowed();
+            }
+
+            TvMsg::NextTre => {
+                self.next_tre();
+                self.sort();
+                self.set_ltt_plot_data();
+                self.update_draw_labs_allowed();
+            }
+
+            TvMsg::NodeOrdOptChanged(node_ord_opt) => {
+                if node_ord_opt != self.node_ord_opt {
+                    self.node_ord_opt = node_ord_opt;
+                    self.sort();
+                    task = self.scroll_to_current_found_edge();
+                }
+            }
+
+            TvMsg::Unroot => {
+                let mut yanked_node: Option<Node> = None;
+                self.with_exclusive_sel_tre_mut(&mut |tre| yanked_node = tre.unroot());
+                if yanked_node.is_some() {
+                    self.sort()
+                }
+                self.set_ltt_plot_data();
+                self.update_draw_labs_allowed();
+                task = self.scroll_to_current_found_edge();
+                self.tre_cnv.clear_cache_legend();
+            }
+
+            TvMsg::Root(node_id) => {
+                let mut node_id_new_root: Option<NodeId> = None;
+                self.with_exclusive_sel_tre_mut(&mut |tre| node_id_new_root = tre.root(&node_id));
+                if node_id_new_root.is_some() {
+                    self.sort()
+                }
+                self.set_ltt_plot_data();
+                self.update_draw_labs_allowed();
+                task = self.scroll_to_current_found_edge();
+                self.tre_cnv.clear_cache_legend();
+            }
+
+            TvMsg::TreesLoaded(trees) => {
+                self.tre_cnv.drawing_enabled = false;
+                self.tre_states = Vec::new();
+
+                let mut i: usize = 1;
+                for tre in trees {
+                    let mut ts = TreeState::new(i);
+                    ts.init(tre);
+                    self.tre_states.push(Rc::new(ts));
+                    i += 1;
+                }
+
+                if !self.tre_states.is_empty() {
+                    self.tre_state_idx = Some(0);
+                } else {
+                    self.tre_state_idx = None;
+                }
+
+                if let Some(_tre_pane_id) = &self.tre_pane_id {
+                } else {
+                    let (pane_grid, tre_pane_id) = PgState::new(TvPane::Tree);
+                    self.pane_grid = Some(pane_grid);
+                    self.tre_pane_id = Some(tre_pane_id)
+                }
+                self.sort();
+                self.set_ltt_plot_data();
+
+                if self.is_new {
+                    self.tre_cnv.opn_angle = angle_from_idx(self.opn_angle_idx);
+                    self.tre_cnv.rot_angle = angle_from_idx(self.rot_angle_idx);
+
+                    let lab_size_min = self.tre_cnv.lab_size_min;
+                    self.tre_cnv.lab_size_tip = lab_size_min * self.lab_size_idx_tip as Float;
+                    self.tre_cnv.lab_size_int = lab_size_min * self.lab_size_idx_int as Float;
+                    self.tre_cnv.lab_size_brnch = lab_size_min * self.lab_size_idx_brnch as Float;
+                    self.tre_cnv.lab_size_max = lab_size_min * self.lab_size_idx_max as Float;
+
+                    self.tre_cnv.lab_offset_tip = self.tre_cnv.lab_size_tip / 3e0;
+                    self.tre_cnv.lab_offset_int = self.tre_cnv.lab_size_int / 3e0;
+                    self.tre_cnv.lab_offset_brnch = -self.tre_cnv.lab_size_brnch / 3e0;
+
+                    self.tre_cnv.root_len_frac = self.calc_root_len_frac();
+
+                    self.show_hide_ltt();
+                    self.ltt_cnv.draw_cursor_line = self.tre_cnv.draw_cursor_line;
+                    self.update_tree_rect_padding();
+                    self.is_new = false;
+                }
+
+                self.update_draw_labs_allowed();
+                self.clear_caches_all();
+                self.tre_cnv.drawing_enabled = true;
+            }
+
+            TvMsg::CnvWidthSelChanged(idx) => {
+                if idx != self.tre_cnv_w_idx {
+                    self.update_rel_scrl_pos();
+                    self.tre_cnv_w_idx = idx;
+                    self.ltt_cnv_needs_to_be_scrolled = true;
+                    self.update_tree_rect_padding();
+                    self.update_vis_x();
+                    self.update_draw_labs_allowed();
+                    task = self.scroll_to_current_found_edge();
+                    if task.is_none() {
+                        task = self.keep_scroll_pos_w();
+                    }
+                    self.tre_cnv.stale_tre_rect = true;
+                    self.clear_cache_edge();
+                }
+            }
+
+            TvMsg::CnvHeightSelChanged(idx) => {
+                if idx != self.tre_cnv_h_idx {
+                    self.update_rel_scrl_pos();
+                    self.tre_cnv_h_idx = idx;
+                    self.update_tree_rect_padding();
+                    self.update_vis_y();
+                    self.update_draw_labs_allowed();
+                    task = self.scroll_to_current_found_edge();
+                    if task.is_none() {
+                        task = self.keep_scroll_pos_h();
+                    }
+                    self.tre_cnv.stale_tre_rect = true;
+                    self.clear_cache_edge();
+                }
+            }
+
+            TvMsg::CnvZoomSelChanged(idx) => {
+                if idx != self.tre_cnv_z_idx {
+                    self.update_rel_scrl_pos();
+                    self.tre_cnv_z_idx = idx;
+                    self.update_tree_rect_padding();
+                    self.update_vis_x();
+                    self.update_vis_y();
+                    self.update_draw_labs_allowed();
+                    task = self.scroll_to_current_found_edge();
+                    if task.is_none() {
+                        task = self.keep_scroll_pos_z();
+                    }
+                    self.tre_cnv.stale_tre_rect = true;
+                    self.clear_cache_edge();
+                }
+            }
+
+            TvMsg::TreStyOptChanged(tre_sty_opt) => {
+                if tre_sty_opt != self.tre_cnv.tre_sty {
+                    self.tre_cnv.tre_sty = tre_sty_opt;
+                    self.update_rel_scrl_pos();
+                    self.update_tree_rect_padding();
+                    self.update_draw_labs_allowed();
+                    task = self.scroll_to_current_found_edge();
+                    self.tre_cnv.stale_tre_rect = true;
+                    self.clear_caches_all();
+                }
+            }
+
+            TvMsg::TipLabVisChanged(state) => {
+                self.tre_cnv.draw_labs_tip = state;
+                self.tre_cnv.stale_tre_rect = true;
+                self.clear_caches_all();
+            }
+
+            TvMsg::TipLabSizeChanged(idx) => {
+                self.lab_size_idx_tip = idx;
+                self.tre_cnv.lab_size_tip = self.tre_cnv.lab_size_min * idx as Float;
+                self.tre_cnv.lab_offset_tip = self.tre_cnv.lab_size_tip / 3e0;
+                // -------------------------------------------------------------
+                if let Some(text_w_tip) = &mut self.tre_cnv.text_w_tip
+                    && text_w_tip.font_size() != self.tre_cnv.lab_size_tip
+                {
+                    text_w_tip.set_font_size(self.tre_cnv.lab_size_tip);
+                };
+                // -------------------------------------------------------------
+                self.tre_cnv.stale_tre_rect = true;
+                self.clear_caches_all();
+            }
+
+            TvMsg::IntLabVisChanged(state) => {
+                self.tre_cnv.draw_labs_int = state;
+                self.clear_cache_lab_int();
+            }
+
+            TvMsg::IntLabSizeChanged(idx) => {
+                self.lab_size_idx_int = idx;
+                self.tre_cnv.lab_size_int = self.tre_cnv.lab_size_min * idx as Float;
+                self.tre_cnv.lab_offset_int = self.tre_cnv.lab_size_int / 3e0;
+                self.clear_cache_lab_int();
+            }
+
+            TvMsg::BrnchLabVisChanged(state) => {
+                self.tre_cnv.draw_labs_brnch = state;
+                self.tre_cnv.stale_tre_rect = true;
+                self.clear_caches_all();
+            }
+
+            TvMsg::BrnchLabSizeChanged(idx) => {
+                self.lab_size_idx_brnch = idx;
+                self.tre_cnv.lab_size_brnch = self.tre_cnv.lab_size_min * idx as Float;
+                self.tre_cnv.lab_offset_brnch = -self.tre_cnv.lab_size_brnch / 3e0;
+                self.tre_cnv.stale_tre_rect = true;
+                self.clear_caches_all();
+            }
+
+            TvMsg::LegendVisChanged(state) => {
+                self.tre_cnv.draw_legend = state;
+            }
+
+            TvMsg::SelectDeselectNode(node_id) => {
+                self.with_exclusive_sel_tre_mut(&mut |tre| tre.select_deselect_node(&node_id));
+            }
+
+            TvMsg::OpnAngleChanged(idx) => {
+                self.opn_angle_idx = idx;
+                self.tre_cnv.opn_angle = angle_from_idx(idx);
+                task = self.scroll_to_current_found_edge();
+                self.clear_caches_all();
+            }
+
+            TvMsg::RotAngleChanged(idx) => {
+                self.rot_angle_idx = idx;
+                self.tre_cnv.rot_angle = angle_from_idx(idx);
+                task = self.scroll_to_current_found_edge();
+                self.clear_caches_all();
+            }
+
+            TvMsg::RootLenSelChanged(idx) => {
+                self.root_len_idx = idx;
+                self.tre_cnv.root_len_frac = self.calc_root_len_frac();
+                task = self.scroll_to_current_found_edge();
+                self.clear_caches_all();
+            }
+
+            TvMsg::PaneResized(ResizeEvent { split, ratio }) => {
+                if let Some(pane_grid) = &mut self.pane_grid {
+                    pane_grid.resize(split, ratio);
+                    self.update_vis_y();
+                    self.update_draw_labs_allowed();
+                    self.clear_cache_sel_nodes();
+                    self.clear_cache_filtered_nodes();
+                }
+            }
+
+            TvMsg::SetSidebarPos(sidebar_pos) => {
+                self.sidebar_pos = sidebar_pos;
+                self.keep_scroll_position_requested = true;
+            }
+
+            TvMsg::CursorLineVisChanged(state) => {
+                self.tre_cnv.crsr_x_rel = None;
+                self.ltt_cnv.crsr_x_rel = None;
+                self.tre_cnv.draw_cursor_line = state;
+                self.ltt_cnv.draw_cursor_line = state;
+                self.tre_cnv.clear_cache_cursor_line();
+                self.ltt_cnv.clear_cache_cursor_line();
+            }
+
+            TvMsg::CursorOnTreCnv { x } => {
+                self.tre_cnv.crsr_x_rel = None;
+                self.ltt_cnv.crsr_x_rel = x;
+            }
+
+            TvMsg::CursorOnLttCnv { x } => {
+                self.tre_cnv.crsr_x_rel = x;
+                self.ltt_cnv.crsr_x_rel = None;
+            }
+
+            TvMsg::TipOnlySearchSelChanged(state) => {
+                self.tip_only_search = state;
+                task = Some(Task::done(TvMsg::Search(self.search_string.clone())));
+            }
+
+            TvMsg::Search(s) => {
+                self.search_string = s.clone();
+                let tips_only = self.tip_only_search;
+                self.with_exclusive_sel_tre_mut(&mut |tre| {
+                    tre.filter_nodes(&s, tips_only);
+                });
+                task = self.scroll_to_current_found_edge();
+            }
+
+            TvMsg::PrevResult => {
+                self.with_exclusive_sel_tre_mut(&mut TreeState::prev_result);
+                task = self.scroll_to_current_found_edge();
+            }
+
+            TvMsg::NextResult => {
+                self.with_exclusive_sel_tre_mut(&mut TreeState::next_result);
+                task = self.scroll_to_current_found_edge();
+            }
+
+            TvMsg::AddFoundToSelection => {
+                self.with_exclusive_sel_tre_mut(&mut TreeState::add_found_to_sel);
+            }
+
+            TvMsg::RemFoundFromSelection => {
+                self.with_exclusive_sel_tre_mut(&mut TreeState::rem_found_from_sel);
+            }
+        }
+
+        match task {
+            Some(task) => task,
+            None => Task::none(),
+        }
+    }
+
+    fn set_ltt_plot_data(&mut self) {
+        if let Some(ts) = self.sel_tre() {
+            let plot_data: Vec<PlotData> =
+                ltt(ts.edges_srtd_y(), 1000).iter().map(|lttp| lttp.into()).collect();
+            self.ltt_cnv.set_plot_data(&plot_data);
+        }
+    }
+
+    pub(super) fn calc_root_len_frac(&self) -> Float { self.root_len_idx as Float / 2e2 }
+
+    pub(super) fn prev_tre_exists(&self) -> bool {
+        match self.tre_state_idx {
+            Some(idx) => idx > 0,
+            None => false,
+        }
+    }
+
+    pub(super) fn next_tre_exists(&self) -> bool {
+        match self.tre_state_idx {
+            Some(idx) => idx < self.tre_states.len() - 1,
+            None => false,
+        }
+    }
+
+    pub(super) fn sel_tre(&self) -> Option<Rc<TreeState>> {
+        if let Some(sel_tre_state_idx) = self.tre_state_idx {
+            let sel_tre_state = &self.tre_states[sel_tre_state_idx];
+            Some(sel_tre_state.clone())
+        } else {
+            None
+        }
+    }
+
+    fn sel_tre_mut(&mut self) -> Option<&mut TreeState> {
+        if let Some(sel_tre_state_idx) = self.tre_state_idx {
+            let sel_tre_state = &mut self.tre_states[sel_tre_state_idx];
+            Rc::get_mut(sel_tre_state)
+        } else {
+            None
+        }
+    }
+
+    fn sort(&mut self) {
+        let node_ord_opt = self.node_ord_opt;
+        self.with_exclusive_sel_tre_mut(&mut |tre| tre.sort(node_ord_opt));
+        self.tre_cnv.stale_tre_rect = true; // important! to make sure TreeCnv updates vis_node_idxs
+    }
+
+    fn update_sel_tre_st_idx(&mut self, idx: Option<usize>) -> bool {
+        if idx != self.tre_state_idx {
+            self.tre_state_idx = idx;
+            true
+        } else {
+            false
+        }
+    }
+
+    fn prev_tre(&mut self) -> bool {
+        let prev_idx = match self.tre_state_idx {
+            Some(idx) => {
+                if idx > 0 {
+                    Some(idx - 1)
+                } else {
+                    Some(idx)
+                }
+            }
+            None => None,
+        };
+        self.update_sel_tre_st_idx(prev_idx)
+    }
+
+    fn next_tre(&mut self) -> bool {
+        let next_idx = match self.tre_state_idx {
+            Some(idx) => {
+                if idx < self.tre_states.len() - 1 {
+                    Some(idx + 1)
+                } else {
+                    Some(idx)
+                }
+            }
+            None => None,
+        };
+        self.update_sel_tre_st_idx(next_idx)
+    }
+
+    fn tip_count(&self) -> usize { if let Some(ts) = self.sel_tre() { ts.tip_count() } else { 1 } }
+
+    fn is_rooted(&self) -> bool {
+        if let Some(ts) = self.sel_tre() { ts.is_rooted() } else { false }
+    }
+
+    fn current_found_edge(&self) -> Option<Edge> {
+        if let Some(tre) = self.sel_tre() { tre.current_found_edge() } else { None }
+    }
+
+    fn scroll_to_current_found_edge(&mut self) -> Option<Task<TvMsg>> {
+        if let Some(edge) = self.current_found_edge() {
+            let edge = &edge.clone();
+            self.scroll_to_edge(edge)
+        } else {
+            None
         }
     }
 
@@ -140,7 +608,7 @@ impl TreeView {
                 if self.tre_cnv_w_idx <= self.tre_cnv_size_idx_min {
                     w
                 } else {
-                    let tmp = TREE_CANVAS_SIZE_DELTA * self.tre_cnv_w_idx as Float;
+                    let tmp = TREE_CNV_SIZE_DELTA * self.tre_cnv_w_idx as Float;
                     if tmp < w { w } else { tmp }
                 }
             }
@@ -148,7 +616,7 @@ impl TreeView {
                 if self.tre_cnv_z_idx <= self.tre_cnv_size_idx_min {
                     w
                 } else {
-                    let tmp = TREE_CANVAS_SIZE_DELTA * self.tre_cnv_z_idx as Float;
+                    let tmp = TREE_CNV_SIZE_DELTA * self.tre_cnv_z_idx as Float;
                     if tmp < w { w } else { tmp }
                 }
             }
@@ -163,7 +631,7 @@ impl TreeView {
                 } else {
                     let tip_count = self.tip_count() as Float;
                     let tmp = if h / tip_count > ONE {
-                        TREE_CANVAS_SIZE_DELTA * self.tre_cnv_h_idx as Float
+                        TREE_CNV_SIZE_DELTA * self.tre_cnv_h_idx as Float
                     } else {
                         tip_count * self.tre_cnv_h_idx as Float
                     };
@@ -174,7 +642,7 @@ impl TreeView {
                 if self.tre_cnv_z_idx <= self.tre_cnv_size_idx_min {
                     h
                 } else {
-                    let tmp = TREE_CANVAS_SIZE_DELTA * self.tre_cnv_z_idx as Float;
+                    let tmp = TREE_CNV_SIZE_DELTA * self.tre_cnv_z_idx as Float;
                     if tmp < h { h } else { tmp }
                 }
             }
@@ -216,10 +684,10 @@ impl TreeView {
         match self.tre_cnv.tre_sty {
             TreSty::PhyGrm => {
                 if self.tre_cnv_w_idx == self.tre_cnv_size_idx_min {
-                    self.tre_cnv.vis_x_mid_rel = ZRO;
+                    self.tre_cnv.vis_x_mid_rel = ZERO;
                 }
                 if self.tre_cnv_h_idx == self.tre_cnv_size_idx_min {
-                    self.tre_cnv.vis_y_mid_rel = ZRO;
+                    self.tre_cnv.vis_y_mid_rel = ZERO;
                 }
             }
             TreSty::Fan => {
@@ -236,7 +704,7 @@ impl TreeView {
         let mut x = w * self.tre_cnv.vis_x_mid_rel;
         if self.tre_cnv.vis_x1 == w {
             x += self.tre_scr_w / TWO
-        } else if self.tre_cnv.vis_x0 == ZRO {
+        } else if self.tre_cnv.vis_x0 == ZERO {
             x -= self.tre_scr_w / TWO
         }
         self.scroll_tre_cnv(x, self.tre_cnv.vis_y_mid)
@@ -247,7 +715,7 @@ impl TreeView {
         let mut y = h * self.tre_cnv.vis_y_mid_rel;
         if self.tre_cnv.vis_y1 == h {
             y += self.tre_scr_h / TWO
-        } else if self.tre_cnv.vis_y0 == ZRO {
+        } else if self.tre_cnv.vis_y0 == ZERO {
             y -= self.tre_scr_h / TWO
         }
         self.scroll_tre_cnv(self.tre_cnv.vis_x_mid, y)
@@ -261,8 +729,8 @@ impl TreeView {
     }
 
     fn scroll_tre_cnv(&self, x: Float, y: Float) -> Option<Task<TvMsg>> {
-        let x = (x - self.tre_scr_w / TWO).max(ZRO);
-        let y = (y - self.tre_scr_h / TWO).max(ZRO);
+        let x = (x - self.tre_scr_w / TWO).max(ZERO);
+        let y = (y - self.tre_scr_h / TWO).max(ZERO);
         let task1 = scroll_to(self.tre_scr_id, AbsoluteOffset { x, y });
         if !self.ltt_cnv_needs_to_be_scrolled {
             Some(task1)
@@ -276,20 +744,20 @@ impl TreeView {
         let y = match receiver_id {
             id if id == self.ltt_scr_id => self.ltt_cnv.vis_y0,
             id if id == self.tre_scr_id => self.tre_cnv.vis_y0,
-            _ => ZRO,
+            _ => ZERO,
         };
         Some(scroll_to(receiver_id, AbsoluteOffset { x, y }))
     }
 
     fn update_tre_vs(&mut self) {
-        self.tre_cnv.tre_vs =
+        let tre_vs =
             RectVals::wh(self.calc_tre_cnv_w(self.tre_scr_w), self.calc_tre_cnv_h(self.tre_scr_h))
                 .padded(
                     self.tre_cnv.padd_l, self.tre_cnv.padd_r, self.tre_cnv.padd_t,
                     self.tre_cnv.padd_b,
                 );
 
-        let mut tip_w: Float = ZRO;
+        let mut tip_w: Float = ZERO;
 
         if let Some(sel_tre) = self.sel_tre()
             && self.tre_cnv.draw_labs_tip
@@ -297,17 +765,14 @@ impl TreeView {
         {
             tip_w = cnv_tree::calc_tip_w(
                 self.tre_cnv.tre_sty,
-                self.tre_cnv.tre_vs,
+                tre_vs,
                 sel_tre.edges_tip_tallest(),
                 self.tre_cnv.lab_offset_tip,
                 self.tre_cnv.text_w_tip.as_mut().unwrap(),
             );
         }
 
-        self.tre_cnv.tre_vs = cnv_tree::calc_tre_vs(
-            tip_w, self.tre_cnv.tre_vs, self.tre_cnv.tre_sty, self.tre_cnv.lab_offset_brnch,
-            self.tre_cnv.lab_size_max,
-        );
+        self.tre_cnv.tre_vs = self.tre_cnv.calc_tre_vs(tip_w, tre_vs);
     }
 
     fn update_vis_x(&mut self) {
@@ -315,7 +780,7 @@ impl TreeView {
         let cnv_w = self.calc_tre_cnv_w(scr_w);
         let vis_x_mid = cnv_w * self.tre_cnv.vis_x_mid_rel;
         self.tre_cnv.vis_x_mid = vis_x_mid;
-        self.tre_cnv.vis_x0 = (vis_x_mid - scr_w / TWO).min(cnv_w - scr_w).max(ZRO);
+        self.tre_cnv.vis_x0 = (vis_x_mid - scr_w / TWO).min(cnv_w - scr_w).max(ZERO);
         self.tre_cnv.vis_x1 = (vis_x_mid + scr_w / TWO).max(scr_w).min(cnv_w);
     }
 
@@ -324,7 +789,7 @@ impl TreeView {
         let cnv_h = self.calc_tre_cnv_h(scr_h);
         let vis_y_mid = cnv_h * self.tre_cnv.vis_y_mid_rel;
         self.tre_cnv.vis_y_mid = vis_y_mid;
-        self.tre_cnv.vis_y0 = (vis_y_mid - scr_h / TWO).min(cnv_h - scr_h).max(ZRO);
+        self.tre_cnv.vis_y0 = (vis_y_mid - scr_h / TWO).min(cnv_h - scr_h).max(ZERO);
         self.tre_cnv.vis_y1 = (vis_y_mid + scr_h / TWO).max(scr_h).min(cnv_h);
     }
 
@@ -333,9 +798,9 @@ impl TreeView {
         let scr_h = self.tre_scr_h;
         let cnv_w = self.calc_tre_cnv_w(scr_w);
         let cnv_h = self.calc_tre_cnv_h(scr_h);
-        self.tre_cnv.vis_x0 = (pt.x - scr_w / TWO).min(cnv_w - scr_w).max(ZRO);
+        self.tre_cnv.vis_x0 = (pt.x - scr_w / TWO).min(cnv_w - scr_w).max(ZERO);
         self.tre_cnv.vis_x1 = (pt.x + scr_w / TWO).max(scr_w).min(cnv_w);
-        self.tre_cnv.vis_y0 = (pt.y - scr_h / TWO).min(cnv_h - scr_h).max(ZRO);
+        self.tre_cnv.vis_y0 = (pt.y - scr_h / TWO).min(cnv_h - scr_h).max(ZERO);
         self.tre_cnv.vis_y1 = (pt.y + scr_h / TWO).max(scr_h).min(cnv_h);
     }
 
@@ -343,7 +808,7 @@ impl TreeView {
 
     fn scroll_to_edge(&mut self, edge: &Edge) -> Option<Task<TvMsg>> {
         self.update_tre_vs(); // this should not be done every time "scroll_to_edge" is called.
-        let mut root_len: Float = ZRO;
+        let mut root_len: Float = ZERO;
         let pt: Point = match self.tre_cnv.tre_sty {
             TreSty::PhyGrm => {
                 if self.is_rooted() {
@@ -457,473 +922,24 @@ impl TreeView {
         self.tre_cnv.tree_state = self.sel_tre();
     }
 
-    pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
-        let mut task: Option<Task<TvMsg>> = None;
-        self.tre_cnv.stale_tre_rect = false;
-        match tv_msg {
-            TvMsg::TreCnvScrolledOrResized(vp) => {
-                // tree canvas scrollable was resized ----------------------------------------------
-                if vp.bounds().width != self.tre_scr_w || vp.bounds().height != self.tre_scr_h {
-                    self.tre_scr_w = vp.bounds().width;
-                    self.tre_scr_h = vp.bounds().height;
-                } // -------------------------------------------------------------------------------
+    pub fn are_any_trees_loaded(&self) -> bool { !self.tre_states.is_empty() }
 
-                if self.keep_scroll_position_requested {
-                    task = self.scroll_tre_cnv(self.tre_cnv.vis_x_mid, self.tre_cnv.vis_y_mid);
-                    self.tre_cnv_scrolled = true;
-                    self.keep_scroll_position_requested = false;
-                }
-
-                self.tre_cnv.vis_x_mid = vp.absolute_offset().x + vp.bounds().width / TWO;
-                self.tre_cnv.vis_y_mid = vp.absolute_offset().y + vp.bounds().height / TWO;
-                self.update_rel_scrl_pos();
-                self.update_vis_x();
-                self.update_vis_y();
-
-                if task.is_none() && self.tre_cnv.tre_sty == TreSty::PhyGrm {
-                    if self.tre_cnv_scrolled && self.tre_cnv.vis_x0 != self.ltt_cnv.vis_x0 {
-                        self.ltt_cnv_scrolled = false;
-                        task = self.scroll_cnv_to_x(self.ltt_scr_id, self.tre_cnv.vis_x0);
-                    } else {
-                        self.tre_cnv_scrolled = true;
-                    }
-                }
-
-                self.update_draw_labs_allowed();
-                self.clear_cache_sel_nodes();
-                self.clear_cache_filtered_nodes();
-            }
-
-            TvMsg::LttCnvScrolledOrResized(vp) => {
-                if self.ltt_cnv.vis_x0 != vp.absolute_offset().x {
-                    self.ltt_cnv.vis_x0 = vp.absolute_offset().x;
-                    self.ltt_cnv.vis_y0 = vp.absolute_offset().y;
-                    if self.tre_cnv.tre_sty == TreSty::PhyGrm {
-                        if self.ltt_cnv_scrolled && self.tre_cnv.vis_x0 != self.ltt_cnv.vis_x0 {
-                            self.tre_cnv_scrolled = false;
-                            task = self.scroll_cnv_to_x(self.tre_scr_id, self.ltt_cnv.vis_x0);
-                        } else {
-                            self.ltt_cnv_scrolled = true;
-                        }
-                    }
-                }
-            }
-
-            TvMsg::LttVisChanged(show_ltt) => {
-                self.show_ltt = show_ltt;
-                self.show_hide_ltt();
-                let x = (self.tre_cnv.vis_x_mid - self.tre_scr_w / TWO).max(ZRO);
-                task =
-                    Some(scroll_to(self.ltt_scr_id, AbsoluteOffset { x, y: self.ltt_cnv.vis_y0 }));
-            }
-
-            TvMsg::PrevTre => {
-                self.prev_tre();
-                self.sort();
-                self.set_ltt_plot_data();
-                self.update_draw_labs_allowed();
-            }
-
-            TvMsg::NextTre => {
-                self.next_tre();
-                self.sort();
-                self.set_ltt_plot_data();
-                self.update_draw_labs_allowed();
-            }
-
-            TvMsg::NodeOrdOptChanged(node_ord_opt) => {
-                self.node_ord_opt = node_ord_opt;
-                self.sort();
-                task = self.scroll_to_current_found_edge();
-            }
-
-            TvMsg::Unroot => {
-                let mut yanked_node: Option<Node> = None;
-                self.with_exclusive_sel_tre_mut(&mut |tre| yanked_node = tre.unroot());
-                if yanked_node.is_some() {
-                    self.sort()
-                }
-                self.set_ltt_plot_data();
-                self.update_draw_labs_allowed();
-                task = self.scroll_to_current_found_edge();
-                self.tre_cnv.clear_cache_legend();
-            }
-
-            TvMsg::Root(node_id) => {
-                let mut node_id_new_root: Option<NodeId> = None;
-                self.with_exclusive_sel_tre_mut(&mut |tre| node_id_new_root = tre.root(&node_id));
-                if node_id_new_root.is_some() {
-                    self.sort()
-                }
-                self.set_ltt_plot_data();
-                self.update_draw_labs_allowed();
-                task = self.scroll_to_current_found_edge();
-                self.tre_cnv.clear_cache_legend();
-            }
-
-            TvMsg::TreesLoaded(trees) => {
-                self.tre_cnv.drawing_enabled = false;
-                self.tre_states = Vec::new();
-
-                let mut i: usize = 1;
-                for tre in trees {
-                    let mut ts = TreeState::new(i);
-                    ts.init(tre);
-                    self.tre_states.push(Rc::new(ts));
-                    i += 1;
-                }
-
-                if !self.tre_states.is_empty() {
-                    self.tre_state_idx = Some(0);
-                } else {
-                    self.tre_state_idx = None;
-                }
-
-                if let Some(_tre_pane_id) = &self.tre_pane_id {
-                } else {
-                    let (pane_grid, tre_pane_id) = PgState::new(TvPane::Tree);
-                    self.pane_grid = Some(pane_grid);
-                    self.tre_pane_id = Some(tre_pane_id)
-                }
-                self.sort();
-                self.set_ltt_plot_data();
-
-                if self.is_new {
-                    self.tre_cnv.opn_angle = angle_from_idx(self.opn_angle_idx);
-                    self.tre_cnv.rot_angle = angle_from_idx(self.rot_angle_idx);
-
-                    let lab_size_min = self.tre_cnv.lab_size_min;
-                    self.tre_cnv.lab_size_tip = lab_size_min * self.lab_size_idx_tip as Float;
-                    self.tre_cnv.lab_size_int = lab_size_min * self.lab_size_idx_int as Float;
-                    self.tre_cnv.lab_size_brnch = lab_size_min * self.lab_size_idx_brnch as Float;
-                    self.tre_cnv.lab_size_max = lab_size_min * self.lab_size_idx_max as Float;
-
-                    self.tre_cnv.lab_offset_tip = self.tre_cnv.lab_size_tip / 3e0;
-                    self.tre_cnv.lab_offset_int = self.tre_cnv.lab_size_int / 3e0;
-                    self.tre_cnv.lab_offset_brnch = -self.tre_cnv.lab_size_brnch / 3e0;
-
-                    self.show_hide_ltt();
-                    self.ltt_cnv.draw_cursor_line = self.tre_cnv.draw_cursor_line;
-                    self.update_tree_rect_padding();
-                    self.is_new = false;
-                }
-
-                self.update_draw_labs_allowed();
-                self.clear_caches_all();
-                self.tre_cnv.drawing_enabled = true;
-            }
-
-            TvMsg::CnvWidthSelChanged(idx) => {
-                self.update_rel_scrl_pos();
-                self.tre_cnv_w_idx = idx;
-                self.ltt_cnv_needs_to_be_scrolled = true;
-                self.update_tree_rect_padding();
-                self.update_vis_x();
-                self.update_draw_labs_allowed();
-                task = self.scroll_to_current_found_edge();
-                if task.is_none() {
-                    task = self.keep_scroll_pos_w();
-                }
-                self.tre_cnv.stale_tre_rect = true;
-                self.clear_cache_edge();
-            }
-
-            TvMsg::CnvHeightSelChanged(idx) => {
-                self.update_rel_scrl_pos();
-                self.tre_cnv_h_idx = idx;
-                self.update_tree_rect_padding();
-                self.update_vis_y();
-                self.update_draw_labs_allowed();
-                task = self.scroll_to_current_found_edge();
-                if task.is_none() {
-                    task = self.keep_scroll_pos_h();
-                }
-                self.tre_cnv.stale_tre_rect = true;
-                self.clear_cache_edge();
-            }
-
-            TvMsg::CnvZoomSelChanged(idx) => {
-                self.update_rel_scrl_pos();
-                self.tre_cnv_z_idx = idx;
-                self.update_tree_rect_padding();
-                self.update_vis_x();
-                self.update_vis_y();
-                self.update_draw_labs_allowed();
-                task = self.scroll_to_current_found_edge();
-                if task.is_none() {
-                    task = self.keep_scroll_pos_z();
-                }
-                self.tre_cnv.stale_tre_rect = true;
-                self.clear_cache_edge();
-            }
-
-            TvMsg::TreStyOptChanged(tre_sty_opt) => {
-                self.tre_cnv.tre_sty = tre_sty_opt;
-                self.update_rel_scrl_pos();
-                self.update_tree_rect_padding();
-                self.update_draw_labs_allowed();
-                task = self.scroll_to_current_found_edge();
-                self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
-            }
-
-            TvMsg::TipLabVisChanged(state) => {
-                self.tre_cnv.draw_labs_tip = state;
-                self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
-            }
-
-            TvMsg::TipLabSizeChanged(idx) => {
-                self.lab_size_idx_tip = idx;
-                self.tre_cnv.lab_size_tip = self.tre_cnv.lab_size_min * idx as Float;
-                self.tre_cnv.lab_offset_tip = self.tre_cnv.lab_size_tip / 3e0;
-                // -------------------------------------------------------------
-                if let Some(text_w_tip) = &mut self.tre_cnv.text_w_tip
-                    && text_w_tip.font_size() != self.tre_cnv.lab_size_tip
-                {
-                    text_w_tip.set_font_size(self.tre_cnv.lab_size_tip);
-                };
-                // -------------------------------------------------------------
-                self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
-            }
-
-            TvMsg::IntLabVisChanged(state) => {
-                self.tre_cnv.draw_labs_int = state;
-                self.clear_cache_lab_int();
-            }
-
-            TvMsg::IntLabSizeChanged(idx) => {
-                self.lab_size_idx_int = idx;
-                self.tre_cnv.lab_size_int = self.tre_cnv.lab_size_min * idx as Float;
-                self.tre_cnv.lab_offset_int = self.tre_cnv.lab_size_int / 3e0;
-                self.clear_cache_lab_int();
-            }
-
-            TvMsg::BrnchLabVisChanged(state) => {
-                self.tre_cnv.draw_labs_brnch = state;
-                self.clear_cache_lab_brnch();
-            }
-
-            TvMsg::BrnchLabSizeChanged(idx) => {
-                self.lab_size_idx_brnch = idx;
-                self.tre_cnv.lab_size_brnch = self.tre_cnv.lab_size_min * idx as Float;
-                self.tre_cnv.lab_offset_brnch = -self.tre_cnv.lab_size_brnch / 3e0;
-                self.clear_cache_lab_brnch();
-                self.tre_cnv.clear_cache_legend();
-            }
-
-            TvMsg::LegendVisChanged(state) => {
-                self.tre_cnv.draw_legend = state;
-            }
-
-            TvMsg::SelectDeselectNode(node_id) => {
-                self.with_exclusive_sel_tre_mut(&mut |tre| tre.select_deselect_node(&node_id));
-            }
-
-            TvMsg::OpnAngleChanged(idx) => {
-                self.opn_angle_idx = idx;
-                self.tre_cnv.opn_angle = angle_from_idx(idx);
-                task = self.scroll_to_current_found_edge();
-                self.clear_caches_all();
-            }
-
-            TvMsg::RotAngleChanged(idx) => {
-                self.rot_angle_idx = idx;
-                self.tre_cnv.rot_angle = angle_from_idx(idx);
-                task = self.scroll_to_current_found_edge();
-                self.clear_caches_all();
-            }
-
-            TvMsg::RootLenSelChanged(idx) => {
-                self.root_len_idx = idx;
-                self.tre_cnv.root_len_frac = self.root_len_idx as Float / 2e2;
-                task = self.scroll_to_current_found_edge();
-                self.clear_caches_all();
-            }
-
-            TvMsg::PaneResized(ResizeEvent { split, ratio }) => {
-                if let Some(pane_grid) = &mut self.pane_grid {
-                    pane_grid.resize(split, ratio);
-                    self.update_vis_y();
-                    self.update_draw_labs_allowed();
-                    self.clear_cache_sel_nodes();
-                    self.clear_cache_filtered_nodes();
-                }
-            }
-
-            TvMsg::SetSidebarPos(sidebar_pos) => {
-                self.sidebar_pos = sidebar_pos;
-                self.keep_scroll_position_requested = true;
-            }
-
-            TvMsg::CursorLineVisChanged(state) => {
-                self.tre_cnv.crsr_x_rel = None;
-                self.ltt_cnv.crsr_x_rel = None;
-                self.tre_cnv.draw_cursor_line = state;
-                self.ltt_cnv.draw_cursor_line = state;
-                self.tre_cnv.clear_cache_cursor_line();
-                self.ltt_cnv.clear_cache_cursor_line();
-            }
-
-            TvMsg::CursorOnTreCnv { x } => {
-                self.tre_cnv.crsr_x_rel = None;
-                self.ltt_cnv.crsr_x_rel = x;
-            }
-
-            TvMsg::CursorOnLttCnv { x } => {
-                self.tre_cnv.crsr_x_rel = x;
-                self.ltt_cnv.crsr_x_rel = None;
-            }
-
-            TvMsg::TipOnlySearchSelChanged(state) => {
-                self.tip_only_search = state;
-                task = Some(Task::done(TvMsg::Search(self.search_string.clone())));
-            }
-
-            TvMsg::Search(s) => {
-                self.search_string = s.clone();
-                let tips_only = self.tip_only_search;
-                self.with_exclusive_sel_tre_mut(&mut |tre| {
-                    tre.filter_nodes(&s, tips_only);
-                });
-                task = self.scroll_to_current_found_edge();
-            }
-
-            TvMsg::PrevResult => {
-                self.with_exclusive_sel_tre_mut(&mut TreeState::prev_result);
-                task = self.scroll_to_current_found_edge();
-            }
-
-            TvMsg::NextResult => {
-                self.with_exclusive_sel_tre_mut(&mut TreeState::next_result);
-                task = self.scroll_to_current_found_edge();
-            }
-
-            TvMsg::AddFoundToSelection => {
-                self.with_exclusive_sel_tre_mut(&mut TreeState::add_found_to_sel);
-            }
-
-            TvMsg::RemFoundFromSelection => {
-                self.with_exclusive_sel_tre_mut(&mut TreeState::rem_found_from_sel);
-            }
-        }
-
-        match task {
-            Some(task) => task,
-            None => Task::none(),
-        }
+    pub fn newick_string(&self) -> String {
+        let trees: Vec<Tree> = self.tre_states.iter().map(|ts| ts.tree().clone()).collect();
+        write_newick(&trees)
     }
 
-    fn set_ltt_plot_data(&mut self) {
-        if let Some(ts) = self.sel_tre() {
-            let plot_data: Vec<PlotData> =
-                ltt(ts.edges_srtd_y(), 1000).iter().map(|lttp| lttp.into()).collect();
-            self.ltt_cnv.set_plot_data(&plot_data);
-        }
-    }
-
-    pub(super) fn prev_tre_exists(&self) -> bool {
-        match self.tre_state_idx {
-            Some(idx) => idx > 0,
-            None => false,
-        }
-    }
-
-    pub(super) fn next_tre_exists(&self) -> bool {
-        match self.tre_state_idx {
-            Some(idx) => idx < self.tre_states.len() - 1,
-            None => false,
-        }
-    }
-
-    pub(super) fn sel_tre(&self) -> Option<Rc<TreeState>> {
-        if let Some(sel_tre_state_idx) = self.tre_state_idx {
-            let sel_tre_state = &self.tre_states[sel_tre_state_idx];
-            Some(sel_tre_state.clone())
-        } else {
-            None
-        }
-    }
-
-    fn sel_tre_mut(&mut self) -> Option<&mut TreeState> {
-        if let Some(sel_tre_state_idx) = self.tre_state_idx {
-            let sel_tre_state = &mut self.tre_states[sel_tre_state_idx];
-            Rc::get_mut(sel_tre_state)
-        } else {
-            None
-        }
-    }
-
-    fn sort(&mut self) {
-        let node_ord_opt = self.node_ord_opt;
-        self.with_exclusive_sel_tre_mut(&mut |tre| tre.sort(node_ord_opt));
-        self.tre_cnv.stale_tre_rect = true; // important! to make sure TreeCnv updates vis_node_idxs
-    }
-
-    fn update_sel_tre_st_idx(&mut self, idx: Option<usize>) -> bool {
-        if idx != self.tre_state_idx {
-            self.tre_state_idx = idx;
-            true
-        } else {
-            false
-        }
-    }
-
-    fn prev_tre(&mut self) -> bool {
-        let prev_idx = match self.tre_state_idx {
-            Some(idx) => {
-                if idx > 0 {
-                    Some(idx - 1)
-                } else {
-                    Some(idx)
-                }
-            }
-            None => None,
-        };
-        self.update_sel_tre_st_idx(prev_idx)
-    }
-
-    fn next_tre(&mut self) -> bool {
-        let next_idx = match self.tre_state_idx {
-            Some(idx) => {
-                if idx < self.tre_states.len() - 1 {
-                    Some(idx + 1)
-                } else {
-                    Some(idx)
-                }
-            }
-            None => None,
-        };
-        self.update_sel_tre_st_idx(next_idx)
-    }
-
-    fn tip_count(&self) -> usize { if let Some(ts) = self.sel_tre() { ts.tip_count() } else { 1 } }
-
-    fn is_rooted(&self) -> bool {
-        if let Some(ts) = self.sel_tre() { ts.is_rooted() } else { false }
-    }
-
-    fn has_tip_labs(&self) -> bool {
-        if let Some(ts) = self.sel_tre() { ts.has_tip_labs() } else { false }
-    }
-
-    fn current_found_edge(&self) -> Option<Edge> {
-        if let Some(tre) = self.sel_tre() { tre.current_found_edge() } else { None }
-    }
-
-    fn scroll_to_current_found_edge(&mut self) -> Option<Task<TvMsg>> {
-        if let Some(edge) = self.current_found_edge() {
-            let edge = &edge.clone();
-            self.scroll_to_edge(edge)
-        } else {
-            None
-        }
+    pub fn toggle_draw_debug(&mut self) {
+        self.tre_cnv.draw_debug = !self.tre_cnv.draw_debug;
+        self.ltt_cnv.draw_debug = !self.ltt_cnv.draw_debug;
     }
 }
 
+fn angle_from_idx(idx: u16) -> Float { (idx as Float).to_radians() }
+
 #[derive(Debug, Clone)]
 pub enum TvMsg {
+    TreeRectNoLongerStale,
     CursorLineVisChanged(bool),
     CnvWidthSelChanged(u16),
     CnvHeightSelChanged(u16),

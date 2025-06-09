@@ -26,6 +26,7 @@ impl From<&LttPoint> for PlotData {
 #[derive(Debug, Default)]
 pub(super) struct PlotCnv {
     plot_data: Vec<PlotData>,
+    pub(super) draw_debug: bool,
     pub(super) draw_cursor_line: bool,
     pub(super) crsr_x_rel: Option<Float>,
     pub(super) cache_bnds: Cache,
@@ -54,8 +55,6 @@ impl PlotCnv {
         self.clear_cache_plot();
         self.plot_data = data.to_vec();
     }
-
-    pub(super) fn clear_plot_data(&mut self) { self.plot_data.clear(); }
 }
 
 #[derive(Debug, Default)]
@@ -76,8 +75,8 @@ impl St {
         if let Some(mouse) = crsr.position_in(self.bnds) {
             let adj = mouse - self.translation;
             let crsr_x_rel = adj.x / self.plt_vs.w;
-            if (ZRO - EPS..=ONE + EPS).contains(&crsr_x_rel)
-                && (ZRO - EPS..=self.plt_vs.h + EPS).contains(&adj.y)
+            if (ZERO - EPSILON..=ONE + EPSILON).contains(&crsr_x_rel)
+                && (ZERO - EPSILON..=self.plt_vs.h + EPSILON).contains(&adj.y)
             {
                 self.cursor_tracking_point = Some(adj);
                 Some(Action::publish(TvMsg::CursorOnLttCnv { x: Some(crsr_x_rel) }))
@@ -142,7 +141,7 @@ impl Program<TvMsg> for PlotCnv {
         }
         // -----------------------------------------------------------------------------------------
         if let Some(crsr_x_rel) = self.crsr_x_rel {
-            st.cursor_tracking_point = Some(Point { x: crsr_x_rel * st.plt_vs.w, y: ZRO });
+            st.cursor_tracking_point = Some(Point { x: crsr_x_rel * st.plt_vs.w, y: ZERO });
         }
         // -----------------------------------------------------------------------------------------
         action
@@ -154,8 +153,9 @@ impl Program<TvMsg> for PlotCnv {
         let mut geoms: Vec<Geometry> = Vec::new();
         // -----------------------------------------------------------------------------------------
         let size = bnds.size();
-        #[cfg(debug_assertions)]
-        draw_bounds(self, st, rndr, bnds, &mut geoms);
+        if self.draw_debug {
+            draw_bounds(self, st, rndr, bnds, &mut geoms);
+        }
         draw_plot(self, st, rndr, size, &mut geoms);
         draw_cursor_line(self, st, rndr, size, &mut geoms);
         // -----------------------------------------------------------------------------------------
@@ -176,7 +176,7 @@ fn draw_cursor_line(plt: &PlotCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut V
         {
             f.push_transform();
             f.translate(st.translation);
-            let p0 = Point { x: p.x, y: ZRO };
+            let p0 = Point { x: p.x, y: ZERO };
             let p1 = Point { x: p.x, y: st.plt_vs.h };
             f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), STRK_CRSR_LINE);
             f.pop_transform();
@@ -188,7 +188,7 @@ fn draw_plot(plt: &PlotCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut Vec<Geom
     g.push(plt.cache_plot.draw(rndr, sz, |f| {
         let mut pb: PathBuilder = PathBuilder::new();
 
-        let mut max_count: Float = ZRO;
+        let mut max_count: Float = ZERO;
         for PlotData::Simple(Simple { x: _, y }) in &plt.plot_data {
             max_count = max_count.max(*y)
         }
