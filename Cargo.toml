@@ -79,7 +79,6 @@ rpath = false
 [workspace.dependencies]
 utils = { path = "utils" }
 treeview = { path = "treeview" }
-widget = { path = "widget" }
 num-traits = "0.2.19"
 numfmt = "1.1.1"
 objc2 = "0.6.1"
@@ -92,14 +91,12 @@ tracing-subscriber = "0.3.19"
 [workspace.dependencies.dendros]
 git = "https://github.com/karolisr/dendros.git"
 branch = "main"
-# path = "../dendros"
 default-features = false
 features = []
 
 [workspace.dependencies.muda]
 git = "https://github.com/karolisr/muda.git"
 branch = "custom"
-# path = "../muda"
 default-features = false
 features = []
 
@@ -139,7 +136,6 @@ features = []
 [workspace.dependencies.iced]
 git = "https://github.com/karolisr/iced.git"
 branch = "custom"
-# path = "../iced"
 default-features = false
 features = [
     ### Enables the "wgpu" GPU-accelerated renderer backend

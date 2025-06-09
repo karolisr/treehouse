@@ -4,12 +4,11 @@
 # rustc --print cfg
 # rustc -Ctarget-cpu=generic --print cfg
 # rustc -Ctarget-cpu=native --print cfg
-
 # RUSTFLAGS="-Ctarget-cpu=generic"
-RUSTFLAGS="-Ctarget-cpu=native"
-export RUSTFLAGS
+# RUSTFLAGS="-Ctarget-cpu=native"
+# export RUSTFLAGS
 
-cargo install cargo-bundle
+# cargo install cargo-bundle
 
 cargo fmt && \
 

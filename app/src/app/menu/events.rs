@@ -1,8 +1,6 @@
-use std::fmt::Display;
-
-use treeview::{SidebarPosition, TvMsg};
-
 use crate::app::AppMsg;
+use std::fmt::Display;
+use treeview::{SidebarPosition, TvMsg};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum AppMenuItemId {
@@ -13,14 +11,6 @@ pub enum AppMenuItemId {
     SetSideBarPositionLeft,
     SetSideBarPositionRight,
     Undefined,
-}
-
-impl From<muda::MenuItem> for AppMenuItemId {
-    fn from(value: muda::MenuItem) -> Self { value.id().0.clone().into() }
-}
-
-impl From<muda::CheckMenuItem> for AppMenuItemId {
-    fn from(value: muda::CheckMenuItem) -> Self { value.id().0.clone().into() }
 }
 
 impl From<String> for AppMenuItemId {

@@ -76,13 +76,23 @@ impl App {
 
     pub fn view(&'_ self, _: WinId) -> Element<'_, AppMsg> {
         if let Some(treeview) = &self.treeview {
-            #[cfg(debug_assertions)]
-            {
-                treeview.view().explain(iced::Color::from_rgb(1e0, 0e0, 0e0)).map(AppMsg::TvMsg)
-            }
-            #[cfg(not(debug_assertions))]
-            {
-                treeview.view().map(AppMsg::TvMsg)
+            if !treeview.any_trees_are_loaded() {
+                iced::widget::container(
+                    iced::widget::button("Open a Tree File...").on_press(AppMsg::OpenFile),
+                )
+                .width(iced::Fill)
+                .height(iced::Fill)
+                .center(iced::Fill)
+                .into()
+            } else {
+                #[cfg(debug_assertions)]
+                {
+                    treeview.view().explain(iced::Color::from_rgb(1e0, 0e0, 0e0)).map(AppMsg::TvMsg)
+                }
+                #[cfg(not(debug_assertions))]
+                {
+                    treeview.view().map(AppMsg::TvMsg)
+                }
             }
         } else {
             iced::widget::container(iced::widget::text!("App::view"))

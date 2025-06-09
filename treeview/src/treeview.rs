@@ -68,6 +68,8 @@ pub struct TreeView {
 fn angle_from_idx(idx: u16) -> Float { (idx as Float).to_radians() }
 
 impl TreeView {
+    pub fn any_trees_are_loaded(&self) -> bool { !self.tre_states.is_empty() }
+
     pub fn newick_string(&self) -> String {
         let trees: Vec<Tree> = self.tre_states.iter().map(|ts| ts.tree().clone()).collect();
         // let trees: Vec<Tree> = self.tre_states.iter().map(|ts| ts.tree_original().clone()).collect();
