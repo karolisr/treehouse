@@ -78,7 +78,7 @@ impl AppMenu {
     #[cfg(target_os = "windows")]
     pub fn init_for_hwnd(&self, hwnd: u64) {
         unsafe {
-            if let Some(menu) = &self.muda_menu {
+            if let Some(menu) = &self._muda_menu {
                 let _rslt = menu.init_for_hwnd(hwnd as isize);
             }
         };

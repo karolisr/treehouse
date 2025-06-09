@@ -351,7 +351,7 @@ impl App {
     }
 
     pub fn subscription(&self) -> Subscription<AppMsg> {
-        let mut subs: Vec<Subscription<AppMsg>> = Vec::new();
+        let mut subs: Vec<Subscription<AppMsg>> = Vec::with_capacity(3);
         #[cfg(target_os = "macos")]
         {
             subs.push(platform::os_events());
