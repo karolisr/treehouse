@@ -21,7 +21,7 @@ pub use w::canvas::{
     stroke::{LineCap, LineDash, LineJoin, Stroke as Strk},
 };
 pub use w::center;
-pub use w::checkbox;
+pub use w::checkbox::{Checkbox, Status as CheckboxStatus, Style as CheckboxStyle};
 pub use w::column as iced_col;
 pub use w::container;
 pub use w::container::{Container, Style as ContainerStyle};
@@ -44,9 +44,11 @@ pub use w::slider::{
     Handle as SliderHandle, HandleShape as SliderHandleShape, Rail as SliderRail,
     Status as SliderStatus, Style as SliderStyle,
 };
+pub use w::svg::{Handle as SvgHandle, Status as SvgStatus, Style as SvgStyle, Svg};
 pub use w::text::{Alignment as TextAlignment, LineHeight, Shaping};
+pub use w::text_input::{
+    Status as TextInputStatus, Style as TextInputStyle, TextInput, focus as focus_text_input,
+};
 pub use w::toggler::{Status as TogglerStatus, Style as TogglerStyle, Toggler};
 pub use w::vertical_space;
-pub use w::{
-    Button, Column, PaneGrid, PickList, Row, Rule, Scrollable, Slider, Space, Text, TextInput,
-};
+pub use w::{Button, Column, PaneGrid, PickList, Row, Rule, Scrollable, Slider, Space, Text};

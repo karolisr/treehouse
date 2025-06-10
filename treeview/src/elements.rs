@@ -2,22 +2,30 @@ use crate::iced::*;
 use crate::style::*;
 use crate::*;
 
-pub(crate) fn btn(lab: &'_ str, msg: Option<TvMsg>) -> Button<'_, TvMsg> {
-    let mut txt = Text::new(lab);
-    txt = txt.align_x(Horizontal::Center);
-    txt = txt.align_y(Vertical::Center);
-    let mut btn = Button::new(txt);
+fn btn(btn: Button<'_, TvMsg>, msg: Option<TvMsg>) -> Button<'_, TvMsg> {
+    let mut btn = btn;
     btn = btn.on_press_maybe(msg);
-    btn = btn.padding(PADDING / TWO);
     btn = btn.width(BTN_H);
     btn = btn.height(BTN_H);
     btn = btn.style(sty_btn);
     btn
 }
 
-pub(crate) fn btn_prev_tre<'a>(enabled: bool) -> Button<'a, TvMsg> {
-    btn(
-        "<",
+pub(crate) fn btn_txt(lab: &'_ str, msg: Option<TvMsg>) -> Button<'_, TvMsg> {
+    let mut txt = Text::new(lab);
+    txt = txt.align_x(Horizontal::Center);
+    txt = txt.align_y(Vertical::Center);
+    btn(Button::new(txt), msg).padding(ZERO)
+}
+
+pub(crate) fn btn_svg(handle: impl Into<SvgHandle>, msg: Option<TvMsg>) -> Button<'static, TvMsg> {
+    let svg = Svg::new(handle).style(sty_svg);
+    btn(Button::new(svg), msg).padding(PADDING / THREE)
+}
+
+pub(crate) fn btn_prev_tre(enabled: bool) -> Button<'static, TvMsg> {
+    btn_svg(
+        Icon::ArrowLeft,
         match enabled {
             true => Some(TvMsg::PrevTre),
             false => None,
@@ -25,9 +33,9 @@ pub(crate) fn btn_prev_tre<'a>(enabled: bool) -> Button<'a, TvMsg> {
     )
 }
 
-pub(crate) fn btn_next_tre<'a>(enabled: bool) -> Button<'a, TvMsg> {
-    btn(
-        ">",
+pub(crate) fn btn_next_tre(enabled: bool) -> Button<'static, TvMsg> {
+    btn_svg(
+        Icon::ArrowRight,
         match enabled {
             true => Some(TvMsg::NextTre),
             false => None,
@@ -36,7 +44,7 @@ pub(crate) fn btn_next_tre<'a>(enabled: bool) -> Button<'a, TvMsg> {
 }
 
 pub(crate) fn btn_root(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
-    btn("Root", {
+    btn_txt("Root", {
         if sel_tre.sel_node_ids().len() == 1 {
             let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
             match sel_tre.can_root(&node_id) {
@@ -51,7 +59,7 @@ pub(crate) fn btn_root(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
 }
 
 pub(crate) fn btn_unroot(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
-    btn(
+    btn_txt(
         "Unroot",
         match sel_tre.is_rooted() {
             true => Some(TvMsg::Unroot),
@@ -59,6 +67,17 @@ pub(crate) fn btn_unroot(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
         },
     )
     .width(BTN_H * TWO)
+}
+
+pub(crate) fn checkbox(
+    lab: &str, is_checked: bool, msg: impl Fn(bool) -> TvMsg + 'static,
+) -> Checkbox<'_, TvMsg> {
+    Checkbox::new(lab, is_checked)
+        .on_toggle(msg)
+        .size(CHECKBOX_H)
+        .spacing(PADDING)
+        .text_line_height(LINE_HEIGHT)
+        .style(sty_checkbox)
 }
 
 fn pick_list_common<'a, T: PartialEq + Display + Clone>(
@@ -140,7 +159,7 @@ pub(crate) fn scrollable_cnv_tre<'a>(
     scrollable_common(s, w, h)
 }
 
-fn scrollable_v<'a>(
+pub(crate) fn scrollable_v<'a>(
     content: impl Into<Element<'a, TvMsg>>, w: impl Into<Length>, h: impl Into<Length>,
 ) -> Scrollable<'a, TvMsg> {
     let mut s: Scrollable<TvMsg> = Scrollable::new(content);
@@ -173,7 +192,7 @@ where
         c = c.push(lab);
         c = c.push(slider);
         c = c.align_x(Horizontal::Center);
-        c = c.spacing(SF);
+        c = c.spacing(ZERO);
         c.into()
     } else {
         slider.into()
@@ -192,7 +211,7 @@ fn toggler(label: &'_ str, value: bool) -> Toggler<'_, TvMsg> {
     tglr = tglr.size(TOGGLER_H);
     tglr = tglr.label(label);
     tglr = tglr.text_size(TXT_SIZE);
-    tglr = tglr.text_line_height(TXT_LINE_HEIGHT);
+    tglr = tglr.text_line_height(LINE_HEIGHT);
     tglr = tglr.text_alignment(TextAlignment::Left);
     tglr = tglr.width(Length::Fill);
     tglr = tglr.spacing(PADDING);
@@ -244,6 +263,17 @@ pub(crate) fn toggler_legend<'a>(enabled: bool, draw_legend: bool) -> Toggler<'a
         tglr = tglr.on_toggle(TvMsg::LegendVisChanged);
     }
     tglr
+}
+
+pub(crate) fn text_input(
+    placeholder: &str, value: &str, id: &'static str, msg: impl Fn(String) -> TvMsg + 'static,
+) -> TextInput<'static, TvMsg> {
+    TextInput::new(placeholder, value)
+        .style(sty_text_input)
+        .id(id)
+        .on_input(msg)
+        .line_height(Pixels(TEXT_INPUT_H))
+        .padding(PADDING)
 }
 
 pub(super) fn txt<'a>(s: impl Into<String>) -> Text<'a> { Text::new(s.into()) }

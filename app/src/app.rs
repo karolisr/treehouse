@@ -166,6 +166,7 @@ impl App {
                         //         {
                         //             let k: &str = k.as_str();
                         //             match k {
+                        //                 "f" => Task::done(AppMsg::TvMsg(TvMsg::ToggleSearchBar)),
                         //                 _ => Task::none(),
                         //             }
                         //         }

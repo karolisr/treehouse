@@ -11,8 +11,11 @@ categories.workspace = true
 [lib]
 crate-type = ["rlib"]
 
+[build-dependencies]
+convert_case = "0.8.0"
+
 [dependencies]
-iced = { workspace = true, features = ["canvas", "lazy"] }
+iced = { workspace = true, features = ["canvas", "lazy", "svg"] }
 numfmt = { workspace = true }
 dendros = { workspace = true }
 utils = { workspace = true }

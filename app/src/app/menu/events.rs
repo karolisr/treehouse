@@ -10,6 +10,7 @@ pub enum AppMenuItemId {
     CloseWindow,
     SetSideBarPositionLeft,
     SetSideBarPositionRight,
+    ToggleSearchBar,
     Undefined,
 }
 
@@ -22,6 +23,7 @@ impl From<String> for AppMenuItemId {
             "Quit" => AppMenuItemId::Quit,
             "SetSideBarPositionLeft" => AppMenuItemId::SetSideBarPositionLeft,
             "SetSideBarPositionRight" => AppMenuItemId::SetSideBarPositionRight,
+            "ToggleSearchBar" => AppMenuItemId::ToggleSearchBar,
             _ => AppMenuItemId::Undefined,
         }
     }
@@ -44,6 +46,7 @@ impl From<&AppMenuItemId> for AppMsg {
             AppMenuItemId::SetSideBarPositionRight => {
                 AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPosition::Right))
             }
+            AppMenuItemId::ToggleSearchBar => AppMsg::TvMsg(TvMsg::ToggleSearchBar),
             _ => AppMsg::Other(Some(value.to_string())),
         }
     }

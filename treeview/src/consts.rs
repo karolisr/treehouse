@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 mod fill;
+pub(crate) mod icons;
 mod stroke;
 mod text;
 
@@ -11,9 +12,9 @@ pub(crate) use text::*;
 use crate::iced::*;
 use crate::*;
 
-pub const SF: Float = 1e0;
+pub const SF: Float = ONE;
 pub const TXT_SIZE: Float = SF * 14.0;
-pub const TXT_LINE_HEIGHT: Pixels = Pixels(TXT_SIZE + TXT_SIZE / TWO);
+pub const LINE_HEIGHT: Pixels = Pixels(TXT_SIZE + TXT_SIZE / TWO);
 
 pub(crate) const FNT_NAME: &str = "JetBrains Mono";
 pub(crate) const FNT_NAME_LAB: &str = FNT_NAME;
@@ -22,12 +23,13 @@ pub(crate) const TIP_LAB_SIZE_IDX: u16 = 12;
 pub(crate) const INTERNAL_LAB_SIZE_IDX: u16 = 12;
 pub(crate) const BRANCH_LAB_SIZE_IDX: u16 = 12;
 
-pub(crate) const WIDGET_H_UNIT: Float = TXT_LINE_HEIGHT.0 / FOUR + SF;
+pub(crate) const WIDGET_H_UNIT: Float = (LINE_HEIGHT.0 / FOUR + SF).floor();
 
-pub(crate) const BTN_H: Float = WIDGET_H_UNIT * FOUR;
+pub(crate) const BTN_H: Float = WIDGET_H_UNIT * FIVE - SF;
 pub(crate) const SLIDER_H: Float = WIDGET_H_UNIT * THREE;
 pub(crate) const TOGGLER_H: Float = WIDGET_H_UNIT * THREE;
-pub(crate) const CHECKBOX_H: Float = WIDGET_H_UNIT * TWO;
+pub(crate) const CHECKBOX_H: Float = WIDGET_H_UNIT * THREE - SF * THREE;
+pub(crate) const TEXT_INPUT_H: Float = TXT_SIZE + SF * TWO;
 
 pub(crate) const SIDE_BAR_W: Float = SF * 220e0;
 pub(crate) const TREE_CNV_SIZE_DELTA: Float = SF * 7e2;

@@ -1,6 +1,84 @@
 use crate::iced::*;
 use crate::*;
 
+pub(crate) fn sty_checkbox(theme: &Theme, status: CheckboxStatus) -> CheckboxStyle {
+    let palette = theme.extended_palette();
+
+    fn styled(
+        icon_color: Color, border_color: Color, base: ::iced::theme::palette::Pair,
+        accent: ::iced::theme::palette::Pair, is_checked: bool,
+    ) -> CheckboxStyle {
+        CheckboxStyle {
+            background: Background::Color(if is_checked { accent.color } else { base.color }),
+            icon_color,
+            border: Border {
+                radius: WIDGET_RADIUS.into(),
+                width: BORDER_W,
+                color: if is_checked { accent.color } else { border_color },
+            },
+            text_color: None,
+        }
+    }
+
+    match status {
+        CheckboxStatus::Active { is_checked } => styled(
+            palette.primary.strong.text, palette.background.strongest.color,
+            palette.background.base, palette.primary.base, is_checked,
+        ),
+        CheckboxStatus::Hovered { is_checked } => styled(
+            palette.primary.strong.text, palette.background.strongest.color,
+            palette.background.weak, palette.primary.strong, is_checked,
+        ),
+        CheckboxStatus::Disabled { is_checked } => styled(
+            palette.primary.strong.text, palette.background.weak.color, palette.background.weak,
+            palette.background.strong, is_checked,
+        ),
+    }
+}
+
+pub(crate) fn sty_text_input(theme: &Theme, status: TextInputStatus) -> TextInputStyle {
+    let pe = theme.extended_palette();
+
+    let active = TextInputStyle {
+        background: Background::Color(pe.background.base.color),
+        border: Border {
+            radius: WIDGET_RADIUS.into(),
+            width: BORDER_W,
+            color: pe.background.strongest.color,
+        },
+        icon: pe.background.weak.text,
+        placeholder: pe.background.strongest.color,
+        value: pe.background.base.text,
+        selection: pe.primary.weak.color,
+    };
+
+    match status {
+        TextInputStatus::Active => active,
+        TextInputStatus::Hovered => TextInputStyle {
+            border: Border { color: pe.background.base.text, ..active.border },
+            ..active
+        },
+        TextInputStatus::Focused { .. } => TextInputStyle {
+            border: Border { color: pe.primary.strong.color, ..active.border },
+            ..active
+        },
+        TextInputStatus::Disabled => TextInputStyle {
+            background: Background::Color(pe.background.weak.color),
+            value: active.placeholder,
+            ..active
+        },
+    }
+}
+
+pub(crate) fn sty_svg(theme: &Theme, status: SvgStatus) -> SvgStyle {
+    let pe = theme.extended_palette();
+    let color = match status {
+        SvgStatus::Idle => pe.background.base.color,
+        SvgStatus::Hovered => pe.background.base.color,
+    };
+    SvgStyle { color: Some(color) }
+}
+
 pub(crate) fn sty_cont(theme: &Theme) -> ContainerStyle {
     let pb = theme.palette();
     ContainerStyle {

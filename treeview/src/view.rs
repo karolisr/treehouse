@@ -31,7 +31,10 @@ impl TreeView {
             tool_bar_and_content_col = tool_bar_and_content_col.push(tool_bar(self, ts.clone()));
         }
 
-        tool_bar_and_content_col = tool_bar_and_content_col.push(search_bar(self, ts.clone()));
+        if self.show_search_bar {
+            tool_bar_and_content_col = tool_bar_and_content_col.push(search_bar(self, ts.clone()));
+        }
+
         tool_bar_and_content_col = tool_bar_and_content_col.push(content(self));
 
         if self.show_side_bar {
@@ -136,18 +139,24 @@ fn tool_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     tb_row = tb_row.push(
         center(
             iced_row![
+                match tv.show_search_bar {
+                    true => btn_svg(Icon::HideSearch, Some(TvMsg::ToggleSearchBar)),
+                    false => btn_svg(Icon::ShowSearch, Some(TvMsg::ToggleSearchBar)),
+                },
                 match tv.show_ltt {
-                    true => btn("H", Some(TvMsg::LttVisChanged(false))),
-                    false => btn("V", Some(TvMsg::LttVisChanged(true))),
-                }
-                .width(BTN_H),
+                    true => btn_svg(Icon::HidePlot, Some(TvMsg::LttVisChanged(false))),
+                    false => btn_svg(Icon::ShowPlot, Some(TvMsg::LttVisChanged(true))),
+                },
                 match tv.sidebar_pos {
-                    SidebarPosition::Left =>
-                        btn("R", Some(TvMsg::SetSidebarPos(SidebarPosition::Right))),
-                    SidebarPosition::Right =>
-                        btn("L", Some(TvMsg::SetSidebarPos(SidebarPosition::Left))),
+                    SidebarPosition::Left => btn_svg(
+                        Icon::SidebarRight,
+                        Some(TvMsg::SetSidebarPos(SidebarPosition::Right))
+                    ),
+                    SidebarPosition::Right => btn_svg(
+                        Icon::SidebarLeft,
+                        Some(TvMsg::SetSidebarPos(SidebarPosition::Left))
+                    ),
                 }
-                .width(BTN_H)
             ]
             .align_y(Vertical::Center)
             .spacing(ZERO),
@@ -174,28 +183,11 @@ fn search_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     let mut row1: Row<TvMsg> = Row::new();
     let mut row2: Row<TvMsg> = Row::new();
 
-    row1 = row1.push(
-        TextInput::new("Search", &tv.search_string).on_input(TvMsg::Search).padding(PADDING / TWO),
-    );
-
-    let add_rem_btn_row = iced_row![
-        btn("+", {
-            match ts.found_node_ids().is_empty() {
-                true => None,
-                false => Some(TvMsg::AddFoundToSelection),
-            }
-        }),
-        btn("-", {
-            match ts.found_node_ids().is_empty() {
-                true => None,
-                false => Some(TvMsg::RemFoundFromSelection),
-            }
-        })
-    ]
-    .align_y(Alignment::Center);
+    row1 =
+        row1.push(text_input("Search", &tv.search_string, tv.search_text_input_id, TvMsg::Search));
 
     let nxt_prv_btn_row = iced_row![
-        btn("<", {
+        btn_svg(Icon::ArrowLeft, {
             match ts.found_edge_idxs().is_empty() {
                 true => None,
                 false => {
@@ -207,7 +199,7 @@ fn search_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
                 }
             }
         }),
-        btn(">", {
+        btn_svg(Icon::ArrowRight, {
             match ts.found_edge_idxs().is_empty() {
                 true => None,
                 false => {
@@ -222,19 +214,28 @@ fn search_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     ]
     .align_y(Alignment::Center);
 
-    row1 = row1.push(add_rem_btn_row);
-    row1 = row1.push(nxt_prv_btn_row);
-    row2 = row2.push(
-        checkbox("Tips Only", tv.tip_only_search)
-            .on_toggle(TvMsg::TipOnlySearchSelChanged)
-            .size(CHECKBOX_H)
-            .spacing(PADDING)
-            .text_size(TXT_SIZE)
-            .text_line_height(TXT_LINE_HEIGHT),
-    );
+    let add_rem_btn_row = iced_row![
+        btn_svg(Icon::AddToSelection, {
+            match ts.found_node_ids().is_empty() {
+                true => None,
+                false => Some(TvMsg::AddFoundToSelection),
+            }
+        }),
+        btn_svg(Icon::RemoveFromSelection, {
+            match ts.found_node_ids().is_empty() {
+                true => None,
+                false => Some(TvMsg::RemFoundFromSelection),
+            }
+        })
+    ]
+    .align_y(Alignment::Center);
 
-    row1 = row1.spacing(PADDING).align_y(Vertical::Center);
-    row2 = row2.spacing(PADDING).align_y(Vertical::Center);
+    row1 = row1.push(nxt_prv_btn_row);
+    row1 = row1.push(add_rem_btn_row);
+    row2 = row2.push(checkbox("Tips Only", tv.tip_only_search, TvMsg::TipOnlySearchSelChanged));
+
+    row1 = row1.spacing(PADDING).height(Length::Shrink).align_y(Vertical::Center);
+    row2 = row2.spacing(PADDING).height(Length::Shrink).align_y(Vertical::Center);
 
     main_col = main_col.push(row1);
     main_col = main_col.push(row2);

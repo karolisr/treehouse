@@ -50,7 +50,7 @@ impl Default for St {
             vis_nodes: Vec::new(),
             filtered_nodes: Vec::new(),
             selected_nodes: Vec::new(),
-            node_radius: SF * 5e0,
+            node_radius: SF * THREE,
             root_len: ZERO,
             rotation: ZERO,
             translation: Vector { x: ZERO, y: ZERO },
@@ -93,7 +93,7 @@ impl St {
                 })
                 .cloned();
             if let Some(closest_node) = closest_node
-                && mouse.distance(closest_node.points.p1) <= self.node_radius + SF * TWO * TWO
+                && mouse.distance(closest_node.points.p1) <= self.node_radius + SF * FIVE
             {
                 rv = Some(closest_node);
             }

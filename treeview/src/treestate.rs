@@ -100,6 +100,13 @@ impl TreeState {
         self.clear_cache_sel_nodes();
     }
 
+    pub(super) fn clear_filter_results(&mut self) {
+        self.found_node_ids.clear();
+        self.found_edge_idxs.clear();
+        self.clear_cache_filtered_nodes();
+        self.vec_idx_to_found_edge_idxs = 0;
+    }
+
     pub(super) fn filter_nodes(&mut self, query: &str, tips_only: bool) -> &Vec<usize> {
         self.found_node_ids.clear();
         self.found_edge_idxs.clear();

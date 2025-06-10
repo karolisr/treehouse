@@ -17,6 +17,7 @@ pub struct TreeView {
     // -------------------------------------------------------------------
     pub(super) show_tool_bar: bool,
     pub(super) show_side_bar: bool,
+    pub(super) show_search_bar: bool,
     // -------------------------------------------------------------------
     pub(super) sidebar_pos: SidebarPosition,
     // -------------------------------------------------------------------
@@ -48,6 +49,7 @@ pub struct TreeView {
     // -------------------------------------------------------------------
     pub(super) ltt_scr_id: &'static str,
     pub(super) tre_scr_id: &'static str,
+    pub(super) search_text_input_id: &'static str,
     // -------------------------------------------------------------------
     keep_scroll_position_requested: bool,
     // -------------------------------------------------------------------
@@ -73,6 +75,7 @@ impl TreeView {
             show_ltt: false,
             show_tool_bar: true,
             show_side_bar: true,
+            show_search_bar: false,
             // -----------------------------------------------------------
             node_ord_opt: NodeOrd::Ascending,
             // -----------------------------------------------------------
@@ -91,7 +94,7 @@ impl TreeView {
             lab_size_idx_max: 22,
             // -----------------------------------------------------------
             root_len_idx_min: 0,
-            root_len_idx: 5,
+            root_len_idx: 10,
             root_len_idx_max: 100,
             // -----------------------------------------------------------
             tre_cnv_size_idx_min: 1,
@@ -102,6 +105,7 @@ impl TreeView {
             // -----------------------------------------------------------
             tre_scr_id: "tre",
             ltt_scr_id: "ltt",
+            search_text_input_id: "srch",
             // -----------------------------------------------------------
             is_new: true,
             // -----------------------------------------------------------
@@ -270,9 +274,9 @@ impl TreeView {
                     self.tre_cnv.lab_size_brnch = lab_size_min * self.lab_size_idx_brnch as Float;
                     self.tre_cnv.lab_size_max = lab_size_min * self.lab_size_idx_max as Float;
 
-                    self.tre_cnv.lab_offset_tip = self.tre_cnv.lab_size_tip / 3e0;
-                    self.tre_cnv.lab_offset_int = self.tre_cnv.lab_size_int / 3e0;
-                    self.tre_cnv.lab_offset_brnch = -self.tre_cnv.lab_size_brnch / 3e0;
+                    self.tre_cnv.lab_offset_tip = SF * 8e0;
+                    self.tre_cnv.lab_offset_int = SF * 8e0;
+                    self.tre_cnv.lab_offset_brnch = -self.tre_cnv.lab_size_brnch / THREE;
 
                     self.tre_cnv.root_len_frac = self.calc_root_len_frac();
 
@@ -358,7 +362,8 @@ impl TreeView {
             TvMsg::TipLabSizeChanged(idx) => {
                 self.lab_size_idx_tip = idx;
                 self.tre_cnv.lab_size_tip = self.tre_cnv.lab_size_min * idx as Float;
-                self.tre_cnv.lab_offset_tip = self.tre_cnv.lab_size_tip / 3e0;
+                // self.tre_cnv.lab_offset_tip = self.tre_cnv.lab_size_tip / THREE;
+                self.tre_cnv.lab_offset_tip = SF * 8e0;
                 // -------------------------------------------------------------
                 if let Some(text_w_tip) = &mut self.tre_cnv.text_w_tip
                     && text_w_tip.font_size() != self.tre_cnv.lab_size_tip
@@ -378,7 +383,8 @@ impl TreeView {
             TvMsg::IntLabSizeChanged(idx) => {
                 self.lab_size_idx_int = idx;
                 self.tre_cnv.lab_size_int = self.tre_cnv.lab_size_min * idx as Float;
-                self.tre_cnv.lab_offset_int = self.tre_cnv.lab_size_int / 3e0;
+                // self.tre_cnv.lab_offset_int = self.tre_cnv.lab_size_int / THREE;
+                self.tre_cnv.lab_offset_int = SF * 8e0;
                 self.clear_cache_lab_int();
             }
 
@@ -391,7 +397,7 @@ impl TreeView {
             TvMsg::BrnchLabSizeChanged(idx) => {
                 self.lab_size_idx_brnch = idx;
                 self.tre_cnv.lab_size_brnch = self.tre_cnv.lab_size_min * idx as Float;
-                self.tre_cnv.lab_offset_brnch = -self.tre_cnv.lab_size_brnch / 3e0;
+                self.tre_cnv.lab_offset_brnch = -self.tre_cnv.lab_size_brnch / THREE;
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_all();
             }
@@ -457,6 +463,21 @@ impl TreeView {
             TvMsg::CursorOnLttCnv { x } => {
                 self.tre_cnv.crsr_x_rel = x;
                 self.ltt_cnv.crsr_x_rel = None;
+            }
+
+            TvMsg::ToggleSearchBar => {
+                self.show_search_bar = !self.show_search_bar;
+                if self.show_search_bar {
+                    task = Some(
+                        Task::done(TvMsg::Search(self.search_string.clone()))
+                            .chain(focus_text_input(self.search_text_input_id)),
+                    );
+                } else {
+                    self.with_exclusive_sel_tre_mut(&mut |tre| {
+                        tre.clear_filter_results();
+                    });
+                    self.keep_scroll_position_requested = true;
+                }
             }
 
             TvMsg::TipOnlySearchSelChanged(state) => {
@@ -972,6 +993,7 @@ pub enum TvMsg {
     CursorOnTreCnv { x: Option<Float> },
     CursorOnLttCnv { x: Option<Float> },
     // -------------------------------------------
+    ToggleSearchBar,
     Search(String),
     NextResult,
     PrevResult,

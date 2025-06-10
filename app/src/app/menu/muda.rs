@@ -155,6 +155,13 @@ impl AppMenu {
             Some(Accelerator::new(Some(modifier), Code::BracketRight)),
         );
 
+        let menu_item_toggle_search_bar = MenuItem::with_id(
+            AppMenuItemId::ToggleSearchBar,
+            "Search...",
+            true,
+            Some(Accelerator::new(Some(modifier), Code::KeyF)),
+        );
+
         submenu_app.append(&menu_item_about).ok();
         submenu_app.append(&menu_item_quit).ok();
 
@@ -165,6 +172,7 @@ impl AppMenu {
         submenu_sidebar_pos.append(&menu_item_sidebar_pos_left).ok();
         submenu_sidebar_pos.append(&menu_item_sidebar_pos_right).ok();
         submenu_view.append(&submenu_sidebar_pos).ok();
+        submenu_view.append(&menu_item_toggle_search_bar).ok();
 
         #[cfg(target_os = "macos")]
         menu.append(&submenu_app).ok();
@@ -185,6 +193,10 @@ impl AppMenu {
         items.insert(
             menu_item_sidebar_pos_right.clone().into(),
             MenuItemKind::Check(menu_item_sidebar_pos_right),
+        );
+        items.insert(
+            menu_item_toggle_search_bar.clone().into(),
+            MenuItemKind::MenuItem(menu_item_toggle_search_bar),
         );
 
         (menu, items)

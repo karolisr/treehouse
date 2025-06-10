@@ -432,7 +432,7 @@ pub(super) fn draw_palette(
             [color_primary_base, color_primary_weak, color_primary_strong, color_text];
         let colors_secondary = [color_secondary_base, color_secondary_weak, color_secondary_strong];
         let colors_other = [color_success_base, color_warning_base, color_danger_base];
-        let color_rect_size = SF * 15e0;
+        let color_rect_size = TXT_SIZE;
         let palette_rect_w = TWO * PADDING + color_rect_size * 5e0;
         let palette_rect_h = TWO * PADDING + color_rect_size * 4e0;
         let palette_rect_x = st.cnv_vs.x0 + PADDING * 5e0;
