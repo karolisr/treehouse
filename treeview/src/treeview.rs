@@ -521,9 +521,8 @@ impl TreeView {
 
     fn set_ltt_plot_data(&mut self) {
         if let Some(ts) = self.sel_tre() {
-            let plot_data: Vec<PlotData> =
-                ltt(ts.edges_srtd_y(), 1000).iter().map(|lttp| lttp.into()).collect();
-            self.ltt_cnv.set_plot_data(&plot_data);
+            let plot_data: PlotData = (&ltt(ts.tre_height(), ts.edges_srtd_y(), 2500)).into();
+            self.ltt_cnv.set_plot_data(plot_data);
         }
     }
 
