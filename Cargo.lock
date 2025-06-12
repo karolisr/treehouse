@@ -550,7 +550,7 @@ checksum = "5c297a1c74b71ae29df00c3e22dd9534821d60eb9af5a0192823fa2acea70c2a"
 [[package]]
 name = "dendros"
 version = "0.0.0"
-source = "git+https://github.com/karolisr/dendros.git?branch=main#4ef994757a3771f8c64fb7d1439a069e7806725e"
+source = "git+https://github.com/karolisr/dendros.git?branch=main#b481542239338d265faab72f07f3ede4414b9758"
 dependencies = [
  "rayon",
  "slotmap",
@@ -1177,7 +1177,7 @@ checksum = "dfa686283ad6dd069f105e5ab091b04c62850d3e4cf5d67debad1933f55023df"
 [[package]]
 name = "iced"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#85a566633437dc6e7b5d331fdb5c611fa9b5f23e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
 dependencies = [
  "iced_core",
  "iced_debug",
@@ -1192,7 +1192,7 @@ dependencies = [
 [[package]]
 name = "iced_core"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#85a566633437dc6e7b5d331fdb5c611fa9b5f23e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
 dependencies = [
  "bitflags 2.9.1",
  "bytes",
@@ -1209,7 +1209,7 @@ dependencies = [
 [[package]]
 name = "iced_debug"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#85a566633437dc6e7b5d331fdb5c611fa9b5f23e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
 dependencies = [
  "iced_core",
  "iced_futures",
@@ -1219,7 +1219,7 @@ dependencies = [
 [[package]]
 name = "iced_futures"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#85a566633437dc6e7b5d331fdb5c611fa9b5f23e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
 dependencies = [
  "futures",
  "iced_core",
@@ -1232,7 +1232,7 @@ dependencies = [
 [[package]]
 name = "iced_graphics"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#85a566633437dc6e7b5d331fdb5c611fa9b5f23e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
 dependencies = [
  "bitflags 2.9.1",
  "bytemuck",
@@ -1251,7 +1251,7 @@ dependencies = [
 [[package]]
 name = "iced_program"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#85a566633437dc6e7b5d331fdb5c611fa9b5f23e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
 dependencies = [
  "iced_graphics",
  "iced_runtime",
@@ -1260,7 +1260,7 @@ dependencies = [
 [[package]]
 name = "iced_renderer"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#85a566633437dc6e7b5d331fdb5c611fa9b5f23e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
 dependencies = [
  "iced_graphics",
  "iced_tiny_skia",
@@ -1272,7 +1272,7 @@ dependencies = [
 [[package]]
 name = "iced_runtime"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#85a566633437dc6e7b5d331fdb5c611fa9b5f23e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
 dependencies = [
  "bytes",
  "iced_core",
@@ -1286,7 +1286,7 @@ dependencies = [
 [[package]]
 name = "iced_tiny_skia"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#85a566633437dc6e7b5d331fdb5c611fa9b5f23e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
 dependencies = [
  "bytemuck",
  "cosmic-text",
@@ -1303,7 +1303,7 @@ dependencies = [
 [[package]]
 name = "iced_wgpu"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#85a566633437dc6e7b5d331fdb5c611fa9b5f23e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
 dependencies = [
  "bitflags 2.9.1",
  "bytemuck",
@@ -1324,7 +1324,7 @@ dependencies = [
 [[package]]
 name = "iced_widget"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#85a566633437dc6e7b5d331fdb5c611fa9b5f23e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
 dependencies = [
  "iced_renderer",
  "iced_runtime",
@@ -1339,7 +1339,7 @@ dependencies = [
 [[package]]
 name = "iced_winit"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#85a566633437dc6e7b5d331fdb5c611fa9b5f23e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
 dependencies = [
  "iced_debug",
  "iced_program",
@@ -1483,7 +1483,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07033963ba89ebaf1584d767badaa2e8fcec21aedea6b8c0346d487d49c28667"
 dependencies = [
  "cfg-if",
- "windows-targets 0.53.1",
+ "windows-targets 0.53.2",
 ]
 
 [[package]]
@@ -1500,7 +1500,7 @@ checksum = "c0ff37bd590ca25063e35af745c343cb7a0271906fb7b37e4813e8f79f00268d"
 dependencies = [
  "bitflags 2.9.1",
  "libc",
- "redox_syscall 0.5.12",
+ "redox_syscall 0.5.13",
 ]
 
 [[package]]
@@ -1662,7 +1662,7 @@ dependencies = [
 [[package]]
 name = "muda"
 version = "0.16.1"
-source = "git+https://github.com/karolisr/muda.git?branch=custom#de9724e2e7a30df0153e95a7e1d8c2fbea892f8d"
+source = "git+https://github.com/karolisr/muda.git?branch=custom#f2205348d8196470fd179ba145c0e8d042bce6b1"
 dependencies = [
  "dpi 0.1.2",
  "futures",
@@ -2207,7 +2207,7 @@ checksum = "bc838d2a56b5b1a6c25f55575dfc605fabb63bb2365f6c2353ef9159aa69e4a5"
 dependencies = [
  "cfg-if",
  "libc",
- "redox_syscall 0.5.12",
+ "redox_syscall 0.5.13",
  "smallvec",
  "windows-targets 0.52.6",
 ]
@@ -2422,9 +2422,9 @@ dependencies = [
 
 [[package]]
 name = "redox_syscall"
-version = "0.5.12"
+version = "0.5.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "928fca9cf2aa042393a8325b9ead81d2f0df4cb12e1e24cef072922ccd99c5af"
+checksum = "0d04b7d0ee6b4a0207a0a7adb104d23ecb0b47d6beae7152d0fa34b692b29fd6"
 dependencies = [
  "bitflags 2.9.1",
 ]
@@ -2756,7 +2756,7 @@ dependencies = [
  "objc2-foundation 0.2.2",
  "objc2-quartz-core 0.2.2",
  "raw-window-handle",
- "redox_syscall 0.5.12",
+ "redox_syscall 0.5.13",
  "rustix 0.38.44",
  "tiny-xlib",
  "wasm-bindgen",
@@ -3738,9 +3738,9 @@ dependencies = [
 
 [[package]]
 name = "windows-targets"
-version = "0.53.1"
+version = "0.53.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30357ec391cde730f8fbfcdc29adc47518b06504528df977ab5af02ef23fdee9"
+checksum = "c66f69fcc9ce11da9966ddb31a40968cad001c5bedeb5c2b82ede4253ab48aef"
 dependencies = [
  "windows_aarch64_gnullvm 0.53.0",
  "windows_aarch64_msvc 0.53.0",

@@ -9,11 +9,11 @@
 # export RUSTFLAGS
 
 cargo fmt &&
-    # cargo check --profile dev &&
-    # cargo clippy --profile dev &&
-    # cargo build --profile dev &&
-    # cargo check --profile release &&
-    # cargo clippy --profile release &&
+    cargo check --profile dev &&
+    cargo clippy --profile dev &&
+    cargo build --profile dev &&
+    cargo check --profile release &&
+    cargo clippy --profile release &&
     cargo build --profile release &&
 
     # cargo install cargo-bundle

@@ -53,7 +53,7 @@ rpath = false
 # --------------------------------------------------------------------------
 [profile.release]
 debug-assertions = false
-incremental = false      # Compile your binary in smaller steps.
+incremental = true       # Compile your binary in smaller steps.
 codegen-units = 1        # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
 lto = true               # Enables link-time-optimizations. Use false for faster compile time.
 opt-level = 3            # "s" prioritizes small binary size. Use 0 for faster compile time.

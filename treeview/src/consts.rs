@@ -64,6 +64,7 @@ pub(crate) const FOUR: Float = 4e0;
 pub(crate) const FIVE: Float = 5e0;
 pub(crate) const TEN: Float = 1e1;
 
+pub(crate) const E: Float = float::consts::E;
 pub(crate) const PI: Float = float::consts::PI;
 pub(crate) const TAU: Float = float::consts::TAU;
 pub(crate) const FRAC_PI_2: Float = float::consts::FRAC_PI_2;

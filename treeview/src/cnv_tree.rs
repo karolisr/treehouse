@@ -312,7 +312,7 @@ impl Program<TvMsg> for TreeCnv {
         st.labs_int.clear();
         st.labs_brnch.clear();
         // -----------------------------------------------------------------------------------------
-        if self.draw_labs_tip && self.draw_labs_allowed {
+        if tst.has_tip_labs() && self.draw_labs_tip && self.draw_labs_allowed {
             node_labs(
                 &st.vis_nodes,
                 edges,
@@ -323,7 +323,7 @@ impl Program<TvMsg> for TreeCnv {
                 &mut st.labs_tip,
             );
         } // ---------------------------------------------------------------------------------------
-        if self.draw_labs_int && self.draw_labs_allowed {
+        if tst.has_int_labs() && self.draw_labs_int && self.draw_labs_allowed {
             node_labs(
                 &st.vis_nodes,
                 edges,
@@ -334,7 +334,7 @@ impl Program<TvMsg> for TreeCnv {
                 &mut st.labs_int,
             );
         } // ---------------------------------------------------------------------------------------
-        if self.draw_labs_brnch && self.draw_labs_allowed {
+        if tst.has_brlen() && self.draw_labs_brnch && self.draw_labs_allowed {
             node_labs(
                 &st.vis_nodes,
                 edges,

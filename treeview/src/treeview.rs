@@ -284,6 +284,9 @@ impl TreeView {
                     self.ltt_cnv.draw_cursor_line = self.tre_cnv.draw_cursor_line;
                     self.update_tree_rect_padding();
                     self.is_new = false;
+
+                    self.ltt_cnv.scale_x = AxisScaleType::Linear;
+                    self.ltt_cnv.scale_y = AxisScaleType::LogTwo;
                 }
 
                 self.update_draw_labs_allowed();
@@ -521,7 +524,7 @@ impl TreeView {
 
     fn set_ltt_plot_data(&mut self) {
         if let Some(ts) = self.sel_tre() {
-            let plot_data: PlotData = (&ltt(ts.tre_height(), ts.edges_srtd_y(), 2500)).into();
+            let plot_data = &ltt(ts.tre_height(), ts.edges_srtd_y(), 503);
             self.ltt_cnv.set_plot_data(plot_data);
         }
     }

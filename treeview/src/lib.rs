@@ -1,7 +1,7 @@
 #![feature(iter_collect_into)]
 #![feature(const_float_round_methods)]
 // -------------------------------------
-#![allow(dead_code)]
+// #![allow(dead_code)]
 // #![allow(unused_mut)]
 // #![allow(unused_imports)]
 // #![allow(unused_variables)]
@@ -36,11 +36,11 @@ pub use treeview::{SidebarPosition, TreeView, TvMsg};
 
 use std::collections::HashSet;
 use std::f32 as float;
-use std::fmt::{Display, Formatter, Result};
+use std::fmt::{Debug, Display, Formatter, Result};
 use std::ops::RangeInclusive;
 use std::rc::Rc;
 
-use cnv_plot::{PlotCnv, PlotData};
+use cnv_plot::{AxisScaleType, PlotCnv, PlotDataType};
 use cnv_tree::TreeCnv;
 use consts::*;
 use dendros::{Edge, LttPoint, Node, NodeId, Tree, TreeFloat, flatten_tree, ltt, write_newick};
