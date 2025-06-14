@@ -260,9 +260,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.26"
+version = "1.2.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "956a5e21988b87f372569b66183b78babf23ebc2e744b733e4350a752c4dafac"
+checksum = "d487aa071b5f64da6f19a3e848e3578944b726ee5a4854b82172f02aa876bfdc"
 dependencies = [
  "jobserver",
  "libc",
@@ -550,7 +550,7 @@ checksum = "5c297a1c74b71ae29df00c3e22dd9534821d60eb9af5a0192823fa2acea70c2a"
 [[package]]
 name = "dendros"
 version = "0.0.0"
-source = "git+https://github.com/karolisr/dendros.git?branch=main#b481542239338d265faab72f07f3ede4414b9758"
+source = "git+https://github.com/karolisr/dendros.git?branch=main#87b4f1a6c049bc4241c605377c9e922226874620"
 dependencies = [
  "rayon",
  "slotmap",
@@ -1177,7 +1177,7 @@ checksum = "dfa686283ad6dd069f105e5ab091b04c62850d3e4cf5d67debad1933f55023df"
 [[package]]
 name = "iced"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#c700ae159f518c571ca7cb0609ec28426a855c90"
 dependencies = [
  "iced_core",
  "iced_debug",
@@ -1192,7 +1192,7 @@ dependencies = [
 [[package]]
 name = "iced_core"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#c700ae159f518c571ca7cb0609ec28426a855c90"
 dependencies = [
  "bitflags 2.9.1",
  "bytes",
@@ -1209,7 +1209,7 @@ dependencies = [
 [[package]]
 name = "iced_debug"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#c700ae159f518c571ca7cb0609ec28426a855c90"
 dependencies = [
  "iced_core",
  "iced_futures",
@@ -1219,7 +1219,7 @@ dependencies = [
 [[package]]
 name = "iced_futures"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#c700ae159f518c571ca7cb0609ec28426a855c90"
 dependencies = [
  "futures",
  "iced_core",
@@ -1232,7 +1232,7 @@ dependencies = [
 [[package]]
 name = "iced_graphics"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#c700ae159f518c571ca7cb0609ec28426a855c90"
 dependencies = [
  "bitflags 2.9.1",
  "bytemuck",
@@ -1251,7 +1251,7 @@ dependencies = [
 [[package]]
 name = "iced_program"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#c700ae159f518c571ca7cb0609ec28426a855c90"
 dependencies = [
  "iced_graphics",
  "iced_runtime",
@@ -1260,7 +1260,7 @@ dependencies = [
 [[package]]
 name = "iced_renderer"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#c700ae159f518c571ca7cb0609ec28426a855c90"
 dependencies = [
  "iced_graphics",
  "iced_tiny_skia",
@@ -1272,7 +1272,7 @@ dependencies = [
 [[package]]
 name = "iced_runtime"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#c700ae159f518c571ca7cb0609ec28426a855c90"
 dependencies = [
  "bytes",
  "iced_core",
@@ -1286,7 +1286,7 @@ dependencies = [
 [[package]]
 name = "iced_tiny_skia"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#c700ae159f518c571ca7cb0609ec28426a855c90"
 dependencies = [
  "bytemuck",
  "cosmic-text",
@@ -1303,7 +1303,7 @@ dependencies = [
 [[package]]
 name = "iced_wgpu"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#c700ae159f518c571ca7cb0609ec28426a855c90"
 dependencies = [
  "bitflags 2.9.1",
  "bytemuck",
@@ -1324,7 +1324,7 @@ dependencies = [
 [[package]]
 name = "iced_widget"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#c700ae159f518c571ca7cb0609ec28426a855c90"
 dependencies = [
  "iced_renderer",
  "iced_runtime",
@@ -1339,7 +1339,7 @@ dependencies = [
 [[package]]
 name = "iced_winit"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#be4a97ba3ecde748729e4b683f78227a35909a5e"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#c700ae159f518c571ca7cb0609ec28426a855c90"
 dependencies = [
  "iced_debug",
  "iced_program",
@@ -1472,9 +1472,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.172"
+version = "0.2.173"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d750af042f7ef4f724306de029d18836c26c1765a54a6a3f094cbd23a7267ffa"
+checksum = "d8cfeafaffdbc32176b64fb251369d52ea9f0a8fbc6f8759edffef7b525d64bb"
 
 [[package]]
 name = "libloading"
@@ -1662,7 +1662,7 @@ dependencies = [
 [[package]]
 name = "muda"
 version = "0.16.1"
-source = "git+https://github.com/karolisr/muda.git?branch=custom#f2205348d8196470fd179ba145c0e8d042bce6b1"
+source = "git+https://github.com/karolisr/muda.git?branch=custom#fbf5f0ff887dbe248a0935666ac1d0469c9d2faf"
 dependencies = [
  "dpi 0.1.2",
  "futures",
@@ -2843,9 +2843,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.102"
+version = "2.0.103"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6397daf94fa90f058bd0fd88429dd9e5738999cca8d701813c80723add80462"
+checksum = "e4307e30089d6fd6aff212f2da3a1f9e32f3223b1f010fb09b7c95f90f3ca1e8"
 dependencies = [
  "proc-macro2",
  "quote",
