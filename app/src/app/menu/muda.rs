@@ -17,6 +17,10 @@ impl From<muda::CheckMenuItem> for AppMenuItemId {
     fn from(value: muda::CheckMenuItem) -> Self { value.id().0.clone().into() }
 }
 
+impl From<muda::Submenu> for AppMenuItemId {
+    fn from(value: muda::Submenu) -> Self { value.id().0.clone().into() }
+}
+
 #[derive(Default, Clone)]
 pub struct AppMenu {
     _muda_menu: Option<muda::Menu>,
@@ -106,7 +110,8 @@ impl AppMenu {
         let submenu_app = Submenu::with_id("sub_app", "App", true);
         let submenu_file = Submenu::with_id("sub_file", "File", true);
         let submenu_view = Submenu::with_id("sub_view", "View", true);
-        let submenu_sidebar_pos = Submenu::with_id("sub_sidebar_pos", "Sidebar Position", true);
+        let submenu_sidebar_pos =
+            Submenu::with_id(AppMenuItemId::SideBarPosition, "Sidebar Position", false);
 
         let menu_item_about =
             muda::PredefinedMenuItem::about(None, Some(muda::AboutMetadata::default()));
@@ -158,7 +163,7 @@ impl AppMenu {
         let menu_item_toggle_search_bar = MenuItem::with_id(
             AppMenuItemId::ToggleSearchBar,
             "Search...",
-            true,
+            false,
             Some(Accelerator::new(Some(modifier), Code::KeyF)),
         );
 
@@ -198,6 +203,8 @@ impl AppMenu {
             menu_item_toggle_search_bar.clone().into(),
             MenuItemKind::MenuItem(menu_item_toggle_search_bar),
         );
+        items
+            .insert(submenu_sidebar_pos.clone().into(), MenuItemKind::Submenu(submenu_sidebar_pos));
 
         (menu, items)
     }

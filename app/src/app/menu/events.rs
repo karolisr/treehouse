@@ -8,6 +8,7 @@ pub enum AppMenuItemId {
     SaveAs,
     Quit,
     CloseWindow,
+    SideBarPosition,
     SetSideBarPositionLeft,
     SetSideBarPositionRight,
     ToggleSearchBar,
@@ -21,6 +22,7 @@ impl From<String> for AppMenuItemId {
             "SaveAs" => AppMenuItemId::SaveAs,
             "CloseWindow" => AppMenuItemId::CloseWindow,
             "Quit" => AppMenuItemId::Quit,
+            "SideBarPosition" => AppMenuItemId::SideBarPosition,
             "SetSideBarPositionLeft" => AppMenuItemId::SetSideBarPositionLeft,
             "SetSideBarPositionRight" => AppMenuItemId::SetSideBarPositionRight,
             "ToggleSearchBar" => AppMenuItemId::ToggleSearchBar,
@@ -38,7 +40,7 @@ impl From<&AppMenuItemId> for AppMsg {
         match value {
             AppMenuItemId::OpenFile => AppMsg::OpenFile,
             AppMenuItemId::SaveAs => AppMsg::SaveAs,
-            AppMenuItemId::Quit => AppMsg::WinCloseRequested,
+            AppMenuItemId::Quit => AppMsg::Quit,
             AppMenuItemId::CloseWindow => AppMsg::WinCloseRequested,
             AppMenuItemId::SetSideBarPositionLeft => {
                 AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPosition::Left))

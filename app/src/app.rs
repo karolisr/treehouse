@@ -48,6 +48,7 @@ pub enum AppMsg {
     WinCloseRequested,
     WinClose,
     WinClosed,
+    Quit,
     // --------------------------------
     KeysPressed(Key, Modifiers),
     // --------------------------------
@@ -84,7 +85,7 @@ impl App {
         if let Some(treeview) = &self.treeview {
             if !treeview.are_any_trees_loaded() {
                 iced::widget::container(
-                    iced::widget::button("Open a Tree File...").on_press(AppMsg::OpenFile),
+                    iced::widget::button("Open a Tree File").on_press(AppMsg::OpenFile),
                 )
                 .width(iced::Fill)
                 .height(iced::Fill)
@@ -218,7 +219,13 @@ impl App {
                     Task::none()
                 }
             }
-            AppMsg::OpenFile => Task::future(ops::choose_file_to_open()),
+            AppMsg::OpenFile => {
+                if self.winid.is_none() {
+                    Task::done(AppMsg::WinOpen).chain(Task::done(ops::choose_file_to_open_sync()))
+                } else {
+                    Task::future(ops::choose_file_to_open())
+                }
+            }
             AppMsg::PathToOpen(path_buf_opt) => {
                 if let Some(path_buf) = path_buf_opt {
                     let file_type: FileType = match path_buf.extension() {
@@ -257,6 +264,8 @@ impl App {
                                 );
                                 if let Some(menu) = &mut self.menu {
                                     menu.enable(&AppMenuItemId::SaveAs);
+                                    menu.enable(&AppMenuItemId::SideBarPosition);
+                                    menu.enable(&AppMenuItemId::ToggleSearchBar);
                                 };
                                 Task::done(AppMsg::TvMsg(TvMsg::TreesLoaded(trees)))
                             }
@@ -358,45 +367,49 @@ impl App {
                 }
             }
 
-            AppMsg::WinOpened => Task::none()
-                .chain({
-                    #[cfg(target_os = "windows")]
-                    {
-                        if let Some(id) = self.winid {
-                            iced::window::get_raw_id::<AppMsg>(id).map(AppMsg::AddMenuForHwnd)
-                        } else {
-                            Task::none()
-                        }
-                    }
-                    #[cfg(target_os = "macos")]
-                    {
-                        Task::none()
-                    }
-                    #[cfg(target_os = "linux")]
-                    {
-                        Task::none()
-                    }
-                })
-                .chain(Task::none())
-                .chain({
-                    #[cfg(not(debug_assertions))]
-                    {
-                        Task::none()
-                    }
-                    #[cfg(debug_assertions)]
-                    {
-                        // let path_buf = PathBuf::from("tests/data/100_starting_trees.newick");
-                        let path_buf = PathBuf::from("tests/data/tree01.newick");
-                        // let path_buf = PathBuf::from("tests/data/tree02.newick");
-                        let path: &std::path::Path = &path_buf.clone().into_boxed_path();
-                        if path.exists() {
-                            Task::done(AppMsg::PathToOpen(Some(path_buf)))
-                        } else {
-                            Task::none()
-                        }
-                    }
-                }),
+            AppMsg::WinOpened => {
+                if let Some(menu) = &mut self.menu {
+                    menu.enable(&AppMenuItemId::CloseWindow);
+                }
 
+                Task::none()
+                    .chain({
+                        #[cfg(target_os = "windows")]
+                        {
+                            if let Some(id) = self.winid {
+                                iced::window::get_raw_id::<AppMsg>(id).map(AppMsg::AddMenuForHwnd)
+                            } else {
+                                Task::none()
+                            }
+                        }
+                        #[cfg(target_os = "macos")]
+                        {
+                            Task::none()
+                        }
+                        #[cfg(target_os = "linux")]
+                        {
+                            Task::none()
+                        }
+                    })
+                    .chain({
+                        #[cfg(not(debug_assertions))]
+                        {
+                            Task::none()
+                        }
+                        #[cfg(debug_assertions)]
+                        {
+                            // let path_buf = PathBuf::from("tests/data/100_starting_trees.newick");
+                            let path_buf = PathBuf::from("tests/data/tree01.newick");
+                            // let path_buf = PathBuf::from("tests/data/tree02.newick");
+                            let path: &std::path::Path = &path_buf.clone().into_boxed_path();
+                            if path.exists() {
+                                Task::done(AppMsg::PathToOpen(Some(path_buf)))
+                            } else {
+                                Task::none()
+                            }
+                        }
+                    })
+            }
             AppMsg::WinCloseRequested => {
                 if self.winid.is_some() {
                     Task::done(AppMsg::WinClose)
@@ -412,11 +425,28 @@ impl App {
                     self.treeview = None;
                     close_window(window_id)
                 } else {
-                    exit()
+                    Task::none()
                 }
             }
 
-            AppMsg::WinClosed => exit(),
+            AppMsg::WinClosed => {
+                if let Some(menu) = &mut self.menu {
+                    menu.disable(&AppMenuItemId::CloseWindow);
+                    menu.disable(&AppMenuItemId::SaveAs);
+                    menu.disable(&AppMenuItemId::SideBarPosition);
+                    menu.disable(&AppMenuItemId::ToggleSearchBar);
+                }
+                #[cfg(target_os = "macos")]
+                {
+                    Task::none()
+                }
+                #[cfg(any(target_os = "windows", target_os = "linux"))]
+                {
+                    Task::done(AppMsg::Quit)
+                }
+            }
+
+            AppMsg::Quit => exit(),
 
             #[cfg(target_os = "windows")]
             AppMsg::AddMenuForHwnd(hwnd) => {
