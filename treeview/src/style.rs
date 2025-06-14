@@ -100,8 +100,8 @@ pub(crate) fn sty_pane_grid(theme: &Theme) -> PgStyle {
             background: Clr::GRN_25.into(),
             border: Border { width: BORDER_W, color: pe.primary.strong.color, radius: 0.into() },
         },
-        hovered_split: PgLine { color: pe.primary.base.color, width: BORDER_W },
-        picked_split: PgLine { color: pe.primary.strong.color, width: BORDER_W },
+        hovered_split: PgLine { color: pe.primary.base.color, width: SF * TWO },
+        picked_split: PgLine { color: pe.primary.strong.color, width: SF * TWO },
     }
 }
 
