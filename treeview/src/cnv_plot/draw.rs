@@ -25,23 +25,16 @@ pub(super) fn draw_plot(plt: &PlotCnv, st: &St, rndr: &Renderer, sz: Size, g: &m
     }));
 }
 
-fn transform_value(raw: Float, max: Float, scale: &AxisScaleType) -> Float {
-    match scale {
-        AxisScaleType::Linear => raw / max,
-        AxisScaleType::LogTwo => raw.log2() / max.log2(),
-        AxisScaleType::LogNat => raw.ln() / max.ln(),
-        AxisScaleType::LogTen => raw.log10() / max.log10(),
-    }
-}
-
 fn path_builder_plot(
     data: &PlotData, scale_x: &AxisScaleType, scale_y: &AxisScaleType, w: Float, h: Float,
 ) -> PathBuilder {
     let mut first = true;
     let mut pb: PathBuilder = PathBuilder::new();
     for plot_point in &data.plot_points {
-        let x_relative = transform_value(plot_point.x, data.x_max, scale_x);
-        let y_relative = transform_value(plot_point.y, data.y_max, scale_y);
+        let x_relative =
+            transform_value(plot_point.x, scale_x) / transform_value(data.x_max, scale_x);
+        let y_relative =
+            transform_value(plot_point.y, scale_y) / transform_value(data.y_max, scale_y);
 
         let pt = Point { x: x_relative * w, y: (ONE - y_relative) * h };
         if first {
@@ -58,16 +51,8 @@ fn calc_ticks(
     tick_count: usize, scale: &AxisScaleType, data_type: &PlotDataType, max: Float,
 ) -> Vec<Tick> {
     let mut ticks: Vec<Tick> = Vec::new();
-
-    let max_transformed = match scale {
-        AxisScaleType::Linear => max,
-        AxisScaleType::LogTwo => max.log2(),
-        AxisScaleType::LogNat => max.ln(),
-        AxisScaleType::LogTen => max.log10(),
-    };
-
+    let max_transformed = transform_value(max, scale);
     let mut tt1: Float = max_transformed * ONE / (tick_count) as Float;
-
     if *scale != AxisScaleType::Linear {
         tt1 = tt1.floor().max(ONE)
     } else if tt1 > TEN {
@@ -88,10 +73,10 @@ fn calc_ticks(
         };
 
         ticks.push(Tick {
-            relative_position: transform_value(tick, max, scale),
+            relative_position: transform_value(tick, scale) / transform_value(max, scale),
             label: match data_type {
                 PlotDataType::Continuous => format!("{tick:.2}"),
-                PlotDataType::Discrete => format!("{}", tick as usize),
+                PlotDataType::Discrete => format!("{tick:.2}",),
             },
         });
     }

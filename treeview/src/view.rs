@@ -430,6 +430,11 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
         sb_col = sb_col.push(rule_h(SF));
     }
 
+    if tv.show_ltt {
+        // sb_col = sb_col.push(pick_list_ltt_x_axis_scale_type(&tv.ltt_cnv.scale_x));
+        sb_col = sb_col.push(pick_list_ltt_y_axis_scale_type(&tv.ltt_cnv.scale_y));
+    }
+
     container(container(sb_col).clip(true))
         .style(sty_cont_side_bar)
         .padding(PADDING)

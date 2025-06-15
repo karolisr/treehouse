@@ -294,6 +294,16 @@ impl TreeView {
                 self.tre_cnv.drawing_enabled = true;
             }
 
+            TvMsg::LttXAxisScaleTypeChanged(axis_scale_type) => {
+                self.ltt_cnv.scale_x = axis_scale_type;
+                self.ltt_cnv.clear_caches_all();
+            }
+
+            TvMsg::LttYAxisScaleTypeChanged(axis_scale_type) => {
+                self.ltt_cnv.scale_y = axis_scale_type;
+                self.ltt_cnv.clear_caches_all();
+            }
+
             TvMsg::CnvWidthSelChanged(idx) => {
                 if idx != self.tre_cnv_w_idx {
                     self.update_rel_scrl_pos();
@@ -879,11 +889,11 @@ impl TreeView {
         }
     }
 
-    pub(super) fn clear_cache_lab_tip(&self) {
-        if let Some(ts) = self.sel_tre() {
-            ts.clear_cache_lab_tip()
-        }
-    }
+    // pub(super) fn clear_cache_lab_tip(&self) {
+    //     if let Some(ts) = self.sel_tre() {
+    //         ts.clear_cache_lab_tip()
+    //     }
+    // }
 
     pub(super) fn clear_cache_lab_int(&self) {
         if let Some(ts) = self.sel_tre() {
@@ -891,11 +901,11 @@ impl TreeView {
         }
     }
 
-    pub(super) fn clear_cache_lab_brnch(&self) {
-        if let Some(ts) = self.sel_tre() {
-            ts.clear_cache_lab_brnch()
-        }
-    }
+    // pub(super) fn clear_cache_lab_brnch(&self) {
+    //     if let Some(ts) = self.sel_tre() {
+    //         ts.clear_cache_lab_brnch()
+    //     }
+    // }
 
     pub(super) fn clear_cache_all_tre(&self) {
         if let Some(ts) = self.sel_tre() {
@@ -978,6 +988,8 @@ pub enum TvMsg {
     PrevTre,
     NextTre,
     NodeOrdOptChanged(NodeOrd),
+    LttXAxisScaleTypeChanged(AxisScaleType),
+    LttYAxisScaleTypeChanged(AxisScaleType),
     OpnAngleChanged(u16),
     PaneResized(ResizeEvent),
     Root(NodeId),

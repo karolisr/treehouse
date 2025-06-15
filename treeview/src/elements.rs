@@ -1,3 +1,4 @@
+use crate::cnv_plot::AXIS_SCALE_TYPE_OPTS;
 use crate::iced::*;
 use crate::style::*;
 use crate::*;
@@ -94,6 +95,30 @@ fn pick_list_common<'a, T: PartialEq + Display + Clone>(
     pl
 }
 
+// pub(crate) fn pick_list_ltt_x_axis_scale_type<'a>(
+//     axis_scale_type: &AxisScaleType,
+// ) -> Row<'a, TvMsg> {
+//     let mut pl: PickList<AxisScaleType, &[AxisScaleType], AxisScaleType, TvMsg> = PickList::new(
+//         &AXIS_SCALE_TYPE_OPTS,
+//         Some(axis_scale_type.clone()),
+//         TvMsg::LttXAxisScaleTypeChanged,
+//     );
+//     pl = pick_list_common(pl);
+//     iced_row![txt("X-Axis Scale").width(Length::FillPortion(9)), pl].align_y(Vertical::Center)
+// }
+
+pub(crate) fn pick_list_ltt_y_axis_scale_type<'a>(
+    axis_scale_type: &AxisScaleType,
+) -> Row<'a, TvMsg> {
+    let mut pl: PickList<AxisScaleType, &[AxisScaleType], AxisScaleType, TvMsg> = PickList::new(
+        &AXIS_SCALE_TYPE_OPTS,
+        Some(axis_scale_type.clone()),
+        TvMsg::LttYAxisScaleTypeChanged,
+    );
+    pl = pick_list_common(pl);
+    iced_row![txt("Y-Axis Scale").width(Length::FillPortion(9)), pl].align_y(Vertical::Center)
+}
+
 pub(crate) fn pick_list_node_ordering<'a>(node_ord: NodeOrd) -> Row<'a, TvMsg> {
     let mut pl: PickList<NodeOrd, &[NodeOrd], NodeOrd, TvMsg> =
         PickList::new(&NODE_ORD_OPTS, Some(node_ord), TvMsg::NodeOrdOptChanged);
@@ -116,11 +141,11 @@ pub(crate) fn rule_h<'a>(height: impl Into<Pixels>) -> Rule<'a, Theme> {
     r
 }
 
-pub(crate) fn rule_v<'a>(width: impl Into<Pixels>) -> Rule<'a, Theme> {
-    let mut r: Rule<'a, Theme> = Rule::vertical(width);
-    r = rule_common(r);
-    r
-}
+// pub(crate) fn rule_v<'a>(width: impl Into<Pixels>) -> Rule<'a, Theme> {
+//     let mut r: Rule<'a, Theme> = Rule::vertical(width);
+//     r = rule_common(r);
+//     r
+// }
 
 fn scrollable_common(
     scrl: Scrollable<TvMsg>, w: impl Into<Length>, h: impl Into<Length>,
@@ -159,13 +184,13 @@ pub(crate) fn scrollable_cnv_tre<'a>(
     scrollable_common(s, w, h)
 }
 
-pub(crate) fn scrollable_v<'a>(
-    content: impl Into<Element<'a, TvMsg>>, w: impl Into<Length>, h: impl Into<Length>,
-) -> Scrollable<'a, TvMsg> {
-    let mut s: Scrollable<TvMsg> = Scrollable::new(content);
-    s = s.direction(ScrollableDirection::Vertical(scroll_bar()));
-    scrollable_common(s, w, h)
-}
+// pub(crate) fn scrollable_v<'a>(
+//     content: impl Into<Element<'a, TvMsg>>, w: impl Into<Length>, h: impl Into<Length>,
+// ) -> Scrollable<'a, TvMsg> {
+//     let mut s: Scrollable<TvMsg> = Scrollable::new(content);
+//     s = s.direction(ScrollableDirection::Vertical(scroll_bar()));
+//     scrollable_common(s, w, h)
+// }
 
 pub(crate) fn slider<'a, T>(
     lab: Option<&str>, min: T, max: T, sel: T, step: T, shift_step: T,

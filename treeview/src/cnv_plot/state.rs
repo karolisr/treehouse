@@ -12,7 +12,7 @@ pub struct St {
     pub(super) plt_padd_r: Float,
     pub(super) plt_padd_t: Float,
     pub(super) plt_padd_b: Float,
-    pub(super) text_w: Option<TextWidth<'static>>,
+    // pub(super) text_w: Option<TextWidth<'static>>,
     pub(super) text_size: Float,
 }
 

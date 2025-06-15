@@ -51,6 +51,7 @@ impl PathBuilder {
         self
     }
 
+    #[allow(dead_code)]
     pub fn arc_approx_quad_bezier(mut self, a0: f32, a1: f32, center: Point, radius: f32) -> Self {
         let arc = self.arc(a0, a1, center, radius);
         arc.cast::<f64>().for_each_quadratic_bezier(&mut |curve| {
@@ -60,6 +61,7 @@ impl PathBuilder {
         self
     }
 
+    #[allow(dead_code)]
     pub fn arc_approx_cubic_bezier(mut self, a0: f32, a1: f32, center: Point, radius: f32) -> Self {
         let arc = self.arc(a0, a1, center, radius);
         arc.cast::<f64>().for_each_cubic_bezier(&mut |curve| {
@@ -87,9 +89,9 @@ pub fn stroke_rect(rect: Rectangle, stroke: Strk, f: &mut Frame) {
     f.stroke(&PathBuilder::new().rectangle(rect).build(), stroke);
 }
 
-pub fn fill_rect(rect: Rectangle, fill: CnvFill, f: &mut Frame) {
-    f.fill(&PathBuilder::new().rectangle(rect).build(), fill);
-}
+// pub fn fill_rect(rect: Rectangle, fill: CnvFill, f: &mut Frame) {
+//     f.fill(&PathBuilder::new().rectangle(rect).build(), fill);
+// }
 
 pub fn stroke_circle(point: Point, stroke: Strk, radius: Float, f: &mut Frame) {
     f.stroke(&PathBuilder::new().circle(point, radius).build(), stroke);

@@ -35,6 +35,20 @@ pub enum AxisScaleType {
     LogTen,
 }
 
+pub(super) const AXIS_SCALE_TYPE_OPTS: [AxisScaleType; 4] =
+    [AxisScaleType::Linear, AxisScaleType::LogTwo, AxisScaleType::LogNat, AxisScaleType::LogTen];
+
+impl Display for AxisScaleType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        f.write_str(match self {
+            AxisScaleType::Linear => "Linear",
+            AxisScaleType::LogTwo => "Log Base 2",
+            AxisScaleType::LogNat => "Natural Log",
+            AxisScaleType::LogTen => "Log Base 10",
+        })
+    }
+}
+
 #[derive(Debug, Default, Clone)]
 pub enum PlotDataType {
     #[default]
@@ -52,8 +66,8 @@ pub struct PlotPoint {
 pub struct PlotData {
     x_data_type: PlotDataType,
     y_data_type: PlotDataType,
-    x_min: Float,
-    y_min: Float,
+    // x_min: Float,
+    // y_min: Float,
     x_max: Float,
     y_max: Float,
     plot_points: Vec<PlotPoint>,
@@ -76,14 +90,14 @@ impl Debug for Tick {
 
 impl From<&Vec<LttPoint>> for PlotData {
     fn from(ltt_points: &Vec<LttPoint>) -> Self {
-        let mut x_min: Float = Float::MAX;
+        // let mut x_min: Float = Float::MAX;
         let mut x_max: Float = Float::MIN;
-        let mut y_min: Float = Float::MAX;
+        // let mut y_min: Float = Float::MAX;
         let mut y_max: Float = Float::MIN;
         for LttPoint { height, count } in ltt_points {
-            x_min = x_min.min(*height as Float);
+            // x_min = x_min.min(*height as Float);
             x_max = x_max.max(*height as Float);
-            y_min = y_min.min(*count as Float);
+            // y_min = y_min.min(*count as Float);
             y_max = y_max.max(*count as Float);
         }
         let mut plot_points = Vec::with_capacity(ltt_points.len());
@@ -93,9 +107,9 @@ impl From<&Vec<LttPoint>> for PlotData {
         PlotData {
             x_data_type: PlotDataType::Continuous,
             y_data_type: PlotDataType::Discrete,
-            x_min,
+            // x_min,
             x_max,
-            y_min,
+            // y_min,
             y_max,
             plot_points,
         }

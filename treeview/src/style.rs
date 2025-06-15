@@ -105,7 +105,7 @@ pub(crate) fn sty_pane_grid(theme: &Theme) -> PgStyle {
     }
 }
 
-pub(crate) fn sty_pane_titlebar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
+// pub(crate) fn sty_pane_titlebar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
 pub(crate) fn sty_pane_body(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
 
 pub(crate) fn sty_btn(theme: &Theme, status: ButtonStatus) -> ButtonStyle {

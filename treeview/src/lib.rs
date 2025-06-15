@@ -54,6 +54,15 @@ use utils::{Clr, TextWidth, text_width};
 
 pub type IndexRange = RangeInclusive<usize>;
 
+fn transform_value(raw: Float, scale: &AxisScaleType) -> Float {
+    match scale {
+        AxisScaleType::Linear => raw,
+        AxisScaleType::LogTwo => raw.log2(),
+        AxisScaleType::LogNat => raw.ln(),
+        AxisScaleType::LogTen => raw.log10(),
+    }
+}
+
 fn lab_text(txt: String, pt: iced::Point, size: Float, template: iced::CnvText) -> iced::CnvText {
     let mut text = template.clone();
     text.content = txt;
