@@ -1,4 +1,5 @@
 use super::{AxisScaleType, PlotData, St, Tick};
+use crate::cnv_utils::*;
 use crate::iced::*;
 use crate::path_utils::*;
 use crate::*;
@@ -14,7 +15,7 @@ pub(super) fn draw_plot(plt: &PlotCnv, st: &St, rndr: &Renderer, sz: Size, g: &m
 
         f.push_transform();
         f.translate(st.translation);
-        f.stroke(&pb_plot.build(), STRK_1_RED_75);
+        f.stroke(&pb_plot.build(), STRK_1_BLK);
         f.stroke(&pb_axes.build(), STRK_1_BLK);
         f.pop_transform();
 
