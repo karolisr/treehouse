@@ -437,6 +437,13 @@ impl TreeView {
                 self.clear_caches_all();
             }
 
+            TvMsg::RootVisChanged(state) => {
+                self.tre_cnv.draw_root = state;
+                self.tre_cnv.root_len_frac = self.calc_root_len_frac();
+                task = self.scroll_to_current_found_edge();
+                self.clear_caches_all();
+            }
+
             TvMsg::RootLenSelChanged(idx) => {
                 self.root_len_idx = idx;
                 self.tre_cnv.root_len_frac = self.calc_root_len_frac();
@@ -539,7 +546,9 @@ impl TreeView {
         }
     }
 
-    pub(super) fn calc_root_len_frac(&self) -> Float { self.root_len_idx as Float / 2e2 }
+    pub(super) fn calc_root_len_frac(&self) -> Float {
+        if self.tre_cnv.draw_root { self.root_len_idx as Float / 2e2 } else { ZERO }
+    }
 
     pub(super) fn prev_tre_exists(&self) -> bool {
         match self.tre_state_idx {
@@ -999,6 +1008,7 @@ pub enum TvMsg {
     SetSidebarPos(SidebarPosition),
     TreesLoaded(Vec<Tree>),
     TreStyOptChanged(TreSty),
+    RootVisChanged(bool),
     RootLenSelChanged(u16),
     LttVisChanged(bool),
     // -------------------------------------------

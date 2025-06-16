@@ -43,6 +43,7 @@ pub(super) struct TreeCnv {
     pub(super) draw_labs_int: bool,
     pub(super) draw_labs_tip: bool,
     pub(super) draw_legend: bool,
+    pub(super) draw_root: bool,
     pub(super) drawing_enabled: bool,
     // ---------------------------------------------------------------------------------------------
     pub(super) tip_labs_vis_max: usize,
@@ -80,12 +81,13 @@ impl TreeCnv {
             // -------------------------------------------------------------------------------------
             draw_debug: false,
             drawing_enabled: false,
+            draw_root: false,
             draw_labs_allowed: false,
             draw_labs_tip: false,
             draw_labs_int: false,
             draw_labs_brnch: false,
-            draw_legend: true,
-            draw_cursor_line: true,
+            draw_legend: false,
+            draw_cursor_line: false,
             // -------------------------------------------------------------------------------------
             tip_labs_vis_max: 400,
             node_labs_vis_max: 900,

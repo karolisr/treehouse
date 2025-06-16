@@ -259,7 +259,7 @@ pub(crate) fn toggler_cursor_line<'a>(
 }
 
 pub(crate) fn toggler_label_branch<'a>(enabled: bool, draw_brnch_labs: bool) -> Toggler<'a, TvMsg> {
-    let mut tglr = toggler("Branch Lengths", enabled && draw_brnch_labs);
+    let mut tglr = toggler("Branch Lengths", draw_brnch_labs);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::BrnchLabVisChanged);
     }
@@ -267,7 +267,7 @@ pub(crate) fn toggler_label_branch<'a>(enabled: bool, draw_brnch_labs: bool) -> 
 }
 
 pub(crate) fn toggler_label_int<'a>(enabled: bool, draw_int_labs: bool) -> Toggler<'a, TvMsg> {
-    let mut tglr = toggler("Internal Labels", enabled && draw_int_labs);
+    let mut tglr = toggler("Internal Labels", draw_int_labs);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::IntLabVisChanged);
     }
@@ -275,7 +275,7 @@ pub(crate) fn toggler_label_int<'a>(enabled: bool, draw_int_labs: bool) -> Toggl
 }
 
 pub(crate) fn toggler_label_tip<'a>(enabled: bool, draw_tip_labs: bool) -> Toggler<'a, TvMsg> {
-    let mut tglr = toggler("Tip Labels", enabled && draw_tip_labs);
+    let mut tglr = toggler("Tip Labels", draw_tip_labs);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::TipLabVisChanged);
     }
@@ -283,9 +283,17 @@ pub(crate) fn toggler_label_tip<'a>(enabled: bool, draw_tip_labs: bool) -> Toggl
 }
 
 pub(crate) fn toggler_legend<'a>(enabled: bool, draw_legend: bool) -> Toggler<'a, TvMsg> {
-    let mut tglr = toggler("Legend", enabled && draw_legend);
+    let mut tglr = toggler("Legend", draw_legend);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::LegendVisChanged);
+    }
+    tglr
+}
+
+pub(crate) fn toggler_root<'a>(enabled: bool, draw_root: bool) -> Toggler<'a, TvMsg> {
+    let mut tglr = toggler("Root", draw_root);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::RootVisChanged);
     }
     tglr
 }

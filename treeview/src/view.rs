@@ -351,6 +351,23 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
 
     sb_col = sb_col.push(rule_h(SF));
 
+    if ts.is_rooted() && tv.tre_cnv.draw_root {
+        sb_col = sb_col.push(iced_col![
+            toggler_root(true, tv.tre_cnv.draw_root),
+            slider(
+                None,
+                tv.root_len_idx_min,
+                tv.root_len_idx_max,
+                tv.root_len_idx,
+                1,
+                2,
+                TvMsg::RootLenSelChanged,
+            )
+        ])
+    } else {
+        sb_col = sb_col.push(toggler_root(ts.is_rooted(), tv.tre_cnv.draw_root))
+    }
+
     if ts.has_tip_labs() && tv.tre_cnv.draw_labs_tip && tv.tre_cnv.draw_labs_allowed {
         sb_col = sb_col.push(iced_col![
             toggler_label_tip(true, tv.tre_cnv.draw_labs_tip,),
@@ -416,19 +433,6 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
         true, tv.tre_cnv.draw_cursor_line, tv.tre_cnv.tre_sty
     )]);
     sb_col = sb_col.push(rule_h(SF));
-
-    if ts.is_rooted() {
-        sb_col = sb_col.push(slider(
-            Some("Root Length"),
-            tv.root_len_idx_min,
-            tv.root_len_idx_max,
-            tv.root_len_idx,
-            1,
-            2,
-            TvMsg::RootLenSelChanged,
-        ));
-        sb_col = sb_col.push(rule_h(SF));
-    }
 
     if tv.show_ltt {
         // sb_col = sb_col.push(pick_list_ltt_x_axis_scale_type(&tv.ltt_cnv.scale_x));
