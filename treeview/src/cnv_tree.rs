@@ -83,7 +83,7 @@ impl TreeCnv {
             padd_t: TREE_PADDING,
             padd_b: TREE_PADDING,
             // -------------------------------------------------------------------------------------
-            draw_debug: false,
+            draw_debug: true,
             drawing_enabled: false,
             draw_root: false,
             draw_labs_allowed: false,

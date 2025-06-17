@@ -56,11 +56,14 @@ impl TreeState {
     pub(super) fn tree_original(&self) -> &Tree { &self.t_orig }
 
     pub(super) fn add_clade_label(
-        &mut self, node_id: NodeId, color: Color, label: impl Into<String>,
-        label_type: CladeLabelType,
+        &mut self,
+        node_id: NodeId,
+        color: Color,
+        // label: impl Into<String>,
+        // label_type: CladeLabelType,
     ) {
-        let clade_label: CladeLabel =
-            CladeLabel { node_id, color, label: label.into(), label_type };
+        let clade_label: CladeLabel = CladeLabel { color };
+        // CladeLabel { node_id, color, label: label.into(), label_type };
         self.labeled_clades.insert(node_id, clade_label);
     }
 

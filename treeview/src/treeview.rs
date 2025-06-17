@@ -128,9 +128,9 @@ impl TreeView {
         }
     }
 
-    pub(super) fn clade_has_label(&self, node_id: &NodeId) -> bool {
-        if let Some(tree) = self.sel_tre() { tree.clade_has_label(node_id) } else { false }
-    }
+    // pub(super) fn clade_has_label(&self, node_id: &NodeId) -> bool {
+    //     if let Some(tree) = self.sel_tre() { tree.clade_has_label(node_id) } else { false }
+    // }
 
     pub(super) fn tree_has_clade_labels(&self) -> bool {
         if let Some(tree) = self.sel_tre() { !tree.labeled_clades().is_empty() } else { false }
@@ -141,7 +141,11 @@ impl TreeView {
         match tv_msg {
             TvMsg::LabelClade(node_id) => {
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
-                    tre.add_clade_label(node_id, Clr::GRN_50, node_id, CladeLabelType::Outside)
+                    tre.add_clade_label(
+                        node_id,
+                        Clr::GRN_50,
+                        // node_id, CladeLabelType::Outside
+                    )
                 });
                 self.tre_cnv.has_clade_labels = self.tree_has_clade_labels();
                 self.tre_cnv.stale_tre_rect = true;

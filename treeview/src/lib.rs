@@ -55,18 +55,18 @@ use utils::{Clr, TextWidth, text_width};
 
 pub type IndexRange = RangeInclusive<usize>;
 
-#[derive(Debug)]
-pub(crate) enum CladeLabelType {
-    Outside,
-    Branches,
-}
+// #[derive(Debug)]
+// pub(crate) enum CladeLabelType {
+//     Outside,
+//     Branches,
+// }
 
 #[derive(Debug)]
 pub(crate) struct CladeLabel {
-    node_id: NodeId,
+    // node_id: NodeId,
     color: iced::Color,
-    label: String,
-    label_type: CladeLabelType,
+    // label: String,
+    // label_type: CladeLabelType,
 }
 
 #[derive(Debug, Clone, Default)]
