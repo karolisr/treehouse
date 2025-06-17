@@ -292,44 +292,30 @@ impl Program<TvMsg> for TreeCnv {
                 }
             }
         } // ---------------------------------------------------------------------------------------
-        st.vis_node_idxs
-            .par_iter()
-            .map(|&idx| match tre_sty {
-                TreSty::PhyGrm => {
-                    node_data_cart(st.tre_vs.w - st.root_len, st.tre_vs.h, &edges[idx]).into()
-                }
-                TreSty::Fan => {
-                    node_data_rad(opn_angle, ZERO, st.tre_vs.radius_min, st.root_len, &edges[idx])
-                        .into()
-                }
-            })
-            .collect_into_vec(&mut st.vis_nodes);
+        prepare_nodes(
+            &st.tre_vs, st.root_len, tre_sty, opn_angle, edges, &st.vis_node_idxs,
+            &mut st.vis_nodes,
+        );
         // -----------------------------------------------------------------------------------------
-        tst.found_edge_idxs()
-            .par_iter()
-            .map(|&idx| match tre_sty {
-                TreSty::PhyGrm => {
-                    node_data_cart(st.tre_vs.w - st.root_len, st.tre_vs.h, &edges[idx]).into()
-                }
-                TreSty::Fan => {
-                    node_data_rad(opn_angle, ZERO, st.tre_vs.radius_min, st.root_len, &edges[idx])
-                        .into()
-                }
-            })
-            .collect_into_vec(&mut st.filtered_nodes);
+        prepare_nodes(
+            &st.tre_vs,
+            st.root_len,
+            tre_sty,
+            opn_angle,
+            edges,
+            tst.found_edge_idxs(),
+            &mut st.filtered_nodes,
+        );
         // -----------------------------------------------------------------------------------------
-        tst.sel_edge_idxs()
-            .par_iter()
-            .map(|&idx| match tre_sty {
-                TreSty::PhyGrm => {
-                    node_data_cart(st.tre_vs.w - st.root_len, st.tre_vs.h, &edges[idx]).into()
-                }
-                TreSty::Fan => {
-                    node_data_rad(opn_angle, ZERO, st.tre_vs.radius_min, st.root_len, &edges[idx])
-                        .into()
-                }
-            })
-            .collect_into_vec(&mut st.selected_nodes);
+        prepare_nodes(
+            &st.tre_vs,
+            st.root_len,
+            tre_sty,
+            opn_angle,
+            edges,
+            tst.sel_edge_idxs(),
+            &mut st.selected_nodes,
+        );
         // -----------------------------------------------------------------------------------------
         st.labs_tip.clear();
         st.labs_int.clear();
@@ -485,6 +471,21 @@ impl Program<TvMsg> for TreeCnv {
         }
         geoms
     }
+}
+
+fn prepare_nodes(
+    vs: &RectVals<Float>, root_len: Float, tre_sty: TreSty, opn_angle: Float, edges: &[Edge],
+    node_idxs: &[usize], results: &mut Vec<NodeData>,
+) {
+    node_idxs
+        .par_iter()
+        .map(|&idx| match tre_sty {
+            TreSty::PhyGrm => node_data_cart(vs.w - root_len, vs.h, &edges[idx]).into(),
+            TreSty::Fan => {
+                node_data_rad(opn_angle, ZERO, vs.radius_min, root_len, &edges[idx]).into()
+            }
+        })
+        .collect_into_vec(results);
 }
 
 pub(super) fn calc_tip_w(
