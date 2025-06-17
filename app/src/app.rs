@@ -227,6 +227,10 @@ impl App {
                 }
             }
             AppMsg::PathToOpen(path_buf_opt) => {
+                if self.winid.is_none() {
+                    return Task::done(AppMsg::WinOpen)
+                        .chain(Task::done(AppMsg::PathToOpen(path_buf_opt)));
+                }
                 if let Some(path_buf) = path_buf_opt {
                     let file_type: FileType = match path_buf.extension() {
                         Some(ext_os_str) => match ext_os_str.to_str() {
