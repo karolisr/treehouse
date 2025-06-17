@@ -155,7 +155,7 @@ impl TreeCnv {
         self.clear_cache_legend();
     }
 
-    pub(super) fn calc_tre_vs(&self, tip_w: Float, tre_vs: RectVals<Float>) -> RectVals<Float> {
+    pub(super) fn calc_tre_vs(&self, tip_w: Float, tre_vs: &RectVals<Float>) -> RectVals<Float> {
         let mut offset_due_to_clade_lab = ZERO;
         if self.has_clade_labels && self.draw_clade_labs {
             offset_due_to_clade_lab = self.clade_labs_w + self.lab_offset_tip + SF;
@@ -227,27 +227,27 @@ impl Program<TvMsg> for TreeCnv {
             || vis_y1 != st.vis_vs.y1
         {
             st.vis_vs = RectVals::corners(vis_x0, vis_y0, vis_x1, vis_y1);
-            st.vis_rect = st.vis_vs.into();
+            st.vis_rect = st.vis_vs.clone().into();
             st.stale_vis_rect = true;
         } // ---------------------------------------------------------------------------------------
         if bnds != st.bnds || st.stale_vis_rect || st.is_new || self.stale_tre_rect {
             st.cnv_vs = RectVals::cnv(bnds);
-            st.cnv_rect = st.cnv_vs.into();
+            st.cnv_rect = st.cnv_vs.clone().into();
             st.tre_vs = st.cnv_vs.padded(self.padd_l, self.padd_r, self.padd_t, self.padd_b);
 
             let mut tip_w: Float = ZERO;
             if self.draw_labs_tip && self.draw_labs_allowed {
                 tip_w = calc_tip_w(
                     tre_sty,
-                    st.tre_vs,
+                    &st.tre_vs,
                     tst.edges_tip_tallest(),
                     self.lab_offset_tip,
                     st.text_w_tip.as_mut()?,
                 );
             }
 
-            st.tre_vs = self.calc_tre_vs(tip_w, st.tre_vs);
-            st.tre_rect = st.tre_vs.into();
+            st.tre_vs = self.calc_tre_vs(tip_w, &st.tre_vs);
+            st.tre_rect = st.tre_vs.clone().into();
             st.bnds = bnds;
             // -------------------------------------------------------------------------------------
             self.clear_cache_bnds();
@@ -255,11 +255,13 @@ impl Program<TvMsg> for TreeCnv {
             tst.clear_cache_lab_int();
             tst.clear_cache_lab_brnch();
         } // ---------------------------------------------------------------------------------------
-        st.root_len = ZERO;
+
         match tre_sty {
             TreSty::PhyGrm => {
                 if tst.is_rooted() {
                     st.root_len = st.tre_vs.w * self.root_len_frac;
+                } else {
+                    st.root_len = ZERO;
                 }
                 st.rotation = ZERO;
                 st.translation =
@@ -268,6 +270,8 @@ impl Program<TvMsg> for TreeCnv {
             TreSty::Fan => {
                 if tst.is_rooted() {
                     st.root_len = st.tre_vs.radius_min * self.root_len_frac;
+                } else {
+                    st.root_len = ZERO;
                 }
                 st.rotation = self.rot_angle;
                 st.translation = st.tre_vs.cntr;
@@ -484,7 +488,7 @@ impl Program<TvMsg> for TreeCnv {
 }
 
 pub(super) fn calc_tip_w(
-    tre_sty: TreSty, tre_vs: RectVals<Float>, edges_tip_tallest: &[Edge], lab_offset_tip: Float,
+    tre_sty: TreSty, tre_vs: &RectVals<Float>, edges_tip_tallest: &[Edge], lab_offset_tip: Float,
     text_w_tip: &mut TextWidth,
 ) -> Float {
     let tre_vs_w = match tre_sty {

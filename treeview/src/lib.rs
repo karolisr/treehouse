@@ -76,7 +76,7 @@ struct Label {
     angle: Option<Float>,
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq)]
 struct EdgePoints {
     p0: iced::Point,
     p_mid: iced::Point,
@@ -107,7 +107,7 @@ struct NodeDataPol {
     angle_parent: Option<Float>,
 }
 
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct RectVals<T> {
     x0: T,
     y0: T,
@@ -215,7 +215,10 @@ impl From<iced::Rectangle<Float>> for RectVals<Float> {
     }
 }
 
-impl<T> From<RectVals<T>> for iced::Rectangle<T> {
+impl<T> From<RectVals<T>> for iced::Rectangle<T>
+where
+    T: Clone,
+{
     fn from(v: RectVals<T>) -> Self {
         iced::Rectangle { x: v.x0, y: v.y0, width: v.w, height: v.h }
     }

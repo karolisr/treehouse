@@ -161,7 +161,7 @@ impl Program<TvMsg> for PlotCnv {
                 self.padd_t + extra_padding * ONE,
                 self.padd_b + extra_padding * TWO,
             );
-            st.plt_rect = st.plt_vs.into();
+            st.plt_rect = st.plt_vs.clone().into();
             st.plt_padd_l = self.padd_l;
             st.plt_padd_r = self.padd_r;
             st.plt_padd_t = self.padd_t;

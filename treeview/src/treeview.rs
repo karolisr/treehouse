@@ -834,14 +834,14 @@ impl TreeView {
         {
             tip_w = cnv_tree::calc_tip_w(
                 self.tre_cnv.tre_sty,
-                tre_vs,
+                &tre_vs,
                 sel_tre.edges_tip_tallest(),
                 self.tre_cnv.lab_offset_tip,
                 self.tre_cnv.text_w_tip.as_mut().unwrap(),
             );
         }
 
-        self.tre_cnv.tre_vs = self.tre_cnv.calc_tre_vs(tip_w, tre_vs);
+        self.tre_cnv.tre_vs = self.tre_cnv.calc_tre_vs(tip_w, &tre_vs);
     }
 
     fn update_vis_x(&mut self) {
