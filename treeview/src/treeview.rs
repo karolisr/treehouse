@@ -65,6 +65,8 @@ pub struct TreeView {
     pub(super) search_string: String,
     pub(super) tip_only_search: bool,
     // -------------------------------------------------------------------
+    text_w_tip: Option<TextWidth<'static>>,
+    // -------------------------------------------------------------------
 }
 
 impl TreeView {
@@ -80,8 +82,8 @@ impl TreeView {
             node_ord_opt: NodeOrd::Ascending,
             // -----------------------------------------------------------
             opn_angle_idx_min: 45,
-            opn_angle_idx: 359,
-            opn_angle_idx_max: 359,
+            opn_angle_idx: 360,
+            opn_angle_idx_max: 360,
             // -----------------------------------------------------------
             rot_angle_idx_min: 360 - 180,
             rot_angle_idx: 360,
@@ -93,8 +95,8 @@ impl TreeView {
             lab_size_idx_brnch: BRANCH_LAB_SIZE_IDX,
             lab_size_idx_max: 22,
             // -----------------------------------------------------------
-            root_len_idx_min: 0,
-            root_len_idx: 10,
+            root_len_idx_min: 5,
+            root_len_idx: 25,
             root_len_idx_max: 100,
             // -----------------------------------------------------------
             tre_cnv_size_idx_min: 1,
@@ -124,6 +126,8 @@ impl TreeView {
             tre_scr_w: ZERO,
             tre_cnv_scrolled: false,
             search_string: String::new(),
+            // -----------------------------------------------------------
+            text_w_tip: Some(text_width(SF * TIP_LAB_SIZE_IDX as Float, FNT_NAME_LAB)),
             // -----------------------------------------------------------
         }
     }
@@ -302,9 +306,9 @@ impl TreeView {
                     self.tre_cnv.lab_size_brnch = lab_size_min * self.lab_size_idx_brnch as Float;
                     self.tre_cnv.lab_size_max = lab_size_min * self.lab_size_idx_max as Float;
 
-                    self.tre_cnv.lab_offset_tip = SF * 8e0;
-                    self.tre_cnv.lab_offset_int = SF * 8e0;
-                    self.tre_cnv.lab_offset_brnch = -self.tre_cnv.lab_size_brnch / THREE;
+                    self.tre_cnv.lab_offset_tip = SF * THREE;
+                    self.tre_cnv.lab_offset_int = SF * THREE;
+                    self.tre_cnv.lab_offset_brnch = -SF * THREE;
 
                     self.tre_cnv.clade_labs_w = SF * TEN;
                     self.tre_cnv.has_clade_labels = self.tree_has_clade_labels();
@@ -399,6 +403,7 @@ impl TreeView {
 
             TvMsg::TipLabVisChanged(state) => {
                 self.tre_cnv.draw_labs_tip = state;
+                task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_all();
             }
@@ -406,15 +411,14 @@ impl TreeView {
             TvMsg::TipLabSizeChanged(idx) => {
                 self.lab_size_idx_tip = idx;
                 self.tre_cnv.lab_size_tip = self.tre_cnv.lab_size_min * idx as Float;
-                // self.tre_cnv.lab_offset_tip = self.tre_cnv.lab_size_tip / THREE;
-                self.tre_cnv.lab_offset_tip = SF * 8e0;
                 // -------------------------------------------------------------
-                if let Some(text_w_tip) = &mut self.tre_cnv.text_w_tip
+                if let Some(text_w_tip) = &mut self.text_w_tip
                     && text_w_tip.font_size() != self.tre_cnv.lab_size_tip
                 {
                     text_w_tip.set_font_size(self.tre_cnv.lab_size_tip);
                 };
                 // -------------------------------------------------------------
+                task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_all();
             }
@@ -427,8 +431,6 @@ impl TreeView {
             TvMsg::IntLabSizeChanged(idx) => {
                 self.lab_size_idx_int = idx;
                 self.tre_cnv.lab_size_int = self.tre_cnv.lab_size_min * idx as Float;
-                // self.tre_cnv.lab_offset_int = self.tre_cnv.lab_size_int / THREE;
-                self.tre_cnv.lab_offset_int = SF * 8e0;
                 self.clear_cache_lab_int();
             }
 
@@ -441,7 +443,6 @@ impl TreeView {
             TvMsg::BrnchLabSizeChanged(idx) => {
                 self.lab_size_idx_brnch = idx;
                 self.tre_cnv.lab_size_brnch = self.tre_cnv.lab_size_min * idx as Float;
-                self.tre_cnv.lab_offset_brnch = -self.tre_cnv.lab_size_brnch / THREE;
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_all();
             }
@@ -472,6 +473,7 @@ impl TreeView {
                 self.tre_cnv.draw_root = state;
                 self.tre_cnv.root_len_frac = self.calc_root_len_frac();
                 task = self.scroll_to_current_found_edge();
+                self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_all();
             }
 
@@ -479,6 +481,7 @@ impl TreeView {
                 self.root_len_idx = idx;
                 self.tre_cnv.root_len_frac = self.calc_root_len_frac();
                 task = self.scroll_to_current_found_edge();
+                self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_all();
             }
 
@@ -577,7 +580,7 @@ impl TreeView {
         }
     }
 
-    pub(super) fn calc_root_len_frac(&self) -> Float {
+    fn calc_root_len_frac(&self) -> Float {
         if self.tre_cnv.draw_root { self.root_len_idx as Float / 2e2 } else { ZERO }
     }
 
@@ -706,7 +709,7 @@ impl TreeView {
                     let tmp = if h / tip_count > ONE {
                         TREE_CNV_SIZE_DELTA * self.tre_cnv_h_idx as Float
                     } else {
-                        tip_count * self.tre_cnv_h_idx as Float
+                        tip_count * SF * self.tre_cnv_h_idx as Float
                     };
                     if tmp < h { h } else { tmp }
                 }
@@ -822,32 +825,6 @@ impl TreeView {
         Some(scroll_to(receiver_id, AbsoluteOffset { x, y }))
     }
 
-    fn update_tre_vs(&mut self) {
-        let tre_vs =
-            RectVals::wh(self.calc_tre_cnv_w(self.tre_scr_w), self.calc_tre_cnv_h(self.tre_scr_h))
-                .padded(
-                    self.tre_cnv.padd_l, self.tre_cnv.padd_r, self.tre_cnv.padd_t,
-                    self.tre_cnv.padd_b,
-                );
-
-        let mut tip_w: Float = ZERO;
-
-        if let Some(sel_tre) = self.sel_tre()
-            && self.tre_cnv.draw_labs_tip
-            && self.tre_cnv.draw_labs_allowed
-        {
-            tip_w = cnv_tree::calc_tip_w(
-                self.tre_cnv.tre_sty,
-                &tre_vs,
-                sel_tre.edges_tip_tallest(),
-                self.tre_cnv.lab_offset_tip,
-                self.tre_cnv.text_w_tip.as_mut().unwrap(),
-            );
-        }
-
-        self.tre_cnv.tre_vs = self.tre_cnv.calc_tre_vs(tip_w, &tre_vs);
-    }
-
     fn update_vis_x(&mut self) {
         let scr_w = self.tre_scr_w;
         let cnv_w = self.calc_tre_cnv_w(scr_w);
@@ -879,26 +856,30 @@ impl TreeView {
 
     fn scroll_to_point(&self, pt: &Point) -> Option<Task<TvMsg>> { self.scroll_tre_cnv(pt.x, pt.y) }
 
+    fn update_tre_vs(&mut self) -> Float {
+        let cnv_w = self.calc_tre_cnv_w(self.tre_scr_w);
+        let cnv_h = self.calc_tre_cnv_h(self.tre_scr_h);
+        let cnv_vs = RectVals::wh(cnv_w, cnv_h);
+        let mut root_len = ZERO;
+        if let Some(sel_tre) = self.sel_tre() {
+            (self.tre_cnv.tre_vs, root_len) = self.tre_cnv.calc_tre_vs(
+                &cnv_vs,
+                sel_tre.edges_tip_tallest(),
+                self.is_rooted(),
+                self.text_w_tip.as_mut().unwrap(),
+            );
+        }
+        root_len
+    }
+
     fn scroll_to_edge(&mut self, edge: &Edge) -> Option<Task<TvMsg>> {
-        self.update_tre_vs(); // this should not be done every time "scroll_to_edge" is called.
-        let mut root_len: Float = ZERO;
+        let root_len = self.update_tre_vs(); // this should not be done every time "scroll_to_edge" is called.
         let pt: Point = match self.tre_cnv.tre_sty {
             TreSty::PhyGrm => {
-                if self.is_rooted() {
-                    root_len = self.tre_cnv.tre_vs.w * self.tre_cnv.root_len_frac;
-                }
-                node_data_cart(self.tre_cnv.tre_vs.w - root_len, self.tre_cnv.tre_vs.h, edge)
-                    .points
-                    .p1
-                    + Vector {
-                        x: self.tre_cnv.tre_vs.trans.x + root_len,
-                        y: self.tre_cnv.tre_vs.trans.y,
-                    }
+                node_data_cart(self.tre_cnv.tre_vs.w, self.tre_cnv.tre_vs.h, edge).points.p1
+                    + Vector { x: self.tre_cnv.tre_vs.trans.x, y: self.tre_cnv.tre_vs.trans.y }
             }
             TreSty::Fan => {
-                if self.is_rooted() {
-                    root_len = self.tre_cnv.tre_vs.radius_min * self.tre_cnv.root_len_frac;
-                }
                 node_data_rad(
                     self.tre_cnv.opn_angle, self.tre_cnv.rot_angle, self.tre_cnv.tre_vs.radius_min,
                     root_len, edge,

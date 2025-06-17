@@ -52,7 +52,7 @@ pub(super) fn draw_clade_labels(
             f.translate(st.translation);
             match tc.tre_sty {
                 TreSty::PhyGrm => {
-                    let x = st.tre_vs.x1 + tc.lab_offset_tip;
+                    let x = st.tre_vs.w + tc.lab_offset_tip;
                     let y = y1_rel * st.tre_vs.h;
                     let height = (y2_rel - y1_rel) * st.tre_vs.h;
                     let rect = Rectangle { x, y, width, height };
@@ -95,8 +95,8 @@ pub(super) fn draw_legend(
                 tc.tre_sty,
                 &st.tre_vs,
                 &st.cnv_vs,
-                tc.lab_size_brnch,
-                -tc.lab_offset_brnch,
+                SF * 12e0,
+                SF * 6e0,
                 st.root_len,
                 tst.tre_height() as Float,
                 f,
@@ -225,7 +225,7 @@ pub(super) fn draw_filtered_nodes(
 
         if let Some(edge) = tst.current_found_edge() {
             let pt = match tc.tre_sty {
-                TreSty::PhyGrm => node_point_cart(st.tre_vs.w - st.root_len, st.tre_vs.h, &edge),
+                TreSty::PhyGrm => node_point_cart(st.tre_vs.w, st.tre_vs.h, &edge),
                 TreSty::Fan => {
                     let angle = edge_angle(tc.opn_angle, &edge);
                     node_point_pol(angle, st.tre_vs.radius_min, st.root_len, &edge)
@@ -250,7 +250,7 @@ fn draw_scale_bar(
 ) {
     let stroke = STRK_2_BLK;
     let w = match tre_sty {
-        TreSty::PhyGrm => tre_vs.w - root_len,
+        TreSty::PhyGrm => tre_vs.w,
         TreSty::Fan => tre_vs.radius_min - root_len,
     };
 
@@ -262,11 +262,11 @@ fn draw_scale_bar(
     let sb_len_on_screen = sb_frac * w;
 
     let x = match tre_sty {
-        TreSty::PhyGrm => tre_vs.x0 + root_len + TEN + TEN,
-        TreSty::Fan => tre_vs.x0 + TEN,
+        TreSty::PhyGrm => tre_vs.x0 + PADDING,
+        TreSty::Fan => tre_vs.x0 + PADDING,
     };
 
-    let y = cnv_vs.y1 - stroke.width / TWO - lab_size - lab_y_offset - TEN - TEN;
+    let y = cnv_vs.y1 - stroke.width / TWO - lab_size - lab_y_offset - PADDING;
     let p0 = Point { x, y };
     let p1 = Point { x: x + sb_len_on_screen, y };
     let p_lab = Point { x: x.midpoint(p1.x), y };
@@ -296,20 +296,17 @@ fn draw_nodes(
 fn stroke_edges_phygrm(
     edges: &[Edge], tre_vs: &RectVals<Float>, root_len: Float, root: Option<Edge>, f: &mut Frame,
 ) {
-    let w = tre_vs.w - root_len;
-
     let mut pb: PathBuilder = PathBuilder::new();
     for e in edges {
-        let nd = node_data_cart(w, tre_vs.h, e);
+        let nd = node_data_cart(tre_vs.w, tre_vs.h, e);
         pb = edge_path_cart(&nd, pb);
         pb = edge_path_vert_cart(&nd, pb);
     }
 
     f.with_save(|f| {
         f.translate(tre_vs.trans);
-        f.translate(Vector { x: root_len, y: ZERO });
         f.stroke(&pb.build(), STRK_EDGE);
-        stroke_root_phygrm(w, tre_vs.h, root_len, root, f);
+        stroke_root_phygrm(tre_vs.w, tre_vs.h, root_len, root, f);
     })
 }
 
