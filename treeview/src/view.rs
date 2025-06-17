@@ -112,6 +112,17 @@ fn tool_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         .padding(ZERO),
     );
 
+    tb_row = tb_row.push(
+        center(
+            iced_row![btn_label_clade(ts.clone()), btn_remove_clade_label(ts.clone())]
+                .align_y(Vertical::Center)
+                .spacing(0),
+        )
+        .width(Length::Shrink)
+        .height(Length::Shrink)
+        .padding(ZERO),
+    );
+
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
 
     let i = format!("{:>4}", ts.id());

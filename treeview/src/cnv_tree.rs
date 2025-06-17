@@ -42,6 +42,7 @@ pub(super) struct TreeCnv {
     pub(super) draw_labs_brnch: bool,
     pub(super) draw_labs_int: bool,
     pub(super) draw_labs_tip: bool,
+    pub(super) draw_clade_labs: bool,
     pub(super) draw_legend: bool,
     pub(super) draw_root: bool,
     pub(super) drawing_enabled: bool,
@@ -58,6 +59,9 @@ pub(super) struct TreeCnv {
     pub(super) lab_offset_tip: Float,
     pub(super) lab_offset_int: Float,
     pub(super) lab_offset_brnch: Float,
+    // ---------------------------------------------------------------------------------------------
+    pub(super) clade_labs_w: Float,
+    pub(super) has_clade_labels: bool,
     // ---------------------------------------------------------------------------------------------
     pub(super) opn_angle: Float,
     pub(super) rot_angle: Float,
@@ -84,6 +88,7 @@ impl TreeCnv {
             draw_root: false,
             draw_labs_allowed: false,
             draw_labs_tip: false,
+            draw_clade_labs: true,
             draw_labs_int: false,
             draw_labs_brnch: false,
             draw_legend: false,
@@ -104,6 +109,9 @@ impl TreeCnv {
             lab_offset_tip: ZERO,
             lab_offset_int: ZERO,
             lab_offset_brnch: ZERO,
+            // -------------------------------------------------------------------------------------
+            clade_labs_w: ZERO,
+            has_clade_labels: false,
             // -------------------------------------------------------------------------------------
             text_w_tip: Some(text_width(SF * TIP_LAB_SIZE_IDX as Float, FNT_NAME_LAB)),
             // -------------------------------------------------------------------------------------
@@ -148,6 +156,11 @@ impl TreeCnv {
     }
 
     pub(super) fn calc_tre_vs(&self, tip_w: Float, tre_vs: RectVals<Float>) -> RectVals<Float> {
+        let mut offset_due_to_clade_lab = ZERO;
+        if self.has_clade_labels && self.draw_clade_labs {
+            offset_due_to_clade_lab = self.clade_labs_w + self.lab_offset_tip + SF;
+        }
+
         match self.tre_sty {
             TreSty::PhyGrm => {
                 let mut offset_due_to_brnch_lab = ZERO;
@@ -161,12 +174,16 @@ impl TreeCnv {
                     offset_due_to_brnch_lab = self.lab_size_brnch + self.lab_offset_brnch.abs();
                 }
 
+                let right = tip_w + offset_due_to_clade_lab;
                 let top = (offset_due_to_tip_lab).max(offset_due_to_brnch_lab);
                 let bottom = offset_due_to_tip_lab;
 
-                tre_vs.padded(ZERO, tip_w, top, bottom)
+                tre_vs.padded(ZERO, right, top, bottom)
             }
-            TreSty::Fan => tre_vs.padded(tip_w, tip_w, tip_w, tip_w),
+            TreSty::Fan => {
+                let p = tip_w + offset_due_to_clade_lab;
+                tre_vs.padded(p, p, p, p)
+            }
         }
     }
 }
@@ -448,6 +465,7 @@ impl Program<TvMsg> for TreeCnv {
                 draw_bounds(self, st, rndr, bnds, &mut geoms);
             }
             draw_edges(self, st, tst, rndr, size, &mut geoms);
+            draw_clade_labels(self, st, tst, rndr, size, &mut geoms);
             draw_legend(self, st, tst, rndr, size, &mut geoms);
             draw_cursor_line(self, st, rndr, size, &mut geoms);
             draw_labs_tip(self, st, tst, rndr, size, &mut geoms);

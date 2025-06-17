@@ -89,9 +89,10 @@ pub fn stroke_rect(rect: Rectangle, stroke: Strk, f: &mut Frame) {
     f.stroke(&PathBuilder::new().rectangle(rect).build(), stroke);
 }
 
-// pub fn fill_rect(rect: Rectangle, fill: CnvFill, f: &mut Frame) {
-//     f.fill(&PathBuilder::new().rectangle(rect).build(), fill);
-// }
+#[allow(dead_code)]
+pub fn fill_rect(rect: Rectangle, fill: CnvFill, f: &mut Frame) {
+    f.fill(&PathBuilder::new().rectangle(rect).build(), fill);
+}
 
 pub fn stroke_circle(point: Point, stroke: Strk, radius: Float, f: &mut Frame) {
     f.stroke(&PathBuilder::new().circle(point, radius).build(), stroke);

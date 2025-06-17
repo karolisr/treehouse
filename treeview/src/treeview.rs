@@ -128,9 +128,33 @@ impl TreeView {
         }
     }
 
+    pub(super) fn clade_has_label(&self, node_id: &NodeId) -> bool {
+        if let Some(tree) = self.sel_tre() { tree.clade_has_label(node_id) } else { false }
+    }
+
+    pub(super) fn tree_has_clade_labels(&self) -> bool {
+        if let Some(tree) = self.sel_tre() { !tree.labeled_clades().is_empty() } else { false }
+    }
+
     pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
         let mut task: Option<Task<TvMsg>> = None;
         match tv_msg {
+            TvMsg::LabelClade(node_id) => {
+                self.with_exclusive_sel_tre_mut(&mut |tre| {
+                    tre.add_clade_label(node_id, Clr::GRN_50, node_id, CladeLabelType::Outside)
+                });
+                self.tre_cnv.has_clade_labels = self.tree_has_clade_labels();
+                self.tre_cnv.stale_tre_rect = true;
+                self.clear_caches_all();
+            }
+
+            TvMsg::RemoveCladeLabel(node_id) => {
+                self.with_exclusive_sel_tre_mut(&mut |tre| tre.remove_clade_label(&node_id));
+                self.tre_cnv.has_clade_labels = self.tree_has_clade_labels();
+                self.tre_cnv.stale_tre_rect = true;
+                self.clear_caches_all();
+            }
+
             TvMsg::TreeRectNoLongerStale => {
                 self.tre_cnv.stale_tre_rect = false;
             }
@@ -277,6 +301,9 @@ impl TreeView {
                     self.tre_cnv.lab_offset_tip = SF * 8e0;
                     self.tre_cnv.lab_offset_int = SF * 8e0;
                     self.tre_cnv.lab_offset_brnch = -self.tre_cnv.lab_size_brnch / THREE;
+
+                    self.tre_cnv.clade_labs_w = SF * TEN;
+                    self.tre_cnv.has_clade_labels = self.tree_has_clade_labels();
 
                     self.tre_cnv.root_len_frac = self.calc_root_len_frac();
 
@@ -1011,6 +1038,9 @@ pub enum TvMsg {
     RootVisChanged(bool),
     RootLenSelChanged(u16),
     LttVisChanged(bool),
+    // -------------------------------------------
+    LabelClade(NodeId),
+    RemoveCladeLabel(NodeId),
     // -------------------------------------------
     TreCnvScrolledOrResized(Viewport),
     LttCnvScrolledOrResized(Viewport),

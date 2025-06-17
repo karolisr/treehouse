@@ -7,6 +7,8 @@ pub(super) struct TreeState {
     sel_edge_idxs: Vec<usize>,
     sel_node_ids: HashSet<NodeId>,
 
+    labeled_clades: HashMap<NodeId, CladeLabel>,
+
     t: Tree,
     t_orig: Tree,
     t_srtd_asc: Option<Tree>,
@@ -29,6 +31,7 @@ pub(super) struct TreeState {
     cache_lab_brnch: Cache,
     cache_sel_nodes: Cache,
     cache_filtered_nodes: Cache,
+    cache_clade_labels: Cache,
 
     // Memoized Values ---------------------------------------------------
     cache_tip_count: Option<usize>,
@@ -49,7 +52,52 @@ pub(super) struct TreeState {
 
 impl TreeState {
     pub(super) fn tree(&self) -> &Tree { &self.t }
-    // pub(super) fn tree_original(&self) -> &Tree { &self.t_orig }
+    #[allow(dead_code)]
+    pub(super) fn tree_original(&self) -> &Tree { &self.t_orig }
+
+    pub(super) fn add_clade_label(
+        &mut self, node_id: NodeId, color: Color, label: impl Into<String>,
+        label_type: CladeLabelType,
+    ) {
+        let clade_label: CladeLabel =
+            CladeLabel { node_id, color, label: label.into(), label_type };
+        self.labeled_clades.insert(node_id, clade_label);
+    }
+
+    pub(super) fn remove_clade_label(&mut self, node_id: &NodeId) {
+        self.labeled_clades.remove(node_id);
+    }
+
+    pub(super) fn clade_has_label(&self, node_id: &NodeId) -> bool {
+        self.labeled_clades.contains_key(node_id)
+    }
+
+    pub(super) fn labeled_clades(&self) -> &HashMap<NodeId, CladeLabel> { &self.labeled_clades }
+
+    // ToDo: this is broken; does not work correctly if the tree structure is modified.
+    // ToDo: how should single tip labels be handled? currently will crash.
+    pub(super) fn bounding_tip_edges_for_clade(&self, node_id: &NodeId) -> (&Edge, &Edge) {
+        let tip_ids = self.t.tip_node_ids(node_id);
+
+        let mut start: usize = 0;
+        let mut end: usize = 0;
+
+        let tip_id_0 = tip_ids[0];
+        let tip_id_1 = tip_ids[&tip_ids.len() - 1];
+
+        for e in &self.edges_srtd_y {
+            if e.node_id == tip_id_0 {
+                start = e.edge_idx;
+            }
+
+            if e.node_id == tip_id_1 {
+                end = e.edge_idx;
+                break;
+            }
+        }
+
+        (&self.edges_srtd_y[start], &self.edges_srtd_y[end])
+    }
 
     // Search & Filter -----------------------------------------------------------------------------
     pub(super) fn found_edge_idxs(&self) -> &Vec<usize> { &self.found_edge_idxs }
@@ -385,6 +433,7 @@ impl TreeState {
     pub(super) fn cache_lab_brnch(&self) -> &Cache { &self.cache_lab_brnch }
     pub(super) fn cache_sel_nodes(&self) -> &Cache { &self.cache_sel_nodes }
     pub(super) fn cache_filtered_nodes(&self) -> &Cache { &self.cache_filtered_nodes }
+    pub(super) fn cache_clade_labels(&self) -> &Cache { &self.cache_clade_labels }
 
     pub(super) fn clear_cache_edge(&self) { self.cache_edge.clear(); }
     pub(super) fn clear_cache_lab_tip(&self) { self.cache_lab_tip.clear(); }
@@ -392,6 +441,7 @@ impl TreeState {
     pub(super) fn clear_cache_lab_brnch(&self) { self.cache_lab_brnch.clear(); }
     pub(super) fn clear_cache_sel_nodes(&self) { self.cache_sel_nodes.clear(); }
     pub(super) fn clear_cache_filtered_nodes(&self) { self.cache_filtered_nodes.clear(); }
+    pub(super) fn clear_cache_clade_labels(&self) { self.cache_clade_labels.clear(); }
 
     pub(super) fn clear_caches_all(&self) {
         self.clear_cache_edge();
@@ -400,6 +450,7 @@ impl TreeState {
         self.clear_cache_lab_brnch();
         self.clear_cache_sel_nodes();
         self.clear_cache_filtered_nodes();
+        self.clear_cache_clade_labels();
     }
 
     // Setup ---------------------------------------------------------------------------------------

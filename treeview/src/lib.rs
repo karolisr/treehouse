@@ -35,7 +35,7 @@ pub type Float = f32;
 pub use consts::{SF, TXT_SIZE};
 pub use treeview::{SidebarPosition, TreeView, TvMsg};
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::f32 as float;
 use std::fmt::{Debug, Display, Formatter, Result};
 use std::ops::RangeInclusive;
@@ -54,6 +54,20 @@ use treeview::{NODE_ORD_OPTS, NodeOrd, TRE_STY_OPTS, TreSty, TvPane};
 use utils::{Clr, TextWidth, text_width};
 
 pub type IndexRange = RangeInclusive<usize>;
+
+#[derive(Debug)]
+pub(crate) enum CladeLabelType {
+    Outside,
+    Branches,
+}
+
+#[derive(Debug)]
+pub(crate) struct CladeLabel {
+    node_id: NodeId,
+    color: iced::Color,
+    label: String,
+    label_type: CladeLabelType,
+}
 
 #[derive(Debug, Clone, Default)]
 struct Label {

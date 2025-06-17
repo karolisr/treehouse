@@ -34,6 +34,58 @@ pub(super) fn draw_edges(
     }));
 }
 
+pub(super) fn draw_clade_labels(
+    tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+) {
+    g.push(tst.cache_clade_labels().draw(rndr, sz, |f| {
+        let labeled_clades = tst.labeled_clades();
+        for (node_id, clade_label) in labeled_clades {
+            let (e1, e2) = tst.bounding_tip_edges_for_clade(node_id);
+            let y1_rel = e1.y as Float;
+            let y2_rel = e2.y as Float;
+            let color = clade_label.color;
+            let width = tc.clade_labs_w;
+
+            let mut pb: PathBuilder = PathBuilder::new();
+
+            f.push_transform();
+            f.translate(st.translation);
+            match tc.tre_sty {
+                TreSty::PhyGrm => {
+                    let x = st.tre_vs.x1 + tc.lab_offset_tip;
+                    let y = y1_rel * st.tre_vs.h;
+                    let height = (y2_rel - y1_rel) * st.tre_vs.h;
+                    let rect = Rectangle { x, y, width, height };
+                    pb = pb.rectangle(rect);
+                }
+
+                TreSty::Fan => {
+                    f.rotate(st.rotation);
+                    let r1 = st.tre_vs.radius_min + tc.lab_offset_tip;
+                    let r2 = r1 + width;
+
+                    let a0 = edge_angle(tc.opn_angle, e1);
+                    let a1 = edge_angle(tc.opn_angle, e2);
+
+                    let p0 = point_pol(a0, r1, ZERO, ONE);
+                    let p1 = point_pol(a1, r1, ZERO, r2 / r1);
+                    let p2 = point_pol(a0, r1, ZERO, ONE);
+
+                    pb = pb.move_to(p0);
+                    pb = pb.arc_approx_line(a0, a1, ORIGIN, r1);
+                    pb = pb.line_to(p1);
+                    pb = pb.arc_approx_line(a1, a0, ORIGIN, r2);
+                    pb = pb.line_to(p2);
+                }
+            }
+            let path = pb.build();
+            f.fill(&path, CnvFill { style: Solid(color), rule: FillRule::EvenOdd });
+            f.stroke(&path, STRK_1_BLK);
+            f.pop_transform();
+        }
+    }));
+}
+
 pub(super) fn draw_legend(
     tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
