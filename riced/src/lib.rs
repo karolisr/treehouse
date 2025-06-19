@@ -39,12 +39,23 @@ pub use text_width::{TextWidth, text_width, text_width_line_height};
 
 pub use i::alignment::{Horizontal, Vertical};
 pub use i::font::{Family, Stretch, Style as FontStyle, Weight};
+pub use i::futures::{
+    channel::mpsc::{UnboundedSender, unbounded},
+    stream::StreamExt,
+};
+pub use i::keyboard::{Key, Modifiers, on_key_press};
 pub use i::mouse::{Button as MouseButton, Cursor, Event as MouseEvent, Interaction};
+pub use i::task::{Never, Sipper, sipper};
 pub use i::theme::{Theme, palette::Pair as PalettePair};
-pub use i::window::Event as WindowEvent;
+pub use i::window::{
+    Event as WindowEvent, Id as WindowId, Level as WindowLevel, Position as WindowPosition,
+    Settings as WindowSettings, close as close_window, events as window_events,
+    open as open_window, settings::PlatformSpecific as PlatformSpecificWindowSettings,
+};
 pub use i::{
     Alignment, Background, Border, Color, Element, Event, Font, Length, Padding, Pixels, Point,
-    Rectangle, Renderer, Size, Task, Vector,
+    Rectangle, Renderer, Result as IcedResult, Settings as IcedAppSettings, Size, Subscription,
+    Task, Vector, daemon, exit,
 };
 
 pub use w::button::{Status as ButtonStatus, Style as ButtonStyle};

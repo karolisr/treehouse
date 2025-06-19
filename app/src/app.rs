@@ -6,21 +6,18 @@ mod win;
 
 use consts::*;
 use dendros::parse_newick;
-use iced::{
-    Element, Subscription, Task, Theme, exit,
-    keyboard::{Key, Modifiers, on_key_press},
-    window::{
-        Event as WinEvent, Id as WinId, close as close_window, events as window_events,
-        open as open_window,
-    },
+use riced::{
+    Clr, Element, Font, IcedAppSettings, Key, Modifiers, Pixels, Subscription, Task, Theme,
+    WindowEvent, WindowId, close_window, exit, on_key_press, open_window, window_events,
 };
+
 use menu::{AppMenu, AppMenuItemId};
 use std::path::PathBuf;
 use treeview::{SidebarPosition, TreeView, TvMsg};
 use win::window_settings;
 
 pub struct App {
-    winid: Option<WinId>,
+    winid: Option<WindowId>,
     treeview: Option<TreeView>,
     menu: Option<AppMenu>,
     title: Option<String>,
@@ -41,7 +38,7 @@ pub enum AppMsg {
     // --------------------------------
     AppInitialized,
     // --------------------------------
-    WinEvent(WinEvent),
+    WinEvent(WindowEvent),
     // --------------------------------
     WinOpen,
     WinOpened,
@@ -81,7 +78,7 @@ impl App {
         )
     }
 
-    pub fn view(&'_ self, _: WinId) -> Element<'_, AppMsg> {
+    pub fn view(&'_ self, _: WindowId) -> Element<'_, AppMsg> {
         if let Some(treeview) = &self.treeview {
             if !treeview.are_any_trees_loaded() {
                 riced::container(
@@ -93,7 +90,7 @@ impl App {
                 .center(riced::Length::Fill)
                 .into()
             } else if self.explain {
-                treeview.view().explain(iced::Color::from_rgb(1e0, 0e0, 0e0)).map(AppMsg::TvMsg)
+                treeview.view().explain(Clr::RED).map(AppMsg::TvMsg)
             } else {
                 treeview.view().map(AppMsg::TvMsg)
             }
@@ -353,10 +350,12 @@ impl App {
             }
 
             AppMsg::WinEvent(e) => match e {
-                WinEvent::Opened { position: _, size: _ } => Task::done(AppMsg::WinOpened),
-                WinEvent::CloseRequested => Task::done(AppMsg::WinCloseRequested),
-                WinEvent::Closed => Task::done(AppMsg::WinClosed),
-                WinEvent::FileDropped(path_buf) => Task::done(AppMsg::PathToOpen(Some(path_buf))),
+                WindowEvent::Opened { position: _, size: _ } => Task::done(AppMsg::WinOpened),
+                WindowEvent::CloseRequested => Task::done(AppMsg::WinCloseRequested),
+                WindowEvent::Closed => Task::done(AppMsg::WinClosed),
+                WindowEvent::FileDropped(path_buf) => {
+                    Task::done(AppMsg::PathToOpen(Some(path_buf)))
+                }
                 _ => Task::none(),
             },
 
@@ -476,17 +475,17 @@ impl App {
         Subscription::batch(subs)
     }
 
-    pub fn title(&self, _: WinId) -> String {
+    pub fn title(&self, _: WindowId) -> String {
         if let Some(title) = &self.title { title.clone() } else { String::from("") }
     }
-    pub fn scale_factor(&self, _: WinId) -> f64 { APP_SCALE_FACTOR }
-    pub fn theme(&self, _: WinId) -> Theme { iced::Theme::default() }
-    pub fn settings() -> iced::Settings {
-        iced::Settings {
+    pub fn scale_factor(&self, _: WindowId) -> f64 { APP_SCALE_FACTOR }
+    pub fn theme(&self, _: WindowId) -> Theme { Theme::default() }
+    pub fn settings() -> IcedAppSettings {
+        IcedAppSettings {
             id: None,
             fonts: vec![],
-            default_font: iced::Font::DEFAULT,
-            default_text_size: iced::Pixels(TXT_SIZE),
+            default_font: Font::DEFAULT,
+            default_text_size: Pixels(TXT_SIZE),
             antialiasing: true,
             #[cfg(target_os = "macos")]
             allows_automatic_window_tabbing: false,

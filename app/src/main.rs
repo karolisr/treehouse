@@ -19,8 +19,8 @@
 mod app;
 use app::App;
 
-fn main() -> iced::Result {
-    iced::daemon(App::boot, App::update, App::view)
+fn main() -> riced::IcedResult {
+    riced::daemon(App::boot, App::update, App::view)
         .title(App::title)
         .subscription(App::subscription)
         .scale_factor(App::scale_factor)

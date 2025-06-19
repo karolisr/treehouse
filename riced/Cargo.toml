@@ -15,6 +15,15 @@ crate-type = ["rlib"]
 convert_case = "0.8.0"
 
 [dependencies]
-iced = { workspace = true, features = ["advanced", "canvas", "lazy", "svg"] }
+iced = { workspace = true, features = [
+    "advanced",
+    "canvas",
+    "crisp",
+    "lazy",
+    "sipper",
+    "svg",
+    "thread-pool",
+    "wgpu",
+] }
 numfmt = { workspace = true }
 num-traits = { workspace = true }

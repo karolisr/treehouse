@@ -1,13 +1,6 @@
 use std::sync::OnceLock;
 
-use iced::{
-    Subscription,
-    futures::{
-        channel::mpsc::{UnboundedSender, unbounded},
-        stream::StreamExt,
-    },
-    task::{Never, Sipper, sipper},
-};
+use riced::{Never, Sipper, StreamExt, Subscription, UnboundedSender, sipper, unbounded};
 
 use crate::app::AppMsg;
 
