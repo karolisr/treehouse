@@ -1,7 +1,5 @@
 use super::{AxisScaleType, PlotData, St, Tick};
 use crate::cnv_utils::*;
-use crate::iced::*;
-use crate::path_utils::*;
 use crate::*;
 
 pub(super) fn draw_plot(plt: &PlotCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>) {
@@ -19,10 +17,10 @@ pub(super) fn draw_plot(plt: &PlotCnv, st: &St, rndr: &Renderer, sz: Size, g: &m
         f.stroke(&pb_axes.build(), STRK_1_BLK);
         f.pop_transform();
 
-        let lab_offset = SF * FIVE;
+        let lab_offset = SF * 5e0;
 
-        draw_labels(&labs_x, Vector { x: ZERO, y: lab_offset }, Some(st.translation), ZERO, f);
-        draw_labels(&labs_y, Vector { x: lab_offset, y: ZERO }, Some(st.translation), ZERO, f);
+        draw_labels(&labs_x, Vector { x: ZRO, y: lab_offset }, Some(st.translation), ZRO, f);
+        draw_labels(&labs_y, Vector { x: lab_offset, y: ZRO }, Some(st.translation), ZRO, f);
     }));
 }
 
@@ -92,16 +90,16 @@ fn path_builder_axes(
     let ticks_x = calc_ticks(6, scale_x, &data.x_data_type, data.x_max);
     let ticks_y = calc_ticks(5, scale_y, &data.y_data_type, data.y_max);
 
-    let tick_size = SF * FIVE;
+    let tick_size = SF * 5e0;
     let y_for_ticks_x = h;
-    let x_for_ticks_y = ZERO;
+    let x_for_ticks_y = ZRO;
 
     let mut pb: PathBuilder = PathBuilder::new();
     let mut labs_x: Vec<Label> = Vec::with_capacity(ticks_x.len());
     let mut labs_y: Vec<Label> = Vec::with_capacity(ticks_y.len());
 
     // x-axis ticks --------------------------------------------------------------------------------
-    let pt_min = Point { x: ZERO, y: y_for_ticks_x };
+    let pt_min = Point { x: ZRO, y: y_for_ticks_x };
     let pt_max = Point { x: w, y: y_for_ticks_x };
     pb = pb.move_to(pt_min);
     pb = pb.line_to(pt_max);
@@ -113,12 +111,12 @@ fn path_builder_axes(
         pb = pb.line_to(pt1);
 
         let text = lab_text(label.to_string(), pt1, lab_size, TEMPLATE_TXT_LAB_PLOT_AXIS_X);
-        let label = Label { text, width: ZERO, angle: None };
+        let label = Label { text, width: ZRO, angle: None };
         labs_x.push(label);
     } // -------------------------------------------------------------------------------------------
 
     // y-axis ticks --------------------------------------------------------------------------------
-    let pt_min = Point { x: x_for_ticks_y, y: ZERO };
+    let pt_min = Point { x: x_for_ticks_y, y: ZRO };
     let pt_max = Point { x: x_for_ticks_y, y: h };
     pb = pb.move_to(pt_min);
     pb = pb.line_to(pt_max);
@@ -130,7 +128,7 @@ fn path_builder_axes(
         pb = pb.line_to(pt1);
 
         let text = lab_text(label.to_string(), pt1, lab_size, TEMPLATE_TXT_LAB_PLOT_AXIS_Y);
-        let label = Label { text, width: ZERO, angle: None };
+        let label = Label { text, width: ZRO, angle: None };
         labs_y.push(label);
     } // -------------------------------------------------------------------------------------------
 
@@ -154,7 +152,7 @@ pub(super) fn draw_cursor_line(
         {
             f.push_transform();
             f.translate(st.translation);
-            let p0 = Point { x: p.x, y: ZERO };
+            let p0 = Point { x: p.x, y: ZRO };
             let p1 = Point { x: p.x, y: st.plt_vs.h };
             f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), STRK_CRSR_LINE);
             f.pop_transform();
@@ -171,14 +169,8 @@ pub(super) fn draw_cursor_line(
 
             let name = format!("{tree_height_at_x:.3}");
             let text = lab_text(name, p, st.text_size, txt_template);
-            let label = Label { text, width: ZERO, angle: None };
-            draw_labels(
-                &[label],
-                Vector { x: PADDING, y: y_offset },
-                Some(st.translation),
-                ZERO,
-                f,
-            );
+            let label = Label { text, width: ZRO, angle: None };
+            draw_labels(&[label], Vector { x: PADDING, y: y_offset }, Some(st.translation), ZRO, f);
         }
     }));
 }

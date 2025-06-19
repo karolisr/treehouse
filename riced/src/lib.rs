@@ -1,13 +1,50 @@
+#![feature(const_float_round_methods)]
+// -------------------------------------
+// #![allow(dead_code)]
+// #![allow(unused_mut)]
+// #![allow(unused_imports)]
+// #![allow(unused_variables)]
+// #![allow(unused_assignments)]
+// #![allow(clippy::single_match)]
+// #![allow(clippy::collapsible_if)]
+// #![allow(clippy::derivable_impls)]
+// #![allow(clippy::type_complexity)]
+// #![allow(clippy::collapsible_match)]
+// #![allow(clippy::too_many_arguments)]
+// #![allow(clippy::vec_init_then_push)]
+// #![allow(clippy::needless_range_loop)]
+// -------------------------------------
+
+mod colors;
+mod consts;
+mod elements;
+mod icons;
+mod path_utils;
+mod style;
+mod text_width;
+
+use num_traits::FromPrimitive;
+use std::fmt::Display;
+
 use iced as i;
 use iced::widget as w;
+
+pub use colors::Clr;
+pub use consts::*;
+pub use elements::*;
+pub use icons::Icon;
+pub use path_utils::*;
+pub use style::*;
+pub use text_width::{TextWidth, text_width, text_width_line_height};
 
 pub use i::alignment::{Horizontal, Vertical};
 pub use i::font::{Family, Stretch, Style as FontStyle, Weight};
 pub use i::mouse::{Button as MouseButton, Cursor, Event as MouseEvent, Interaction};
+pub use i::theme::{Theme, palette::Pair as PalettePair};
 pub use i::window::Event as WindowEvent;
 pub use i::{
     Alignment, Background, Border, Color, Element, Event, Font, Length, Padding, Pixels, Point,
-    Rectangle, Renderer, Size, Task, Theme, Vector,
+    Rectangle, Renderer, Size, Task, Vector,
 };
 
 pub use w::button::{Status as ButtonStatus, Style as ButtonStyle};

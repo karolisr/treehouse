@@ -4,7 +4,6 @@ mod state;
 use draw::*;
 use state::St;
 
-use crate::iced::*;
 use crate::*;
 
 #[derive(Debug, Default)]
@@ -156,8 +155,8 @@ impl Program<TvMsg> for PlotCnv {
             st.text_size = SF * 10.0;
             let extra_padding = SF * TEN;
             st.plt_vs = RectVals::cnv(bnds).padded(
-                self.padd_l + extra_padding * ZERO,
-                self.padd_r + extra_padding * ZERO,
+                self.padd_l + extra_padding * ZRO,
+                self.padd_r + extra_padding * ZRO,
                 self.padd_t + extra_padding * ONE,
                 self.padd_b + extra_padding * TWO,
             );
@@ -189,7 +188,7 @@ impl Program<TvMsg> for PlotCnv {
         }
         // -----------------------------------------------------------------------------------------
         if let Some(crsr_x_rel) = self.crsr_x_rel {
-            st.cursor_tracking_point = Some(Point { x: crsr_x_rel * st.plt_vs.w, y: ZERO });
+            st.cursor_tracking_point = Some(Point { x: crsr_x_rel * st.plt_vs.w, y: ZRO });
         }
         // -----------------------------------------------------------------------------------------
         action

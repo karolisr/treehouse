@@ -1,4 +1,3 @@
-use crate::iced::*;
 use crate::*;
 
 pub(crate) const TEMPLATE_TXT_LAB_TIP: CnvText = CnvText {

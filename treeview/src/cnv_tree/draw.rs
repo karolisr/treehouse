@@ -1,8 +1,6 @@
 use super::St;
 use crate::cnv_utils::*;
 use crate::edge_utils::*;
-use crate::iced::*;
-use crate::path_utils::*;
 use crate::*;
 
 pub(super) fn draw_bounds(
@@ -67,9 +65,9 @@ pub(super) fn draw_clade_labels(
                     let a0 = edge_angle(tc.opn_angle, e1);
                     let a1 = edge_angle(tc.opn_angle, e2);
 
-                    let p0 = point_pol(a0, r1, ZERO, ONE);
-                    let p1 = point_pol(a1, r1, ZERO, r2 / r1);
-                    let p2 = point_pol(a0, r1, ZERO, ONE);
+                    let p0 = point_pol(a0, r1, ZRO, ONE);
+                    let p1 = point_pol(a1, r1, ZRO, r2 / r1);
+                    let p2 = point_pol(a0, r1, ZRO, ONE);
 
                     pb = pb.move_to(p0);
                     pb = pb.arc_approx_line(a0, a1, ORIGIN, r1);
@@ -116,7 +114,7 @@ pub(super) fn draw_cursor_line(
             f.translate(st.translation);
             match tc.tre_sty {
                 TreSty::PhyGrm => {
-                    let p0 = Point { x: p.x, y: ZERO };
+                    let p0 = Point { x: p.x, y: ZRO };
                     let p1 = Point { x: p.x, y: st.tre_vs.h };
                     f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), STRK_CRSR_LINE);
                 }
@@ -137,7 +135,7 @@ pub(super) fn draw_labs_tip(
     g.push(tst.cache_lab_tip().draw(rndr, sz, |f| {
         draw_labels(
             &st.labs_tip,
-            Vector { x: tc.lab_offset_tip, y: ZERO },
+            Vector { x: tc.lab_offset_tip, y: ZRO },
             Some(st.translation),
             st.rotation,
             f,
@@ -151,7 +149,7 @@ pub(super) fn draw_labs_int(
     g.push(tst.cache_lab_int().draw(rndr, sz, |f| {
         draw_labels(
             &st.labs_int,
-            Vector { x: tc.lab_offset_int, y: ZERO },
+            Vector { x: tc.lab_offset_int, y: ZRO },
             Some(st.translation),
             st.rotation,
             f,
@@ -165,7 +163,7 @@ pub(super) fn draw_labs_brnch(
     g.push(tst.cache_lab_brnch().draw(rndr, sz, |f| {
         draw_labels(
             &st.labs_brnch,
-            Vector { x: ZERO, y: tc.lab_offset_brnch },
+            Vector { x: ZRO, y: tc.lab_offset_brnch },
             Some(st.translation),
             st.rotation,
             f,
@@ -257,7 +255,7 @@ fn draw_scale_bar(
     let a = tre_height / 3.25;
     let b = a.fract();
     let c = a - b;
-    let sb_len = if c > ZERO { (c / TEN).floor() * TEN } else { (a * TEN).floor() / TEN };
+    let sb_len = if c > ZRO { (c / TEN).floor() * TEN } else { (a * TEN).floor() / TEN };
     let sb_frac = sb_len / tre_height;
     let sb_len_on_screen = sb_frac * w;
 
@@ -274,7 +272,7 @@ fn draw_scale_bar(
     f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), stroke);
     let text = lab_text(format!("{sb_len}"), p_lab, lab_size, TEMPLATE_TXT_LAB_SCALEBAR);
     let lab = Label { text, width: sb_len_on_screen, angle: None };
-    draw_labels(&[lab], Vector { x: ZERO, y: lab_y_offset }, None, ZERO, f);
+    draw_labels(&[lab], Vector { x: ZRO, y: lab_y_offset }, None, ZRO, f);
 }
 
 fn draw_nodes(
@@ -317,13 +315,13 @@ fn stroke_edges_fan(
     let mut pb: PathBuilder = PathBuilder::new();
     if opn_angle >= ONE.to_radians() {
         for e in edges {
-            let nd = node_data_rad(opn_angle, ZERO, tre_vs.radius_min, root_len, e);
+            let nd = node_data_rad(opn_angle, ZRO, tre_vs.radius_min, root_len, e);
             pb = edge_path_pol(&nd, pb);
             pb = edge_path_arc_pol(&nd, pb);
         }
     } else {
-        let p0 = Point { x: root_len, y: ZERO };
-        let p1 = Point { x: tre_vs.radius_min, y: ZERO };
+        let p0 = Point { x: root_len, y: ZRO };
+        let p1 = Point { x: tre_vs.radius_min, y: ZRO };
         pb = pb.move_to(p0).line_to(p1)
     }
 
@@ -337,7 +335,7 @@ fn stroke_edges_fan(
 
 fn stroke_root_phygrm(w: Float, h: Float, root_len: Float, root_edge: Option<Edge>, f: &mut Frame) {
     if let Some(root_edge) = root_edge
-        && root_len > ZERO
+        && root_len > ZRO
     {
         let nd = node_data_cart(w, h, &root_edge);
         let pt_parent = Point { x: -root_len, y: nd.points.p0.y };
@@ -349,9 +347,9 @@ fn stroke_root_fan(
     radius_min: Float, opn_angle: Float, root_len: Float, root_edge: Option<Edge>, f: &mut Frame,
 ) {
     if let Some(root_edge) = root_edge
-        && root_len > ZERO
+        && root_len > ZRO
     {
-        let nd = node_data_rad(opn_angle, ZERO, radius_min, root_len, &root_edge);
+        let nd = node_data_rad(opn_angle, ZRO, radius_min, root_len, &root_edge);
         f.stroke(&PathBuilder::new().move_to(ORIGIN).line_to(nd.points.p0).build(), STRK_ROOT);
     };
 }
@@ -424,13 +422,13 @@ pub(super) fn draw_palette(
 
         f.fill_rectangle(
             Point { x: palette_rect_x, y: palette_rect_y },
-            iced::Size { width: palette_rect_w, height: palette_rect_h },
+            Size { width: palette_rect_w, height: palette_rect_h },
             color_bg_base,
         );
 
         f.stroke_rectangle(
             Point { x: palette_rect_x + SF / TWO, y: palette_rect_y + SF / TWO },
-            iced::Size {
+            Size {
                 width: TWO * PADDING + color_rect_size * 5e0 - SF,
                 height: TWO * PADDING + color_rect_size * 4e0 - SF,
             },
@@ -443,7 +441,7 @@ pub(super) fn draw_palette(
                     x: palette_rect_x + PADDING + color_rect_size * i as Float,
                     y: palette_rect_y + PADDING,
                 },
-                iced::Size { width: color_rect_size, height: color_rect_size },
+                Size { width: color_rect_size, height: color_rect_size },
                 *c,
             );
         }
@@ -454,7 +452,7 @@ pub(super) fn draw_palette(
                     x: palette_rect_x + PADDING + color_rect_size * i as Float,
                     y: palette_rect_y + PADDING + color_rect_size * 1e0,
                 },
-                iced::Size { width: color_rect_size, height: color_rect_size },
+                Size { width: color_rect_size, height: color_rect_size },
                 *c,
             );
         }
@@ -465,7 +463,7 @@ pub(super) fn draw_palette(
                     x: palette_rect_x + PADDING + color_rect_size * i as Float,
                     y: palette_rect_y + PADDING + color_rect_size * 2e0,
                 },
-                iced::Size { width: color_rect_size, height: color_rect_size },
+                Size { width: color_rect_size, height: color_rect_size },
                 *c,
             );
         }
@@ -476,7 +474,7 @@ pub(super) fn draw_palette(
                     x: palette_rect_x + PADDING + color_rect_size * i as Float,
                     y: palette_rect_y + PADDING + color_rect_size * 3e0,
                 },
-                iced::Size { width: color_rect_size, height: color_rect_size },
+                Size { width: color_rect_size, height: color_rect_size },
                 *c,
             );
         }

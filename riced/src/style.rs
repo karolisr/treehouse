@@ -1,12 +1,11 @@
-use crate::iced::*;
 use crate::*;
 
 pub(crate) fn sty_checkbox(theme: &Theme, status: CheckboxStatus) -> CheckboxStyle {
     let palette = theme.extended_palette();
 
     fn styled(
-        icon_color: Color, border_color: Color, base: ::iced::theme::palette::Pair,
-        accent: ::iced::theme::palette::Pair, is_checked: bool,
+        icon_color: Color, border_color: Color, base: PalettePair, accent: PalettePair,
+        is_checked: bool,
     ) -> CheckboxStyle {
         CheckboxStyle {
             background: Background::Color(if is_checked { accent.color } else { base.color }),
@@ -79,7 +78,7 @@ pub(crate) fn sty_svg(theme: &Theme, status: SvgStatus) -> SvgStyle {
     SvgStyle { color: Some(color) }
 }
 
-pub(crate) fn sty_cont(theme: &Theme) -> ContainerStyle {
+pub fn sty_cont(theme: &Theme) -> ContainerStyle {
     let pb = theme.palette();
     ContainerStyle {
         text_color: Some(pb.text),
@@ -89,24 +88,24 @@ pub(crate) fn sty_cont(theme: &Theme) -> ContainerStyle {
     }
 }
 
-pub(crate) fn sty_cont_tool_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
-pub(crate) fn sty_cont_search_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
-pub(crate) fn sty_cont_side_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
+pub fn sty_cont_tool_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
+pub fn sty_cont_search_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
+pub fn sty_cont_side_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
 
-pub(crate) fn sty_pane_grid(theme: &Theme) -> PgStyle {
+pub fn sty_pane_grid(theme: &Theme) -> PgStyle {
     let pe = theme.extended_palette();
     PgStyle {
         hovered_region: PgHighlight {
             background: Clr::GRN_25.into(),
             border: Border { width: BORDER_W, color: pe.primary.strong.color, radius: 0.into() },
         },
-        hovered_split: PgLine { color: pe.primary.base.color, width: SF * TWO },
-        picked_split: PgLine { color: pe.primary.strong.color, width: SF * TWO },
+        hovered_split: PgLine { color: pe.primary.base.color, width: SF * 2e0 },
+        picked_split: PgLine { color: pe.primary.strong.color, width: SF * 2e0 },
     }
 }
 
-// pub(crate) fn sty_pane_titlebar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
-pub(crate) fn sty_pane_body(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
+pub fn sty_pane_titlebar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
+pub fn sty_pane_body(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
 
 pub(crate) fn sty_btn(theme: &Theme, status: ButtonStatus) -> ButtonStyle {
     let ep = theme.extended_palette();
@@ -171,10 +170,10 @@ pub(crate) fn sty_scrlbl(theme: &Theme, status: ScrollableStatus) -> ScrollableS
 
     let scrollbar = ScrollBarRail {
         background: Some(palette.background.weak.color.into()),
-        border: Border { radius: WIDGET_RADIUS.into(), width: ZERO, color: Clr::TRN },
+        border: Border { radius: WIDGET_RADIUS.into(), width: 0e0, color: Clr::TRN },
         scroller: Scroller {
             color: palette.background.strong.color,
-            border: Border { radius: WIDGET_RADIUS.into(), width: ZERO, color: Clr::TRN },
+            border: Border { radius: WIDGET_RADIUS.into(), width: 0e0, color: Clr::TRN },
         },
     };
 
@@ -252,12 +251,12 @@ pub(crate) fn sty_slider(theme: &Theme, status: SliderStatus) -> SliderStyle {
     SliderStyle {
         rail: SliderRail {
             backgrounds: (color.into(), palette.background.strong.color.into()),
-            width: SLIDER_H / THREE,
+            width: SLIDER_H / 3e0,
             border: Border { radius: WIDGET_RADIUS.into(), width: BORDER_W, color: Clr::TRN },
         },
 
         handle: SliderHandle {
-            shape: SliderHandleShape::Circle { radius: SLIDER_H / THREE + SF * TWO },
+            shape: SliderHandleShape::Circle { radius: SLIDER_H / 3e0 + SF * 2e0 },
             background: color.into(),
             border_color: Clr::TRN,
             border_width: BORDER_W,

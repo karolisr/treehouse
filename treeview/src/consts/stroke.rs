@@ -1,4 +1,3 @@
-use crate::iced::*;
 use crate::*;
 
 const TEMPLATE_STRK: Strk = Strk {

@@ -1,5 +1,4 @@
 #![feature(iter_collect_into)]
-#![feature(const_float_round_methods)]
 // -------------------------------------
 // #![allow(dead_code)]
 // #![allow(unused_mut)]
@@ -21,18 +20,14 @@ mod cnv_tree;
 mod cnv_utils;
 mod consts;
 mod edge_utils;
-mod elements;
-mod iced;
-mod icons;
-mod path_utils;
-mod style;
+
 mod treestate;
 mod treeview;
 mod view;
 
 pub type Float = f32;
 
-pub use consts::{SF, TXT_SIZE};
+pub use riced::{SF, TXT_SIZE};
 pub use treeview::{SidebarPosition, TreeView, TvMsg};
 
 use std::collections::{HashMap, HashSet};
@@ -41,17 +36,15 @@ use std::fmt::{Debug, Display, Formatter, Result};
 use std::ops::RangeInclusive;
 use std::rc::Rc;
 
+use cnv_plot::AXIS_SCALE_TYPE_OPTS;
 use cnv_plot::{AxisScaleType, PlotCnv, PlotDataType};
 use cnv_tree::TreeCnv;
 use consts::*;
 use dendros::{Edge, LttPoint, Node, NodeId, Tree, TreeFloat, flatten_tree, ltt, write_newick};
-use icons::Icon;
-use num_traits::FromPrimitive;
-use path_utils::PathBuilder;
 use rayon::prelude::*;
+use riced::*;
 use treestate::TreeState;
 use treeview::{NODE_ORD_OPTS, NodeOrd, TRE_STY_OPTS, TreSty, TvPane};
-use utils::{Clr, TextWidth, text_width};
 
 pub type IndexRange = RangeInclusive<usize>;
 
@@ -64,23 +57,23 @@ pub type IndexRange = RangeInclusive<usize>;
 #[derive(Debug)]
 pub(crate) struct CladeLabel {
     // node_id: NodeId,
-    color: iced::Color,
+    color: Color,
     // label: String,
     // label_type: CladeLabelType,
 }
 
 #[derive(Debug, Clone, Default)]
 struct Label {
-    text: iced::CnvText,
+    text: CnvText,
     width: Float,
     angle: Option<Float>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
 struct EdgePoints {
-    p0: iced::Point,
-    p_mid: iced::Point,
-    p1: iced::Point,
+    p0: Point,
+    p_mid: Point,
+    p1: Point,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -121,23 +114,23 @@ pub struct RectVals<T> {
     radius_max: T,
     cntr_x: T,
     cntr_y: T,
-    cntr: iced::Vector<T>,
-    trans: iced::Vector<T>,
+    cntr: Vector<T>,
+    trans: Vector<T>,
 }
 
 impl RectVals<Float> {
-    pub fn cnv(bounds: iced::Rectangle) -> Self {
-        let x = ZERO;
-        let y = ZERO;
+    pub fn cnv(bounds: Rectangle) -> Self {
+        let x = ZRO;
+        let y = ZRO;
         let w = bounds.width as Float;
         let h = bounds.height as Float;
-        iced::Rectangle { x, y, width: w, height: h }.into()
+        Rectangle { x, y, width: w, height: h }.into()
     }
 
     pub fn wh(w: Float, h: Float) -> Self {
-        let x = ZERO;
-        let y = ZERO;
-        iced::Rectangle { x, y, width: w, height: h }.into()
+        let x = ZRO;
+        let y = ZRO;
+        Rectangle { x, y, width: w, height: h }.into()
     }
 
     pub fn corners(x0: Float, y0: Float, x1: Float, y1: Float) -> Self {
@@ -145,7 +138,7 @@ impl RectVals<Float> {
         let y = y0;
         let w = x1 - x0;
         let h = y1 - y0;
-        iced::Rectangle { x, y, width: w, height: h }.into()
+        Rectangle { x, y, width: w, height: h }.into()
     }
 
     pub fn padded(&self, left: Float, right: Float, top: Float, bottom: Float) -> RectVals<Float> {
@@ -153,7 +146,7 @@ impl RectVals<Float> {
         let y = self.y0 + top;
         let width = self.w - right - left;
         let height = self.h - bottom - top;
-        iced::Rectangle { x, y, width, height }.into()
+        Rectangle { x, y, width, height }.into()
     }
 
     pub fn transfer_x_from(&self, other: &RectVals<Float>) -> RectVals<Float> {
@@ -161,7 +154,7 @@ impl RectVals<Float> {
         let y = self.y0;
         let width = other.w;
         let height = self.h;
-        iced::Rectangle { x, y, width, height }.into()
+        Rectangle { x, y, width, height }.into()
     }
 
     pub fn transfer_y_from(&self, other: &RectVals<Float>) -> RectVals<Float> {
@@ -169,12 +162,12 @@ impl RectVals<Float> {
         let y = other.y0;
         let width = self.w;
         let height = other.h;
-        iced::Rectangle { x, y, width, height }.into()
+        Rectangle { x, y, width, height }.into()
     }
 }
 
-impl From<iced::Rectangle<Float>> for RectVals<Float> {
-    fn from(r: iced::Rectangle<Float>) -> Self {
+impl From<Rectangle<Float>> for RectVals<Float> {
+    fn from(r: Rectangle<Float>) -> Self {
         let x0 = r.x;
         let y0 = r.y;
         let w = r.width;
@@ -192,9 +185,9 @@ impl From<iced::Rectangle<Float>> for RectVals<Float> {
 
         let cntr_x = cntr_untrans_x + x0;
         let cntr_y = cntr_untrans_y + y0;
-        let cntr = iced::Vector { x: cntr_x, y: cntr_y };
+        let cntr = Vector { x: cntr_x, y: cntr_y };
 
-        let trans = iced::Vector { x: x0, y: y0 };
+        let trans = Vector { x: x0, y: y0 };
 
         RectVals {
             x0,
@@ -215,13 +208,11 @@ impl From<iced::Rectangle<Float>> for RectVals<Float> {
     }
 }
 
-impl<T> From<RectVals<T>> for iced::Rectangle<T>
+impl<T> From<RectVals<T>> for Rectangle<T>
 where
     T: Clone,
 {
-    fn from(v: RectVals<T>) -> Self {
-        iced::Rectangle { x: v.x0, y: v.y0, width: v.w, height: v.h }
-    }
+    fn from(v: RectVals<T>) -> Self { Rectangle { x: v.x0, y: v.y0, width: v.w, height: v.h } }
 }
 
 impl Display for RectVals<Float> {

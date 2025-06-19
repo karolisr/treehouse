@@ -1,4 +1,3 @@
-use crate::iced::*;
 use crate::*;
 
 #[derive(Debug, Default)]
@@ -21,8 +20,8 @@ impl St {
         if let Some(mouse) = crsr.position_in(self.bnds) {
             let adj = mouse - self.translation;
             let crsr_x_rel = adj.x / self.plt_vs.w;
-            if (ZERO - EPSILON..=ONE + EPSILON).contains(&crsr_x_rel)
-                && (ZERO - EPSILON..=self.plt_vs.h + EPSILON).contains(&adj.y)
+            if (ZRO - EPSILON..=ONE + EPSILON).contains(&crsr_x_rel)
+                && (ZRO - EPSILON..=self.plt_vs.h + EPSILON).contains(&adj.y)
             {
                 self.cursor_tracking_point = Some(adj);
                 Some(Action::publish(TvMsg::CursorOnLttCnv { x: Some(crsr_x_rel) }))

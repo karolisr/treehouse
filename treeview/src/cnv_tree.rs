@@ -2,7 +2,6 @@ mod draw;
 mod program;
 mod state;
 
-use crate::iced::*;
 use crate::*;
 use state::St;
 
@@ -93,8 +92,8 @@ impl TreeCnv {
             tip_labs_vis_max: 400,
             node_labs_vis_max: 900,
             // -------------------------------------------------------------------------------------
-            opn_angle: ZERO,
-            rot_angle: ZERO,
+            opn_angle: ZRO,
+            rot_angle: ZRO,
             // -------------------------------------------------------------------------------------
             lab_size_min: SF,
             lab_size_max: SF,
@@ -102,11 +101,11 @@ impl TreeCnv {
             lab_size_int: SF,
             lab_size_brnch: SF,
             // -------------------------------------------------------------------------------------
-            lab_offset_tip: ZERO,
-            lab_offset_int: ZERO,
-            lab_offset_brnch: ZERO,
+            lab_offset_tip: ZRO,
+            lab_offset_int: ZRO,
+            lab_offset_brnch: ZRO,
             // -------------------------------------------------------------------------------------
-            clade_labs_w: ZERO,
+            clade_labs_w: ZRO,
             has_clade_labels: false,
             // -------------------------------------------------------------------------------------
             cache_bnds: Default::default(),
@@ -117,17 +116,17 @@ impl TreeCnv {
             // -------------------------------------------------------------------------------------
             crsr_x_rel: None,
             // -------------------------------------------------------------------------------------
-            vis_x0: ZERO,
-            vis_y0: ZERO,
-            vis_x1: ZERO,
-            vis_y1: ZERO,
-            vis_x_mid: ZERO,
-            vis_y_mid: ZERO,
-            vis_x_mid_rel: ZERO,
-            vis_y_mid_rel: ZERO,
+            vis_x0: ZRO,
+            vis_y0: ZRO,
+            vis_x1: ZRO,
+            vis_y1: ZRO,
+            vis_x_mid: ZRO,
+            vis_y_mid: ZRO,
+            vis_x_mid_rel: ZRO,
+            vis_y_mid_rel: ZRO,
             // -------------------------------------------------------------------------------------
             tre_vs: RectVals::default(),
-            root_len_frac: ZERO,
+            root_len_frac: ZRO,
             stale_tre_rect: false,
             // -------------------------------------------------------------------------------------
             tree_state: None,
@@ -154,21 +153,21 @@ impl TreeCnv {
         text_w_tip: &mut TextWidth<'static>,
     ) -> (RectVals<Float>, Float) {
         let tre_vs_prelim = cnv_vs.padded(self.padd_l, self.padd_r, self.padd_t, self.padd_b);
-        let mut tip_w: Float = ZERO;
+        let mut tip_w: Float = ZRO;
         if self.draw_labs_tip && self.draw_labs_allowed {
             tip_w = calc_tip_w(
                 self.tre_sty, &tre_vs_prelim, edges_tip_tallest, self.lab_offset_tip, text_w_tip,
             );
         }
-        let mut offset_due_to_clade_lab = ZERO;
+        let mut offset_due_to_clade_lab = ZRO;
         if self.has_clade_labels && self.draw_clade_labs {
             offset_due_to_clade_lab = self.clade_labs_w + self.lab_offset_tip + SF;
         }
-        let mut root_len = ZERO;
+        let mut root_len = ZRO;
         match self.tre_sty {
             TreSty::PhyGrm => {
-                let mut offset_due_to_brnch_lab = ZERO;
-                let mut offset_due_to_tip_lab = ZERO;
+                let mut offset_due_to_brnch_lab = ZRO;
+                let mut offset_due_to_tip_lab = ZRO;
                 if self.draw_labs_allowed && self.draw_labs_tip {
                     offset_due_to_tip_lab = self.lab_size_tip / TWO;
                 }
@@ -178,7 +177,7 @@ impl TreeCnv {
                 let right = tip_w + offset_due_to_clade_lab;
                 let top = (offset_due_to_tip_lab).max(offset_due_to_brnch_lab);
                 let bottom = offset_due_to_tip_lab;
-                let mut tre_vs = tre_vs_prelim.padded(ZERO, right, top, bottom);
+                let mut tre_vs = tre_vs_prelim.padded(ZRO, right, top, bottom);
                 if is_rooted {
                     root_len = tre_vs.w * self.root_len_frac;
                     tre_vs.w -= root_len;
@@ -192,7 +191,7 @@ impl TreeCnv {
                     let cntr_untrans_y = tre_vs.h / TWO;
                     tre_vs.cntr_x = cntr_untrans_x + tre_vs.x0;
                     tre_vs.cntr_y = cntr_untrans_y + tre_vs.y0;
-                    tre_vs.cntr = iced::Vector { x: tre_vs.cntr_x, y: tre_vs.cntr_y };
+                    tre_vs.cntr = Vector { x: tre_vs.cntr_x, y: tre_vs.cntr_y };
                 }
 
                 (tre_vs, root_len)
@@ -225,8 +224,8 @@ fn calc_tip_w(
 fn calc_tip_lab_extra_w(
     tre_vs_w: Float, edges_tip_tallest: &[Edge], text_w_tip: &mut TextWidth,
 ) -> Float {
-    let mut max_w: Float = ZERO;
-    let mut max_offset: Float = ZERO;
+    let mut max_w: Float = ZRO;
+    let mut max_offset: Float = ZRO;
     for edge in edges_tip_tallest {
         if let Some(name) = &edge.name {
             let offset = edge.x1 as Float * tre_vs_w;

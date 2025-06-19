@@ -1,5 +1,5 @@
 [package]
-name = "utils"
+name = "riced"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -11,5 +11,10 @@ categories.workspace = true
 [lib]
 crate-type = ["rlib"]
 
+[build-dependencies]
+convert_case = "0.8.0"
+
 [dependencies]
-iced = { workspace = true, features = ["advanced"] }
+iced = { workspace = true, features = ["advanced", "canvas", "lazy", "svg"] }
+numfmt = { workspace = true }
+num-traits = { workspace = true }

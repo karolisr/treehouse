@@ -1,7 +1,7 @@
 use crate::consts::icons::*;
-use crate::iced::SvgHandle;
+use crate::*;
 
-pub(crate) enum Icon {
+pub enum Icon {
     ArrowLeft,
     ArrowRight,
     SidebarLeft,

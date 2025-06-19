@@ -1,6 +1,3 @@
-use crate::elements::*;
-use crate::iced::*;
-use crate::style::*;
 use crate::*;
 
 impl TreeView {
@@ -66,12 +63,12 @@ fn content<'a>(tv: &'a TreeView) -> Element<'a, TvMsg> {
             .style(sty_pane_body)
         })
         .style(sty_pane_grid)
-        .on_resize(ZERO, TvMsg::PaneResized)
+        .on_resize(ZRO, TvMsg::PaneResized)
         .min_size(SF * 2e2)
         .spacing(PADDING)
         .into()
     } else {
-        space_v(ZERO, ZERO).into()
+        space_v(ZRO, ZRO).into()
     };
     center(ele).into()
 }
@@ -109,7 +106,7 @@ fn tool_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         )
         .width(Length::Shrink)
         .height(Length::Shrink)
-        .padding(ZERO),
+        .padding(ZRO),
     );
 
     tb_row = tb_row.push(
@@ -120,7 +117,7 @@ fn tool_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         )
         .width(Length::Shrink)
         .height(Length::Shrink)
-        .padding(ZERO),
+        .padding(ZRO),
     );
 
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
@@ -138,11 +135,11 @@ fn tool_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
                 btn_next_tre(tv.next_tre_exists())
             ]
             .align_y(Vertical::Center)
-            .spacing(ZERO),
+            .spacing(ZRO),
         )
         .width(Length::Shrink)
         .height(Length::Shrink)
-        .padding(ZERO),
+        .padding(ZRO),
     );
 
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
@@ -170,11 +167,11 @@ fn tool_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
                 }
             ]
             .align_y(Vertical::Center)
-            .spacing(ZERO),
+            .spacing(ZRO),
         )
         .width(Length::Shrink)
         .height(Length::Shrink)
-        .padding(ZERO),
+        .padding(ZRO),
     );
 
     tb_row = tb_row.align_y(Vertical::Center);
@@ -195,7 +192,7 @@ fn search_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     let mut row2: Row<TvMsg> = Row::new();
 
     row1 =
-        row1.push(text_input("Search", &tv.search_string, tv.search_text_input_id, TvMsg::Search));
+        row1.push(txt_input("Search", &tv.search_string, tv.search_text_input_id, TvMsg::Search));
 
     let nxt_prv_btn_row = iced_row![
         btn_svg(Icon::ArrowLeft, {
@@ -455,4 +452,192 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
         .padding(PADDING)
         .width(SIDE_BAR_W)
         .into()
+}
+
+pub(crate) fn btn_prev_tre(enabled: bool) -> Button<'static, TvMsg> {
+    btn_svg(
+        Icon::ArrowLeft,
+        match enabled {
+            true => Some(TvMsg::PrevTre),
+            false => None,
+        },
+    )
+}
+
+pub(crate) fn btn_next_tre(enabled: bool) -> Button<'static, TvMsg> {
+    btn_svg(
+        Icon::ArrowRight,
+        match enabled {
+            true => Some(TvMsg::NextTre),
+            false => None,
+        },
+    )
+}
+
+pub(crate) fn btn_label_clade(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
+    btn_txt("Label", {
+        if sel_tre.sel_node_ids().len() == 1 {
+            let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
+            match sel_tre.clade_has_label(&node_id) {
+                true => None,
+                false => Some(TvMsg::LabelClade(node_id)),
+            }
+        } else {
+            None
+        }
+    })
+    .width(BTN_H * TWO)
+}
+
+pub(crate) fn btn_remove_clade_label(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
+    btn_txt("Unlabel", {
+        if sel_tre.sel_node_ids().len() == 1 {
+            let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
+            match sel_tre.clade_has_label(&node_id) {
+                true => Some(TvMsg::RemoveCladeLabel(node_id)),
+                false => None,
+            }
+        } else {
+            None
+        }
+    })
+    .width(BTN_H * TWO)
+}
+
+pub(crate) fn btn_root(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
+    btn_txt("Root", {
+        if sel_tre.sel_node_ids().len() == 1 {
+            let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
+            match sel_tre.can_root(&node_id) {
+                true => Some(TvMsg::Root(node_id)),
+                false => None,
+            }
+        } else {
+            None
+        }
+    })
+    .width(BTN_H * TWO)
+}
+
+pub(crate) fn btn_unroot(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
+    btn_txt(
+        "Unroot",
+        match sel_tre.is_rooted() {
+            true => Some(TvMsg::Unroot),
+            false => None,
+        },
+    )
+    .width(BTN_H * TWO)
+}
+
+// pub(crate) fn pick_list_ltt_x_axis_scale_type<'a>(
+//     axis_scale_type: &AxisScaleType,
+// ) -> Row<'a, TvMsg> {
+//     let mut pl: PickList<AxisScaleType, &[AxisScaleType], AxisScaleType, TvMsg> = PickList::new(
+//         &AXIS_SCALE_TYPE_OPTS,
+//         Some(axis_scale_type.clone()),
+//         TvMsg::LttXAxisScaleTypeChanged,
+//     );
+//     pl = pick_list_common(pl);
+//     iced_row![txt("X-Axis Scale").width(Length::FillPortion(9)), pl].align_y(Vertical::Center)
+// }
+
+pub(crate) fn pick_list_ltt_y_axis_scale_type<'a>(
+    axis_scale_type: &AxisScaleType,
+) -> Row<'a, TvMsg> {
+    let mut pl: PickList<AxisScaleType, &[AxisScaleType], AxisScaleType, TvMsg> = PickList::new(
+        &AXIS_SCALE_TYPE_OPTS,
+        Some(axis_scale_type.clone()),
+        TvMsg::LttYAxisScaleTypeChanged,
+    );
+    pl = pick_list_common(pl);
+    iced_row![txt("Y-Axis Scale").width(Length::FillPortion(9)), pl].align_y(Vertical::Center)
+}
+
+pub(crate) fn pick_list_node_ordering<'a>(node_ord: NodeOrd) -> Row<'a, TvMsg> {
+    let mut pl: PickList<NodeOrd, &[NodeOrd], NodeOrd, TvMsg> =
+        PickList::new(&NODE_ORD_OPTS, Some(node_ord), TvMsg::NodeOrdOptChanged);
+    pl = pick_list_common(pl);
+    iced_row![txt("Node Order").width(Length::FillPortion(9)), pl].align_y(Vertical::Center)
+}
+
+pub(crate) fn pick_list_tre_sty<'a>(tre_sty: TreSty) -> Row<'a, TvMsg> {
+    let mut pl: PickList<TreSty, &[TreSty], TreSty, TvMsg> =
+        PickList::new(&TRE_STY_OPTS, Some(tre_sty), TvMsg::TreStyOptChanged);
+    pl = pick_list_common(pl);
+    iced_row![txt("Style").width(Length::FillPortion(9)), pl].align_y(Vertical::Center)
+}
+
+pub(crate) fn scrollable_cnv_ltt<'a>(
+    id: &'static str, cnv: Cnv<&'a PlotCnv, TvMsg>, w: impl Into<Length>, h: impl Into<Length>,
+) -> Scrollable<'a, TvMsg> {
+    let mut s: Scrollable<TvMsg> = Scrollable::new(cnv);
+    s = s.direction(ScrollableDirection::Horizontal(scroll_bar()));
+    s = s.id(id);
+    s = s.on_scroll(TvMsg::LttCnvScrolledOrResized);
+    scrollable_common(s, w, h)
+}
+
+pub(crate) fn scrollable_cnv_tre<'a>(
+    id: &'static str, cnv: Cnv<&'a TreeCnv, TvMsg>, w: impl Into<Length>, h: impl Into<Length>,
+) -> Scrollable<'a, TvMsg> {
+    let mut s: Scrollable<TvMsg> = Scrollable::new(cnv);
+    s = s.direction(ScrollableDirection::Both { horizontal: scroll_bar(), vertical: scroll_bar() });
+    s = s.id(id);
+    s = s.on_scroll(TvMsg::TreCnvScrolledOrResized);
+    scrollable_common(s, w, h)
+}
+
+pub(crate) fn toggler_cursor_line<'a>(
+    enabled: bool, draw_cursor_line: bool, tre_sty: TreSty,
+) -> Toggler<'a, TvMsg> {
+    let lab = match tre_sty {
+        TreSty::PhyGrm => "Cursor Tracking Line",
+        TreSty::Fan => "Cursor Tracking Circle",
+    };
+    let mut tglr = toggler(lab, draw_cursor_line);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::CursorLineVisChanged);
+    }
+    tglr
+}
+
+pub(crate) fn toggler_label_branch<'a>(enabled: bool, draw_brnch_labs: bool) -> Toggler<'a, TvMsg> {
+    let mut tglr = toggler("Branch Lengths", draw_brnch_labs);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::BrnchLabVisChanged);
+    }
+    tglr
+}
+
+pub(crate) fn toggler_label_int<'a>(enabled: bool, draw_int_labs: bool) -> Toggler<'a, TvMsg> {
+    let mut tglr = toggler("Internal Labels", draw_int_labs);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::IntLabVisChanged);
+    }
+    tglr
+}
+
+pub(crate) fn toggler_label_tip<'a>(enabled: bool, draw_tip_labs: bool) -> Toggler<'a, TvMsg> {
+    let mut tglr = toggler("Tip Labels", draw_tip_labs);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::TipLabVisChanged);
+    }
+    tglr
+}
+
+pub(crate) fn toggler_legend<'a>(enabled: bool, draw_legend: bool) -> Toggler<'a, TvMsg> {
+    let mut tglr = toggler("Legend", draw_legend);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::LegendVisChanged);
+    }
+    tglr
+}
+
+pub(crate) fn toggler_root<'a>(enabled: bool, draw_root: bool) -> Toggler<'a, TvMsg> {
+    let mut tglr = toggler("Root", draw_root);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::RootVisChanged);
+    }
+    tglr
 }

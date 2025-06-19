@@ -1,4 +1,3 @@
-use crate::iced::*;
 use crate::*;
 
 #[derive(Default, Debug)]
@@ -52,8 +51,7 @@ pub(super) struct TreeState {
 
 impl TreeState {
     pub(super) fn tree(&self) -> &Tree { &self.t }
-    #[allow(dead_code)]
-    pub(super) fn tree_original(&self) -> &Tree { &self.t_orig }
+    // pub(super) fn tree_original(&self) -> &Tree { &self.t_orig }
 
     pub(super) fn add_clade_label(
         &mut self,

@@ -1,4 +1,5 @@
-use crate::iced::*;
+use core::f32;
+
 use crate::*;
 use lyon_path::builder;
 use lyon_path::geom;
@@ -31,13 +32,13 @@ impl PathBuilder {
 
     pub fn circle(self, center: Point, radius: f32) -> Self {
         let start = Point { x: center.x + radius, y: center.y };
-        self.move_to(start).arc_approx_line(ZERO, TAU, center, radius)
+        self.move_to(start).arc_approx_line(0e0, f32::consts::TAU, center, radius)
     }
 
     fn arc(&self, a0: f32, a1: f32, center: Point, radius: f32) -> geom::Arc<f32> {
         let center = geom::Point::new(center.x, center.y);
         let radii = geom::Vector::new(radius, radius);
-        let x_rotation = geom::Angle::radians(ZERO);
+        let x_rotation = geom::Angle::radians(0e0);
         let start_angle = geom::Angle::radians(a0);
         let sweep_angle = geom::Angle::radians(a1 - a0);
         geom::Arc { center, radii, start_angle, sweep_angle, x_rotation }
@@ -51,7 +52,6 @@ impl PathBuilder {
         self
     }
 
-    #[allow(dead_code)]
     pub fn arc_approx_quad_bezier(mut self, a0: f32, a1: f32, center: Point, radius: f32) -> Self {
         let arc = self.arc(a0, a1, center, radius);
         arc.cast::<f64>().for_each_quadratic_bezier(&mut |curve| {
@@ -61,7 +61,6 @@ impl PathBuilder {
         self
     }
 
-    #[allow(dead_code)]
     pub fn arc_approx_cubic_bezier(mut self, a0: f32, a1: f32, center: Point, radius: f32) -> Self {
         let arc = self.arc(a0, a1, center, radius);
         arc.cast::<f64>().for_each_cubic_bezier(&mut |curve| {
@@ -89,15 +88,14 @@ pub fn stroke_rect(rect: Rectangle, stroke: Strk, f: &mut Frame) {
     f.stroke(&PathBuilder::new().rectangle(rect).build(), stroke);
 }
 
-#[allow(dead_code)]
 pub fn fill_rect(rect: Rectangle, fill: CnvFill, f: &mut Frame) {
     f.fill(&PathBuilder::new().rectangle(rect).build(), fill);
 }
 
-pub fn stroke_circle(point: Point, stroke: Strk, radius: Float, f: &mut Frame) {
+pub fn stroke_circle(point: Point, stroke: Strk, radius: f32, f: &mut Frame) {
     f.stroke(&PathBuilder::new().circle(point, radius).build(), stroke);
 }
 
-pub fn fill_circle(point: Point, fill: CnvFill, radius: Float, f: &mut Frame) {
+pub fn fill_circle(point: Point, fill: CnvFill, radius: f32, f: &mut Frame) {
     f.fill(&PathBuilder::new().circle(point, radius).build(), fill);
 }

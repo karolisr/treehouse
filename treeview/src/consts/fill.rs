@@ -1,4 +1,3 @@
-use crate::iced::*;
 use crate::*;
 
 const TEMPLATE_FILL: CnvFill = CnvFill { style: Solid(Clr::BLK), rule: FillRule::EvenOdd };

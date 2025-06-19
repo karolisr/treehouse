@@ -1,5 +1,4 @@
 use crate::edge_utils::*;
-use crate::iced::*;
 use crate::*;
 
 pub struct TreeView {
@@ -122,8 +121,8 @@ impl TreeView {
             keep_scroll_position_requested: false,
             ltt_cnv_needs_to_be_scrolled: false,
             ltt_cnv_scrolled: false,
-            tre_scr_h: ZERO,
-            tre_scr_w: ZERO,
+            tre_scr_h: ZRO,
+            tre_scr_w: ZRO,
             tre_cnv_scrolled: false,
             search_string: String::new(),
             // -----------------------------------------------------------
@@ -218,7 +217,7 @@ impl TreeView {
             TvMsg::LttVisChanged(show_ltt) => {
                 self.show_ltt = show_ltt;
                 self.show_hide_ltt();
-                let x = (self.tre_cnv.vis_x_mid - self.tre_scr_w / TWO).max(ZERO);
+                let x = (self.tre_cnv.vis_x_mid - self.tre_scr_w / TWO).max(ZRO);
                 task =
                     Some(scroll_to(self.ltt_scr_id, AbsoluteOffset { x, y: self.ltt_cnv.vis_y0 }));
             }
@@ -306,9 +305,9 @@ impl TreeView {
                     self.tre_cnv.lab_size_brnch = lab_size_min * self.lab_size_idx_brnch as Float;
                     self.tre_cnv.lab_size_max = lab_size_min * self.lab_size_idx_max as Float;
 
-                    self.tre_cnv.lab_offset_tip = SF * THREE;
-                    self.tre_cnv.lab_offset_int = SF * THREE;
-                    self.tre_cnv.lab_offset_brnch = -SF * THREE;
+                    self.tre_cnv.lab_offset_tip = SF * 3e0;
+                    self.tre_cnv.lab_offset_int = SF * 3e0;
+                    self.tre_cnv.lab_offset_brnch = -SF * 3e0;
 
                     self.tre_cnv.clade_labs_w = SF * TEN;
                     self.tre_cnv.has_clade_labels = self.tree_has_clade_labels();
@@ -581,7 +580,7 @@ impl TreeView {
     }
 
     fn calc_root_len_frac(&self) -> Float {
-        if self.tre_cnv.draw_root { self.root_len_idx as Float / 2e2 } else { ZERO }
+        if self.tre_cnv.draw_root { self.root_len_idx as Float / 2e2 } else { ZRO }
     }
 
     pub(super) fn prev_tre_exists(&self) -> bool {
@@ -760,10 +759,10 @@ impl TreeView {
         match self.tre_cnv.tre_sty {
             TreSty::PhyGrm => {
                 if self.tre_cnv_w_idx == self.tre_cnv_size_idx_min {
-                    self.tre_cnv.vis_x_mid_rel = ZERO;
+                    self.tre_cnv.vis_x_mid_rel = ZRO;
                 }
                 if self.tre_cnv_h_idx == self.tre_cnv_size_idx_min {
-                    self.tre_cnv.vis_y_mid_rel = ZERO;
+                    self.tre_cnv.vis_y_mid_rel = ZRO;
                 }
             }
             TreSty::Fan => {
@@ -780,7 +779,7 @@ impl TreeView {
         let mut x = w * self.tre_cnv.vis_x_mid_rel;
         if self.tre_cnv.vis_x1 == w {
             x += self.tre_scr_w / TWO
-        } else if self.tre_cnv.vis_x0 == ZERO {
+        } else if self.tre_cnv.vis_x0 == ZRO {
             x -= self.tre_scr_w / TWO
         }
         self.scroll_tre_cnv(x, self.tre_cnv.vis_y_mid)
@@ -791,7 +790,7 @@ impl TreeView {
         let mut y = h * self.tre_cnv.vis_y_mid_rel;
         if self.tre_cnv.vis_y1 == h {
             y += self.tre_scr_h / TWO
-        } else if self.tre_cnv.vis_y0 == ZERO {
+        } else if self.tre_cnv.vis_y0 == ZRO {
             y -= self.tre_scr_h / TWO
         }
         self.scroll_tre_cnv(self.tre_cnv.vis_x_mid, y)
@@ -805,8 +804,8 @@ impl TreeView {
     }
 
     fn scroll_tre_cnv(&self, x: Float, y: Float) -> Option<Task<TvMsg>> {
-        let x = (x - self.tre_scr_w / TWO).max(ZERO);
-        let y = (y - self.tre_scr_h / TWO).max(ZERO);
+        let x = (x - self.tre_scr_w / TWO).max(ZRO);
+        let y = (y - self.tre_scr_h / TWO).max(ZRO);
         let task1 = scroll_to(self.tre_scr_id, AbsoluteOffset { x, y });
         if !self.ltt_cnv_needs_to_be_scrolled {
             Some(task1)
@@ -820,7 +819,7 @@ impl TreeView {
         let y = match receiver_id {
             id if id == self.ltt_scr_id => self.ltt_cnv.vis_y0,
             id if id == self.tre_scr_id => self.tre_cnv.vis_y0,
-            _ => ZERO,
+            _ => ZRO,
         };
         Some(scroll_to(receiver_id, AbsoluteOffset { x, y }))
     }
@@ -830,7 +829,7 @@ impl TreeView {
         let cnv_w = self.calc_tre_cnv_w(scr_w);
         let vis_x_mid = cnv_w * self.tre_cnv.vis_x_mid_rel;
         self.tre_cnv.vis_x_mid = vis_x_mid;
-        self.tre_cnv.vis_x0 = (vis_x_mid - scr_w / TWO).min(cnv_w - scr_w).max(ZERO);
+        self.tre_cnv.vis_x0 = (vis_x_mid - scr_w / TWO).min(cnv_w - scr_w).max(ZRO);
         self.tre_cnv.vis_x1 = (vis_x_mid + scr_w / TWO).max(scr_w).min(cnv_w);
     }
 
@@ -839,7 +838,7 @@ impl TreeView {
         let cnv_h = self.calc_tre_cnv_h(scr_h);
         let vis_y_mid = cnv_h * self.tre_cnv.vis_y_mid_rel;
         self.tre_cnv.vis_y_mid = vis_y_mid;
-        self.tre_cnv.vis_y0 = (vis_y_mid - scr_h / TWO).min(cnv_h - scr_h).max(ZERO);
+        self.tre_cnv.vis_y0 = (vis_y_mid - scr_h / TWO).min(cnv_h - scr_h).max(ZRO);
         self.tre_cnv.vis_y1 = (vis_y_mid + scr_h / TWO).max(scr_h).min(cnv_h);
     }
 
@@ -848,9 +847,9 @@ impl TreeView {
         let scr_h = self.tre_scr_h;
         let cnv_w = self.calc_tre_cnv_w(scr_w);
         let cnv_h = self.calc_tre_cnv_h(scr_h);
-        self.tre_cnv.vis_x0 = (pt.x - scr_w / TWO).min(cnv_w - scr_w).max(ZERO);
+        self.tre_cnv.vis_x0 = (pt.x - scr_w / TWO).min(cnv_w - scr_w).max(ZRO);
         self.tre_cnv.vis_x1 = (pt.x + scr_w / TWO).max(scr_w).min(cnv_w);
-        self.tre_cnv.vis_y0 = (pt.y - scr_h / TWO).min(cnv_h - scr_h).max(ZERO);
+        self.tre_cnv.vis_y0 = (pt.y - scr_h / TWO).min(cnv_h - scr_h).max(ZRO);
         self.tre_cnv.vis_y1 = (pt.y + scr_h / TWO).max(scr_h).min(cnv_h);
     }
 
@@ -860,7 +859,7 @@ impl TreeView {
         let cnv_w = self.calc_tre_cnv_w(self.tre_scr_w);
         let cnv_h = self.calc_tre_cnv_h(self.tre_scr_h);
         let cnv_vs = RectVals::wh(cnv_w, cnv_h);
-        let mut root_len = ZERO;
+        let mut root_len = ZRO;
         if let Some(sel_tre) = self.sel_tre() {
             (self.tre_cnv.tre_vs, root_len) = self.tre_cnv.calc_tre_vs(
                 &cnv_vs,

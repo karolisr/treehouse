@@ -1,7 +1,6 @@
 use super::St;
 use super::draw::*;
 use crate::edge_utils::*;
-use crate::iced::*;
 use crate::*;
 
 fn prepare_nodes(
@@ -13,7 +12,7 @@ fn prepare_nodes(
         .map(|&idx| match tre_sty {
             TreSty::PhyGrm => node_data_cart(vs.w, vs.h, &edges[idx]).into(),
             TreSty::Fan => {
-                node_data_rad(opn_angle, ZERO, vs.radius_min, root_len, &edges[idx]).into()
+                node_data_rad(opn_angle, ZRO, vs.radius_min, root_len, &edges[idx]).into()
             }
         })
         .collect_into_vec(results);
@@ -80,7 +79,7 @@ impl Program<TvMsg> for TreeCnv {
         // -----------------------------------------------------------------------------------------
         match tre_sty {
             TreSty::PhyGrm => {
-                st.rotation = ZERO;
+                st.rotation = ZRO;
                 st.translation = Vector { x: st.tre_vs.trans.x, y: st.tre_vs.trans.y };
             }
             TreSty::Fan => {
@@ -190,7 +189,7 @@ impl Program<TvMsg> for TreeCnv {
                                 }
                             };
 
-                            if (ZERO - EPSILON..=ONE + EPSILON).contains(&crsr_x_rel) {
+                            if (ZRO - EPSILON..=ONE + EPSILON).contains(&crsr_x_rel) {
                                 action = Some(Action::publish(TvMsg::CursorOnTreCnv {
                                     x: Some(crsr_x_rel),
                                 }))
@@ -228,12 +227,12 @@ impl Program<TvMsg> for TreeCnv {
         if let Some(crsr_x_rel) = self.crsr_x_rel {
             match tre_sty {
                 TreSty::PhyGrm => {
-                    st.cursor_tracking_point = Some(Point { x: crsr_x_rel * st.tre_vs.w, y: ZERO })
+                    st.cursor_tracking_point = Some(Point { x: crsr_x_rel * st.tre_vs.w, y: ZRO })
                 }
                 TreSty::Fan => {
                     st.cursor_tracking_point = Some(Point {
                         x: st.root_len + crsr_x_rel * (st.tre_vs.radius_min - st.root_len),
-                        y: ZERO,
+                        y: ZRO,
                     })
                 }
             }

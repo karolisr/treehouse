@@ -5,4 +5,4 @@ submodules/*
 .DS_Store
 .cargo/config.toml
 *.example.rs
-treeview/icons-unused
+icons-unused
