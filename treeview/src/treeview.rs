@@ -227,6 +227,7 @@ impl TreeView {
                 self.sort();
                 self.set_ltt_plot_data();
                 self.update_draw_labs_allowed();
+                self.tre_cnv.has_clade_labels = self.tree_has_clade_labels();
                 self.tre_cnv.stale_tre_rect = true;
             }
 
@@ -235,6 +236,7 @@ impl TreeView {
                 self.sort();
                 self.set_ltt_plot_data();
                 self.update_draw_labs_allowed();
+                self.tre_cnv.has_clade_labels = self.tree_has_clade_labels();
                 self.tre_cnv.stale_tre_rect = true;
             }
 
@@ -254,6 +256,7 @@ impl TreeView {
                 self.update_draw_labs_allowed();
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.clear_cache_legend();
+                self.tre_cnv.has_clade_labels = self.tree_has_clade_labels();
                 self.tre_cnv.stale_tre_rect = true;
             }
 
@@ -264,6 +267,7 @@ impl TreeView {
                 self.update_draw_labs_allowed();
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.clear_cache_legend();
+                self.tre_cnv.has_clade_labels = self.tree_has_clade_labels();
                 self.tre_cnv.stale_tre_rect = true;
             }
 
@@ -323,6 +327,7 @@ impl TreeView {
                 }
 
                 self.update_draw_labs_allowed();
+                self.tre_cnv.has_clade_labels = self.tree_has_clade_labels();
                 self.clear_caches_all();
                 self.tre_cnv.drawing_enabled = true;
                 self.tre_cnv.stale_tre_rect = true;
