@@ -1,46 +1,46 @@
 [package]
-name = "treehouse"
-version.workspace = true
-edition.workspace = true
-authors.workspace = true
-repository.workspace = true
-license-file.workspace = true
-readme.workspace = true
-categories.workspace = true
+    authors.workspace=true
+    categories.workspace=true
+    edition.workspace=true
+    license-file.workspace=true
+    name="treehouse"
+    readme.workspace=true
+    repository.workspace=true
+    version.workspace=true
 
-# cargo-bundle (https://github.com/burtonageo/cargo-bundle) ----------------
-[package.metadata.bundle]
-name = "TreeHouse"
-identifier = "is.karol.treehouse"
-icon = ["resources/icons/treehouse*.icns"]
-copyright = "Copyright \u00A9 Karolis Ramanauskas 2025\nAll rights reserved"
-category = "public.app-category.utilities"
-short_description = "Short description."
-long_description = """Long description."""
-osx_frameworks = []
-osx_url_schemes = ["is.karol.treehouse"]
-linux_mime_types = []
-# linux_exec_args = []
-linux_use_terminal = false
-deb_depends = []
-# --------------------------------------------------------------------------
+    # cargo-bundle (https://github.com/burtonageo/cargo-bundle) ----------------
+    [package.metadata.bundle]
+        category="public.app-category.utilities"
+        copyright="Copyright \u00A9 Karolis Ramanauskas 2025\nAll rights reserved"
+        deb_depends=[]
+        icon=["resources/icons/treehouse*.icns"]
+        identifier="is.karol.treehouse"
+        # linux_exec_args=[]
+        linux_mime_types=[]
+        linux_use_terminal=false
+        long_description="""Long description."""
+        name="TreeHouse"
+        osx_frameworks=[]
+        osx_url_schemes=["is.karol.treehouse"]
+        short_description="Short description."
+        # --------------------------------------------------------------------------
 
 [dependencies]
-treeview = { workspace = true }
-riced = { workspace = true }
-dendros = { workspace = true }
-# tracing-subscriber = { workspace = true }
+    dendros={workspace=true}
+    riced={workspace=true}
+    tracing-subscriber={workspace=true}
+    treeview={workspace=true}
 
 [target.'cfg(target_os = "linux")'.dependencies]
-rfd = { workspace = true, features = ["gtk3"] }
+    rfd={workspace=true, features=["gtk3"]}
 
 [target.'cfg(target_os = "macos")'.dependencies]
-objc2 = { workspace = true }
-objc2-app-kit = { workspace = true }
-objc2-foundation = { workspace = true }
-muda = { workspace = true }
-rfd = { workspace = true }
+    muda={workspace=true}
+    objc2={workspace=true}
+    objc2-app-kit={workspace=true}
+    objc2-foundation={workspace=true}
+    rfd={workspace=true}
 
 [target.'cfg(target_os = "windows")'.dependencies]
-muda = { workspace = true }
-rfd = { workspace = true }
+    muda={workspace=true}
+    rfd={workspace=true}

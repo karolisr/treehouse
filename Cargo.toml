@@ -1,189 +1,79 @@
 [workspace]
-members = ["app", "riced", "treeview"]
-resolver = "3"
+    members=["app", "riced", "treeview"]
+    resolver="3"
 
-[workspace.package]
-version = "0.0.0"
-edition = "2024"
-authors = ["Karolis Ramanauskas"]
-repository = "https://github.com/karolisr/treehouse"
-license-file = "LICENSE"
-readme = "README.md"
-categories = [
-    "science::bioinformatics",
-    "science::bioinformatics::sequence-analysis",
-    "visualization",
-    "gui",
-]
-# description = ""
-# documentation = ""
-# exclude = []
-# homepage = ""
-# include = []
-# keywords = []
-# license = ""
-# publish = false
+    [workspace.package]
+        authors=["Karolis Ramanauskas"]
+        categories=[
+            "gui",
+            "science::bioinformatics",
+            "science::bioinformatics::sequence-analysis",
+            "visualization",
+        ]
+        description=""
+        documentation=""
+        edition="2024"
+        exclude=[]
+        homepage=""
+        include=[]
+        keywords=[]
+        license=""
+        license-file="LICENSE"
+        publish=false
+        readme="README.md"
+        repository="https://github.com/karolisr/treehouse"
+        version="0.0.0"
 
-# --------------------------------------------------------------------------
-[profile.dev]
-debug-assertions = false # Why false? objc2-foundation-0.2.2 is freaking out on 2025-06-20 on macOS 26.0 Beta
-incremental = true       # Compile your binary in smaller steps.
-codegen-units = 6        # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
-lto = false              # Enables link-time-optimizations. Use false for faster compile time.
-opt-level = 1            # "s" prioritizes small binary size. Use 0 for faster compile time.
-panic = "abort"          # Higher performance by disabling panic handlers.
-strip = false            # Ensures debug symbols are removed.
-debug = true
-overflow-checks = true
-rpath = false
+    [profile.dev] # --------------------------------------------------------------------------------
+        codegen-units=6          # 256      | Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
+        debug = true             # true     |
+        debug-assertions = false # true     | Why false? objc2-foundation-0.2.2 is freaking out on 2025-06-20 on macOS 26.0 Beta
+        incremental = true       # true     | Compile your binary in smaller steps.
+        lto = false              # false    | Enables link-time-optimizations. Use false for faster compile time.
+        opt-level = 1            # 1        | "s" prioritizes small binary size. Use 0 for faster compile time.
+        overflow-checks = true   # true     |
+        panic = "abort"          # "unwind" | Higher performance by disabling panic handlers.
+        rpath = false            # false    |
+        strip = false            # false    | Ensures debug symbols are removed.
 
-# Defaults ---------------
-# debug-assertions = true
-# incremental = true
-# codegen-units = 256
-# lto = false
-# opt-level = 1
-# panic = "unwind"
-# strip = false
-# debug = true
-# overflow-checks = true
-# rpath = false
-# --------------------------------------------------------------------------
+    [profile.release] # ----------------------------------------------------------------------------
+        codegen-units = 1        # 16       | Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
+        debug = false            # false    |
+        debug-assertions = false # false    |
+        incremental = true       # false    | Compile your binary in smaller steps.
+        lto = true               # false    | Enables link-time-optimizations. Use false for faster compile time.
+        opt-level = 3            # 3        | "s" prioritizes small binary size. Use 0 for faster compile time.
+        overflow-checks = true   # false    |
+        panic = "abort"          # "unwind" | Higher performance by disabling panic handlers.
+        rpath = false            # false    |
+        strip = true             # "none"   | Ensures debug symbols are removed.
+    # ----------------------------------------------------------------------------------------------
 
-# --------------------------------------------------------------------------
-[profile.release]
-debug-assertions = false
-incremental = true       # Compile your binary in smaller steps.
-codegen-units = 1        # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
-lto = true               # Enables link-time-optimizations. Use false for faster compile time.
-opt-level = 3            # "s" prioritizes small binary size. Use 0 for faster compile time.
-panic = "abort"          # Higher performance by disabling panic handlers.
-strip = true             # Ensures debug symbols are removed.
-debug = false
-overflow-checks = true
-rpath = false
+    [workspace.dependencies]
+        num-traits="0.2.19"
+        numfmt="1.1.1"
+        objc2="0.6.1"
+        objc2-app-kit="0.3.1"
+        objc2-foundation="0.3.1"
+        rayon="1.10.0"
+        riced={path="riced"}
+        roarsvg="0.5.0"
+        tracing-subscriber="0.3.19"
+        treeview={path="treeview"}
 
-# Defaults ---------------
-# debug-assertions = false
-# incremental = false
-# codegen-units = 16
-# lto = false
-# opt-level = 3
-# panic = "unwind"
-# strip = "none"
-# debug = false
-# overflow-checks = false
-# rpath = false
-# --------------------------------------------------------------------------
+        [workspace.dependencies.dendros]
+            branch="main"
+            default-features=false
+            features=[]
+            git="https://github.com/karolisr/dendros.git"
 
-[workspace.dependencies]
-riced = { path = "riced" }
-treeview = { path = "treeview" }
-num-traits = "0.2.19"
-numfmt = "1.1.1"
-objc2 = "0.6.1"
-objc2-app-kit = "0.3.1"
-objc2-foundation = "0.3.1"
-rayon = "1.10.0"
-roarsvg = "0.5.0"
-tracing-subscriber = "0.3.19"
+        [workspace.dependencies.muda]
+            branch="custom"
+            default-features=false
+            features=[]
+            git="https://github.com/karolisr/muda.git"
 
-[workspace.dependencies.dendros]
-git = "https://github.com/karolisr/dendros.git"
-branch = "main"
-default-features = false
-features = []
-
-[workspace.dependencies.muda]
-git = "https://github.com/karolisr/muda.git"
-branch = "custom"
-default-features = false
-features = []
-
-[workspace.dependencies.rfd]
-version = "0.15.3"
-default-features = false
-features = []
-
-# [workspace.dependencies.tokio]
-# version = "1.44.2"
-# default-features = false
-# features = [
-#     "bytes",
-#     "fs",
-#     "full",
-#     "io-std",
-#     "io-util",
-#     "libc",
-#     "macros",
-#     "mio",
-#     "net",
-#     "parking_lot",
-#     "process",
-#     "rt-multi-thread",
-#     "rt",
-#     "signal-hook-registry",
-#     "signal",
-#     "socket2",
-#     "sync",
-#     "test-util",
-#     "time",
-#     "tokio-macros",
-#     "tracing",
-#     "windows-sys",
-# ]
-
-[workspace.dependencies.iced]
-git = "https://github.com/karolisr/iced.git"
-branch = "custom"
-default-features = false
-features = [
-    ### Enables the "wgpu" GPU-accelerated renderer backend
-    # "wgpu",
-    ### Enables the "thread-pool" futures executor as the "executor::Default" on native platforms
-    # "thread-pool",
-    ### Enables the "canvas" widget
-    # "canvas",
-    ### Enables lazy widgets
-    # "lazy",
-    ### Enables support for the "sipper" library
-    # "sipper",
-    ### Enables the advanced module
-    # "advanced",
-    ### Auto-detects light/dark mode for the built-in theme
-    # "auto-detect-theme",
-    ### Enables a debug view in native platforms (press F12)
-    # "debug",
-    ### Redraws on every runtime event, and not only when a widget requests it
-    # "unconditional-rendering",
-    ### Enables the "tiny-skia" software renderer backend
-    # "tiny-skia",
-    ### Enables querying system information
-    # "system",
-    ### Enables "tokio" as the "executor::Default" on native platforms
-    # "tokio",
-    ### Enables "smol" as the "executor::Default" on native platforms
-    # "smol",
-    ### Enables the "image" widget, without any built-in codecs of the "image" crate
-    # "image-without-codecs",
-    ### Enables the "qr_code" widget
-    # "qr_code",
-    ### Enables the "markdown" widget
-    # "markdown",
-    ### Enables broken "sRGB linear" blending to reproduce color management of the Web
-    # "web-colors",
-    ### Enables the WebGL backend
-    # "webgl",
-    ### Enables syntax highligthing
-    # "highlighter",
-    ### Embeds Fira Sans into the final application; useful for testing and Wasm builds
-    # "fira-sans",
-    ### Enables strict assertions for debugging purposes at the expense of performance
-    # "strict-assertions",
-    ### Enables the "image" widget
-    # "image",
-    ### Enables the "svg" widget
-    # "svg",
-    ### Enables pixel snapping for crisp edges by default (can cause jitter!)
-    # "crisp",
-]
+        [workspace.dependencies.rfd]
+            default-features=false
+            features=[]
+            version="0.15.3"

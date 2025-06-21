@@ -19,6 +19,9 @@
         "rust-analyzer.cargo.autoreload": true,
     },
     "extensions": {
-        "recommendations": []
+        "recommendations": [
+            "rust-lang.rust-analyzer",
+            "tamasfe.even-better-toml"
+        ]
     }
 }
