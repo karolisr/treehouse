@@ -26,13 +26,13 @@ categories = [
 
 # --------------------------------------------------------------------------
 [profile.dev]
-debug-assertions = true
-incremental = true      # Compile your binary in smaller steps.
-codegen-units = 6       # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
-lto = false             # Enables link-time-optimizations. Use false for faster compile time.
-opt-level = 1           # "s" prioritizes small binary size. Use 0 for faster compile time.
-panic = "abort"         # Higher performance by disabling panic handlers.
-strip = false           # Ensures debug symbols are removed.
+debug-assertions = false # Why false? objc2-foundation-0.2.2 is freaking out on 2025-06-20 on macOS 26.0 Beta
+incremental = true       # Compile your binary in smaller steps.
+codegen-units = 6        # Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
+lto = false              # Enables link-time-optimizations. Use false for faster compile time.
+opt-level = 1            # "s" prioritizes small binary size. Use 0 for faster compile time.
+panic = "abort"          # Higher performance by disabling panic handlers.
+strip = false            # Ensures debug symbols are removed.
 debug = true
 overflow-checks = true
 rpath = false

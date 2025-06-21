@@ -40,7 +40,7 @@ use cnv_plot::AXIS_SCALE_TYPE_OPTS;
 use cnv_plot::{AxisScaleType, PlotCnv, PlotDataType};
 use cnv_tree::TreeCnv;
 use consts::*;
-use dendros::{Edge, LttPoint, Node, NodeId, Tree, TreeFloat, flatten_tree, ltt, write_newick};
+use dendros::{Edge, LttPoint, Node, NodeId, Tree, TreeFloat, ltt, write_newick};
 use rayon::prelude::*;
 use riced::*;
 use treestate::TreeState;

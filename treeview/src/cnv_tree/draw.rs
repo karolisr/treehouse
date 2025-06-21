@@ -17,11 +17,15 @@ pub(super) fn draw_edges(
     tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_edge().draw(rndr, sz, |f| match tc.tre_sty {
-        TreSty::PhyGrm => {
-            stroke_edges_phygrm(tst.edges_srtd_y(), &st.tre_vs, st.root_len, tst.edge_root(), f)
-        }
+        TreSty::PhyGrm => stroke_edges_phygrm(
+            tst.edges_srtd_y().unwrap(),
+            &st.tre_vs,
+            st.root_len,
+            tst.edge_root(),
+            f,
+        ),
         TreSty::Fan => stroke_edges_fan(
-            tst.edges_srtd_y(),
+            tst.edges_srtd_y().unwrap(),
             &st.tre_vs,
             tc.rot_angle,
             tc.opn_angle,
@@ -39,8 +43,8 @@ pub(super) fn draw_clade_labels(
         let labeled_clades = tst.labeled_clades();
         for (node_id, clade_label) in labeled_clades {
             let (e1, e2) = tst.bounding_tip_edges_for_clade(node_id);
-            let y1_rel = e1.y as Float;
-            let y2_rel = e2.y as Float;
+            let y1_rel = e1.unwrap().y as Float;
+            let y2_rel = e2.unwrap().y as Float;
             let color = clade_label.color;
             let width = tc.clade_labs_w;
 
@@ -62,8 +66,8 @@ pub(super) fn draw_clade_labels(
                     let r1 = st.tre_vs.radius_min + tc.lab_offset_tip;
                     let r2 = r1 + width;
 
-                    let a0 = edge_angle(tc.opn_angle, e1);
-                    let a1 = edge_angle(tc.opn_angle, e2);
+                    let a0 = edge_angle(tc.opn_angle, e1.unwrap());
+                    let a1 = edge_angle(tc.opn_angle, e2.unwrap());
 
                     let p0 = point_pol(a0, r1, ZRO, ONE);
                     let p1 = point_pol(a1, r1, ZRO, r2 / r1);

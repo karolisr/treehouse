@@ -31,7 +31,7 @@ impl Program<TvMsg> for TreeCnv {
             return None;
         }
         let tst: &TreeState = tree_state_opt?;
-        let edges = tst.edges_srtd_y();
+        let edges = tst.edges_srtd_y()?;
         let tip_edge_idxs = tst.edges_tip_idx();
         let tre_sty = self.tre_sty;
         let opn_angle = self.opn_angle;

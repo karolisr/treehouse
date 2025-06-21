@@ -78,7 +78,7 @@ impl TreeView {
             show_side_bar: true,
             show_search_bar: false,
             // -----------------------------------------------------------
-            node_ord_opt: NodeOrd::Ascending,
+            node_ord_opt: NodeOrd::Unordered,
             // -----------------------------------------------------------
             opn_angle_idx_min: 45,
             opn_angle_idx: 360,
@@ -227,6 +227,7 @@ impl TreeView {
                 self.sort();
                 self.set_ltt_plot_data();
                 self.update_draw_labs_allowed();
+                self.tre_cnv.stale_tre_rect = true;
             }
 
             TvMsg::NextTre => {
@@ -234,6 +235,7 @@ impl TreeView {
                 self.sort();
                 self.set_ltt_plot_data();
                 self.update_draw_labs_allowed();
+                self.tre_cnv.stale_tre_rect = true;
             }
 
             TvMsg::NodeOrdOptChanged(node_ord_opt) => {
@@ -241,31 +243,28 @@ impl TreeView {
                     self.node_ord_opt = node_ord_opt;
                     self.sort();
                     task = self.scroll_to_current_found_edge();
+                    self.tre_cnv.stale_tre_rect = true;
                 }
             }
 
             TvMsg::Unroot => {
                 let mut yanked_node: Option<Node> = None;
                 self.with_exclusive_sel_tre_mut(&mut |tre| yanked_node = tre.unroot());
-                if yanked_node.is_some() {
-                    self.sort()
-                }
                 self.set_ltt_plot_data();
                 self.update_draw_labs_allowed();
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.clear_cache_legend();
+                self.tre_cnv.stale_tre_rect = true;
             }
 
             TvMsg::Root(node_id) => {
                 let mut node_id_new_root: Option<NodeId> = None;
                 self.with_exclusive_sel_tre_mut(&mut |tre| node_id_new_root = tre.root(&node_id));
-                if node_id_new_root.is_some() {
-                    self.sort()
-                }
                 self.set_ltt_plot_data();
                 self.update_draw_labs_allowed();
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.clear_cache_legend();
+                self.tre_cnv.stale_tre_rect = true;
             }
 
             TvMsg::TreesLoaded(trees) => {
@@ -326,6 +325,7 @@ impl TreeView {
                 self.update_draw_labs_allowed();
                 self.clear_caches_all();
                 self.tre_cnv.drawing_enabled = true;
+                self.tre_cnv.stale_tre_rect = true;
             }
 
             TvMsg::LttXAxisScaleTypeChanged(axis_scale_type) => {
@@ -573,8 +573,10 @@ impl TreeView {
     }
 
     fn set_ltt_plot_data(&mut self) {
-        if let Some(ts) = self.sel_tre() {
-            let plot_data = &ltt(ts.tre_height(), ts.edges_srtd_y(), 503);
+        if let Some(ts) = self.sel_tre()
+            && let Some(edges) = ts.edges_srtd_y()
+        {
+            let plot_data = &ltt(ts.tre_height(), edges, 503);
             self.ltt_cnv.set_plot_data(plot_data);
         }
     }
@@ -618,7 +620,6 @@ impl TreeView {
     fn sort(&mut self) {
         let node_ord_opt = self.node_ord_opt;
         self.with_exclusive_sel_tre_mut(&mut |tre| tre.sort(node_ord_opt));
-        self.tre_cnv.stale_tre_rect = true; // important! to make sure TreeCnv updates vis_node_idxs
     }
 
     fn update_sel_tre_st_idx(&mut self, idx: Option<usize>) -> bool {

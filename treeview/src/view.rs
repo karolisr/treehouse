@@ -110,14 +110,10 @@ fn tool_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     );
 
     tb_row = tb_row.push(
-        center(
-            iced_row![btn_label_clade(ts.clone()), btn_remove_clade_label(ts.clone())]
-                .align_y(Vertical::Center)
-                .spacing(0),
-        )
-        .width(Length::Shrink)
-        .height(Length::Shrink)
-        .padding(ZRO),
+        center(btn_clade_label(ts.clone()))
+            .width(Length::Shrink)
+            .height(Length::Shrink)
+            .padding(ZRO),
     );
 
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
@@ -474,34 +470,18 @@ pub(crate) fn btn_next_tre(enabled: bool) -> Button<'static, TvMsg> {
     )
 }
 
-pub(crate) fn btn_label_clade(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
-    btn_txt("Label", {
-        if sel_tre.sel_node_ids().len() == 1 {
+pub(crate) fn btn_clade_label(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
+    let (lab, msg) = match sel_tre.sel_node_ids().len() == 1 {
+        true => {
             let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
             match sel_tre.clade_has_label(&node_id) {
-                true => None,
-                false => Some(TvMsg::LabelClade(node_id)),
+                false => ("Label", Some(TvMsg::LabelClade(node_id))),
+                true => ("Unlabel", Some(TvMsg::RemoveCladeLabel(node_id))),
             }
-        } else {
-            None
         }
-    })
-    .width(BTN_H * TWO)
-}
-
-pub(crate) fn btn_remove_clade_label(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
-    btn_txt("Unlabel", {
-        if sel_tre.sel_node_ids().len() == 1 {
-            let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
-            match sel_tre.clade_has_label(&node_id) {
-                true => Some(TvMsg::RemoveCladeLabel(node_id)),
-                false => None,
-            }
-        } else {
-            None
-        }
-    })
-    .width(BTN_H * TWO)
+        false => ("Label", None),
+    };
+    btn_txt(lab, msg).width(BTN_H * TWO)
 }
 
 pub(crate) fn btn_root(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
