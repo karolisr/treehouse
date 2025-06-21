@@ -56,7 +56,6 @@ pub(super) struct TreeCnv {
     pub(super) lab_offset_brnch: Float,
     // ---------------------------------------------------------------------------------------------
     pub(super) clade_labs_w: Float,
-    pub(super) has_clade_labels: bool,
     // ---------------------------------------------------------------------------------------------
     pub(super) opn_angle: Float,
     pub(super) rot_angle: Float,
@@ -106,7 +105,6 @@ impl TreeCnv {
             lab_offset_brnch: ZRO,
             // -------------------------------------------------------------------------------------
             clade_labs_w: ZRO,
-            has_clade_labels: false,
             // -------------------------------------------------------------------------------------
             cache_bnds: Default::default(),
             cache_legend: Default::default(),
@@ -150,7 +148,7 @@ impl TreeCnv {
 
     pub(super) fn calc_tre_vs(
         &self, cnv_vs: &RectVals<Float>, edges_tip_tallest: &[Edge], is_rooted: bool,
-        text_w_tip: &mut TextWidth<'static>,
+        has_clade_labels: bool, text_w_tip: &mut TextWidth<'static>,
     ) -> (RectVals<Float>, Float) {
         let tre_vs_prelim = cnv_vs.padded(self.padd_l, self.padd_r, self.padd_t, self.padd_b);
         let mut tip_w: Float = ZRO;
@@ -160,7 +158,7 @@ impl TreeCnv {
             );
         }
         let mut offset_due_to_clade_lab = ZRO;
-        if self.has_clade_labels && self.draw_clade_labs {
+        if has_clade_labels && self.draw_clade_labs {
             offset_due_to_clade_lab = self.clade_labs_w + self.lab_offset_tip + SF;
         }
         let mut root_len = ZRO;

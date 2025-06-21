@@ -80,6 +80,8 @@ impl TreeState {
 
     pub(super) fn labeled_clades(&self) -> &HashMap<NodeId, CladeLabel> { &self.labeled_clades }
 
+    pub(super) fn has_clade_labels(&self) -> bool { !self.labeled_clades().is_empty() }
+
     pub(super) fn bounding_tip_edges_for_clade(
         &self, node_id: &NodeId,
     ) -> (Option<&Edge>, Option<&Edge>) {

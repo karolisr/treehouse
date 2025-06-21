@@ -66,6 +66,7 @@ impl Program<TvMsg> for TreeCnv {
                 &st.cnv_vs,
                 tst.edges_tip_tallest(),
                 tst.is_rooted(),
+                tst.has_clade_labels(),
                 st.text_w_tip.as_mut()?,
             );
             st.tre_rect = st.tre_vs.clone().into();

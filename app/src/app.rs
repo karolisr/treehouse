@@ -442,7 +442,8 @@ impl App {
                 }
                 #[cfg(target_os = "macos")]
                 {
-                    Task::none()
+                    // Task::none()
+                    Task::done(AppMsg::Quit)
                 }
                 #[cfg(any(target_os = "windows", target_os = "linux"))]
                 {
