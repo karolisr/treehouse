@@ -19,17 +19,17 @@
         branch="custom"
         default-features=false
         features=[
-            "advanced",    # advanced module
-            "canvas",      # "canvas" widget
-            "debug",       # a debug view in native platforms (press F12)
-            "lazy",        # lazy widgets
-            "sipper",      # support for the "sipper" library
-            "svg",         # "svg" widget
-            "thread-pool", # "thread-pool" futures executor as the "executor::Default" on native platforms
-            "wgpu",        # "wgpu" GPU-accelerated renderer backend
+            "advanced", # advanced module
+            "canvas",   # "canvas" widget
+            "crisp",    # pixel snapping for crisp edges by default (can cause jitter!)
+            "debug",    # a debug view in native platforms (press F12)
+            "lazy",     # lazy widgets
+            "sipper",   # support for the "sipper" library
+            "svg",      # "svg" widget
+            "tokio",    # "tokio" as the "executor::Default" on native platforms
+            "wgpu",     # "wgpu" GPU-accelerated renderer backend
             # ----------------------------------------------------------------------------------------------
             # "auto-detect-theme",       # auto-detects light/dark mode for the built-in theme
-            # "crisp",                   # pixel snapping for crisp edges by default (can cause jitter!)
             # "fira-sans",               # embeds Fira Sans into the final application; useful for testing and Wasm builds
             # "highlighter",             # syntax highligthing
             # "image-without-codecs",    # "image" widget, without any built-in codecs of the "image" crate
@@ -39,10 +39,13 @@
             # "smol",                    # "smol" as the "executor::Default" on native platforms
             # "strict-assertions",       # strict assertions for debugging purposes at the expense of performance
             # "system",                  # enables querying system information
+            # "thread-pool",             # "thread-pool" futures executor as the "executor::Default" on native platforms
             # "tiny-skia",               # "tiny-skia" software renderer backend
-            # "tokio",                   # "tokio" as the "executor::Default" on native platforms
             # "unconditional-rendering", # redraws on every runtime event, and not only when a widget requests it
             # "web-colors",              # enables broken "sRGB linear" blending to reproduce color management of the Web
             # "webgl",                   # WebGL backend
         ]
         git="https://github.com/karolisr/iced.git"
+
+[features]
+    crisp=["iced/crisp"]
