@@ -1,6 +1,4 @@
 [toolchain]
     # Wait for 1.89 to be stable then change to stable:
     # because it allows "&&" in "if let Some() blocks".
-    # channel = "nightly-2025-06-18-aarch64-apple-darwin"
-    channel="nightly-2025-06-19-aarch64-apple-darwin"
-    # channel = "nightly"
+    channel="nightly"
