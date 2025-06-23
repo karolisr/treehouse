@@ -38,6 +38,8 @@ pub use style::*;
 pub use text_width::{TextWidth, text_width, text_width_line_height};
 
 pub use i::alignment::{Horizontal, Vertical};
+pub use i::border::{Border, Radius};
+pub use i::debug::{time as timer, time_with as timer_with};
 pub use i::font::{Family, Stretch, Style as FontStyle, Weight};
 pub use i::futures::{
     channel::mpsc::{UnboundedSender, unbounded},
@@ -53,11 +55,10 @@ pub use i::window::{
     open as open_window, settings::PlatformSpecific as PlatformSpecificWindowSettings,
 };
 pub use i::{
-    Alignment, Background, Border, Color, Element, Event, Font, Length, Padding, Pixels, Point,
-    Rectangle, Renderer, Result as IcedResult, Settings as IcedAppSettings, Size, Subscription,
-    Task, Vector, daemon, exit,
+    Alignment, Background, Color, Element, Event, Font, Length, Padding, Pixels, Point, Rectangle,
+    Renderer, Result as IcedResult, Settings as IcedAppSettings, Shadow, Size, Subscription, Task,
+    Vector, daemon, exit,
 };
-
 pub use w::button::{Status as ButtonStatus, Style as ButtonStyle};
 pub use w::canvas::{
     Action, Cache, Canvas as Cnv, Frame, Geometry, Program,

@@ -19,12 +19,14 @@ pub(crate) const DASH_008: LineDash = LineDash { segments: &[SF * 8e0, SF * 8e0]
 pub(crate) const DASH_009: LineDash = LineDash { segments: &[SF * 9e0, SF * 9e0], offset: 0 };
 pub(crate) const DASH_010: LineDash = LineDash { segments: &[SF * 1e1, SF * 1e1], offset: 0 };
 
+const STRK_H: Strk = Strk { width: SF * 0.5, ..TEMPLATE_STRK };
 const STRK_1: Strk = Strk { width: SF * 1e0, ..TEMPLATE_STRK };
 const STRK_2: Strk = Strk { width: SF * 2e0, ..TEMPLATE_STRK };
 const STRK_3: Strk = Strk { width: SF * 3e0, ..TEMPLATE_STRK };
 const STRK_4: Strk = Strk { width: SF * 4e0, ..TEMPLATE_STRK };
 const STRK_5: Strk = Strk { width: SF * 5e0, ..TEMPLATE_STRK };
 
+pub(crate) const STRK_H_BLK: Strk = Strk { style: Solid(Clr::BLK), ..STRK_H };
 pub(crate) const STRK_1_BLK: Strk = Strk { style: Solid(Clr::BLK), ..STRK_1 };
 pub(crate) const STRK_1_RED: Strk = Strk { style: Solid(Clr::RED), ..STRK_1 };
 pub(crate) const STRK_1_GRN: Strk = Strk { style: Solid(Clr::GRN), ..STRK_1 };

@@ -79,33 +79,10 @@ impl TreeState {
     }
 
     pub(super) fn labeled_clades(&self) -> &HashMap<NodeId, CladeLabel> { &self.labeled_clades }
-
     pub(super) fn has_clade_labels(&self) -> bool { !self.labeled_clades().is_empty() }
 
-    pub(super) fn bounding_tip_edges_for_clade(
-        &self, node_id: &NodeId,
-    ) -> (Option<&Edge>, Option<&Edge>) {
-        let tip_ids = self.tree().tip_node_ids(node_id);
-
-        let tip_id_0 = tip_ids[0];
-        let tip_id_1 = tip_ids[&tip_ids.len() - 1];
-
-        let mut start: Option<&Edge> = None;
-        let mut end: Option<&Edge> = None;
-
-        if let Some(edges) = self.edges_srtd_y() {
-            edges.iter().for_each(|e| match e.node_id {
-                id if id == tip_id_0 => start = Some(e),
-                id if id == tip_id_1 => end = Some(e),
-                _ => {}
-            })
-        }
-
-        if tip_id_0 == tip_id_1 {
-            end = start
-        }
-
-        (start, end)
+    pub(super) fn bounding_tip_edges_for_clade(&self, node_id: &NodeId) -> Option<(&Edge, &Edge)> {
+        self.tree().bounding_tip_edges_for_clade(node_id)
     }
 
     // Search & Filter -----------------------------------------------------------------------------

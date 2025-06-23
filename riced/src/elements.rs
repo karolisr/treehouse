@@ -12,14 +12,14 @@ fn btn_common<Msg>(btn: Button<'_, Msg>, msg: Option<Msg>) -> Button<'_, Msg> {
 
 pub fn btn_svg<Msg>(handle: impl Into<SvgHandle>, msg: Option<Msg>) -> Button<'static, Msg> {
     let svg = Svg::new(handle).style(sty_svg);
-    btn_common(Button::new(svg), msg).padding(PADDING / 3e0)
+    btn_common(Button::new(svg), msg).padding(PADDING / THREE)
 }
 
 pub fn btn_txt<Msg>(lab: &'_ str, msg: Option<Msg>) -> Button<'_, Msg> {
     let mut txt = Text::new(lab);
     txt = txt.align_x(Horizontal::Center);
     txt = txt.align_y(Vertical::Center);
-    btn_common(Button::new(txt), msg).padding(0e0)
+    btn_common(Button::new(txt), msg).padding(ZERO)
 }
 
 pub fn checkbox<Msg>(
@@ -29,7 +29,7 @@ pub fn checkbox<Msg>(
         .on_toggle(msg)
         .size(CHECKBOX_H)
         .spacing(PADDING)
-        .text_line_height(LINE_HEIGHT)
+        .text_line_height(LINE_H_PIX)
         .style(sty_checkbox)
 }
 
@@ -37,9 +37,8 @@ pub fn pick_list_common<'a, T: PartialEq + Display + Clone, Msg: Clone + 'a>(
     pl: PickList<'a, T, &[T], T, Msg>,
 ) -> PickList<'a, T, &'a [T], T, Msg> {
     let mut pl = pl;
-    let h: PickListHandle<Font> = PickListHandle::Arrow { size: Some(Pixels(TXT_SIZE)) };
-    pl = pl.handle(h);
-    pl = pl.text_line_height(Pixels(TXT_SIZE));
+    pl = pl.handle(PickListHandle::Arrow { size: Some(LINE_H_PIX) });
+    pl = pl.text_line_height(LINE_H_PIX);
     pl = pl.text_size(TXT_SIZE);
     pl = pl.padding(PADDING);
     pl = pl.width(Length::FillPortion(10));
@@ -73,8 +72,8 @@ pub fn scrollable_common<Msg>(
 
 pub fn scroll_bar() -> Scrollbar {
     let mut sb = Scrollbar::new();
-    sb = sb.width(SCROLL_BAR_W);
-    sb = sb.scroller_width(SCROLL_BAR_W);
+    sb = sb.width(SCROLLBAR_W);
+    sb = sb.scroller_width(SCROLLBAR_W);
     sb
 }
 
@@ -110,7 +109,7 @@ where
         c = c.push(lab);
         c = c.push(slider);
         c = c.align_x(Horizontal::Center);
-        c = c.spacing(0e0);
+        c = c.spacing(ZERO);
         c.into()
     } else {
         slider.into()
@@ -130,7 +129,7 @@ pub fn toggler<'a, Msg>(label: &'a str, value: bool) -> Toggler<'a, Msg> {
     tglr = tglr.size(TOGGLER_H);
     tglr = tglr.label(label);
     tglr = tglr.text_size(TXT_SIZE);
-    tglr = tglr.text_line_height(LINE_HEIGHT);
+    tglr = tglr.text_line_height(LINE_H_PIX);
     tglr = tglr.text_alignment(TextAlignment::Left);
     tglr = tglr.width(Length::Fill);
     tglr = tglr.spacing(PADDING);
@@ -138,7 +137,7 @@ pub fn toggler<'a, Msg>(label: &'a str, value: bool) -> Toggler<'a, Msg> {
     tglr
 }
 
-pub fn txt<'a>(s: impl Into<String>) -> Text<'a> { Text::new(s.into()) }
+pub fn txt<'a>(s: impl Into<String>) -> Text<'a> { Text::new(s.into()).line_height(LINE_H_PIX) }
 
 pub fn txt_bool(b: bool) -> Text<'static> {
     let s = match b {

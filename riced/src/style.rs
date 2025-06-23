@@ -82,30 +82,76 @@ pub fn sty_cont(theme: &Theme) -> ContainerStyle {
     let pb = theme.palette();
     ContainerStyle {
         text_color: Some(pb.text),
-        background: None,
-        border: Border { width: BORDER_W, color: Clr::BLK_25, radius: WIDGET_RADIUS.into() },
-        ..Default::default()
+        background: Some(Background::Color(Clr::BLK.scale_alpha(0.02))),
+        border: Border {
+            width: BORDER_W,
+            color: Clr::BLK.scale_alpha(0.15),
+            radius: WIDGET_RADIUS.into(),
+        },
+        shadow: Shadow {
+            color: Clr::BLK_25,
+            offset: Vector { x: ZERO, y: ZERO },
+            blur_radius: PADDING - PADDING / FOUR,
+        },
+        snap: cfg!(feature = "crisp"),
+    }
+}
+
+pub fn sty_cont_bottom(theme: &Theme) -> ContainerStyle {
+    let base = sty_cont(theme);
+    ContainerStyle {
+        border: Border {
+            radius: Radius {
+                bottom_right: MAC_OS_WINDOW_BORDER_RADIUS,
+                bottom_left: MAC_OS_WINDOW_BORDER_RADIUS,
+                ..base.border.radius
+            },
+            ..base.border
+        },
+        ..base
+    }
+}
+
+pub fn sty_cont_bottom_left(theme: &Theme) -> ContainerStyle {
+    let base = sty_cont(theme);
+    ContainerStyle {
+        border: Border {
+            radius: Radius { bottom_left: MAC_OS_WINDOW_BORDER_RADIUS, ..base.border.radius },
+            ..base.border
+        },
+        ..base
+    }
+}
+
+pub fn sty_cont_bottom_right(theme: &Theme) -> ContainerStyle {
+    let base = sty_cont(theme);
+    ContainerStyle {
+        border: Border {
+            radius: Radius { bottom_right: MAC_OS_WINDOW_BORDER_RADIUS, ..base.border.radius },
+            ..base.border
+        },
+        ..base
     }
 }
 
 pub fn sty_cont_tool_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
 pub fn sty_cont_search_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
-pub fn sty_cont_side_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
 
 pub fn sty_pane_grid(theme: &Theme) -> PgStyle {
     let pe = theme.extended_palette();
     PgStyle {
         hovered_region: PgHighlight {
             background: Clr::GRN_25.into(),
-            border: Border { width: BORDER_W, color: pe.primary.strong.color, radius: 0.into() },
+            border: Border { width: BORDER_W, color: pe.primary.strong.color, radius: ZERO.into() },
         },
-        hovered_split: PgLine { color: pe.primary.base.color, width: SF * 2e0 },
-        picked_split: PgLine { color: pe.primary.strong.color, width: SF * 2e0 },
+        hovered_split: PgLine { color: pe.primary.base.color, width: SF * TWO },
+        picked_split: PgLine { color: pe.primary.strong.color, width: SF * TWO },
     }
 }
 
 pub fn sty_pane_titlebar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
 pub fn sty_pane_body(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
+pub fn sty_pane_body_bottom(theme: &Theme) -> ContainerStyle { sty_cont_bottom(theme) }
 
 pub(crate) fn sty_btn(theme: &Theme, status: ButtonStatus) -> ButtonStyle {
     let ep = theme.extended_palette();
@@ -170,10 +216,10 @@ pub(crate) fn sty_scrlbl(theme: &Theme, status: ScrollableStatus) -> ScrollableS
 
     let scrollbar = ScrollBarRail {
         background: Some(palette.background.weak.color.into()),
-        border: Border { radius: WIDGET_RADIUS.into(), width: 0e0, color: Clr::TRN },
+        border: Border { radius: WIDGET_RADIUS.into(), width: ZERO, color: Clr::TRN },
         scroller: Scroller {
             color: palette.background.strong.color,
-            border: Border { radius: WIDGET_RADIUS.into(), width: 0e0, color: Clr::TRN },
+            border: Border { radius: WIDGET_RADIUS.into(), width: ZERO, color: Clr::TRN },
         },
     };
 
@@ -251,12 +297,15 @@ pub(crate) fn sty_slider(theme: &Theme, status: SliderStatus) -> SliderStyle {
     SliderStyle {
         rail: SliderRail {
             backgrounds: (color.into(), palette.background.strong.color.into()),
-            width: SLIDER_H / 3e0,
+            width: (SLIDER_H + SF * TWO) / THREE,
             border: Border { radius: WIDGET_RADIUS.into(), width: BORDER_W, color: Clr::TRN },
         },
 
         handle: SliderHandle {
-            shape: SliderHandleShape::Circle { radius: SLIDER_H / 3e0 + SF * 2e0 },
+            shape: SliderHandleShape::Rectangle {
+                width: SLIDER_H as u16,
+                border_radius: WIDGET_RADIUS.into(),
+            },
             background: color.into(),
             border_color: Clr::TRN,
             border_width: BORDER_W,
@@ -288,7 +337,7 @@ pub(crate) fn sty_toggler(theme: &Theme, status: TogglerStatus) -> TogglerStyle 
         }
         TogglerStatus::Hovered { is_toggled } => {
             if is_toggled {
-                Color { a: 0.5, ..palette.primary.strong.text }
+                Color { a: 0.75, ..palette.primary.strong.text }
             } else {
                 palette.background.weak.color
             }
@@ -299,9 +348,10 @@ pub(crate) fn sty_toggler(theme: &Theme, status: TogglerStatus) -> TogglerStyle 
     TogglerStyle {
         foreground,
         background,
-        foreground_border_width: BORDER_W,
-        background_border_width: BORDER_W,
+        foreground_border_width: SF * TWO,
+        background_border_width: ZERO,
         foreground_border_color: Clr::TRN,
         background_border_color: Clr::TRN,
+        border_radius: WIDGET_RADIUS,
     }
 }

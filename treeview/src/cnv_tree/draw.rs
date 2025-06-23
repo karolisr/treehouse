@@ -42,48 +42,37 @@ pub(super) fn draw_clade_labels(
     g.push(tst.cache_clade_labels().draw(rndr, sz, |f| {
         let labeled_clades = tst.labeled_clades();
         for (node_id, clade_label) in labeled_clades {
-            let (e1, e2) = tst.bounding_tip_edges_for_clade(node_id);
-            let y1_rel = e1.unwrap().y as Float;
-            let y2_rel = e2.unwrap().y as Float;
-            let color = clade_label.color;
-            let width = tc.clade_labs_w;
+            if let Some((e1, e2)) = tst.bounding_tip_edges_for_clade(node_id) {
+                let y1_rel = e1.y as Float;
+                let y2_rel = e2.y as Float;
+                let color = clade_label.color;
+                let width = tc.clade_labs_w;
 
-            let mut pb: PathBuilder = PathBuilder::new();
+                let mut pb: PathBuilder = PathBuilder::new();
 
-            f.push_transform();
-            f.translate(st.translation);
-            match tc.tre_sty {
-                TreSty::PhyGrm => {
-                    let x = st.tre_vs.w + tc.lab_offset_tip;
-                    let y = y1_rel * st.tre_vs.h;
-                    let height = (y2_rel - y1_rel) * st.tre_vs.h;
-                    let rect = Rectangle { x, y, width, height };
-                    pb = pb.rectangle(rect);
+                f.push_transform();
+                f.translate(st.translation);
+                match tc.tre_sty {
+                    TreSty::PhyGrm => {
+                        let x = st.tre_vs.w + tc.lab_offset_tip;
+                        let y = y1_rel * st.tre_vs.h;
+                        let height = (y2_rel - y1_rel) * st.tre_vs.h;
+                        let rect = Rectangle { x, y, width, height };
+                        pb = pb.rectangle(rect);
+                    }
+                    TreSty::Fan => {
+                        f.rotate(st.rotation);
+                        let r1 = st.tre_vs.radius_min + tc.lab_offset_tip;
+                        let a0 = edge_angle(tc.opn_angle, e1);
+                        let a1 = edge_angle(tc.opn_angle, e2);
+                        pb = pb.thick_arc(a0, a1, ORIGIN, r1, width);
+                    }
                 }
-
-                TreSty::Fan => {
-                    f.rotate(st.rotation);
-                    let r1 = st.tre_vs.radius_min + tc.lab_offset_tip;
-                    let r2 = r1 + width;
-
-                    let a0 = edge_angle(tc.opn_angle, e1.unwrap());
-                    let a1 = edge_angle(tc.opn_angle, e2.unwrap());
-
-                    let p0 = point_pol(a0, r1, ZRO, ONE);
-                    let p1 = point_pol(a1, r1, ZRO, r2 / r1);
-                    let p2 = point_pol(a0, r1, ZRO, ONE);
-
-                    pb = pb.move_to(p0);
-                    pb = pb.arc_approx_line(a0, a1, ORIGIN, r1);
-                    pb = pb.line_to(p1);
-                    pb = pb.arc_approx_line(a1, a0, ORIGIN, r2);
-                    pb = pb.line_to(p2);
-                }
+                let path = pb.build();
+                f.fill(&path, CnvFill { style: Solid(color), rule: FillRule::EvenOdd });
+                f.stroke(&path, STRK_1_BLK);
+                f.pop_transform();
             }
-            let path = pb.build();
-            f.fill(&path, CnvFill { style: Solid(color), rule: FillRule::EvenOdd });
-            f.stroke(&path, STRK_1_BLK);
-            f.pop_transform();
         }
     }));
 }
@@ -217,7 +206,7 @@ pub(super) fn draw_filtered_nodes(
         let points: Vec<Point> = st.filtered_nodes.par_iter().map(|nd| nd.points.p1).collect();
         draw_nodes(
             &points,
-            st.node_radius + SF * 2e0,
+            st.node_radius + SF * TWO,
             STRK_NODE_FILTERED,
             FILL_NODE_FILTERED,
             Some(st.translation),
@@ -235,7 +224,7 @@ pub(super) fn draw_filtered_nodes(
             };
             draw_nodes(
                 &[pt],
-                st.node_radius + SF * 1e0,
+                st.node_radius + SF * ONE,
                 STRK_NODE_CURRENT,
                 FILL_NODE_CURRENT,
                 Some(st.translation),
@@ -303,6 +292,25 @@ fn stroke_edges_phygrm(
         let nd = node_data_cart(tre_vs.w, tre_vs.h, e);
         pb = edge_path_cart(&nd, pb);
         pb = edge_path_vert_cart(&nd, pb);
+    }
+
+    f.with_save(|f| {
+        f.translate(tre_vs.trans);
+        f.stroke(&pb.build(), STRK_EDGE);
+        stroke_root_phygrm(tre_vs.w, tre_vs.h, root_len, root, f);
+    })
+}
+
+#[allow(dead_code)]
+// This is correct code, but will not work with the edges the way they are currently calculated.
+// Current method works only for phylograms.
+fn stroke_edges_cladogram(
+    edges: &[Edge], tre_vs: &RectVals<Float>, root_len: Float, root: Option<Edge>, f: &mut Frame,
+) {
+    let mut pb: PathBuilder = PathBuilder::new();
+    for e in edges {
+        let nd = node_data_cart(tre_vs.w, tre_vs.h, e);
+        pb = edge_path_diag_cart(&nd, pb);
     }
 
     f.with_save(|f| {

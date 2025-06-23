@@ -25,7 +25,7 @@ impl TreeView {
         tool_bar_and_content_col = tool_bar_and_content_col.spacing(PADDING);
 
         if self.show_tool_bar {
-            tool_bar_and_content_col = tool_bar_and_content_col.push(tool_bar(self, ts.clone()));
+            tool_bar_and_content_col = tool_bar_and_content_col.push(toolbar(self, ts.clone()));
         }
 
         if self.show_search_bar {
@@ -56,11 +56,17 @@ impl TreeView {
 
 fn content<'a>(tv: &'a TreeView) -> Element<'a, TvMsg> {
     let ele: Element<'a, TvMsg> = if let Some(pane_grid) = &tv.pane_grid {
-        PaneGrid::new(pane_grid, |_pane_idx, tv_pane, _is_maximized| {
+        PaneGrid::new(pane_grid, |pane_idx, tv_pane, _is_maximized| {
             PgContent::new(
                 center(responsive(move |size| pane_content(tv, tv_pane, size))).padding(PADDING),
             )
-            .style(sty_pane_body)
+            .style(match &pane_idx == pane_grid.panes.last_key_value().unwrap().0 {
+                true => match tv.sidebar_pos {
+                    SidebarPosition::Left => sty_cont_bottom_right,
+                    SidebarPosition::Right => sty_cont_bottom_left,
+                },
+                false => sty_pane_body,
+            })
         })
         .style(sty_pane_grid)
         .on_resize(ZRO, TvMsg::PaneResized)
@@ -95,7 +101,7 @@ fn pane_content<'a>(tv: &'a TreeView, tv_pane: &TvPane, size: Size) -> Element<'
     scrollable.into()
 }
 
-fn tool_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
+fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     let mut tb_row: Row<TvMsg> = Row::new();
 
     tb_row = tb_row.push(
@@ -289,7 +295,7 @@ fn stats(ts: Rc<TreeState>) -> Row<'static, TvMsg> {
 fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
     let mut sb_col: Column<TvMsg> = Column::new();
 
-    sb_col = sb_col.spacing(PADDING);
+    sb_col = sb_col.spacing(PADDING + SF * TWO);
     sb_col = sb_col.width(Length::Fill);
     sb_col = sb_col.height(Length::Fill);
 
@@ -358,6 +364,7 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
     if ts.is_rooted() && tv.tre_cnv.draw_root {
         sb_col = sb_col.push(iced_col![
             toggler_root(true, tv.tre_cnv.draw_root),
+            space_v(ZRO, PADDING / TWO),
             slider(
                 None,
                 tv.root_len_idx_min,
@@ -375,6 +382,7 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
     if ts.has_tip_labs() && tv.tre_cnv.draw_labs_tip && tv.tre_cnv.draw_labs_allowed {
         sb_col = sb_col.push(iced_col![
             toggler_label_tip(true, tv.tre_cnv.draw_labs_tip,),
+            space_v(ZRO, PADDING / TWO),
             slider(
                 None,
                 tv.lab_size_idx_min,
@@ -395,6 +403,7 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
     if ts.has_int_labs() && tv.tre_cnv.draw_labs_int && tv.tre_cnv.draw_labs_allowed {
         sb_col = sb_col.push(iced_col![
             toggler_label_int(true, tv.tre_cnv.draw_labs_int),
+            space_v(ZRO, PADDING / TWO),
             slider(
                 None,
                 tv.lab_size_idx_min,
@@ -415,6 +424,7 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
     if ts.has_brlen() && tv.tre_cnv.draw_labs_brnch && tv.tre_cnv.draw_labs_allowed {
         sb_col = sb_col.push(iced_col![
             toggler_label_branch(true, tv.tre_cnv.draw_labs_brnch),
+            space_v(ZRO, PADDING / TWO),
             slider(
                 None,
                 tv.lab_size_idx_min,
@@ -444,7 +454,10 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
     }
 
     container(container(sb_col).clip(true))
-        .style(sty_cont_side_bar)
+        .style(match tv.sidebar_pos {
+            SidebarPosition::Left => sty_cont_bottom_left,
+            SidebarPosition::Right => sty_cont_bottom_right,
+        })
         .padding(PADDING)
         .width(SIDE_BAR_W)
         .into()

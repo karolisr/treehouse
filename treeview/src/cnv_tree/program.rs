@@ -243,7 +243,9 @@ impl Program<TvMsg> for TreeCnv {
             action = Some(Action::publish(TvMsg::TreeRectNoLongerStale));
         }
         // -----------------------------------------------------------------------------------------
-        st.is_new = false;
+        if st.is_new {
+            st.is_new = false
+        }
         action
     }
 

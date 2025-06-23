@@ -726,13 +726,13 @@ impl TreeView {
         if self.calc_tre_cnv_w(self.tre_scr_w) <= self.tre_scr_w {
             self.tre_cnv.padd_b = TREE_PADDING;
         } else {
-            self.tre_cnv.padd_b = TREE_PADDING + SCROLL_BAR_W;
+            self.tre_cnv.padd_b = TREE_PADDING + SCROLLBAR_W;
         }
 
         if self.calc_tre_cnv_h(self.tre_scr_h) <= self.tre_scr_h {
             self.tre_cnv.padd_r = TREE_PADDING;
         } else {
-            self.tre_cnv.padd_r = TREE_PADDING + SCROLL_BAR_W;
+            self.tre_cnv.padd_r = TREE_PADDING + SCROLLBAR_W;
         }
 
         if self.tre_cnv.tre_sty == TreSty::PhyGrm {

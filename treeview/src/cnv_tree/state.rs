@@ -82,36 +82,28 @@ impl St {
     }
 
     pub(super) fn hovered_node(&mut self) -> Option<NodeData> {
-        let mut rv: Option<NodeData> = None;
-        if let Some(mouse) = self.mouse {
-            let closest_node = self
-                .vis_nodes
-                .iter()
-                .min_by(|&a, &b| {
-                    mouse.distance(a.points.p1).total_cmp(&mouse.distance(b.points.p1))
-                })
-                .cloned();
-            if let Some(closest_node) = closest_node
-                && mouse.distance(closest_node.points.p1) <= self.node_radius + SF * 5e0
-            {
-                rv = Some(closest_node);
-            }
+        let mouse = &self.mouse?;
+        let closest_node = self
+            .vis_nodes
+            .iter()
+            .min_by(|&a, &b| mouse.distance(a.points.p1).total_cmp(&mouse.distance(b.points.p1)))
+            .cloned();
+        if let Some(closest_node) = closest_node
+            && mouse.distance(closest_node.points.p1) <= self.node_radius + SF * 5e0
+        {
+            Some(closest_node)
+        } else {
+            None
         }
-        rv
     }
 
     pub(super) fn cursor_tracking_point(&mut self) -> Option<Point> {
-        let mut rv: Option<Point> = None;
-        if let Some(mouse) = &self.mouse {
-            let mut x = mouse.x;
-            let mut y = mouse.y;
-            if let Some(hovered_node) = &self.hovered_node {
-                x = hovered_node.points.p1.x;
-                y = hovered_node.points.p1.y;
-            }
-            rv = Some(Point { x, y })
+        let mouse = &self.mouse?;
+        if let Some(hovered_node) = &self.hovered_node {
+            Some(Point { x: hovered_node.points.p1.x, y: hovered_node.points.p1.y })
+        } else {
+            Some(Point { x: mouse.x, y: mouse.y })
         }
-        rv
     }
 
     pub(super) fn update_vis_node_idxs_phygrm(

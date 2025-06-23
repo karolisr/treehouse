@@ -1,3 +1,4 @@
+use crate::ZERO;
 use iced::advanced::graphics::text::cosmic_text::{
     Attrs, Buffer, Family, FontSystem, Metrics, Shaping,
 };
@@ -26,9 +27,9 @@ impl TextWidth<'_> {
     pub fn width(&mut self, text: &str) -> f32 {
         self.buffer.set_text(&mut self.font_system, text, &self.attrs, Shaping::Basic);
         if let Some(line_layouts) = self.buffer.line_layout(&mut self.font_system, 0) {
-            if let Some(line_layout) = line_layouts.first() { line_layout.w } else { 0e0 }
+            if let Some(line_layout) = line_layouts.first() { line_layout.w } else { ZERO }
         } else {
-            0e0
+            ZERO
         }
     }
 }

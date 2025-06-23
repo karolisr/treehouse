@@ -4,16 +4,27 @@ use crate::*;
 
 type Float = f32;
 
-pub const SF: Float = 4e0;
-pub const TXT_SIZE: Float = SF * 13e0;
-pub const LINE_HEIGHT: Pixels = Pixels(TXT_SIZE + TXT_SIZE / 2e0);
-pub const WIDGET_H_UNIT: Float = (LINE_HEIGHT.0 / 4e0 + SF * 1.5).floor() + 0.5;
-pub const BTN_H: Float = WIDGET_H_UNIT * 5e0 - SF;
-pub const SLIDER_H: Float = WIDGET_H_UNIT * 3e0;
-pub const TOGGLER_H: Float = WIDGET_H_UNIT * 3e0;
-pub const CHECKBOX_H: Float = WIDGET_H_UNIT * 3e0 - SF * 3e0;
-pub const TEXT_INPUT_H: Float = TXT_SIZE + SF * 2e0;
+pub(crate) const ZERO: Float = 0e0;
+pub(crate) const ONE: Float = 1e0;
+pub(crate) const TWO: Float = 2e0;
+pub(crate) const THREE: Float = 3e0;
+pub(crate) const FOUR: Float = 4e0;
+pub(crate) const FIVE: Float = 5e0;
+
+pub const SF: Float = 1.0;
+pub const TXT_SIZE: Float = SF * 13.0;
+
+pub const LINE_H: Float = TXT_SIZE + SF * THREE;
+pub const LINE_H_PIX: Pixels = Pixels(LINE_H);
 pub const BORDER_W: Float = SF;
-pub const SCROLL_BAR_W: Float = SF * 1e1;
-pub const PADDING: Float = ((TXT_SIZE / (1e1 * SF)).floor().max(1e0) / 2e0) * 1e1 * SF;
-pub const WIDGET_RADIUS: Float = WIDGET_H_UNIT / 2e0;
+pub const WIDGET_H_UNIT: Float = (TXT_SIZE / THREE).floor() * TWO + SF;
+pub const WIDGET_RADIUS: Float = WIDGET_H_UNIT * TWO / THREE - SF * TWO;
+pub const PADDING: Float = WIDGET_RADIUS + SF * TWO;
+pub const BTN_H: Float = WIDGET_H_UNIT * THREE + SF * FIVE;
+pub const SLIDER_H: Float = WIDGET_H_UNIT * TWO - SF * TWO;
+pub const TOGGLER_H: Float = WIDGET_H_UNIT * TWO - SF;
+pub const CHECKBOX_H: Float = WIDGET_H_UNIT * TWO - SF;
+pub const SCROLLBAR_W: Float = WIDGET_H_UNIT - SF;
+pub const TEXT_INPUT_H: Float = WIDGET_H_UNIT * TWO;
+
+pub const MAC_OS_WINDOW_BORDER_RADIUS: Float = SF * 14.0;

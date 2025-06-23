@@ -28,6 +28,15 @@ pub fn edge_path_cart(nd: &NodeDataCart, pb: PathBuilder) -> PathBuilder {
     pb.move_to(nd.points.p1).line_to(nd.points.p0)
 }
 
+pub fn edge_path_diag_cart(nd: &NodeDataCart, pb: PathBuilder) -> PathBuilder {
+    if let Some(y_parent) = nd.y_parent {
+        let pt_parent = Point { x: nd.points.p0.x, y: y_parent };
+        pb.move_to(nd.points.p1).line_to(pt_parent)
+    } else {
+        pb
+    }
+}
+
 pub fn edge_path_pol(nd: &NodeDataPol, pb: PathBuilder) -> PathBuilder {
     pb.move_to(nd.points.p1).line_to(nd.points.p0)
 }
@@ -43,12 +52,7 @@ pub fn edge_path_vert_cart(nd: &NodeDataCart, pb: PathBuilder) -> PathBuilder {
 
 pub fn edge_path_arc_pol(nd: &NodeDataPol, pb: PathBuilder) -> PathBuilder {
     if let Some(angle_parent) = nd.angle_parent {
-        pb.move_to(nd.points.p0).arc_approx_line(
-            nd.angle,
-            angle_parent,
-            ORIGIN,
-            ORIGIN.distance(nd.points.p0),
-        )
+        pb.move_to(nd.points.p0).arc(nd.angle, angle_parent, ORIGIN, ORIGIN.distance(nd.points.p0))
     } else {
         pb
     }
