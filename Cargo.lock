@@ -225,9 +225,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.18.1"
+version = "3.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "793db76d6187cd04dff33004d8e6c9cc4e05cd330500379d2394209271b4aeee"
+checksum = "46c5e41b57b8bba42a04676d81cb89e9ee8e859a1a66f80a5a72e1cb76b34d43"
 
 [[package]]
 name = "bytemuck"
@@ -1217,7 +1217,7 @@ checksum = "dfa686283ad6dd069f105e5ab091b04c62850d3e4cf5d67debad1933f55023df"
 [[package]]
 name = "iced"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#d8caa3b29e0223be861d5a51eaff188da9226b64"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#8d0551ef88373d5502c9dd6e2b7dd7f32fdf1eac"
 dependencies = [
  "iced_core",
  "iced_debug",
@@ -1233,7 +1233,7 @@ dependencies = [
 [[package]]
 name = "iced_beacon"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#d8caa3b29e0223be861d5a51eaff188da9226b64"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#8d0551ef88373d5502c9dd6e2b7dd7f32fdf1eac"
 dependencies = [
  "bincode",
  "futures",
@@ -1248,7 +1248,7 @@ dependencies = [
 [[package]]
 name = "iced_core"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#d8caa3b29e0223be861d5a51eaff188da9226b64"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#8d0551ef88373d5502c9dd6e2b7dd7f32fdf1eac"
 dependencies = [
  "bitflags 2.9.1",
  "bytes",
@@ -1266,7 +1266,7 @@ dependencies = [
 [[package]]
 name = "iced_debug"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#d8caa3b29e0223be861d5a51eaff188da9226b64"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#8d0551ef88373d5502c9dd6e2b7dd7f32fdf1eac"
 dependencies = [
  "iced_beacon",
  "iced_core",
@@ -1277,7 +1277,7 @@ dependencies = [
 [[package]]
 name = "iced_devtools"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#d8caa3b29e0223be861d5a51eaff188da9226b64"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#8d0551ef88373d5502c9dd6e2b7dd7f32fdf1eac"
 dependencies = [
  "iced_debug",
  "iced_program",
@@ -1288,7 +1288,7 @@ dependencies = [
 [[package]]
 name = "iced_futures"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#d8caa3b29e0223be861d5a51eaff188da9226b64"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#8d0551ef88373d5502c9dd6e2b7dd7f32fdf1eac"
 dependencies = [
  "futures",
  "iced_core",
@@ -1302,7 +1302,7 @@ dependencies = [
 [[package]]
 name = "iced_graphics"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#d8caa3b29e0223be861d5a51eaff188da9226b64"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#8d0551ef88373d5502c9dd6e2b7dd7f32fdf1eac"
 dependencies = [
  "bitflags 2.9.1",
  "bytemuck",
@@ -1321,7 +1321,7 @@ dependencies = [
 [[package]]
 name = "iced_program"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#d8caa3b29e0223be861d5a51eaff188da9226b64"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#8d0551ef88373d5502c9dd6e2b7dd7f32fdf1eac"
 dependencies = [
  "iced_graphics",
  "iced_runtime",
@@ -1330,7 +1330,7 @@ dependencies = [
 [[package]]
 name = "iced_renderer"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#d8caa3b29e0223be861d5a51eaff188da9226b64"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#8d0551ef88373d5502c9dd6e2b7dd7f32fdf1eac"
 dependencies = [
  "iced_graphics",
  "iced_tiny_skia",
@@ -1342,7 +1342,7 @@ dependencies = [
 [[package]]
 name = "iced_runtime"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#d8caa3b29e0223be861d5a51eaff188da9226b64"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#8d0551ef88373d5502c9dd6e2b7dd7f32fdf1eac"
 dependencies = [
  "bytes",
  "iced_core",
@@ -1356,7 +1356,7 @@ dependencies = [
 [[package]]
 name = "iced_tiny_skia"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#d8caa3b29e0223be861d5a51eaff188da9226b64"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#8d0551ef88373d5502c9dd6e2b7dd7f32fdf1eac"
 dependencies = [
  "bytemuck",
  "cosmic-text",
@@ -1373,7 +1373,7 @@ dependencies = [
 [[package]]
 name = "iced_wgpu"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#d8caa3b29e0223be861d5a51eaff188da9226b64"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#8d0551ef88373d5502c9dd6e2b7dd7f32fdf1eac"
 dependencies = [
  "bitflags 2.9.1",
  "bytemuck",
@@ -1394,7 +1394,7 @@ dependencies = [
 [[package]]
 name = "iced_widget"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#d8caa3b29e0223be861d5a51eaff188da9226b64"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#8d0551ef88373d5502c9dd6e2b7dd7f32fdf1eac"
 dependencies = [
  "iced_renderer",
  "iced_runtime",
@@ -1409,7 +1409,7 @@ dependencies = [
 [[package]]
 name = "iced_winit"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#d8caa3b29e0223be861d5a51eaff188da9226b64"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#8d0551ef88373d5502c9dd6e2b7dd7f32fdf1eac"
 dependencies = [
  "iced_debug",
  "iced_program",
@@ -1749,7 +1749,7 @@ dependencies = [
 [[package]]
 name = "muda"
 version = "0.16.1"
-source = "git+https://github.com/karolisr/muda.git?branch=custom#00cc6b5db80d6f71b46b20aa51afb5fad62c61e2"
+source = "git+https://github.com/karolisr/muda.git?branch=custom#5c6bfe334341ed6f9a827f93f0a49e4d3307bf0e"
 dependencies = [
  "dpi 0.1.2",
  "futures",
@@ -4292,9 +4292,9 @@ checksum = "ec107c4503ea0b4a98ef47356329af139c0a4f7750e621cf2973cd3385ebcb3d"
 
 [[package]]
 name = "xcursor"
-version = "0.3.9"
+version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "635887f4315a33cb714eb059bdbd7c1c92bfa71bc5b9d5115460502f788c2ab5"
+checksum = "bec9e4a500ca8864c5b47b8b482a73d62e4237670e5b5f1d6b9e3cae50f28f2b"
 
 [[package]]
 name = "xkbcommon-dl"
