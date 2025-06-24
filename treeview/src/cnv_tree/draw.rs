@@ -20,18 +20,26 @@ pub(super) fn draw_clade_labels(
         let labeled_clades = tst.labeled_clades();
         for (node_id, clade_label) in labeled_clades {
             if let Some((e1, e2)) = tst.bounding_tip_edges_for_clade(node_id) {
-                let y1_rel = e1.y as Float;
-                let y2_rel = e2.y as Float;
                 let color = clade_label.color;
-                let width = tc.clade_labs_w;
-
+                let edge = &tst.edges_srtd_y().unwrap()
+                    [tst.tree().edge_idx_for_node_id(*node_id).unwrap()];
                 let mut pb: PathBuilder = PathBuilder::new();
-
                 f.push_transform();
                 f.translate(st.translation);
                 match tc.tre_sty {
                     TreSty::PhyGrm => {
-                        let x = st.tre_vs.w + tc.lab_offset_tip;
+                        let (x, width) = match clade_label.label_type {
+                            CladeLabelType::Outside => {
+                                (st.tre_vs.w + tc.lab_offset_tip, tc.clade_labs_w)
+                            }
+                            CladeLabelType::Inside => {
+                                let nd = node_data_cart(st.tre_vs.w, st.tre_vs.h, edge);
+                                let x = nd.points.p1.x;
+                                (x, st.tre_vs.w - x)
+                            }
+                        };
+                        let y1_rel = e1.y as Float;
+                        let y2_rel = e2.y as Float;
                         let y = y1_rel * st.tre_vs.h;
                         let height = (y2_rel - y1_rel) * st.tre_vs.h;
                         let rect = Rectangle { x, y, width, height };
@@ -39,7 +47,22 @@ pub(super) fn draw_clade_labels(
                     }
                     TreSty::Fan => {
                         f.rotate(st.rotation);
-                        let r1 = st.tre_vs.radius_min + tc.lab_offset_tip;
+
+                        let (r1, width) = match clade_label.label_type {
+                            CladeLabelType::Outside => {
+                                (st.tre_vs.radius_min + tc.lab_offset_tip, tc.clade_labs_w)
+                            }
+                            CladeLabelType::Inside => {
+                                let nd = node_data_rad(
+                                    tc.opn_angle, tc.rot_angle, st.tre_vs.radius_min, st.root_len,
+                                    edge,
+                                );
+                                let r1 = ONE.max(nd.points.p1.distance(ORIGIN));
+                                let r2 = st.tre_vs.radius_min;
+                                let width = r2 - r1;
+                                (r1, width)
+                            }
+                        };
                         let a0 = edge_angle(tc.opn_angle, e1);
                         let a1 = edge_angle(tc.opn_angle, e2);
                         pb = pb.thick_arc(a0, a1, ORIGIN, r1, width);
@@ -47,7 +70,7 @@ pub(super) fn draw_clade_labels(
                 }
                 let path = pb.build();
                 f.fill(&path, CnvFill { style: Solid(color), rule: FillRule::EvenOdd });
-                f.stroke(&path, STRK_1_BLK);
+                f.stroke(&path, STRK_1.with_color(color));
                 f.pop_transform();
             }
         }

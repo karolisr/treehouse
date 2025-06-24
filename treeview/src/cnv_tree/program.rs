@@ -210,7 +210,16 @@ impl Program<TvMsg> for TreeCnv {
                             if let Some(hevered_node) = &st.hovered_node {
                                 let edge = &edges[hevered_node.edge_idx];
                                 let node_id = edge.node_id;
-                                action = Some(Action::publish(TvMsg::SelectDeselectNode(node_id)));
+                                if let Some(modifiers) = st.modifiers
+                                    && modifiers == Modifiers::SHIFT
+                                {
+                                    action =
+                                        Some(Action::publish(TvMsg::SelectDeselectNode(node_id)));
+                                } else {
+                                    action = Some(Action::publish(
+                                        TvMsg::SelectDeselectNodeExclusive(node_id),
+                                    ));
+                                }
                             }
                         }
                         MouseButton::Right => {}
@@ -220,7 +229,12 @@ impl Program<TvMsg> for TreeCnv {
                     _ => {}
                 }
             }
-            Event::Keyboard(_e) => {}
+            Event::Keyboard(KeyboardEvent::ModifiersChanged(modifiers)) => {
+                st.modifiers = match *modifiers {
+                    Modifiers::SHIFT => Some(Modifiers::SHIFT),
+                    _ => None,
+                };
+            }
             Event::Window(WindowEvent::RedrawRequested(_)) => action = None,
             _ => {}
         }

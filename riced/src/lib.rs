@@ -45,7 +45,9 @@ pub use i::futures::{
     channel::mpsc::{UnboundedSender, unbounded},
     stream::StreamExt,
 };
-pub use i::keyboard::{Key, Modifiers, on_key_press};
+pub use i::keyboard::{
+    Event as KeyboardEvent, Key, Location as KeyLocation, Modifiers, on_key_press,
+};
 pub use i::mouse::{Button as MouseButton, Cursor, Event as MouseEvent, Interaction};
 pub use i::task::{Never, Sipper, sipper};
 pub use i::theme::{Theme, palette::Pair as PalettePair};

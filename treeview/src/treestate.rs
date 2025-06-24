@@ -58,15 +58,23 @@ impl TreeState {
     }
     // pub(super) fn tree_original(&self) -> &Tree { &self.t_orig }
 
-    pub(super) fn add_clade_label(
-        &mut self,
-        node_id: NodeId,
-        color: Color,
-        // label: impl Into<String>,
-        // label_type: CladeLabelType,
+    pub(super) fn add_remove_clade_label(
+        &mut self, node_id: NodeId, color: Color, label: impl Into<String>,
+        label_type: CladeLabelType,
     ) {
-        let clade_label: CladeLabel = CladeLabel { color };
-        // CladeLabel { node_id, color, label: label.into(), label_type };
+        if self.clade_has_label(&node_id) {
+            self.remove_clade_label(&node_id);
+        } else {
+            self.add_clade_label(node_id, color, label, label_type);
+        }
+    }
+
+    pub(super) fn add_clade_label(
+        &mut self, node_id: NodeId, color: Color, label: impl Into<String>,
+        label_type: CladeLabelType,
+    ) {
+        let clade_label: CladeLabel =
+            CladeLabel { node_id, color, label: label.into(), label_type };
         self.labeled_clades.insert(node_id, clade_label);
     }
 
@@ -414,8 +422,20 @@ impl TreeState {
         self.sel_node_ids.insert(*node_id);
         self.clear_cache_sel_nodes();
     }
+
     pub(super) fn deselect_node(&mut self, node_id: &NodeId) {
         self.sel_node_ids.remove(node_id);
+        self.clear_cache_sel_nodes();
+    }
+
+    pub(super) fn select_deselect_node_exclusive(&mut self, node_id: &NodeId) {
+        let selected = self.sel_node_ids.clone();
+        selected.iter().for_each(|id| {
+            if id != node_id {
+                self.sel_node_ids.remove(id);
+            }
+        });
+        self.select_deselect_node(node_id);
         self.clear_cache_sel_nodes();
     }
 

@@ -144,11 +144,7 @@ impl TreeView {
         match tv_msg {
             TvMsg::LabelClade(node_id) => {
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
-                    tre.add_clade_label(
-                        node_id,
-                        Clr::GRN_50,
-                        // node_id, CladeLabelType::Outside
-                    )
+                    tre.add_clade_label(node_id, Clr::GRN_25, node_id, CladeLabelType::Inside)
                 });
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_all();
@@ -158,6 +154,28 @@ impl TreeView {
                 self.with_exclusive_sel_tre_mut(&mut |tre| tre.remove_clade_label(&node_id));
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_all();
+            }
+
+            TvMsg::AddRemoveCladeLabel => {
+                let mut node_id: Option<NodeId> = None;
+                if let Some(sel_tre) = self.sel_tre() {
+                    node_id = match sel_tre.sel_node_ids().len() == 1 {
+                        true => sel_tre.sel_node_ids().iter().last().copied(),
+                        false => None,
+                    }
+                }
+                if let Some(node_id) = node_id {
+                    self.with_exclusive_sel_tre_mut(&mut |tre| {
+                        tre.add_remove_clade_label(
+                            node_id,
+                            Clr::GRN_25,
+                            node_id,
+                            CladeLabelType::Inside,
+                        )
+                    });
+                    self.tre_cnv.stale_tre_rect = true;
+                    self.clear_caches_all();
+                }
             }
 
             TvMsg::TreeRectNoLongerStale => {
@@ -306,7 +324,7 @@ impl TreeView {
                     self.tre_cnv.lab_offset_int = SF * 3e0;
                     self.tre_cnv.lab_offset_brnch = -SF * 3e0;
 
-                    self.tre_cnv.clade_labs_w = SF * TEN;
+                    // self.tre_cnv.clade_labs_w = SF * TEN;
 
                     self.tre_cnv.root_len_frac = self.calc_root_len_frac();
 
@@ -449,6 +467,12 @@ impl TreeView {
 
             TvMsg::SelectDeselectNode(node_id) => {
                 self.with_exclusive_sel_tre_mut(&mut |tre| tre.select_deselect_node(&node_id));
+            }
+
+            TvMsg::SelectDeselectNodeExclusive(node_id) => {
+                self.with_exclusive_sel_tre_mut(&mut |tre| {
+                    tre.select_deselect_node_exclusive(&node_id)
+                });
             }
 
             TvMsg::OpnAngleChanged(idx) => {
@@ -1015,6 +1039,7 @@ pub enum TvMsg {
     Unroot,
     RotAngleChanged(u16),
     SelectDeselectNode(NodeId),
+    SelectDeselectNodeExclusive(NodeId),
     SetSidebarPos(SidebarPosition),
     TreesLoaded(Vec<Tree>),
     TreStyOptChanged(TreSty),
@@ -1024,6 +1049,7 @@ pub enum TvMsg {
     // -------------------------------------------
     LabelClade(NodeId),
     RemoveCladeLabel(NodeId),
+    AddRemoveCladeLabel,
     // -------------------------------------------
     TreCnvScrolledOrResized(Viewport),
     LttCnvScrolledOrResized(Viewport),

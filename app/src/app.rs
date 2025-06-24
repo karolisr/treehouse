@@ -177,7 +177,16 @@ impl App {
                         //     }
                         //     _ => Task::none(),
                         // },
-                        _ => Task::none(),
+                        _ => match key {
+                            Key::Character(k) => {
+                                let k: &str = k.as_str();
+                                match k {
+                                    "l" => Task::done(AppMsg::TvMsg(TvMsg::AddRemoveCladeLabel)),
+                                    _ => Task::none(),
+                                }
+                            }
+                            _ => Task::none(),
+                        },
                     }
                 }
             }

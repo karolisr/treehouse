@@ -48,18 +48,18 @@ use treeview::{NODE_ORD_OPTS, NodeOrd, TRE_STY_OPTS, TreSty, TvPane};
 
 pub type IndexRange = RangeInclusive<usize>;
 
-// #[derive(Debug)]
-// pub(crate) enum CladeLabelType {
-//     Outside,
-//     Branches,
-// }
+#[derive(Debug)]
+pub(crate) enum CladeLabelType {
+    Outside,
+    Inside,
+}
 
 #[derive(Debug)]
 pub(crate) struct CladeLabel {
-    // node_id: NodeId,
+    node_id: NodeId,
     color: Color,
-    // label: String,
-    // label_type: CladeLabelType,
+    label: String,
+    label_type: CladeLabelType,
 }
 
 #[derive(Debug, Clone, Default)]

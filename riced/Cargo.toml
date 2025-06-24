@@ -22,12 +22,12 @@
             "advanced", # advanced module
             "canvas",   # "canvas" widget
             "crisp",    # pixel snapping for crisp edges by default (can cause jitter!)
-            "debug",    # a debug view in native platforms (press F12)
             "lazy",     # lazy widgets
             "sipper",   # support for the "sipper" library
             "svg",      # "svg" widget
             "tokio",    # "tokio" as the "executor::Default" on native platforms
             "wgpu",     # "wgpu" GPU-accelerated renderer backend
+            # "debug",    # a debug view in native platforms (press F12)
             # ----------------------------------------------------------------------------------------------
             # "auto-detect-theme",       # auto-detects light/dark mode for the built-in theme
             # "fira-sans",               # embeds Fira Sans into the final application; useful for testing and Wasm builds

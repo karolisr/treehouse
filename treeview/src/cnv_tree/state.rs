@@ -4,6 +4,7 @@ use crate::*;
 #[derive(Debug)]
 pub struct St {
     pub(crate) mouse: Option<Point>,
+    pub(crate) modifiers: Option<Modifiers>,
     pub(crate) hovered_node: Option<NodeData>,
     pub(crate) cursor_tracking_point: Option<Point>,
     pub(crate) bnds: Rectangle<Float>,
@@ -35,6 +36,7 @@ impl Default for St {
     fn default() -> Self {
         Self {
             mouse: None,
+            modifiers: None,
             hovered_node: None,
             cursor_tracking_point: None,
             bnds: Default::default(),

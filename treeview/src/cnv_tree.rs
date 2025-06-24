@@ -159,7 +159,8 @@ impl TreeCnv {
         }
         let mut offset_due_to_clade_lab = ZRO;
         if has_clade_labels && self.draw_clade_labs {
-            offset_due_to_clade_lab = self.clade_labs_w + self.lab_offset_tip + SF;
+            // offset_due_to_clade_lab = self.clade_labs_w + self.lab_offset_tip + SF;
+            offset_due_to_clade_lab = self.clade_labs_w;
         }
         let mut root_len = ZRO;
         match self.tre_sty {
