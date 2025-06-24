@@ -267,8 +267,8 @@ impl Program<TvMsg> for TreeCnv {
             if self.draw_debug {
                 draw_bounds(self, st, rndr, bnds, &mut geoms);
             }
-            draw_edges(self, st, tst, rndr, size, &mut geoms);
             draw_clade_labels(self, st, tst, rndr, size, &mut geoms);
+            draw_edges(self, st, tst, rndr, size, &mut geoms);
             draw_legend(self, st, tst, rndr, size, &mut geoms);
             draw_cursor_line(self, st, rndr, size, &mut geoms);
             draw_labs_tip(self, st, tst, rndr, size, &mut geoms);
