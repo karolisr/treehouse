@@ -13,29 +13,6 @@ pub(super) fn draw_bounds(
     }));
 }
 
-pub(super) fn draw_edges(
-    tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
-) {
-    g.push(tst.cache_edge().draw(rndr, sz, |f| match tc.tre_sty {
-        TreSty::PhyGrm => stroke_edges_phygrm(
-            tst.edges_srtd_y().unwrap(),
-            &st.tre_vs,
-            st.root_len,
-            tst.edge_root(),
-            f,
-        ),
-        TreSty::Fan => stroke_edges_fan(
-            tst.edges_srtd_y().unwrap(),
-            &st.tre_vs,
-            tc.rot_angle,
-            tc.opn_angle,
-            st.root_len,
-            tst.edge_root(),
-            f,
-        ),
-    }));
-}
-
 pub(super) fn draw_clade_labels(
     tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
 ) {
@@ -74,6 +51,29 @@ pub(super) fn draw_clade_labels(
                 f.pop_transform();
             }
         }
+    }));
+}
+
+pub(super) fn draw_edges(
+    tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+) {
+    g.push(tst.cache_edge().draw(rndr, sz, |f| match tc.tre_sty {
+        TreSty::PhyGrm => stroke_edges_phygrm(
+            tst.edges_srtd_y().unwrap(),
+            &st.tre_vs,
+            st.root_len,
+            tst.edge_root(),
+            f,
+        ),
+        TreSty::Fan => stroke_edges_fan(
+            tst.edges_srtd_y().unwrap(),
+            &st.tre_vs,
+            tc.rot_angle,
+            tc.opn_angle,
+            st.root_len,
+            tst.edge_root(),
+            f,
+        ),
     }));
 }
 
