@@ -22,6 +22,7 @@ mod icons;
 mod path_utils;
 mod style;
 mod text_width;
+mod widget;
 
 use num_traits::FromPrimitive;
 use std::fmt::Display;
@@ -36,6 +37,7 @@ pub use icons::Icon;
 pub use path_utils::*;
 pub use style::*;
 pub use text_width::{TextWidth, text_width, text_width_line_height};
+pub use widget::*;
 
 pub use i::alignment::{Horizontal, Vertical};
 pub use i::border::{Border, Radius};
