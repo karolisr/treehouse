@@ -972,7 +972,7 @@ impl TreeView {
             } else if self.show_ltt
                 && let Some(tre_pane_id) = self.tre_pane_id
                 && let Some((ltt_pane_id, split)) =
-                    pane_grid.split(Axis::Horizontal, tre_pane_id, TvPane::LttPlot)
+                    pane_grid.split(PgAxis::Horizontal, tre_pane_id, TvPane::LttPlot)
             {
                 pane_grid.resize(split, ONE);
                 self.ltt_pane_id = Some(ltt_pane_id);

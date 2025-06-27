@@ -48,12 +48,14 @@ use treeview::{NODE_ORD_OPTS, NodeOrd, TRE_STY_OPTS, TreSty, TvPane};
 
 pub type IndexRange = RangeInclusive<usize>;
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub(crate) enum CladeLabelType {
     Outside,
     Inside,
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub(crate) struct CladeLabel {
     node_id: NodeId,

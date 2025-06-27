@@ -1,6 +1,7 @@
 [package]
     authors.workspace=true
     categories.workspace=true
+    default-run="treehouse"
     edition.workspace=true
     license-file.workspace=true
     name="treehouse"

@@ -78,8 +78,8 @@ pub use w::container;
 pub use w::container::{Container, Style as ContainerStyle};
 pub use w::horizontal_space;
 pub use w::pane_grid::{
-    Axis, Content as PgContent, Highlight as PgHighlight, Line as PgLine, Pane, ResizeEvent,
-    State as PgState, Style as PgStyle,
+    Axis as PgAxis, Content as PgContent, Highlight as PgHighlight, Line as PgLine, Pane,
+    ResizeEvent, State as PgState, Style as PgStyle,
 };
 pub use w::pick_list::{
     Handle as PickListHandle, Status as PickListStatus, Style as PickListStyle,
