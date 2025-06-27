@@ -5,7 +5,6 @@
 use super::common::*;
 use super::flex;
 use super::{MenuCatalog, MenuStyle};
-
 use iced::Pixels;
 use iced::advanced::overlay::Group;
 use iced::advanced::widget::Operation;
@@ -18,7 +17,7 @@ use iced::{
         widget::tree::{self, Tree},
     },
     alignment,
-    event::Status,
+    event::Status as EventStatus,
     event::Status::Captured,
     event::Status::Ignored,
 };
@@ -94,6 +93,7 @@ where
     pub(super) axis: Axis,
     pub(super) offset: f32,
 }
+
 impl<'a, Message, Theme, Renderer> Menu<'a, Message, Theme, Renderer>
 where
     Theme: MenuCatalog,
@@ -141,6 +141,7 @@ where
         Tree { tag: self.tag(), state: self.state(), children: self.children() }
     }
 }
+
 impl<Message, Theme, Renderer> Menu<'_, Message, Theme, Renderer>
 where
     Theme: MenuCatalog,
@@ -277,7 +278,7 @@ where
         &mut self, tree: &mut Tree, event: &Event, layout: Layout<'_>, cursor: mouse::Cursor,
         renderer: &Renderer, clipboard: &mut dyn Clipboard, shell: &mut Shell<'_, Message>,
         viewport: &Rectangle, scroll_speed: ScrollSpeed,
-    ) -> Status {
+    ) -> EventStatus {
         let mut lc = layout.children();
         let slice_layout = lc.next().unwrap();
         let prescroll = lc.next().unwrap().bounds();
@@ -287,7 +288,7 @@ where
         let menu_state = tree.state.downcast_mut::<MenuState>();
         let slice = &menu_state.slice;
 
-        self.items[slice.start_index..=slice.end_index] // [item...]
+        let status_1 = self.items[slice.start_index..=slice.end_index] // [item...]
             .iter_mut()
             .zip(tree.children[slice.start_index..=slice.end_index].iter_mut()) // [item_tree...]
             .zip(slice_layout.children()) // [item_layout...]
@@ -303,19 +304,21 @@ where
                     viewport,
                 )
             })
-            .fold(Ignored, Status::merge);
+            .fold(Ignored, EventStatus::merge);
 
-        match event {
+        let status_2 = match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 if cursor.is_over(prescroll) {
                     menu_state.pressed = true;
                 }
                 Ignored
             }
+
             Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
                 menu_state.pressed = false;
                 Ignored
             }
+
             Event::Mouse(mouse::Event::WheelScrolled { delta }) => {
                 if cursor.is_over(prescroll) {
                     process_scroll_event(
@@ -334,7 +337,21 @@ where
             }
             _ => Ignored,
         }
-        // .merge(status)
+        .merge(status_1);
+
+        if !shell.is_event_captured() {
+            match shell.event_status().merge(status_2) {
+                Ignored => Ignored,
+                Captured => {
+                    // shell.invalidate_layout();
+                    shell.capture_event();
+                    shell.request_redraw();
+                    Captured
+                }
+            }
+        } else {
+            Captured
+        }
     }
 
     pub(super) fn operate(
@@ -370,10 +387,8 @@ where
         let _prescroll = lc.next()?.bounds();
         let _offset_bounds = lc.next()?.bounds();
         let _check_bounds = lc.next()?.bounds();
-
         let menu_state = tree.state.downcast_mut::<MenuState>();
         let slice = &menu_state.slice;
-
         let children = self.items[slice.start_index..=slice.end_index] // [item...]
             .iter_mut()
             .zip(tree.children[slice.start_index..=slice.end_index].iter_mut()) // [item_tree...]
@@ -382,7 +397,6 @@ where
                 child.overlay(state, layout, renderer, translation)
             })
             .collect::<Vec<_>>();
-
         (!children.is_empty()).then(|| Group::with_children(children).overlay())
     }
 
@@ -425,12 +439,9 @@ where
         let prescroll = lc.next().unwrap().bounds();
         // let offset_bounds = lc.next().unwrap().bounds();
         // let check_bounds = lc.next().unwrap().bounds();
-
         let menu_state = tree.state.downcast_ref::<MenuState>();
         let slice = &menu_state.slice;
-
         // debug_draw(renderer, prescroll, check_bounds, offset_bounds);
-
         // draw background
         let pad_rectangle = pad_rectangle(prescroll, theme_style.menu_background_expand);
         if pad_rectangle.intersects(viewport) {
@@ -468,6 +479,7 @@ where
                         );
                     }
                 }
+
                 MenuDrawPath::FakeHovering => {
                     if !cursor.is_over(active_bounds) {
                         cursor = mouse::Cursor::Available(active_bounds.center());
@@ -480,9 +492,11 @@ where
         let Some(start) = self.items.get(slice.start_index) else {
             return;
         };
+
         let Some(start_tree) = tree.children.get(slice.start_index) else {
             return;
         };
+
         let Some(start_layout) = slice_layout.children().next() else {
             return;
         };
@@ -497,9 +511,11 @@ where
             let Some(end) = self.items.get(slice.end_index) else {
                 return;
             };
+
             let Some(end_tree) = tree.children.get(slice.end_index) else {
                 return;
             };
+
             let Some(end_layout) = slice_layout.children().last() else {
                 return;
             };
@@ -537,7 +553,7 @@ where
 
     pub(super) fn open_event(
         &self, tree: &mut Tree, layout: Layout<'_>, cursor: mouse::Cursor,
-    ) -> Status {
+    ) -> EventStatus {
         let mut lc = layout.children();
         let slice_layout = lc.next().unwrap();
         // let prescroll = lc.next().unwrap().bounds();
@@ -609,6 +625,7 @@ where
     pub(super) item: Element<'a, Message, Theme, Renderer>,
     pub(super) menu: Option<Box<Menu<'a, Message, Theme, Renderer>>>,
 }
+
 impl<'a, Message, Theme, Renderer> MenuItem<'a, Message, Theme, Renderer>
 where
     Theme: MenuCatalog,
@@ -632,17 +649,13 @@ where
         Tree { tag: self.tag(), state: self.state(), children: self.children() }
     }
 }
+
 impl<Message, Theme, Renderer> MenuItem<'_, Message, Theme, Renderer>
 where
     Theme: MenuCatalog,
     Renderer: renderer::Renderer,
 {
-    // pub(super) fn size(&self) -> Size<Length> {
-    //     self.item.as_widget().size()
-    // }
-
     pub(super) fn tag(&self) -> tree::Tag { tree::Tag::stateless() }
-
     pub(super) fn state(&self) -> tree::State { tree::State::None }
 
     /// out: \[widget_tree, menu_tree]
@@ -654,7 +667,6 @@ where
     }
 
     /// tree: Tree{stateless, \[widget_tree, menu_tree]}
-    #[allow(clippy::option_if_let_else)]
     pub(super) fn diff(&self, tree: &mut Tree) {
         if let Some(t0) = tree.children.get_mut(0) {
             t0.diff(&self.item);
@@ -676,11 +688,17 @@ where
         &mut self, tree: &mut Tree, event: Event, layout: Layout<'_>, cursor: mouse::Cursor,
         renderer: &Renderer, clipboard: &mut dyn Clipboard, shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
-    ) -> Status {
+    ) -> EventStatus {
         self.item.as_widget_mut().update(
             &mut tree.children[0], &event, layout, cursor, renderer, clipboard, shell, viewport,
         );
-        shell.event_status()
+
+        if shell.is_event_captured() {
+            shell.request_redraw();
+            Captured
+        } else {
+            Ignored
+        }
     }
 
     /// tree: Tree{stateless, \[widget_tree, menu_tree]}
@@ -712,7 +730,6 @@ where
         self.item.as_widget().operate(&mut tree.children[0], layout, renderer, operation);
     }
 
-    // #[allow(dead_code)]
     pub(super) fn overlay<'b>(
         &'b mut self, tree: &'b mut Tree, layout: Layout<'b>, renderer: &Renderer,
         translation: Vector,
@@ -729,7 +746,6 @@ where
 
 /// Adaptive open direction
 #[derive(Debug)]
-#[allow(clippy::struct_excessive_bools)]
 struct Aod {
     // whether or not to use overlap
     horizontal_overlap: bool,
@@ -743,6 +759,7 @@ struct Aod {
     horizontal_offset: f32,
     vertical_offset: f32,
 }
+
 impl Aod {
     /// Returns (child position, offset position, child direction)
     fn adaptive(
@@ -909,6 +926,7 @@ pub(super) struct MenuSlice {
     pub(super) lower_bound_rel: f32,
     pub(super) upper_bound_rel: f32,
 }
+
 impl MenuSlice {
     fn new(items_node: &Node, translation: Vector, viewport: Size, scroll_offset: f32) -> Self {
         let items_bounds = items_node.bounds() + translation;

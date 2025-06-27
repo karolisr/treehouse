@@ -23,7 +23,6 @@ where
     /// Tree{ bar_state, [item_tree...] }
     pub(super) translation: Vector,
     pub(super) tree: &'b mut Tree,
-
     pub(super) roots: &'b mut [MenuItem<'a, Message, Theme, Renderer>],
     pub(super) init_bar_bounds: Rectangle,
     pub(super) init_root_bounds: Vec<Rectangle>,
@@ -152,7 +151,6 @@ where
         )
     }
 
-    // #[allow(unused_results)]
     fn update(
         &mut self, event: &Event, layout: Layout<'_>, cursor: mouse::Cursor, renderer: &Renderer,
         clipboard: &mut dyn Clipboard, shell: &mut Shell<'_, Message>,
@@ -275,27 +273,26 @@ where
             self.scroll_speed,
         );
 
-        // let status = match re {
-        //     RecEvent::Event => Captured,
-        //     RecEvent::Close | RecEvent::None => {
-        //         if cursor.is_over(bar_bounds) {
-        //             Ignored
-        //         } else {
-        //             Captured
-        //         }
-        //     }
-        // };
+        let status = match re {
+            RecEvent::Event => Captured,
+            RecEvent::Close | RecEvent::None => {
+                if cursor.is_over(bar_bounds) {
+                    Ignored
+                } else {
+                    Captured
+                }
+            }
+        };
 
-        // if !shell.is_event_captured() {
-        // match shell.event_status().merge(status) {
-        //     Ignored => {}
-        //     Captured => {
-        //         // shell.invalidate_layout();
-        //         shell.capture_event();
-        //         shell.request_redraw();
-        //     }
-        // }
-        // }
+        if !shell.is_event_captured() {
+            match shell.event_status().merge(status) {
+                Ignored => {}
+                Captured => {
+                    shell.capture_event();
+                    shell.request_redraw();
+                }
+            }
+        }
     }
 
     fn mouse_interaction(
@@ -414,7 +411,6 @@ where
         let menu = active_root.menu.as_mut()?;
         let menu_tree = &mut active_tree.children[1];
         let menu_layout = menu_layouts.next()?;
-
         menu.overlay(menu_tree, menu_layout, renderer, Vector::ZERO)
     }
 

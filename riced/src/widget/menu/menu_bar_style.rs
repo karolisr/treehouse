@@ -51,20 +51,25 @@ impl std::default::Default for Style {
     fn default() -> Self {
         Self {
             bar_background: Color::from([0.85; 3]).into(),
-            bar_border: Border { radius: 8.0.into(), ..Default::default() },
+            bar_border: Border { radius: 3.0.into(), ..Default::default() },
             bar_shadow: Shadow::default(),
-            bar_background_expand: 5.into(),
+            bar_background_expand: 3.into(),
 
             menu_background: Color::from([0.85; 3]).into(),
-            menu_border: Border { radius: 8.0.into(), ..Default::default() },
+            menu_border: Border { radius: 3.0.into(), ..Default::default() },
             menu_shadow: Shadow {
-                color: Color::from([0.0, 0.0, 0.0, 0.5]),
+                color: Color::from([0.0, 0.0, 0.0, 0.75]),
                 offset: Vector::ZERO,
                 blur_radius: 10.0,
             },
-            menu_background_expand: 5.into(),
+
+            menu_background_expand: 3.into(),
             path: Color::from([0.3; 3]).into(),
-            path_border: Border { radius: 6.0.into(), ..Default::default() },
+            path_border: Border {
+                radius: 3.0.into(),
+                width: 2.0,
+                color: Color { r: 1e0, g: 0e0, b: 0e0, a: 1e0 },
+            },
         }
     }
 }
@@ -83,9 +88,7 @@ pub trait MenuCatalog {
 
 impl MenuCatalog for Theme {
     type Class<'a> = StyleFn<'a, Self, Style>;
-
     fn default<'a>() -> Self::Class<'a> { Box::new(primary) }
-
     fn style(&self, class: &Self::Class<'_>, status: MenuStatus) -> Style { class(self, status) }
 }
 
@@ -93,7 +96,6 @@ impl MenuCatalog for Theme {
 #[must_use]
 pub fn primary(theme: &Theme, _status: MenuStatus) -> Style {
     let palette = theme.extended_palette();
-
     Style {
         bar_background: palette.background.base.color.into(),
         menu_background: palette.background.base.color.into(),

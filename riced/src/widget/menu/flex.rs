@@ -17,9 +17,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![allow(clippy::all)]
-#![allow(clippy::pedantic)]
-#![allow(clippy::use_self)]
+#![allow(clippy::too_many_arguments)]
 
 use iced::{
     Alignment, Element, Length, Padding, Pixels, Point, Size,
@@ -34,7 +32,6 @@ use iced::{
 pub enum Axis {
     /// The horizontal axis
     Horizontal,
-
     /// The vertical axis
     Vertical,
 }

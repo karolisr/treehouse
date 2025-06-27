@@ -12,7 +12,7 @@ use iced::{
         widget::{Operation, Tree, tree},
     },
     alignment,
-    event::Status,
+    event::Status as EventStatus,
     event::Status::Captured,
     event::Status::Ignored,
 };
@@ -167,7 +167,8 @@ where
         renderer: &Renderer, clipboard: &mut dyn Clipboard, shell: &mut Shell<'_, Message>,
         viewport: &Rectangle,
     ) {
-        self.roots
+        let status_1 = self
+            .roots
             .iter_mut() // [Item...]
             .zip(tree.children.iter_mut()) // [item_tree...]
             .zip(layout.children()) // [widget_node...]
@@ -183,12 +184,12 @@ where
                     viewport,
                 )
             })
-            .fold(Ignored, Status::merge);
+            .fold(Ignored, EventStatus::merge);
 
         let bar = tree.state.downcast_mut::<MenuBarState>();
         let bar_bounds = layout.bounds();
 
-        match event {
+        let status_2 = match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 if cursor.is_over(bar_bounds) {
                     bar.is_pressed = true;
@@ -197,6 +198,7 @@ where
                     Ignored
                 }
             }
+
             Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) => {
                 if cursor.is_over(bar_bounds) && bar.is_pressed {
                     bar.open = !bar.open;
@@ -212,6 +214,7 @@ where
                     Ignored
                 }
             }
+
             Event::Mouse(mouse::Event::CursorMoved { .. }) => {
                 if bar.open {
                     if cursor.is_over(bar_bounds) {
@@ -229,20 +232,21 @@ where
                     Ignored
                 }
             }
-            _ => Ignored,
-        };
-        // .merge(status);
 
-        // if !shell.is_event_captured() {
-        //     match shell.event_status().merge(status_new) {
-        //         Ignored => {}
-        //         Captured => {
-        //             // shell.invalidate_layout();
-        //             shell.capture_event();
-        //             shell.request_redraw();
-        //         }
-        //     }
-        // }
+            _ => Ignored,
+        }
+        .merge(status_1);
+
+        if !shell.is_event_captured() {
+            match shell.event_status().merge(status_2) {
+                Ignored => {}
+                Captured => {
+                    // shell.invalidate_layout();
+                    shell.capture_event();
+                    shell.request_redraw();
+                }
+            }
+        }
     }
 
     fn operate(
