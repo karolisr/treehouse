@@ -204,7 +204,6 @@ pub(crate) fn sty_rule(theme: &Theme) -> RuleStyle {
     let palette = theme.extended_palette();
     RuleStyle {
         color: palette.background.strong.color,
-        width: BORDER_W as u16,
         radius: WIDGET_RADIUS.into(),
         fill_mode: RuleFillMode::Percent(1e2),
         snap: true,
