@@ -6,8 +6,7 @@ fn btn_common<Msg>(btn: Button<'_, Msg>, msg: Option<Msg>) -> Button<'_, Msg> {
     btn = btn.on_press_maybe(msg);
     btn = btn.width(BTN_H);
     btn = btn.height(BTN_H);
-    btn = btn.style(sty_btn);
-    btn
+    btn.style(sty_btn)
 }
 
 pub fn btn_svg<Msg>(handle: impl Into<SvgHandle>, msg: Option<Msg>) -> Button<'static, Msg> {
@@ -42,22 +41,19 @@ pub fn pick_list_common<'a, T: PartialEq + Display + Clone, Msg: Clone + 'a>(
     pl = pl.text_size(TXT_SIZE);
     pl = pl.padding(PADDING);
     pl = pl.width(Length::FillPortion(10));
-    pl = pl.style(sty_pick_lst);
-    pl
+    pl.style(sty_pick_lst)
 }
 
 fn rule_common(rule: Rule<Theme>) -> Rule<Theme> { rule.style(sty_rule) }
 
 pub fn rule_h<'a>(height: impl Into<Pixels>) -> Rule<'a, Theme> {
-    let mut r: Rule<'_, Theme> = Rule::horizontal(height);
-    r = rule_common(r);
-    r
+    let r: Rule<'_, Theme> = Rule::horizontal(height);
+    rule_common(r)
 }
 
 pub fn rule_v<'a>(width: impl Into<Pixels>) -> Rule<'a, Theme> {
-    let mut r: Rule<'a, Theme> = Rule::vertical(width);
-    r = rule_common(r);
-    r
+    let r: Rule<'a, Theme> = Rule::vertical(width);
+    rule_common(r)
 }
 
 pub fn scrollable_common<Msg>(
@@ -66,15 +62,13 @@ pub fn scrollable_common<Msg>(
     let mut s = scrl;
     s = s.width(w.into());
     s = s.height(h.into());
-    s = s.style(sty_scrlbl);
-    s
+    s.style(sty_scrlbl)
 }
 
 pub fn scroll_bar() -> Scrollbar {
     let mut sb = Scrollbar::new();
-    sb = sb.width(SCROLLBAR_W);
     sb = sb.scroller_width(SCROLLBAR_W);
-    sb
+    sb.width(SCROLLBAR_W)
 }
 
 pub fn scrollable_v<'a, Msg: Clone + 'a>(
@@ -133,8 +127,7 @@ pub fn toggler<'a, Msg>(label: &'a str, value: bool) -> Toggler<'a, Msg> {
     tglr = tglr.text_alignment(TextAlignment::Left);
     tglr = tglr.width(Length::Fill);
     tglr = tglr.spacing(PADDING);
-    tglr = tglr.style(sty_toggler);
-    tglr
+    tglr.style(sty_toggler)
 }
 
 pub fn txt<'a>(s: impl Into<String>) -> Text<'a> { Text::new(s.into()).line_height(LINE_H_PIX) }
@@ -163,6 +156,14 @@ pub fn txt_float(n: impl Into<f32>) -> Text<'static> {
 }
 
 pub fn txt_usize(n: impl Into<usize>) -> Text<'static> {
+    let mut num_fmt = numfmt::Formatter::new();
+    num_fmt = num_fmt.precision(numfmt::Precision::Decimals(0));
+    num_fmt = num_fmt.separator(',').unwrap();
+    let s = num_fmt.fmt2(n.into());
+    txt(s)
+}
+
+pub fn txt_i64(n: impl Into<i64>) -> Text<'static> {
     let mut num_fmt = numfmt::Formatter::new();
     num_fmt = num_fmt.precision(numfmt::Precision::Decimals(0));
     num_fmt = num_fmt.separator(',').unwrap();

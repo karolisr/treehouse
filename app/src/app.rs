@@ -106,7 +106,7 @@ impl App {
     pub fn update(&mut self, app_msg: AppMsg) -> Task<AppMsg> {
         match app_msg {
             AppMsg::KeysPressed(key, modifiers) => {
-                if modifiers.contains(Modifiers::CTRL) && modifiers.contains(Modifiers::SHIFT) {
+                if modifiers.contains(Modifiers::CTRL | Modifiers::SHIFT) {
                     match key {
                         Key::Character(k) => {
                             let k: &str = k.as_str();
