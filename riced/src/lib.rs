@@ -46,7 +46,8 @@ pub use i::futures::{
     stream::StreamExt,
 };
 pub use i::keyboard::{
-    Event as KeyboardEvent, Key, Location as KeyLocation, Modifiers, on_key_press,
+    Event as KeyboardEvent, Key, Location as KeyLocation, Modifiers, key::Named as KeyName,
+    on_key_press,
 };
 pub use i::mouse::{Button as MouseButton, Cursor, Event as MouseEvent, Interaction};
 pub use i::task::{Never, Sipper, sipper};

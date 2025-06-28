@@ -170,6 +170,14 @@ pub fn txt_usize(n: impl Into<usize>) -> Text<'static> {
     txt(s)
 }
 
+pub fn txt_i64(n: impl Into<i64>) -> Text<'static> {
+    let mut num_fmt = numfmt::Formatter::new();
+    num_fmt = num_fmt.precision(numfmt::Precision::Decimals(0));
+    num_fmt = num_fmt.separator(',').unwrap();
+    let s = num_fmt.fmt2(n.into());
+    txt(s)
+}
+
 pub fn txt_input<'a, Msg: Clone + 'a>(
     placeholder: &str, value: &str, id: &'static str, msg: impl Fn(String) -> Msg + 'a,
 ) -> TextInput<'a, Msg> {
