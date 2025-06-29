@@ -27,7 +27,7 @@
         [profile.dev] # --------------------------------------------------------------------------------
             codegen-units = 6        # 256      | Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
             debug = true             # true     |
-            debug-assertions = false # true     | Why false? objc2-foundation-0.2.2 is freaking out on 2025-06-20 on macOS 26.0 Beta
+            debug-assertions = true  # true     |
             incremental = true       # true     | Compile your binary in smaller steps.
             lto = false              # false    | Enables link-time-optimizations. Use false for faster compile time.
             opt-level = 1            # 1        | "s" prioritizes small binary size. Use 0 for faster compile time.
@@ -35,6 +35,9 @@
             panic = "abort"          # "unwind" | Higher performance by disabling panic handlers.
             rpath = false            # false    |
             strip = false            # false    | Ensures debug symbols are removed.
+
+        [profile.dev.package.objc2]
+            debug-assertions = false
 
         [profile.release] # ----------------------------------------------------------------------------
             codegen-units = 1        # 16       | Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.

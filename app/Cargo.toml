@@ -29,7 +29,6 @@
 [dependencies]
     dendros={workspace=true}
     riced={workspace=true}
-    tracing-subscriber={workspace=true}
     treeview={workspace=true}
 
 [target.'cfg(target_os = "linux")'.dependencies]
