@@ -21,6 +21,8 @@ mod elements;
 mod icons;
 mod path_utils;
 mod style;
+#[cfg(debug_assertions)]
+pub mod template_widget;
 mod text_width;
 
 use num_traits::FromPrimitive;
