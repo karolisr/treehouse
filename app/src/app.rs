@@ -405,22 +405,22 @@ impl App {
                         }
                     })
                     .chain({
-                        // #[cfg(not(debug_assertions))]
-                        // {
-                        //     Task::none()
-                        // }
-                        // #[cfg(debug_assertions)]
-                        // {
-                        // let path_buf = PathBuf::from("tests/data/100_starting_trees.newick");
-                        // let path_buf = PathBuf::from("tests/data/tree01.newick");
-                        let path_buf = PathBuf::from("tests/data/tree02.newick");
-                        let path: &std::path::Path = &path_buf.clone().into_boxed_path();
-                        if path.exists() {
-                            Task::done(AppMsg::PathToOpen(Some(path_buf)))
-                        } else {
+                        #[cfg(not(debug_assertions))]
+                        {
                             Task::none()
                         }
-                        // }
+                        #[cfg(debug_assertions)]
+                        {
+                            // let path_buf = PathBuf::from("tests/data/100_starting_trees.newick");
+                            // let path_buf = PathBuf::from("tests/data/tree01.newick");
+                            let path_buf = PathBuf::from("tests/data/tree02.newick");
+                            let path: &std::path::Path = &path_buf.clone().into_boxed_path();
+                            if path.exists() {
+                                Task::done(AppMsg::PathToOpen(Some(path_buf)))
+                            } else {
+                                Task::none()
+                            }
+                        }
                     })
             }
             AppMsg::WinCloseRequested => {
