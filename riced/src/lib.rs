@@ -57,7 +57,10 @@ pub use i::theme::{Theme, palette::Pair as PalettePair};
 pub use i::window::{
     Event as WindowEvent, Id as WindowId, Level as WindowLevel, Position as WindowPosition,
     Settings as WindowSettings, close as close_window, events as window_events,
-    open as open_window, settings::PlatformSpecific as PlatformSpecificWindowSettings,
+    open as open_window,
+    raw_window_handle::{HasWindowHandle, RawWindowHandle},
+    run_with_handle,
+    settings::PlatformSpecific as PlatformSpecificWindowSettings,
 };
 pub use i::{
     Alignment, Background, Color, Element, Event, Font, Length, Padding, Pixels, Point, Rectangle,
@@ -80,6 +83,8 @@ pub use w::column as iced_col;
 pub use w::container;
 pub use w::container::{Container, Style as ContainerStyle};
 pub use w::horizontal_space;
+pub use w::mouse_area;
+// pub use w::overlay::menu::{Menu, State as MenuState};
 pub use w::pane_grid::{
     Axis as PgAxis, Content as PgContent, Highlight as PgHighlight, Line as PgLine, Pane,
     ResizeEvent, State as PgState, Style as PgStyle,

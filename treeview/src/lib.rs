@@ -19,14 +19,15 @@ mod cnv_plot;
 mod cnv_tree;
 mod cnv_utils;
 mod consts;
+mod context_menu;
 mod edge_utils;
-
 mod treestate;
 mod treeview;
 mod view;
 
 pub type Float = f32;
 
+pub use context_menu::{TreeViewContextMenuItem, TreeViewContextMenuListing};
 pub use riced::{SF, TXT_SIZE};
 pub use treeview::{SidebarPosition, TreeView, TvMsg};
 

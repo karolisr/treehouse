@@ -7,13 +7,14 @@ mod win;
 use consts::*;
 use dendros::parse_newick;
 use riced::{
-    Clr, Element, Font, IcedAppSettings, Key, Modifiers, Pixels, Subscription, Task, Theme,
-    WindowEvent, WindowId, close_window, exit, on_key_press, open_window, window_events,
+    Clr, Element, Font, HasWindowHandle, IcedAppSettings, Key, Modifiers, Pixels, RawWindowHandle,
+    Subscription, Task, Theme, WindowEvent, WindowId, close_window, exit, on_key_press,
+    open_window, run_with_handle, window_events,
 };
 
-use menu::{AppMenu, AppMenuItemId};
+use menu::{AppMenu, AppMenuItemId, ContextMenu};
 use std::path::PathBuf;
-use treeview::{SidebarPosition, TreeView, TvMsg};
+use treeview::{SidebarPosition, TreeView, TreeViewContextMenuListing, TvMsg};
 use win::window_settings;
 
 pub struct App {
@@ -28,6 +29,10 @@ pub struct App {
 pub enum AppMsg {
     Other(Option<String>),
     MenuEvent(AppMenuItemId),
+    // --------------------------------
+    ShowContextMenu(TreeViewContextMenuListing),
+    // TvContextMenuAction,
+    // ContextMenuClosed,
     // --------------------------------
     TvMsg(TvMsg),
     // --------------------------------
@@ -207,21 +212,52 @@ impl App {
                 Task::done(miid.into())
             }
 
+            AppMsg::ShowContextMenu(tv_context_menu_listing) => {
+                if let Some(winid) = self.winid {
+                    run_with_handle(winid, |h| {
+                        if let RawWindowHandle::AppKit(handle) = h.window_handle().unwrap().as_raw()
+                        {
+                            let context_menu: ContextMenu = tv_context_menu_listing.into();
+                            let muda_menu: muda::Menu = context_menu.into();
+                            unsafe {
+                                muda::ContextMenu::show_context_menu_for_nsview(
+                                    &muda_menu,
+                                    handle.ns_view.as_ptr(),
+                                    None,
+                                )
+                            };
+                        }
+                    })
+                    .discard()
+                } else {
+                    Task::none()
+                }
+            }
+
             AppMsg::TvMsg(tv_msg) => {
                 if let Some(treeview) = &mut self.treeview {
-                    if let Some(menu) = &mut self.menu
-                        && let TvMsg::SetSidebarPos(sidebar_pos) = tv_msg
-                    {
-                        match sidebar_pos {
-                            SidebarPosition::Left => {
-                                menu.update(&AppMenuItemId::SetSideBarPositionLeft)
-                            }
-                            SidebarPosition::Right => {
-                                menu.update(&AppMenuItemId::SetSideBarPositionRight)
+                    let mut task: Task<AppMsg> = treeview.update(tv_msg.clone()).map(AppMsg::TvMsg);
+                    match tv_msg {
+                        TvMsg::ShowContextMenu(context_menu) => {
+                            println!("AppMsg::TvMsg(TvMsg::ShowContextMenu({context_menu:?}))");
+                            task = Task::done(AppMsg::ShowContextMenu(context_menu))
+                        }
+
+                        TvMsg::SetSidebarPos(sidebar_position) => {
+                            if let Some(menu) = &mut self.menu {
+                                match sidebar_position {
+                                    SidebarPosition::Left => {
+                                        menu.update(&AppMenuItemId::SetSideBarPositionLeft)
+                                    }
+                                    SidebarPosition::Right => {
+                                        menu.update(&AppMenuItemId::SetSideBarPositionRight)
+                                    }
+                                }
                             }
                         }
+                        _ => {}
                     }
-                    treeview.update(tv_msg).map(AppMsg::TvMsg)
+                    task
                 } else {
                     Task::none()
                 }

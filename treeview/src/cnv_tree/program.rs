@@ -207,8 +207,8 @@ impl Program<TvMsg> for TreeCnv {
                     }
                     MouseEvent::ButtonPressed(btn) => match btn {
                         MouseButton::Left => {
-                            if let Some(hevered_node) = &st.hovered_node {
-                                let edge = &edges[hevered_node.edge_idx];
+                            if let Some(hovered_node) = &st.hovered_node {
+                                let edge = &edges[hovered_node.edge_idx];
                                 let node_id = edge.node_id;
                                 if let Some(modifiers) = st.modifiers
                                     && modifiers == Modifiers::SHIFT
@@ -222,7 +222,16 @@ impl Program<TvMsg> for TreeCnv {
                                 }
                             }
                         }
-                        MouseButton::Right => {}
+                        MouseButton::Right => {
+                            if let Some(hovered_node) = &st.hovered_node {
+                                let edge = &edges[hovered_node.edge_idx];
+                                let node_id = edge.node_id;
+                                let mut listing = TreeViewContextMenuListing::new();
+                                listing.push(TvMsg::Root(node_id));
+                                listing.push(TvMsg::AddCladeLabel(node_id));
+                                action = Some(Action::publish(TvMsg::ShowContextMenu(listing)));
+                            }
+                        }
                         _ => {}
                     },
                     MouseEvent::ButtonReleased(_btn) => {}

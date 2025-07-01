@@ -142,7 +142,11 @@ impl TreeView {
     pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
         let mut task: Option<Task<TvMsg>> = None;
         match tv_msg {
-            TvMsg::LabelClade(node_id) => {
+            TvMsg::ShowContextMenu(context_menu) => {
+                println!("TvMsg::ShowContextMenu({context_menu:?})")
+            }
+
+            TvMsg::AddCladeLabel(node_id) => {
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
                     tre.add_clade_label(node_id, Clr::GRN_25, node_id, CladeLabelType::Inside)
                 });
@@ -1016,6 +1020,8 @@ fn angle_from_idx(idx: u16) -> Float { (idx as Float).to_radians() }
 
 #[derive(Debug, Clone)]
 pub enum TvMsg {
+    ShowContextMenu(TreeViewContextMenuListing),
+    // -------------------------------------------
     TreeRectNoLongerStale,
     CursorLineVisChanged(bool),
     CnvWidthSelChanged(u16),
@@ -1047,7 +1053,7 @@ pub enum TvMsg {
     RootLenSelChanged(u16),
     LttVisChanged(bool),
     // -------------------------------------------
-    LabelClade(NodeId),
+    AddCladeLabel(NodeId),
     RemoveCladeLabel(NodeId),
     AddRemoveCladeLabel,
     // -------------------------------------------

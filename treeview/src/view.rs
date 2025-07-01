@@ -488,7 +488,7 @@ pub(crate) fn btn_clade_label(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> 
         true => {
             let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
             match sel_tre.clade_has_label(&node_id) {
-                false => ("Label", Some(TvMsg::LabelClade(node_id))),
+                false => ("Label", Some(TvMsg::AddCladeLabel(node_id))),
                 true => ("Unlabel", Some(TvMsg::RemoveCladeLabel(node_id))),
             }
         }
