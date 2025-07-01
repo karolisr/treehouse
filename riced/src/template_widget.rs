@@ -1,5 +1,5 @@
 use iced::{
-    Length, Rectangle, Size, Vector,
+    Element, Length, Rectangle, Size, Vector,
     advanced::{
         self, Clipboard, Shell, layout, mouse, overlay, renderer,
         widget::{self, tree},
@@ -65,4 +65,12 @@ where
     ) -> Option<overlay::Element<'a, Message, Theme, Renderer>> {
         None
     }
+}
+
+impl<'a, Message, Theme, Renderer> From<TheWidget> for Element<'a, Message, Theme, Renderer>
+where
+    Message: 'a,
+    Renderer: advanced::Renderer + 'a,
+{
+    fn from(w: TheWidget) -> Self { Element::new(w) }
 }

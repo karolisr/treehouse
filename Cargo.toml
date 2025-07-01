@@ -24,7 +24,7 @@
         repository="https://github.com/karolisr/treehouse"
         version="0.0.0"
 
-        [profile.dev] # --------------------------------------------------------------------------------
+        [profile.dev] # ----------------------------------------------------------------------------
             codegen-units = 6        # 256      | Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
             debug = true             # true     |
             debug-assertions = true  # true     |
@@ -39,7 +39,7 @@
         [profile.dev.package.objc2]
             debug-assertions = false
 
-        [profile.release] # ----------------------------------------------------------------------------
+        [profile.release] # ------------------------------------------------------------------------
             codegen-units = 1        # 16       | Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
             debug = false            # false    |
             debug-assertions = false # false    |
@@ -50,7 +50,21 @@
             panic = "abort"          # "unwind" | Higher performance by disabling panic handlers.
             rpath = false            # false    |
             strip = true             # "none"   | Ensures debug symbols are removed.
-        # ----------------------------------------------------------------------------------------------
+        # ------------------------------------------------------------------------------------------
+
+        [profile.middle] # ------------------------------------------------------------------------
+            codegen-units = 2        # 16       | Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
+            debug = false            # false    |
+            debug-assertions = false # false    |
+            incremental = false      # false    | Compile your binary in smaller steps.
+            lto = false              # false    | Enables link-time-optimizations. Use false for faster compile time.
+            opt-level = 2            # 3        | "s" prioritizes small binary size. Use 0 for faster compile time.
+            overflow-checks = true   # false    |
+            panic = "abort"          # "unwind" | Higher performance by disabling panic handlers.
+            rpath = false            # false    |
+            strip = true             # "none"   | Ensures debug symbols are removed.
+            inherits = "release"
+        # ------------------------------------------------------------------------------------------
 
     [workspace.dependencies]
         num-traits="0.2.19"
