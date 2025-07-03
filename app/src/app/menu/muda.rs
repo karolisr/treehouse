@@ -7,7 +7,7 @@ use muda::{
     accelerator::{Accelerator, CMD_OR_CTRL, Code},
 };
 use std::collections::HashMap;
-use treeview::{SidebarPosition, TreeViewContextMenuListing};
+use treeview::{SidebarPosition, TvContextMenuListing};
 
 impl From<muda::MenuItem> for AppMenuItemId {
     fn from(value: muda::MenuItem) -> Self { value.id().0.clone().into() }
@@ -39,29 +39,16 @@ impl From<ContextMenu> for muda::Menu {
     fn from(context_menu: ContextMenu) -> Self { context_menu.muda_menu }
 }
 
-impl From<TreeViewContextMenuListing> for ContextMenu {
-    fn from(tv_context_menu_listing: TreeViewContextMenuListing) -> Self {
+impl From<TvContextMenuListing> for ContextMenu {
+    fn from(tv_context_menu_listing: TvContextMenuListing) -> Self {
         let muda_menu = muda::Menu::new();
-
+        let mut idx: usize = 0;
         tv_context_menu_listing.items().iter().for_each(|item| {
-            let muda_menu_item = match item.tv_msg {
-                treeview::TvMsg::Root(node_id) => {
-                    Some(MenuItem::with_id(AppMenuItemId::Root, "Root here", item.enabled, None))
-                }
-                treeview::TvMsg::AddCladeLabel(node_id) => Some(MenuItem::with_id(
-                    AppMenuItemId::AddCladeLabel,
-                    "Add clade label",
-                    item.enabled,
-                    None,
-                )),
-                _ => None,
-            };
-
-            if let Some(mmi) = muda_menu_item {
-                let _ = muda_menu.append(&mmi);
-            }
+            let mii = AppMenuItemId::ContextMenuIndex(idx);
+            let mmi = MenuItem::with_id(mii, item.label.clone(), item.enabled, None);
+            let _ = muda_menu.append(&mmi);
+            idx += 1;
         });
-
         ContextMenu::with_muda_menu(muda_menu)
     }
 }

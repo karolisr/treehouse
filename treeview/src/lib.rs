@@ -27,7 +27,7 @@ mod view;
 
 pub type Float = f32;
 
-pub use context_menu::{TreeViewContextMenuItem, TreeViewContextMenuListing};
+pub use context_menu::{TvContextMenuItem, TvContextMenuListing};
 pub use riced::{SF, TXT_SIZE};
 pub use treeview::{SidebarPosition, TreeView, TvMsg};
 

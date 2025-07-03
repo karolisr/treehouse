@@ -56,7 +56,7 @@ pub use i::task::{Never, Sipper, sipper};
 pub use i::theme::{Theme, palette::Pair as PalettePair};
 pub use i::window::{
     Event as WindowEvent, Id as WindowId, Level as WindowLevel, Position as WindowPosition,
-    Settings as WindowSettings, close as close_window, events as window_events,
+    Settings as WindowSettings, close as close_window, events as window_events, get_raw_id,
     open as open_window,
     raw_window_handle::{HasWindowHandle, RawWindowHandle},
     run_with_handle,

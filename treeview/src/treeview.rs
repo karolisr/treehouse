@@ -66,6 +66,65 @@ pub struct TreeView {
     // -------------------------------------------------------------------
     text_w_tip: Option<TextWidth<'static>>,
     // -------------------------------------------------------------------
+    pending_context_menu_listing: TvContextMenuListing,
+}
+
+#[derive(Debug, Clone)]
+pub enum TvMsg {
+    // -------------------------------------------
+    ContextMenuInteractionBegin(TvContextMenuListing),
+    ContextMenuChosenIdx(usize),
+    // -------------------------------------------
+    TreeRectNoLongerStale,
+    CursorLineVisChanged(bool),
+    CnvWidthSelChanged(u16),
+    CnvHeightSelChanged(u16),
+    CnvZoomSelChanged(u16),
+    TipLabVisChanged(bool),
+    IntLabVisChanged(bool),
+    BrnchLabVisChanged(bool),
+    LegendVisChanged(bool),
+    TipLabSizeChanged(u16),
+    IntLabSizeChanged(u16),
+    BrnchLabSizeChanged(u16),
+    PrevTre,
+    NextTre,
+    NodeOrdOptChanged(NodeOrd),
+    LttXAxisScaleTypeChanged(AxisScaleType),
+    LttYAxisScaleTypeChanged(AxisScaleType),
+    OpnAngleChanged(u16),
+    PaneResized(ResizeEvent),
+    Root(NodeId),
+    Unroot,
+    RotAngleChanged(u16),
+    SelectDeselectNode(NodeId),
+    SelectDeselectNodeExclusive(NodeId),
+    SetSidebarPos(SidebarPosition),
+    TreesLoaded(Vec<Tree>),
+    TreStyOptChanged(TreSty),
+    RootVisChanged(bool),
+    RootLenSelChanged(u16),
+    LttVisChanged(bool),
+    // -------------------------------------------
+    AddCladeLabel(NodeId),
+    RemoveCladeLabel(NodeId),
+    AddRemoveCladeLabel(NodeId),
+    AddRemoveCladeLabelForSelectedNode,
+    // -------------------------------------------
+    TreCnvScrolledOrResized(Viewport),
+    LttCnvScrolledOrResized(Viewport),
+    // -------------------------------------------
+    CursorOnTreCnv { x: Option<Float> },
+    CursorOnLttCnv { x: Option<Float> },
+    // -------------------------------------------
+    ToggleSearchBar,
+    Search(String),
+    NextResult,
+    PrevResult,
+    AddFoundToSelection,
+    RemFoundFromSelection,
+    TipOnlySearchSelChanged(bool),
+    // -------------------------------------------
 }
 
 impl TreeView {
@@ -128,6 +187,7 @@ impl TreeView {
             // -----------------------------------------------------------
             text_w_tip: Some(text_width(SF * TIP_LAB_SIZE_IDX as Float, FNT_NAME_LAB)),
             // -----------------------------------------------------------
+            pending_context_menu_listing: TvContextMenuListing::default(),
         }
     }
 
@@ -142,8 +202,13 @@ impl TreeView {
     pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
         let mut task: Option<Task<TvMsg>> = None;
         match tv_msg {
-            TvMsg::ShowContextMenu(context_menu) => {
-                println!("TvMsg::ShowContextMenu({context_menu:?})")
+            TvMsg::ContextMenuInteractionBegin(tree_view_context_menu_listing) => {
+                self.pending_context_menu_listing = tree_view_context_menu_listing;
+            }
+
+            TvMsg::ContextMenuChosenIdx(idx) => {
+                let msg = self.pending_context_menu_listing.items()[idx].msg.clone();
+                task = Some(Task::done(msg));
             }
 
             TvMsg::AddCladeLabel(node_id) => {
@@ -160,7 +225,20 @@ impl TreeView {
                 self.clear_caches_all();
             }
 
-            TvMsg::AddRemoveCladeLabel => {
+            TvMsg::AddRemoveCladeLabel(node_id) => {
+                self.with_exclusive_sel_tre_mut(&mut |tre| {
+                    tre.add_remove_clade_label(
+                        node_id,
+                        Clr::GRN_25,
+                        node_id,
+                        CladeLabelType::Inside,
+                    )
+                });
+                self.tre_cnv.stale_tre_rect = true;
+                self.clear_caches_all();
+            }
+
+            TvMsg::AddRemoveCladeLabelForSelectedNode => {
                 let mut node_id: Option<NodeId> = None;
                 if let Some(sel_tre) = self.sel_tre() {
                     node_id = match sel_tre.sel_node_ids().len() == 1 {
@@ -1017,61 +1095,6 @@ impl TreeView {
 }
 
 fn angle_from_idx(idx: u16) -> Float { (idx as Float).to_radians() }
-
-#[derive(Debug, Clone)]
-pub enum TvMsg {
-    ShowContextMenu(TreeViewContextMenuListing),
-    // -------------------------------------------
-    TreeRectNoLongerStale,
-    CursorLineVisChanged(bool),
-    CnvWidthSelChanged(u16),
-    CnvHeightSelChanged(u16),
-    CnvZoomSelChanged(u16),
-    TipLabVisChanged(bool),
-    IntLabVisChanged(bool),
-    BrnchLabVisChanged(bool),
-    LegendVisChanged(bool),
-    TipLabSizeChanged(u16),
-    IntLabSizeChanged(u16),
-    BrnchLabSizeChanged(u16),
-    PrevTre,
-    NextTre,
-    NodeOrdOptChanged(NodeOrd),
-    LttXAxisScaleTypeChanged(AxisScaleType),
-    LttYAxisScaleTypeChanged(AxisScaleType),
-    OpnAngleChanged(u16),
-    PaneResized(ResizeEvent),
-    Root(NodeId),
-    Unroot,
-    RotAngleChanged(u16),
-    SelectDeselectNode(NodeId),
-    SelectDeselectNodeExclusive(NodeId),
-    SetSidebarPos(SidebarPosition),
-    TreesLoaded(Vec<Tree>),
-    TreStyOptChanged(TreSty),
-    RootVisChanged(bool),
-    RootLenSelChanged(u16),
-    LttVisChanged(bool),
-    // -------------------------------------------
-    AddCladeLabel(NodeId),
-    RemoveCladeLabel(NodeId),
-    AddRemoveCladeLabel,
-    // -------------------------------------------
-    TreCnvScrolledOrResized(Viewport),
-    LttCnvScrolledOrResized(Viewport),
-    // -------------------------------------------
-    CursorOnTreCnv { x: Option<Float> },
-    CursorOnLttCnv { x: Option<Float> },
-    // -------------------------------------------
-    ToggleSearchBar,
-    Search(String),
-    NextResult,
-    PrevResult,
-    AddFoundToSelection,
-    RemFoundFromSelection,
-    TipOnlySearchSelChanged(bool),
-    // -------------------------------------------
-}
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SidebarPosition {

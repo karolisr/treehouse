@@ -1,5 +1,4 @@
 use crate::app::AppMsg;
-use dendros::NodeId;
 use std::fmt::Display;
 use treeview::{SidebarPosition, TvMsg};
 
@@ -14,8 +13,7 @@ pub enum AppMenuItemId {
     SetSideBarPositionRight,
     ToggleSearchBar,
     Undefined,
-    Root,
-    AddCladeLabel,
+    ContextMenuIndex(usize),
 }
 
 impl From<String> for AppMenuItemId {
@@ -30,8 +28,14 @@ impl From<String> for AppMenuItemId {
             "SetSideBarPositionRight" => AppMenuItemId::SetSideBarPositionRight,
             "ToggleSearchBar" => AppMenuItemId::ToggleSearchBar,
             // -------------------------------------------------------------------------------------
-            "Root" => AppMenuItemId::Root,
-            "AddCladeLabel" => AppMenuItemId::AddCladeLabel,
+            val if val.starts_with("ContextMenuIndex") => {
+                let idx_str = val.replace("ContextMenuIndex(", "").replace(")", "");
+                if let Ok(idx) = idx_str.parse::<usize>() {
+                    AppMenuItemId::ContextMenuIndex(idx)
+                } else {
+                    AppMenuItemId::Undefined
+                }
+            }
             // -------------------------------------------------------------------------------------
             _ => AppMenuItemId::Undefined,
         }
@@ -56,8 +60,9 @@ impl From<&AppMenuItemId> for AppMsg {
                 AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPosition::Right))
             }
             AppMenuItemId::ToggleSearchBar => AppMsg::TvMsg(TvMsg::ToggleSearchBar),
-            AppMenuItemId::Root => AppMsg::Other(Some("Root".to_string())),
-            AppMenuItemId::AddCladeLabel => AppMsg::Other(Some("AddCladeLabel".to_string())),
+            AppMenuItemId::ContextMenuIndex(idx) => {
+                AppMsg::TvMsg(TvMsg::ContextMenuChosenIdx(*idx))
+            }
             _ => AppMsg::Other(Some(value.to_string())),
         }
     }

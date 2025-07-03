@@ -104,23 +104,20 @@ fn pane_content<'a>(tv: &'a TreeView, tv_pane: &TvPane, size: Size) -> Element<'
 fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     let mut tb_row: Row<TvMsg> = Row::new();
 
-    tb_row = tb_row.push(
-        center(
-            iced_row![btn_unroot(ts.clone()), btn_root(ts.clone())]
-                .align_y(Vertical::Center)
-                .spacing(0),
-        )
-        .width(Length::Shrink)
-        .height(Length::Shrink)
-        .padding(ZRO),
-    );
+    tb_row = tb_row.push(btn_unroot(ts.clone()));
 
-    tb_row = tb_row.push(
-        center(btn_clade_label(ts.clone()))
-            .width(Length::Shrink)
-            .height(Length::Shrink)
-            .padding(ZRO),
-    );
+    // tb_row = tb_row.push(
+    //     center(
+    //         iced_row![btn_unroot(ts.clone()), btn_root(ts.clone())]
+    //             .align_y(Vertical::Center)
+    //             .spacing(0),
+    //     )
+    //     .width(Length::Shrink)
+    //     .height(Length::Shrink)
+    //     .padding(ZRO),
+    // );
+
+    // tb_row = tb_row.push(btn_clade_label(ts.clone()));
 
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
 
@@ -483,34 +480,34 @@ pub(crate) fn btn_next_tre(enabled: bool) -> Button<'static, TvMsg> {
     )
 }
 
-pub(crate) fn btn_clade_label(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
-    let (lab, msg) = match sel_tre.sel_node_ids().len() == 1 {
-        true => {
-            let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
-            match sel_tre.clade_has_label(&node_id) {
-                false => ("Label", Some(TvMsg::AddCladeLabel(node_id))),
-                true => ("Unlabel", Some(TvMsg::RemoveCladeLabel(node_id))),
-            }
-        }
-        false => ("Label", None),
-    };
-    btn_txt(lab, msg).width(BTN_H * TWO)
-}
+// pub(crate) fn btn_clade_label(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
+//     let (lab, msg) = match sel_tre.sel_node_ids().len() == 1 {
+//         true => {
+//             let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
+//             match sel_tre.clade_has_label(&node_id) {
+//                 false => ("Label", Some(TvMsg::AddCladeLabel(node_id))),
+//                 true => ("Unlabel", Some(TvMsg::RemoveCladeLabel(node_id))),
+//             }
+//         }
+//         false => ("Label", None),
+//     };
+//     btn_txt(lab, msg).width(BTN_H * TWO)
+// }
 
-pub(crate) fn btn_root(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
-    btn_txt("Root", {
-        if sel_tre.sel_node_ids().len() == 1 {
-            let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
-            match sel_tre.can_root(&node_id) {
-                true => Some(TvMsg::Root(node_id)),
-                false => None,
-            }
-        } else {
-            None
-        }
-    })
-    .width(BTN_H * TWO)
-}
+// pub(crate) fn btn_root(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
+//     btn_txt("Root", {
+//         if sel_tre.sel_node_ids().len() == 1 {
+//             let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
+//             match sel_tre.can_root(&node_id) {
+//                 true => Some(TvMsg::Root(node_id)),
+//                 false => None,
+//             }
+//         } else {
+//             None
+//         }
+//     })
+//     .width(BTN_H * TWO)
+// }
 
 pub(crate) fn btn_unroot(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
     btn_txt(

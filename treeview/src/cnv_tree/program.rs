@@ -210,26 +210,29 @@ impl Program<TvMsg> for TreeCnv {
                             if let Some(hovered_node) = &st.hovered_node {
                                 let edge = &edges[hovered_node.edge_idx];
                                 let node_id = edge.node_id;
-                                if let Some(modifiers) = st.modifiers
-                                    && modifiers == Modifiers::SHIFT
-                                {
-                                    action =
-                                        Some(Action::publish(TvMsg::SelectDeselectNode(node_id)));
-                                } else {
-                                    action = Some(Action::publish(
-                                        TvMsg::SelectDeselectNodeExclusive(node_id),
-                                    ));
-                                }
+                                // -----------------------------------------------------------------
+                                // if let Some(modifiers) = st.modifiers
+                                //     && modifiers == Modifiers::SHIFT
+                                // {
+                                //     action =
+                                //         Some(Action::publish(TvMsg::SelectDeselectNode(node_id)));
+                                // } else {
+                                //     action = Some(Action::publish(
+                                //         TvMsg::SelectDeselectNodeExclusive(node_id),
+                                //     ));
+                                // }
+                                // -----------------------------------------------------------------
+                                action = Some(Action::publish(TvMsg::SelectDeselectNode(node_id)));
+                                // -----------------------------------------------------------------
                             }
                         }
                         MouseButton::Right => {
                             if let Some(hovered_node) = &st.hovered_node {
-                                let edge = &edges[hovered_node.edge_idx];
-                                let node_id = edge.node_id;
-                                let mut listing = TreeViewContextMenuListing::new();
-                                listing.push(TvMsg::Root(node_id));
-                                listing.push(TvMsg::AddCladeLabel(node_id));
-                                action = Some(Action::publish(TvMsg::ShowContextMenu(listing)));
+                                action = Some(Action::publish(TvMsg::ContextMenuInteractionBegin(
+                                    TvContextMenuListing::for_node(
+                                        &edges[hovered_node.edge_idx].node_id, tst,
+                                    ),
+                                )));
                             }
                         }
                         _ => {}
