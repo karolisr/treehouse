@@ -12,3 +12,6 @@
     dendros={workspace=true}
     rayon={workspace=true}
     riced={workspace=true}
+
+[lints]
+    workspace=true

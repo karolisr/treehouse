@@ -1,3 +1,43 @@
+[profile.dev] # ---------------------
+    codegen-units=6       # 256
+    debug=true            # true
+    debug-assertions=true # true
+    incremental=true      # true
+    lto=false             # false
+    opt-level=1           # 1
+    overflow-checks=true  # true
+    panic="abort"         # "unwind"
+    rpath=false           # false
+    strip=false           # false
+
+    [profile.dev.package.objc2]
+        debug-assertions=false
+
+[profile.custom] # -----------------
+    codegen-units=2
+    debug=false
+    debug-assertions=false
+    incremental=false
+    inherits="release"
+    lto=false
+    opt-level=2
+    overflow-checks=true
+    panic="abort"
+    rpath=false
+    strip=true
+
+[profile.release] # -----------------
+    codegen-units=1        # 16
+    debug=false            # false
+    debug-assertions=false # false
+    incremental=false      # false
+    lto=true               # false
+    opt-level=3            # 3
+    overflow-checks=true   # false
+    panic="abort"          # "unwind"
+    rpath=false            # false
+    strip=true             # "none"
+
 [workspace]
     members=["app", "riced", "treeview"]
     resolver="3"
@@ -23,48 +63,6 @@
         readme="README.md"
         repository="https://github.com/karolisr/treehouse"
         version="0.0.0"
-
-        [profile.dev] # ----------------------------------------------------------------------------
-            codegen-units = 6        # 256      | Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
-            debug = true             # true     |
-            debug-assertions = true  # true     |
-            incremental = true       # true     | Compile your binary in smaller steps.
-            lto = false              # false    | Enables link-time-optimizations. Use false for faster compile time.
-            opt-level = 1            # 1        | "s" prioritizes small binary size. Use 0 for faster compile time.
-            overflow-checks = true   # true     |
-            panic = "abort"          # "unwind" | Higher performance by disabling panic handlers.
-            rpath = false            # false    |
-            strip = false            # false    | Ensures debug symbols are removed.
-
-        [profile.dev.package.objc2]
-            debug-assertions = false
-
-        [profile.release] # ------------------------------------------------------------------------
-            codegen-units = 1        # 16       | Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
-            debug = false            # false    |
-            debug-assertions = false # false    |
-            incremental = false      # false    | Compile your binary in smaller steps.
-            lto = true               # false    | Enables link-time-optimizations. Use false for faster compile time.
-            opt-level = 3            # 3        | "s" prioritizes small binary size. Use 0 for faster compile time.
-            overflow-checks = true   # false    |
-            panic = "abort"          # "unwind" | Higher performance by disabling panic handlers.
-            rpath = false            # false    |
-            strip = true             # "none"   | Ensures debug symbols are removed.
-        # ------------------------------------------------------------------------------------------
-
-        [profile.middle] # ------------------------------------------------------------------------
-            codegen-units = 2        # 16       | Allows LLVM to perform better optimization. 1-256; 1=slow compile time; 256=faster compile time.
-            debug = false            # false    |
-            debug-assertions = false # false    |
-            incremental = false      # false    | Compile your binary in smaller steps.
-            lto = false              # false    | Enables link-time-optimizations. Use false for faster compile time.
-            opt-level = 2            # 3        | "s" prioritizes small binary size. Use 0 for faster compile time.
-            overflow-checks = true   # false    |
-            panic = "abort"          # "unwind" | Higher performance by disabling panic handlers.
-            rpath = false            # false    |
-            strip = true             # "none"   | Ensures debug symbols are removed.
-            inherits = "release"
-        # ------------------------------------------------------------------------------------------
 
     [workspace.dependencies]
         num-traits="0.2.19"
@@ -112,4 +110,9 @@
                 "test-util",       # testing based infrastructure for the Tokio runtime.
                 "time",            # tokio::time types and allows the schedulers to enable the built in timer.
             ]
-            version="1.45.1"
+            version="1.46.0"
+
+    [workspace.lints.clippy]
+        single_match="allow"
+
+    [workspace.lints.rust]
