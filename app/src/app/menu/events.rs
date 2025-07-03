@@ -13,6 +13,7 @@ pub enum AppMenuItemId {
     SetSideBarPositionRight,
     ToggleSearchBar,
     Undefined,
+    ContextMenuIndex(usize),
 }
 
 impl From<String> for AppMenuItemId {
@@ -26,6 +27,16 @@ impl From<String> for AppMenuItemId {
             "SetSideBarPositionLeft" => AppMenuItemId::SetSideBarPositionLeft,
             "SetSideBarPositionRight" => AppMenuItemId::SetSideBarPositionRight,
             "ToggleSearchBar" => AppMenuItemId::ToggleSearchBar,
+            // -------------------------------------------------------------------------------------
+            val if val.starts_with("ContextMenuIndex") => {
+                let idx_str = val.replace("ContextMenuIndex(", "").replace(")", "");
+                if let Ok(idx) = idx_str.parse::<usize>() {
+                    AppMenuItemId::ContextMenuIndex(idx)
+                } else {
+                    AppMenuItemId::Undefined
+                }
+            }
+            // -------------------------------------------------------------------------------------
             _ => AppMenuItemId::Undefined,
         }
     }
@@ -49,6 +60,9 @@ impl From<&AppMenuItemId> for AppMsg {
                 AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPosition::Right))
             }
             AppMenuItemId::ToggleSearchBar => AppMsg::TvMsg(TvMsg::ToggleSearchBar),
+            AppMenuItemId::ContextMenuIndex(idx) => {
+                AppMsg::TvMsg(TvMsg::ContextMenuChosenIdx(*idx))
+            }
             _ => AppMsg::Other(Some(value.to_string())),
         }
     }

@@ -207,22 +207,34 @@ impl Program<TvMsg> for TreeCnv {
                     }
                     MouseEvent::ButtonPressed(btn) => match btn {
                         MouseButton::Left => {
-                            if let Some(hevered_node) = &st.hovered_node {
-                                let edge = &edges[hevered_node.edge_idx];
+                            if let Some(hovered_node) = &st.hovered_node {
+                                let edge = &edges[hovered_node.edge_idx];
                                 let node_id = edge.node_id;
-                                if let Some(modifiers) = st.modifiers
-                                    && modifiers == Modifiers::SHIFT
-                                {
-                                    action =
-                                        Some(Action::publish(TvMsg::SelectDeselectNode(node_id)));
-                                } else {
-                                    action = Some(Action::publish(
-                                        TvMsg::SelectDeselectNodeExclusive(node_id),
-                                    ));
-                                }
+                                // -----------------------------------------------------------------
+                                // if let Some(modifiers) = st.modifiers
+                                //     && modifiers == Modifiers::SHIFT
+                                // {
+                                //     action =
+                                //         Some(Action::publish(TvMsg::SelectDeselectNode(node_id)));
+                                // } else {
+                                //     action = Some(Action::publish(
+                                //         TvMsg::SelectDeselectNodeExclusive(node_id),
+                                //     ));
+                                // }
+                                // -----------------------------------------------------------------
+                                action = Some(Action::publish(TvMsg::SelectDeselectNode(node_id)));
+                                // -----------------------------------------------------------------
                             }
                         }
-                        MouseButton::Right => {}
+                        MouseButton::Right => {
+                            if let Some(hovered_node) = &st.hovered_node {
+                                action = Some(Action::publish(TvMsg::ContextMenuInteractionBegin(
+                                    TvContextMenuListing::for_node(
+                                        &edges[hovered_node.edge_idx].node_id, tst,
+                                    ),
+                                )));
+                            }
+                        }
                         _ => {}
                     },
                     MouseEvent::ButtonReleased(_btn) => {}

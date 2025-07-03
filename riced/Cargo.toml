@@ -12,6 +12,7 @@
     convert_case="0.8.0"
 
 [dependencies]
+    muda={workspace=true}
     num-traits={workspace=true}
     numfmt={workspace=true}
 

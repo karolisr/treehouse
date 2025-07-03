@@ -7,13 +7,14 @@ mod win;
 use consts::*;
 use dendros::parse_newick;
 use riced::{
-    Clr, Element, Font, IcedAppSettings, Key, Modifiers, Pixels, Subscription, Task, Theme,
-    WindowEvent, WindowId, close_window, exit, on_key_press, open_window, window_events,
+    Clr, Element, Font, HasWindowHandle, IcedAppSettings, Key, Modifiers, Pixels, RawWindowHandle,
+    Subscription, Task, Theme, WindowEvent, WindowId, close_window, exit, on_key_press,
+    open_window, run_with_handle, window_events,
 };
 
-use menu::{AppMenu, AppMenuItemId};
+use menu::{AppMenu, AppMenuItemId, ContextMenu};
 use std::path::PathBuf;
-use treeview::{SidebarPosition, TreeView, TvMsg};
+use treeview::{SidebarPosition, TreeView, TvContextMenuListing, TvMsg};
 use win::window_settings;
 
 pub struct App {
@@ -28,6 +29,8 @@ pub struct App {
 pub enum AppMsg {
     Other(Option<String>),
     MenuEvent(AppMenuItemId),
+    // --------------------------------
+    ShowContextMenu(TvContextMenuListing),
     // --------------------------------
     TvMsg(TvMsg),
     // --------------------------------
@@ -104,133 +107,135 @@ impl App {
     }
 
     pub fn update(&mut self, app_msg: AppMsg) -> Task<AppMsg> {
+        let mut task: Option<Task<AppMsg>> = None;
         match app_msg {
             AppMsg::KeysPressed(key, modifiers) => {
-                if modifiers.contains(Modifiers::CTRL | Modifiers::SHIFT) {
-                    match key {
-                        Key::Character(k) => {
-                            let k: &str = k.as_str();
+                if let Key::Character(k) = key {
+                    let k: &str = k.as_str();
+                    match modifiers {
+                        mods if mods.contains(Modifiers::COMMAND | Modifiers::SHIFT) => match k {
+                            "d" => {
+                                if let Some(treeview) = &mut self.treeview {
+                                    treeview.toggle_draw_debug();
+                                }
+                            }
+                            "e" => {
+                                self.toggle_explain();
+                            }
+                            _ => {}
+                        },
+                        Modifiers::COMMAND =>
+                        {
+                            #[cfg(any(target_os = "windows", target_os = "linux"))]
                             match k {
-                                "d" => {
-                                    if let Some(treeview) = &mut self.treeview {
-                                        treeview.toggle_draw_debug();
-                                    }
-                                    Task::none()
+                                "f" => {
+                                    task = Some(Task::done(AppMsg::TvMsg(TvMsg::ToggleSearchBar)))
                                 }
-                                "e" => {
-                                    self.toggle_explain();
-                                    Task::none()
+                                "o" => {
+                                    task =
+                                        Some(Task::done(AppMsg::MenuEvent(AppMenuItemId::OpenFile)))
                                 }
-                                _ => Task::none(),
+                                "s" => {
+                                    task =
+                                        Some(Task::done(AppMsg::MenuEvent(AppMenuItemId::SaveAs)))
+                                }
+                                "w" => {
+                                    task = Some(Task::done(AppMsg::MenuEvent(
+                                        AppMenuItemId::CloseWindow,
+                                    )))
+                                }
+                                "q" => {
+                                    task = Some(Task::done(AppMsg::MenuEvent(AppMenuItemId::Quit)))
+                                }
+                                "[" => {
+                                    task = Some(Task::done(AppMsg::MenuEvent(
+                                        AppMenuItemId::SetSideBarPositionLeft,
+                                    )))
+                                }
+                                "]" => {
+                                    task = Some(Task::done(AppMsg::MenuEvent(
+                                        AppMenuItemId::SetSideBarPositionRight,
+                                    )))
+                                }
+                                _ => {}
                             }
                         }
-                        _ => Task::none(),
-                    }
-                } else {
-                    match modifiers {
-                        Modifiers::CTRL => match key {
-                            Key::Character(k) => {
-                                #[cfg(any(target_os = "windows", target_os = "linux"))]
-                                {
-                                    let k: &str = k.as_str();
-                                    match k {
-                                        "o" => {
-                                            Task::done(AppMsg::MenuEvent(AppMenuItemId::OpenFile))
-                                        }
-                                        "s" => Task::done(AppMsg::MenuEvent(AppMenuItemId::SaveAs)),
-                                        "w" => Task::done(AppMsg::MenuEvent(
-                                            AppMenuItemId::CloseWindow,
-                                        )),
-                                        "q" => Task::done(AppMsg::MenuEvent(AppMenuItemId::Quit)),
-                                        "[" => Task::done(AppMsg::MenuEvent(
-                                            AppMenuItemId::SetSideBarPositionLeft,
-                                        )),
-                                        "]" => Task::done(AppMsg::MenuEvent(
-                                            AppMenuItemId::SetSideBarPositionRight,
-                                        )),
-                                        _ => Task::none(),
-                                    }
-                                }
-                                #[cfg(target_os = "macos")]
-                                {
-                                    println!("Ctrl + {k}");
-                                    Task::none()
-                                }
+                        _ => match k {
+                            "l" => {
+                                task = Some(Task::done(AppMsg::TvMsg(
+                                    TvMsg::AddRemoveCladeLabelForSelectedNode,
+                                )))
                             }
-                            _ => Task::none(),
-                        },
-                        // Modifiers::COMMAND => match key {
-                        //     Key::Character(k) => {
-                        //         #[cfg(target_os = "macos")]
-                        //         {
-                        //             let k: &str = k.as_str();
-                        //             match k {
-                        //                 "f" => Task::done(AppMsg::TvMsg(TvMsg::ToggleSearchBar)),
-                        //                 _ => Task::none(),
-                        //             }
-                        //         }
-                        //         #[cfg(any(target_os = "windows", target_os = "linux"))]
-                        //         {
-                        //             println!("Cmd + {k}");
-                        //             Task::none()
-                        //         }
-                        //     }
-                        //     _ => Task::none(),
-                        // },
-                        _ => match key {
-                            Key::Character(k) => {
-                                let k: &str = k.as_str();
-                                match k {
-                                    "l" => Task::done(AppMsg::TvMsg(TvMsg::AddRemoveCladeLabel)),
-                                    _ => Task::none(),
-                                }
-                            }
-                            _ => Task::none(),
+                            _ => {}
                         },
                     }
                 }
             }
-
             AppMsg::Other(opt_msg) => {
                 if let Some(msg) = opt_msg {
                     println!("AppMsg::Other({msg})");
-                    Task::none()
-                } else {
-                    Task::none()
                 }
             }
-
             AppMsg::MenuEvent(miid) => {
                 if let Some(menu) = &mut self.menu {
                     menu.update(&miid);
                 }
-                Task::done(miid.into())
+                task = Some(Task::done(miid.into()))
             }
-
+            AppMsg::ShowContextMenu(tree_view_context_menu_listing) => {
+                if let Some(winid) = self.winid {
+                    let task_to_return = run_with_handle(winid, |h| {
+                        if let Some(handle) = h.window_handle().ok()
+                            && let RawWindowHandle::AppKit(handle_raw) = handle.as_raw()
+                        {
+                            let context_menu: ContextMenu = tree_view_context_menu_listing.into();
+                            let muda_menu: muda::Menu = context_menu.into();
+                            unsafe {
+                                muda::ContextMenu::show_context_menu_for_nsview(
+                                    &muda_menu,
+                                    handle_raw.ns_view.as_ptr(),
+                                    None,
+                                )
+                            };
+                        }
+                    })
+                    .discard();
+                    task = Some(task_to_return)
+                }
+            }
             AppMsg::TvMsg(tv_msg) => {
                 if let Some(treeview) = &mut self.treeview {
-                    if let Some(menu) = &mut self.menu
-                        && let TvMsg::SetSidebarPos(sidebar_pos) = tv_msg
-                    {
-                        match sidebar_pos {
-                            SidebarPosition::Left => {
-                                menu.update(&AppMenuItemId::SetSideBarPositionLeft)
-                            }
-                            SidebarPosition::Right => {
-                                menu.update(&AppMenuItemId::SetSideBarPositionRight)
+                    task = Some(treeview.update(tv_msg.clone()).map(AppMsg::TvMsg));
+                    match tv_msg {
+                        TvMsg::ContextMenuInteractionBegin(tree_view_context_menu_listing) => {
+                            task = Some(Task::done(AppMsg::ShowContextMenu(
+                                tree_view_context_menu_listing,
+                            )))
+                        }
+                        TvMsg::SetSidebarPos(sidebar_position) => {
+                            if let Some(menu) = &mut self.menu {
+                                match sidebar_position {
+                                    SidebarPosition::Left => {
+                                        menu.update(&AppMenuItemId::SetSideBarPositionLeft)
+                                    }
+                                    SidebarPosition::Right => {
+                                        menu.update(&AppMenuItemId::SetSideBarPositionRight)
+                                    }
+                                }
                             }
                         }
+                        _ => {}
                     }
-                    treeview.update(tv_msg).map(AppMsg::TvMsg)
-                } else {
-                    Task::none()
                 }
             }
             AppMsg::OpenFile => {
                 if self.winid.is_none() {
-                    Task::done(AppMsg::WinOpen).chain(Task::done(ops::choose_file_to_open_sync()))
+                    task = Some(
+                        Task::done(AppMsg::WinOpen)
+                            .chain(Task::done(ops::choose_file_to_open_sync())),
+                    )
                 } else {
-                    Task::future(ops::choose_file_to_open())
+                    task = Some(Task::future(ops::choose_file_to_open()))
                 }
             }
             AppMsg::PathToOpen(path_buf_opt) => {
@@ -238,6 +243,7 @@ impl App {
                     return Task::done(AppMsg::WinOpen)
                         .chain(Task::done(AppMsg::PathToOpen(path_buf_opt)));
                 }
+
                 if let Some(path_buf) = path_buf_opt {
                     let file_type: FileType = match path_buf.extension() {
                         Some(ext_os_str) => match ext_os_str.to_str() {
@@ -278,14 +284,13 @@ impl App {
                                     menu.enable(&AppMenuItemId::SideBarPosition);
                                     menu.enable(&AppMenuItemId::ToggleSearchBar);
                                 };
-                                Task::done(AppMsg::TvMsg(TvMsg::TreesLoaded(trees)))
+                                task = Some(Task::done(AppMsg::TvMsg(TvMsg::TreesLoaded(trees))))
                             }
                             None => {
                                 println!("ParsedData::Trees(None)");
                                 if let Some(menu) = &mut self.menu {
                                     menu.disable(&AppMenuItemId::SaveAs);
                                 };
-                                Task::none()
                             }
                         },
                         ParsedData::Other(s) => {
@@ -293,21 +298,16 @@ impl App {
                             if let Some(menu) = &mut self.menu {
                                 menu.disable(&AppMenuItemId::SaveAs);
                             };
-                            Task::none()
                         }
                         ParsedData::Exception => {
                             if let Some(menu) = &mut self.menu {
                                 menu.disable(&AppMenuItemId::SaveAs);
                             };
-                            Task::none()
                         }
                     }
-                } else {
-                    Task::none()
                 }
             }
-
-            AppMsg::SaveAs => Task::future(ops::choose_file_to_save()),
+            AppMsg::SaveAs => task = Some(Task::future(ops::choose_file_to_save())),
             AppMsg::PathToSave(path_buf_opt) => {
                 if let Some(path_buf) = path_buf_opt {
                     println!("{path_buf:?}");
@@ -324,8 +324,8 @@ impl App {
                     };
 
                     match file_type {
-                        FileType::Other(_) => Task::none(),
-                        FileType::Exception => Task::none(),
+                        FileType::Other(_) => {}
+                        FileType::Exception => {}
                         file_type => match file_type {
                             FileType::Newick => {
                                 if let Some(tv) = &self.treeview {
@@ -339,109 +339,86 @@ impl App {
                                             .to_string(),
                                     );
                                 }
-                                Task::none()
                             }
-                            FileType::Nexus => Task::none(), // Save Nexus file
-                            _ => Task::none(),
+                            FileType::Nexus => {} // Save Nexus file
+                            _ => {}
                         },
                     }
-                } else {
-                    Task::none()
                 }
             }
-
             AppMsg::AppInitialized => {
                 self.menu = AppMenu::new(consts::SIDEBAR_POSITION);
                 if let Some(menu) = &mut self.menu {
                     menu.disable(&AppMenuItemId::SaveAs);
                 }
-                Task::done(AppMsg::WinOpen)
+                task = Some(Task::done(AppMsg::WinOpen))
             }
-
             AppMsg::WinEvent(e) => match e {
-                WindowEvent::Opened { position: _, size: _ } => Task::done(AppMsg::WinOpened),
-                WindowEvent::CloseRequested => Task::done(AppMsg::WinCloseRequested),
-                WindowEvent::Closed => Task::done(AppMsg::WinClosed),
-                WindowEvent::FileDropped(path_buf) => {
-                    Task::done(AppMsg::PathToOpen(Some(path_buf)))
+                WindowEvent::Opened { position: _, size: _ } => {
+                    task = Some(Task::done(AppMsg::WinOpened))
                 }
-                _ => Task::none(),
+                WindowEvent::CloseRequested => task = Some(Task::done(AppMsg::WinCloseRequested)),
+                WindowEvent::Closed => task = Some(Task::done(AppMsg::WinClosed)),
+                WindowEvent::FileDropped(path_buf) => {
+                    task = Some(Task::done(AppMsg::PathToOpen(Some(path_buf))))
+                }
+                _ => {}
             },
-
             AppMsg::WinOpen => {
                 if self.winid.is_none() {
-                    let (window_id, task) = open_window(window_settings());
+                    let (window_id, open_window_task) = open_window(window_settings());
                     self.winid = Some(window_id);
                     self.treeview = Some(TreeView::new(consts::SIDEBAR_POSITION));
-                    task.discard()
+                    task = Some(open_window_task.discard())
                 } else {
                     eprintln!("AppMsg::OpenWindow -> Window is already open.");
-                    Task::none()
                 }
             }
-
             AppMsg::WinOpened => {
                 if let Some(menu) = &mut self.menu {
                     menu.enable(&AppMenuItemId::CloseWindow);
                 }
 
-                Task::none()
-                    .chain({
-                        #[cfg(target_os = "windows")]
-                        {
-                            if let Some(id) = self.winid {
-                                iced::window::get_raw_id::<AppMsg>(id).map(AppMsg::AddMenuForHwnd)
-                            } else {
-                                Task::none()
-                            }
-                        }
-                        #[cfg(target_os = "macos")]
-                        {
+                #[cfg(debug_assertions)]
+                let mut task_to_return = Task::none();
+
+                #[cfg(not(debug_assertions))]
+                let task_to_return = Task::none();
+
+                #[cfg(target_os = "windows")]
+                if let Some(id) = self.winid {
+                    task_to_return = riced::get_raw_id::<AppMsg>(id).map(AppMsg::AddMenuForHwnd);
+                }
+
+                #[cfg(debug_assertions)]
+                {
+                    task_to_return = task_to_return.chain({
+                        let path_buf = PathBuf::from("tests/data/tree02.newick");
+                        let path: &std::path::Path = &path_buf.clone().into_boxed_path();
+                        if path.exists() {
+                            Task::done(AppMsg::PathToOpen(Some(path_buf)))
+                        } else {
                             Task::none()
                         }
-                        #[cfg(target_os = "linux")]
-                        {
-                            Task::none()
-                        }
-                    })
-                    .chain({
-                        #[cfg(not(debug_assertions))]
-                        {
-                            Task::none()
-                        }
-                        #[cfg(debug_assertions)]
-                        {
-                            // let path_buf = PathBuf::from("tests/data/100_starting_trees.newick");
-                            // let path_buf = PathBuf::from("tests/data/tree01.newick");
-                            let path_buf = PathBuf::from("tests/data/tree02.newick");
-                            let path: &std::path::Path = &path_buf.clone().into_boxed_path();
-                            if path.exists() {
-                                Task::done(AppMsg::PathToOpen(Some(path_buf)))
-                            } else {
-                                Task::none()
-                            }
-                        }
-                    })
+                    });
+                }
+
+                task = Some(task_to_return);
             }
             AppMsg::WinCloseRequested => {
                 if self.winid.is_some() {
-                    Task::done(AppMsg::WinClose)
+                    task = Some(Task::done(AppMsg::WinClose))
                 } else {
                     eprintln!("AppMsg::CloseWindow -> There is no window to close.");
-                    Task::none()
                 }
             }
-
             AppMsg::WinClose => {
                 if let Some(window_id) = self.winid {
                     self.winid = None;
                     self.treeview = None;
-                    close_window(window_id)
-                } else {
-                    Task::none()
+                    task = Some(close_window(window_id))
                 }
             }
-
             AppMsg::WinClosed => {
                 if let Some(menu) = &mut self.menu {
                     menu.disable(&AppMenuItemId::CloseWindow);
@@ -451,24 +428,25 @@ impl App {
                 }
                 #[cfg(target_os = "macos")]
                 {
-                    // Task::none()
-                    Task::done(AppMsg::Quit)
+                    task = Some(Task::done(AppMsg::Quit))
                 }
                 #[cfg(any(target_os = "windows", target_os = "linux"))]
                 {
-                    Task::done(AppMsg::Quit)
+                    task = Some(Task::done(AppMsg::Quit))
                 }
             }
-
-            AppMsg::Quit => exit(),
-
+            AppMsg::Quit => task = Some(exit()),
             #[cfg(target_os = "windows")]
             AppMsg::AddMenuForHwnd(hwnd) => {
                 if let Some(menu) = &self.menu {
-                    menu.init_for_hwnd(hwnd);
+                    menu.init_for_hwnd(hwnd)
                 }
-                Task::none()
             }
+        }
+
+        match task {
+            Some(task) => task,
+            None => Task::none(),
         }
     }
 
