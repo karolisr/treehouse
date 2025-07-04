@@ -87,6 +87,8 @@ pub enum TvMsg {
     TipLabSizeChanged(u16),
     IntLabSizeChanged(u16),
     BrnchLabSizeChanged(u16),
+    TipLabTrimOptChanged(bool),
+    TipLabTrimValChanged(u16),
     PrevTre,
     NextTre,
     NodeOrdOptChanged(NodeOrd),
@@ -514,6 +516,20 @@ impl TreeView {
                     text_w_tip.set_font_size(self.tre_cnv.lab_size_tip);
                 };
                 // -------------------------------------------------------------
+                task = self.scroll_to_current_found_edge();
+                self.tre_cnv.stale_tre_rect = true;
+                self.clear_caches_all();
+            }
+
+            TvMsg::TipLabTrimOptChanged(state) => {
+                self.tre_cnv.trim_tip_labs = state;
+                task = self.scroll_to_current_found_edge();
+                self.tre_cnv.stale_tre_rect = true;
+                self.clear_caches_all();
+            }
+
+            TvMsg::TipLabTrimValChanged(value) => {
+                self.tre_cnv.trim_tip_labs_to_nchar = value;
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_all();

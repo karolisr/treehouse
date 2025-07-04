@@ -65,6 +65,9 @@ pub(super) struct TreeCnv {
     pub(super) stale_tre_rect: bool,
     // ---------------------------------------------------------------------------------------------
     pub(super) tree_state: Option<Rc<TreeState>>,
+    // ---------------------------------------------------------------------------------------------
+    pub(super) trim_tip_labs: bool,
+    pub(super) trim_tip_labs_to_nchar: u16,
 }
 
 impl TreeCnv {
@@ -129,6 +132,9 @@ impl TreeCnv {
             // -------------------------------------------------------------------------------------
             tree_state: None,
             // -------------------------------------------------------------------------------------
+            trim_tip_labs: true,
+            trim_tip_labs_to_nchar: 20,
+            // -------------------------------------------------------------------------------------
         }
     }
 
@@ -152,9 +158,14 @@ impl TreeCnv {
     ) -> (RectVals<Float>, Float) {
         let tre_vs_prelim = cnv_vs.padded(self.padd_l, self.padd_r, self.padd_t, self.padd_b);
         let mut tip_w: Float = ZRO;
+        let trim_to = match self.trim_tip_labs {
+            true => Some(self.trim_tip_labs_to_nchar as usize),
+            false => None,
+        };
         if self.draw_labs_tip && self.draw_labs_allowed {
             tip_w = calc_tip_w(
-                self.tre_sty, &tre_vs_prelim, edges_tip_tallest, self.lab_offset_tip, text_w_tip,
+                self.tre_sty, &tre_vs_prelim, edges_tip_tallest, self.lab_offset_tip, trim_to,
+                text_w_tip,
             );
         }
         let mut offset_due_to_clade_lab = ZRO;
@@ -209,19 +220,19 @@ impl TreeCnv {
 
 fn calc_tip_w(
     tre_sty: TreSty, tre_vs: &RectVals<Float>, edges_tip_tallest: &[Edge], lab_offset_tip: Float,
-    text_w_tip: &mut TextWidth,
+    trim_to: Option<usize>, text_w_tip: &mut TextWidth,
 ) -> Float {
     let tre_vs_w = match tre_sty {
         TreSty::PhyGrm => tre_vs.w,
         TreSty::Fan => tre_vs.radius_min,
     };
     let tip_w: Float =
-        lab_offset_tip + calc_tip_lab_extra_w(tre_vs_w, edges_tip_tallest, text_w_tip);
+        lab_offset_tip + calc_tip_lab_extra_w(tre_vs_w, edges_tip_tallest, trim_to, text_w_tip);
     tip_w.min(tre_vs_w / TWO)
 }
 
 fn calc_tip_lab_extra_w(
-    tre_vs_w: Float, edges_tip_tallest: &[Edge], text_w_tip: &mut TextWidth,
+    tre_vs_w: Float, edges_tip_tallest: &[Edge], trim_to: Option<usize>, text_w_tip: &mut TextWidth,
 ) -> Float {
     let mut max_w: Float = ZRO;
     let mut max_offset: Float = ZRO;
@@ -231,7 +242,11 @@ fn calc_tip_lab_extra_w(
             if offset >= max_offset {
                 max_offset = offset
             };
-            let tip_name_w = text_w_tip.width(name);
+            let mut name_trimmed = name.to_string();
+            if let Some(nchar) = trim_to {
+                name_trimmed = ellipsize_unicode(name_trimmed, nchar);
+            }
+            let tip_name_w = text_w_tip.width(&name_trimmed);
             let curr_max_w = tip_name_w + (max_offset + offset) / TWO - tre_vs_w;
             if curr_max_w >= max_w {
                 max_w = curr_max_w;

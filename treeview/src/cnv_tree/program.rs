@@ -140,6 +140,10 @@ impl Program<TvMsg> for TreeCnv {
                 self.lab_size_tip,
                 true,
                 false,
+                match self.trim_tip_labs {
+                    true => Some(self.trim_tip_labs_to_nchar as usize),
+                    false => None,
+                },
                 st.text_w_tip.as_mut()?,
                 &mut st.labs_tip,
             );
@@ -151,6 +155,7 @@ impl Program<TvMsg> for TreeCnv {
                 self.lab_size_int,
                 false,
                 false,
+                None,
                 st.text_w_int.as_mut()?,
                 &mut st.labs_int,
             );
@@ -162,6 +167,7 @@ impl Program<TvMsg> for TreeCnv {
                 self.lab_size_brnch,
                 false,
                 true,
+                None,
                 st.text_w_brnch.as_mut()?,
                 &mut st.labs_brnch,
             );

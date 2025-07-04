@@ -391,7 +391,7 @@ fn stroke_root_fan(
 
 pub(super) fn node_labs(
     nodes: &[NodeData], edges: &[Edge], size: Float, tips: bool, branch: bool,
-    text_w: &mut TextWidth, results: &mut Vec<Label>,
+    trim_to: Option<usize>, text_w: &mut TextWidth, results: &mut Vec<Label>,
 ) {
     nodes
         .iter()
@@ -405,8 +405,14 @@ pub(super) fn node_labs(
                 if !tips {
                     txt_lab_tmpl = TEMPLATE_TXT_LAB_INTERNAL;
                 }
-                let width = text_w.width(name);
-                let text = lab_text(name.to_string(), nd.points.p1, size, txt_lab_tmpl);
+
+                let mut name_trimmed: String = name.to_string();
+                if let Some(nchar) = trim_to {
+                    name_trimmed = ellipsize_unicode(name_trimmed, nchar)
+                }
+
+                let width = text_w.width(&name_trimmed);
+                let text = lab_text(name_trimmed.to_string(), nd.points.p1, size, txt_lab_tmpl);
                 Some(Label { text, width, angle: nd.angle })
             } else if branch && edge.parent_node_id.is_some() {
                 let name = format!("{:.3}", edge.brlen);

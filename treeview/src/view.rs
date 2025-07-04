@@ -388,7 +388,28 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
                 1,
                 2,
                 TvMsg::TipLabSizeChanged,
-            )
+            ),
+            space_v(ZRO, PADDING / TWO),
+            toggler_label_tip_trim(true, tv.tre_cnv.trim_tip_labs),
+            match tv.tre_cnv.trim_tip_labs {
+                true => {
+                    iced_col![
+                        space_v(ZRO, PADDING / TWO),
+                        slider(
+                            None,
+                            3,
+                            75,
+                            tv.tre_cnv.trim_tip_labs_to_nchar,
+                            1,
+                            10,
+                            TvMsg::TipLabTrimValChanged,
+                        ),
+                    ]
+                }
+                false => {
+                    iced_col![]
+                }
+            },
         ])
     } else {
         sb_col = sb_col.push(toggler_label_tip(
@@ -612,6 +633,14 @@ pub(crate) fn toggler_label_tip<'a>(enabled: bool, draw_tip_labs: bool) -> Toggl
     let mut tglr = toggler("Tip Labels", draw_tip_labs);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::TipLabVisChanged);
+    }
+    tglr
+}
+
+pub(crate) fn toggler_label_tip_trim<'a>(enabled: bool, trim_tip_labs: bool) -> Toggler<'a, TvMsg> {
+    let mut tglr = toggler("Trim Tip Labels", trim_tip_labs);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::TipLabTrimOptChanged);
     }
     tglr
 }

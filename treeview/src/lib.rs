@@ -223,3 +223,17 @@ impl Display for RectVals<Float> {
         write!(f, "({:7.2}, {:7.2}), ({:7.2}, {:7.2})", self.x0, self.y0, self.x1, self.y1)
     }
 }
+
+fn ellipsize_unicode(name: impl Into<String>, width: usize) -> String {
+    let tmp = name.into();
+    let mut rv = tmp.char_indices().fold(String::new(), |mut string_accum, (i, character)| {
+        if i < width {
+            string_accum.push(character);
+        }
+        string_accum
+    });
+    if tmp.len() > rv.len() {
+        rv.push('\u{2026}'); // ellipsis
+    }
+    rv
+}
