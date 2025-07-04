@@ -41,6 +41,7 @@ pub fn pick_list_common<'a, T: PartialEq + Display + Clone, Msg: Clone + 'a>(
     pl = pl.text_size(TXT_SIZE);
     pl = pl.padding(PADDING);
     pl = pl.width(Length::FillPortion(10));
+    pl = pl.menu_style(sty_menu);
     pl.style(sty_pick_lst)
 }
 
@@ -178,6 +179,6 @@ pub fn txt_input<'a, Msg: Clone + 'a>(
         .style(sty_text_input)
         .id(id)
         .on_input(msg)
-        .line_height(Pixels(TEXT_INPUT_H))
+        .line_height(Pixels(TEXT_INPUT_H - PADDING * TWO - SF * TWO))
         .padding(PADDING)
 }

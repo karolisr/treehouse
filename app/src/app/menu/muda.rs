@@ -42,12 +42,10 @@ impl From<ContextMenu> for muda::Menu {
 impl From<TvContextMenuListing> for ContextMenu {
     fn from(tv_context_menu_listing: TvContextMenuListing) -> Self {
         let muda_menu = muda::Menu::new();
-        let mut idx: usize = 0;
-        tv_context_menu_listing.items().iter().for_each(|item| {
+        tv_context_menu_listing.items().iter().enumerate().for_each(|(idx, item)| {
             let mii = AppMenuItemId::ContextMenuIndex(idx);
             let mmi = MenuItem::with_id(mii, item.label.clone(), item.enabled, None);
             let _ = muda_menu.append(&mmi);
-            idx += 1;
         });
         ContextMenu::with_muda_menu(muda_menu)
     }
@@ -148,12 +146,12 @@ impl AppMenu {
         let menu_item_about =
             muda::PredefinedMenuItem::about(None, Some(muda::AboutMetadata::default()));
 
-        let menu_item_close_win = MenuItem::with_id(
-            AppMenuItemId::CloseWindow,
-            "Close Window",
-            true,
-            Some(Accelerator::new(Some(modifier), Code::KeyW)),
-        );
+        // let menu_item_close_win = MenuItem::with_id(
+        //     AppMenuItemId::CloseWindow,
+        //     "Close Window",
+        //     true,
+        //     Some(Accelerator::new(Some(modifier), Code::KeyW)),
+        // );
 
         let menu_item_quit = MenuItem::with_id(
             AppMenuItemId::Quit,
@@ -204,7 +202,7 @@ impl AppMenu {
 
         submenu_file.append(&menu_item_open).ok();
         submenu_file.append(&menu_item_save_as).ok();
-        submenu_file.append(&menu_item_close_win).ok();
+        // submenu_file.append(&menu_item_close_win).ok();
 
         submenu_sidebar_pos.append(&menu_item_sidebar_pos_left).ok();
         submenu_sidebar_pos.append(&menu_item_sidebar_pos_right).ok();
@@ -219,10 +217,10 @@ impl AppMenu {
         items.insert(menu_item_quit.clone().into(), MenuItemKind::MenuItem(menu_item_quit));
         items.insert(menu_item_open.clone().into(), MenuItemKind::MenuItem(menu_item_open));
         items.insert(menu_item_save_as.clone().into(), MenuItemKind::MenuItem(menu_item_save_as));
-        items.insert(
-            menu_item_close_win.clone().into(),
-            MenuItemKind::MenuItem(menu_item_close_win),
-        );
+        // items.insert(
+        //     menu_item_close_win.clone().into(),
+        //     MenuItemKind::MenuItem(menu_item_close_win),
+        // );
         items.insert(
             menu_item_sidebar_pos_left.clone().into(),
             MenuItemKind::Check(menu_item_sidebar_pos_left),

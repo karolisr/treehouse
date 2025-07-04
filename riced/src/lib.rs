@@ -84,7 +84,7 @@ pub use w::container;
 pub use w::container::{Container, Style as ContainerStyle};
 pub use w::horizontal_space;
 pub use w::mouse_area;
-// pub use w::overlay::menu::{Menu, State as MenuState};
+pub use w::overlay::menu::{Menu, State as MenuState, Style as MenuStyle};
 pub use w::pane_grid::{
     Axis as PgAxis, Content as PgContent, Highlight as PgHighlight, Line as PgLine, Pane,
     ResizeEvent, State as PgState, Style as PgStyle,

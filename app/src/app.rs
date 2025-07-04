@@ -124,8 +124,7 @@ impl App {
                             }
                             _ => {}
                         },
-                        Modifiers::COMMAND =>
-                        {
+                        Modifiers::COMMAND => {
                             #[cfg(any(target_os = "windows", target_os = "linux"))]
                             match k {
                                 "f" => {
@@ -139,11 +138,6 @@ impl App {
                                     task =
                                         Some(Task::done(AppMsg::MenuEvent(AppMenuItemId::SaveAs)))
                                 }
-                                "w" => {
-                                    task = Some(Task::done(AppMsg::MenuEvent(
-                                        AppMenuItemId::CloseWindow,
-                                    )))
-                                }
                                 "q" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(AppMenuItemId::Quit)))
                                 }
@@ -155,6 +149,14 @@ impl App {
                                 "]" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
                                         AppMenuItemId::SetSideBarPositionRight,
+                                    )))
+                                }
+                                _ => {}
+                            }
+                            match k {
+                                "w" => {
+                                    task = Some(Task::done(AppMsg::MenuEvent(
+                                        AppMenuItemId::CloseWindow,
                                     )))
                                 }
                                 _ => {}

@@ -137,6 +137,14 @@ pub fn sty_cont_bottom_right(theme: &Theme) -> ContainerStyle {
 pub fn sty_cont_tool_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
 pub fn sty_cont_search_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
 
+pub fn sty_cont_no_shadow(theme: &Theme) -> ContainerStyle {
+    let base = sty_cont(theme);
+    ContainerStyle {
+        shadow: Shadow { color: Clr::TRN, offset: Vector { x: ZERO, y: ZERO }, blur_radius: ZERO },
+        ..base
+    }
+}
+
 pub fn sty_pane_grid(theme: &Theme) -> PgStyle {
     let pe = theme.extended_palette();
     PgStyle {
@@ -182,13 +190,13 @@ pub(crate) fn sty_pick_lst(theme: &Theme, status: PickListStatus) -> PickListSty
     let active = PickListStyle {
         text_color: palette.background.weak.text,
         background: palette.background.weak.color.into(),
-        placeholder_color: palette.background.strong.color,
-        handle_color: palette.background.weak.text,
         border: Border {
             radius: WIDGET_RADIUS.into(),
             width: BORDER_W,
             color: palette.background.strong.color,
         },
+        placeholder_color: palette.background.strong.color,
+        handle_color: palette.background.weak.text,
     };
 
     match status {
@@ -197,6 +205,22 @@ pub(crate) fn sty_pick_lst(theme: &Theme, status: PickListStatus) -> PickListSty
             border: Border { color: palette.primary.strong.color, ..active.border },
             ..active
         },
+    }
+}
+
+pub(crate) fn sty_menu(theme: &Theme) -> MenuStyle {
+    let palette = theme.extended_palette();
+
+    MenuStyle {
+        text_color: palette.background.weak.text,
+        background: palette.background.weak.color.into(),
+        border: Border {
+            radius: WIDGET_RADIUS.into(),
+            width: BORDER_W,
+            color: palette.background.strong.color,
+        },
+        selected_text_color: palette.primary.strong.text,
+        selected_background: palette.primary.strong.color.into(),
     }
 }
 

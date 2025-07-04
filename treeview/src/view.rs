@@ -122,19 +122,25 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
 
     let i = format!("{:>4}", ts.id());
-    let s = "/";
+    let s = "|";
     let n = format!("{:<4}", tv.tre_states.len());
     tb_row = tb_row.push(
         center(
             iced_row![
                 btn_prev_tre(tv.prev_tre_exists()),
-                txt(i).align_x(Alignment::Center).width(Length::Fixed(3e1 * SF)),
-                txt(s).align_x(Alignment::Center).width(Length::Fixed(1e1 * SF)),
-                txt(n).align_x(Alignment::Center).width(Length::Fixed(3e1 * SF)),
+                center(iced_row![
+                    txt(i).align_x(Alignment::Center).width(Length::Fixed(3e1 * SF)),
+                    txt(s).align_x(Alignment::Center).width(Length::Fixed(1e1 * SF)),
+                    txt(n).align_x(Alignment::Center).width(Length::Fixed(3e1 * SF)),
+                ])
+                .width(Length::Shrink)
+                .height(Length::Fixed(BTN_H))
+                .padding(PADDING)
+                .style(sty_cont_no_shadow),
                 btn_next_tre(tv.next_tre_exists())
             ]
             .align_y(Vertical::Center)
-            .spacing(ZRO),
+            .spacing(PADDING / TWO),
         )
         .width(Length::Shrink)
         .height(Length::Shrink)

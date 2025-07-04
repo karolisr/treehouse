@@ -142,8 +142,8 @@ impl TreeView {
             node_ord_opt: NodeOrd::Unordered,
             // -----------------------------------------------------------
             opn_angle_idx_min: 45,
-            opn_angle_idx: 360,
-            opn_angle_idx_max: 360,
+            opn_angle_idx: 359,
+            opn_angle_idx_max: 359,
             // -----------------------------------------------------------
             rot_angle_idx_min: 360 - 180,
             rot_angle_idx: 360,
