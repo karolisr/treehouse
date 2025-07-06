@@ -138,9 +138,6 @@ impl App {
                                     task =
                                         Some(Task::done(AppMsg::MenuEvent(AppMenuItemId::SaveAs)))
                                 }
-                                "q" => {
-                                    task = Some(Task::done(AppMsg::MenuEvent(AppMenuItemId::Quit)))
-                                }
                                 "[" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
                                         AppMenuItemId::SetSideBarPositionLeft,
@@ -153,11 +150,19 @@ impl App {
                                 }
                                 _ => {}
                             }
+                            #[cfg(any(target_os = "macos", target_os = "linux"))]
                             match k {
                                 "w" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
                                         AppMenuItemId::CloseWindow,
                                     )))
+                                }
+                                _ => {}
+                            }
+                            #[cfg(target_os = "linux")]
+                            match k {
+                                "q" => {
+                                    task = Some(Task::done(AppMsg::MenuEvent(AppMenuItemId::Quit)))
                                 }
                                 _ => {}
                             }
@@ -391,10 +396,10 @@ impl App {
                     menu.enable(&AppMenuItemId::CloseWindow);
                 }
 
-                #[cfg(debug_assertions)]
+                #[cfg(any(debug_assertions, target_os = "windows"))]
                 let mut task_to_return = Task::none();
 
-                #[cfg(not(debug_assertions))]
+                #[cfg(all(not(debug_assertions), target_os = "macos"))]
                 let task_to_return = Task::none();
 
                 #[cfg(target_os = "windows")]

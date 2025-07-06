@@ -8,14 +8,15 @@
 # RUSTFLAGS="-Ctarget-cpu=native"
 # export RUSTFLAGS
 
-# cargo install cargo-bundle
+# cargo install cargo-bundle 2&> /dev/null
 
 cargo fmt &&
-    # cargo check --profile dev && \
-    # cargo clippy --profile dev && \
-    # cargo build --profile dev && \
-    # cargo check --profile release && \
-    # cargo clippy --profile release && \
+    cargo check --profile dev && \
+    cargo clippy --profile dev && \
+    cargo build --profile dev && \
+    # -------------------------------------------
+    cargo check --profile release && \
+    cargo clippy --profile release && \
     cargo build --profile release
 
 # cargo-bundle bundle --profile release

@@ -29,4 +29,11 @@ pub const CHECKBOX_H: Float = WIDGET_H_UNIT * THREE;
 pub const SCROLLBAR_W: Float = WIDGET_H_UNIT * TWO;
 pub const TEXT_INPUT_H: Float = BTN_H2;
 
-pub const MAC_OS_WINDOW_BORDER_RADIUS: Float = SF * 11.0;
+#[cfg(target_os = "macos")]
+pub const WINDOW_BORDER_RADIUS: Float = SF * 11.0;
+
+#[cfg(target_os = "linux")]
+pub const WINDOW_BORDER_RADIUS: Float = WIDGET_RADIUS;
+
+#[cfg(target_os = "windows")]
+pub const WINDOW_BORDER_RADIUS: Float = SF * 5.0;

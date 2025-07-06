@@ -2,6 +2,8 @@ mod events;
 
 pub use super::events::AppMenuItemId;
 pub use events::menu_events;
+#[cfg(target_os = "windows")]
+use muda::accelerator::Modifiers;
 use muda::{
     CheckMenuItem, MenuItem, MenuItemKind, Submenu,
     accelerator::{Accelerator, CMD_OR_CTRL, Code},
@@ -137,22 +139,26 @@ impl AppMenu {
 
         let modifier = CMD_OR_CTRL;
 
+        #[cfg(target_os = "macos")]
         let submenu_app = Submenu::with_id("sub_app", "App", true);
         let submenu_file = Submenu::with_id("sub_file", "File", true);
         let submenu_view = Submenu::with_id("sub_view", "View", true);
         let submenu_sidebar_pos =
             Submenu::with_id(AppMenuItemId::SideBarPosition, "Sidebar Position", false);
 
+        #[cfg(target_os = "macos")]
         let menu_item_about =
             muda::PredefinedMenuItem::about(None, Some(muda::AboutMetadata::default()));
 
-        // let menu_item_close_win = MenuItem::with_id(
-        //     AppMenuItemId::CloseWindow,
-        //     "Close Window",
-        //     true,
-        //     Some(Accelerator::new(Some(modifier), Code::KeyW)),
-        // );
+        #[cfg(any(target_os = "windows", target_os = "linux"))]
+        let menu_item_close_win = MenuItem::with_id(
+            AppMenuItemId::CloseWindow,
+            "Close Window",
+            true,
+            Some(Accelerator::new(Some(Modifiers::ALT), Code::F4)),
+        );
 
+        #[cfg(target_os = "macos")]
         let menu_item_quit = MenuItem::with_id(
             AppMenuItemId::Quit,
             "Quit",
@@ -197,12 +203,15 @@ impl AppMenu {
             Some(Accelerator::new(Some(modifier), Code::KeyF)),
         );
 
+        #[cfg(target_os = "macos")]
         submenu_app.append(&menu_item_about).ok();
+        #[cfg(target_os = "macos")]
         submenu_app.append(&menu_item_quit).ok();
 
         submenu_file.append(&menu_item_open).ok();
         submenu_file.append(&menu_item_save_as).ok();
-        // submenu_file.append(&menu_item_close_win).ok();
+        #[cfg(any(target_os = "windows", target_os = "linux"))]
+        submenu_file.append(&menu_item_close_win).ok();
 
         submenu_sidebar_pos.append(&menu_item_sidebar_pos_left).ok();
         submenu_sidebar_pos.append(&menu_item_sidebar_pos_right).ok();
@@ -214,13 +223,15 @@ impl AppMenu {
         menu.append(&submenu_file).ok();
         menu.append(&submenu_view).ok();
 
+        #[cfg(target_os = "macos")]
         items.insert(menu_item_quit.clone().into(), MenuItemKind::MenuItem(menu_item_quit));
         items.insert(menu_item_open.clone().into(), MenuItemKind::MenuItem(menu_item_open));
         items.insert(menu_item_save_as.clone().into(), MenuItemKind::MenuItem(menu_item_save_as));
-        // items.insert(
-        //     menu_item_close_win.clone().into(),
-        //     MenuItemKind::MenuItem(menu_item_close_win),
-        // );
+        #[cfg(any(target_os = "windows", target_os = "linux"))]
+        items.insert(
+            menu_item_close_win.clone().into(),
+            MenuItemKind::MenuItem(menu_item_close_win),
+        );
         items.insert(
             menu_item_sidebar_pos_left.clone().into(),
             MenuItemKind::Check(menu_item_sidebar_pos_left),

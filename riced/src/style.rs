@@ -103,8 +103,8 @@ pub fn sty_cont_bottom(theme: &Theme) -> ContainerStyle {
     ContainerStyle {
         border: Border {
             radius: Radius {
-                bottom_right: MAC_OS_WINDOW_BORDER_RADIUS,
-                bottom_left: MAC_OS_WINDOW_BORDER_RADIUS,
+                bottom_right: WINDOW_BORDER_RADIUS,
+                bottom_left: WINDOW_BORDER_RADIUS,
                 ..base.border.radius
             },
             ..base.border
@@ -117,7 +117,7 @@ pub fn sty_cont_bottom_left(theme: &Theme) -> ContainerStyle {
     let base = sty_cont(theme);
     ContainerStyle {
         border: Border {
-            radius: Radius { bottom_left: MAC_OS_WINDOW_BORDER_RADIUS, ..base.border.radius },
+            radius: Radius { bottom_left: WINDOW_BORDER_RADIUS, ..base.border.radius },
             ..base.border
         },
         ..base
@@ -128,7 +128,7 @@ pub fn sty_cont_bottom_right(theme: &Theme) -> ContainerStyle {
     let base = sty_cont(theme);
     ContainerStyle {
         border: Border {
-            radius: Radius { bottom_right: MAC_OS_WINDOW_BORDER_RADIUS, ..base.border.radius },
+            radius: Radius { bottom_right: WINDOW_BORDER_RADIUS, ..base.border.radius },
             ..base.border
         },
         ..base
