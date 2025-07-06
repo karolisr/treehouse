@@ -6,10 +6,12 @@ mod win;
 
 use consts::*;
 use dendros::parse_newick;
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+use riced::RawWindowHandle;
 use riced::{
-    Clr, Element, Font, HasWindowHandle, IcedAppSettings, Key, Modifiers, Pixels, RawWindowHandle,
-    Subscription, Task, Theme, WindowEvent, WindowId, close_window, exit, on_key_press,
-    open_window, run_with_handle, window_events,
+    Clr, Element, Font, HasWindowHandle, IcedAppSettings, Key, Modifiers, Pixels, Subscription,
+    Task, Theme, WindowEvent, WindowId, close_window, exit, on_key_press, open_window,
+    run_with_handle, window_events,
 };
 
 use menu::{AppMenu, AppMenuItemId, ContextMenu};
@@ -162,7 +164,9 @@ impl App {
                             #[cfg(target_os = "linux")]
                             match k {
                                 "q" => {
-                                    task = Some(Task::done(AppMsg::MenuEvent(AppMenuItemId::Quit)))
+                                    task = Some(Task::done(AppMsg::MenuEvent(
+                                        AppMenuItemId::CloseWindow,
+                                    )))
                                 }
                                 _ => {}
                             }
@@ -194,6 +198,7 @@ impl App {
                     let task_to_return = run_with_handle(winid, |h| {
                         if let Ok(handle) = h.window_handle() {
                             let context_menu: ContextMenu = tree_view_context_menu_listing.into();
+                            #[cfg(any(target_os = "windows", target_os = "macos"))]
                             let muda_menu: muda::Menu = context_menu.into();
                             unsafe {
                                 #[cfg(target_os = "macos")]
@@ -204,7 +209,6 @@ impl App {
                                         None,
                                     );
                                 }
-
                                 #[cfg(target_os = "windows")]
                                 if let RawWindowHandle::Win32(handle_raw) = handle.as_raw() {
                                     muda::ContextMenu::show_context_menu_for_hwnd(
@@ -400,6 +404,9 @@ impl App {
                 let mut task_to_return = Task::none();
 
                 #[cfg(all(not(debug_assertions), target_os = "macos"))]
+                let task_to_return = Task::none();
+
+                #[cfg(all(not(debug_assertions), target_os = "linux"))]
                 let task_to_return = Task::none();
 
                 #[cfg(target_os = "windows")]
