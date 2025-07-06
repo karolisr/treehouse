@@ -1,11 +1,11 @@
 use riced::{
-    Alignment, BTN_H, Clr, Element, Horizontal, IcedResult, Key, Length, Modifiers, SF, Size,
+    Alignment, BTN_H1, Clr, Element, Horizontal, IcedResult, Key, Length, Modifiers, SF, Size,
     Subscription, Theme, Vertical, WindowSettings, btn_txt, center, iced_col, iced_row,
     on_key_press, txt_i64, txt_input,
 };
 
 const PADDING: f32 = 3e1 * SF;
-const MIN_WIN_DIM: f32 = BTN_H * 2e0 + PADDING * 5e0;
+const MIN_WIN_DIM: f32 = BTN_H1 * 2e0 + PADDING * 5e0;
 const MIN_WIN_SIZE: Size = Size { width: MIN_WIN_DIM, height: MIN_WIN_DIM };
 
 #[derive(Debug, Default)]

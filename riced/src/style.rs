@@ -80,18 +80,19 @@ pub(crate) fn sty_svg(theme: &Theme, status: SvgStatus) -> SvgStyle {
 
 pub fn sty_cont(theme: &Theme) -> ContainerStyle {
     let pb = theme.palette();
+    let pe = theme.extended_palette();
     ContainerStyle {
         text_color: Some(pb.text),
-        background: Some(Background::Color(Clr::BLK.scale_alpha(0.02))),
+        background: Some(Background::Color(pe.background.strongest.color.scale_alpha(0.11))),
         border: Border {
             width: BORDER_W,
-            color: Clr::BLK.scale_alpha(0.15),
+            color: pe.background.strong.color,
             radius: WIDGET_RADIUS.into(),
         },
         shadow: Shadow {
-            color: Clr::BLK_25,
+            color: pe.background.strong.color.scale_alpha(0.77),
             offset: Vector { x: ZERO, y: ZERO },
-            blur_radius: PADDING - PADDING / FOUR,
+            blur_radius: PADDING - PADDING / THREE,
         },
         snap: cfg!(feature = "crisp"),
     }
@@ -139,7 +140,10 @@ pub fn sty_cont_search_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
 
 pub fn sty_cont_no_shadow(theme: &Theme) -> ContainerStyle {
     let base = sty_cont(theme);
+    let pe = theme.extended_palette();
     ContainerStyle {
+        background: Some(Background::Color(pe.background.base.color)),
+        border: Border { color: pe.background.strongest.color, ..base.border },
         shadow: Shadow { color: Clr::TRN, offset: Vector { x: ZERO, y: ZERO }, blur_radius: ZERO },
         ..base
     }
@@ -149,7 +153,7 @@ pub fn sty_pane_grid(theme: &Theme) -> PgStyle {
     let pe = theme.extended_palette();
     PgStyle {
         hovered_region: PgHighlight {
-            background: Clr::GRN_25.into(),
+            background: Background::Color(pe.primary.weak.color),
             border: Border { width: BORDER_W, color: pe.primary.strong.color, radius: ZERO.into() },
         },
         hovered_split: PgLine { color: pe.primary.base.color, width: SF * TWO },
@@ -158,8 +162,30 @@ pub fn sty_pane_grid(theme: &Theme) -> PgStyle {
 }
 
 pub fn sty_pane_titlebar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
-pub fn sty_pane_body(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
-pub fn sty_pane_body_bottom(theme: &Theme) -> ContainerStyle { sty_cont_bottom(theme) }
+
+pub fn sty_pane_body(theme: &Theme) -> ContainerStyle {
+    let pe = theme.extended_palette();
+    let base = sty_cont(theme);
+    ContainerStyle { background: Some(Background::Color(pe.background.base.color)), ..base }
+}
+
+pub fn sty_pane_body_bottom(theme: &Theme) -> ContainerStyle {
+    let pe = theme.extended_palette();
+    let base = sty_cont_bottom(theme);
+    ContainerStyle { background: Some(Background::Color(pe.background.base.color)), ..base }
+}
+
+pub fn sty_pane_body_bottom_left(theme: &Theme) -> ContainerStyle {
+    let pe = theme.extended_palette();
+    let base = sty_cont_bottom_left(theme);
+    ContainerStyle { background: Some(Background::Color(pe.background.base.color)), ..base }
+}
+
+pub fn sty_pane_body_bottom_right(theme: &Theme) -> ContainerStyle {
+    let pe = theme.extended_palette();
+    let base = sty_cont_bottom_right(theme);
+    ContainerStyle { background: Some(Background::Color(pe.background.base.color)), ..base }
+}
 
 pub(crate) fn sty_btn(theme: &Theme, status: ButtonStatus) -> ButtonStyle {
     let ep = theme.extended_palette();
@@ -167,7 +193,7 @@ pub(crate) fn sty_btn(theme: &Theme, status: ButtonStatus) -> ButtonStyle {
     let base = ButtonStyle {
         background: Some(Background::Color(ep.primary.base.color)),
         text_color: ep.primary.base.text,
-        border: Border { radius: WIDGET_RADIUS.into(), width: BORDER_W, color: Clr::TRN },
+        border: Border { radius: WIDGET_RADIUS.into(), width: ZERO, color: Clr::TRN },
         ..ButtonStyle::default()
     };
 
@@ -320,8 +346,8 @@ pub(crate) fn sty_slider(theme: &Theme, status: SliderStatus) -> SliderStyle {
     SliderStyle {
         rail: SliderRail {
             backgrounds: (color.into(), palette.background.strong.color.into()),
-            width: (SLIDER_H + SF * TWO) / THREE,
-            border: Border { radius: WIDGET_RADIUS.into(), width: BORDER_W, color: Clr::TRN },
+            width: SLIDER_H / THREE,
+            border: Border { radius: WIDGET_RADIUS.into(), width: ZERO, color: Clr::TRN },
         },
 
         handle: SliderHandle {
@@ -331,7 +357,7 @@ pub(crate) fn sty_slider(theme: &Theme, status: SliderStatus) -> SliderStyle {
             },
             background: color.into(),
             border_color: Clr::TRN,
-            border_width: BORDER_W,
+            border_width: ZERO,
         },
     }
 }

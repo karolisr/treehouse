@@ -193,10 +193,6 @@ impl TreeView {
         }
     }
 
-    // fn clade_has_label(&self, node_id: &NodeId) -> bool {
-    //     if let Some(tree) = self.sel_tre() { tree.clade_has_label(node_id) } else { false }
-    // }
-
     fn tree_has_clade_labels(&self) -> bool {
         if let Some(tree) = self.sel_tre() { tree.has_clade_labels() } else { false }
     }
@@ -1030,23 +1026,11 @@ impl TreeView {
         }
     }
 
-    // pub(super) fn clear_cache_lab_tip(&self) {
-    //     if let Some(ts) = self.sel_tre() {
-    //         ts.clear_cache_lab_tip()
-    //     }
-    // }
-
     pub(super) fn clear_cache_lab_int(&self) {
         if let Some(ts) = self.sel_tre() {
             ts.clear_cache_lab_int()
         }
     }
-
-    // pub(super) fn clear_cache_lab_brnch(&self) {
-    //     if let Some(ts) = self.sel_tre() {
-    //         ts.clear_cache_lab_brnch()
-    //     }
-    // }
 
     pub(super) fn clear_cache_all_tre(&self) {
         if let Some(ts) = self.sel_tre() {

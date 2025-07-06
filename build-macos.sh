@@ -10,19 +10,19 @@
 
 cargo fmt &&
     # -------------------------------------------
-    cargo check --profile dev &&
-    cargo clippy --profile dev &&
-    cargo build --profile dev &&
+    # cargo check --profile dev &&
+    # cargo clippy --profile dev &&
+    # cargo build --profile dev &&
     # -------------------------------------------
-    cargo check --profile custom &&
-    cargo clippy --profile custom &&
-    cargo build --profile custom &&
+    # cargo check --profile custom &&
+    # cargo clippy --profile custom &&
+    # cargo build --profile custom &&
     # -------------------------------------------
     cargo check --profile release &&
     cargo clippy --profile release &&
     cargo build --profile release &&
     # -------------------------------------------
-    # cargo install cargo-bundle
+    cargo install cargo-bundle 2&> /dev/null
     cargo-bundle bundle --profile release
 
 BUNDLE_PATH="./target/release/bundle/osx/TreeHouse.app/Contents"

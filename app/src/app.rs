@@ -86,7 +86,7 @@ impl App {
             if !treeview.are_any_trees_loaded() {
                 riced::container(
                     riced::btn_txt("Open a Tree File", Some(AppMsg::OpenFile))
-                        .width(riced::BTN_H * 5e0),
+                        .width(riced::BTN_H1 * 5e0),
                 )
                 .width(riced::Length::Fill)
                 .height(riced::Length::Fill)

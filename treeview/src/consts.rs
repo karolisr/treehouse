@@ -17,7 +17,7 @@ pub(crate) const TIP_LAB_SIZE_IDX: u16 = 12;
 pub(crate) const INTERNAL_LAB_SIZE_IDX: u16 = 12;
 pub(crate) const BRANCH_LAB_SIZE_IDX: u16 = 12;
 
-pub(crate) const SIDE_BAR_W: Float = SF * 19e1;
+pub(crate) const SIDE_BAR_W: Float = TXT_SIZE * 16.0;
 pub(crate) const TREE_CNV_SIZE_DELTA: Float = SF * 5e2;
 
 pub(crate) const TREE_PADDING: Float = SF;

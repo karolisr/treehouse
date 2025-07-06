@@ -4,8 +4,8 @@ use crate::*;
 fn btn_common<Msg>(btn: Button<'_, Msg>, msg: Option<Msg>) -> Button<'_, Msg> {
     let mut btn = btn;
     btn = btn.on_press_maybe(msg);
-    btn = btn.width(BTN_H);
-    btn = btn.height(BTN_H);
+    btn = btn.width(BTN_H1);
+    btn = btn.height(BTN_H1);
     btn.style(sty_btn)
 }
 
@@ -179,6 +179,6 @@ pub fn txt_input<'a, Msg: Clone + 'a>(
         .style(sty_text_input)
         .id(id)
         .on_input(msg)
-        .line_height(Pixels(TEXT_INPUT_H - PADDING * TWO - SF * TWO))
+        .line_height(Pixels(TEXT_INPUT_H - PADDING * TWO))
         .padding(PADDING)
 }
