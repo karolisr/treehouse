@@ -16,7 +16,9 @@ pub enum Icon {
 
 impl From<Icon> for SvgHandle {
     fn from(icon: Icon) -> Self {
-        fn i(bytes: &'static [u8]) -> SvgHandle { SvgHandle::from_memory(bytes) }
+        fn i(bytes: &'static [u8]) -> SvgHandle {
+            SvgHandle::from_memory(bytes)
+        }
         match icon {
             Icon::ArrowLeft => i(&ARROW_LEFT_ALT),
             Icon::ArrowRight => i(&ARROW_RIGHT_ALT),

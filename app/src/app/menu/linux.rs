@@ -8,14 +8,18 @@ pub struct AppMenu {}
 pub struct ContextMenu {}
 
 impl AppMenu {
-    pub fn new(sidebar_pos: SidebarPosition) -> Option<Self> { None }
+    pub fn new(sidebar_pos: SidebarPosition) -> Option<Self> {
+        None
+    }
     pub fn enable(&mut self, id: &AppMenuItemId) {}
     pub fn disable(&mut self, id: &AppMenuItemId) {}
     pub fn update(&mut self, id: &AppMenuItemId) {}
 }
 
 impl ContextMenu {
-    pub fn new() -> Self { Self {} }
+    pub fn new() -> Self {
+        Self {}
+    }
 }
 
 impl From<TvContextMenuListing> for ContextMenu {

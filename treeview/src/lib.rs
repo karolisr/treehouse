@@ -214,7 +214,9 @@ impl<T> From<RectVals<T>> for Rectangle<T>
 where
     T: Clone,
 {
-    fn from(v: RectVals<T>) -> Self { Rectangle { x: v.x0, y: v.y0, width: v.w, height: v.h } }
+    fn from(v: RectVals<T>) -> Self {
+        Rectangle { x: v.x0, y: v.y0, width: v.w, height: v.h }
+    }
 }
 
 impl Display for RectVals<Float> {

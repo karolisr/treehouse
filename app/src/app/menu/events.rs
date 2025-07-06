@@ -43,7 +43,9 @@ impl From<String> for AppMenuItemId {
 }
 
 impl From<AppMenuItemId> for AppMsg {
-    fn from(value: AppMenuItemId) -> Self { (&value).into() }
+    fn from(value: AppMenuItemId) -> Self {
+        (&value).into()
+    }
 }
 
 impl From<&AppMenuItemId> for AppMsg {
@@ -69,5 +71,7 @@ impl From<&AppMenuItemId> for AppMsg {
 }
 
 impl Display for AppMenuItemId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{self:?}") }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
+    }
 }

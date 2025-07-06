@@ -135,8 +135,13 @@ pub fn sty_cont_bottom_right(theme: &Theme) -> ContainerStyle {
     }
 }
 
-pub fn sty_cont_tool_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
-pub fn sty_cont_search_bar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
+pub fn sty_cont_tool_bar(theme: &Theme) -> ContainerStyle {
+    sty_cont(theme)
+}
+
+pub fn sty_cont_search_bar(theme: &Theme) -> ContainerStyle {
+    sty_cont(theme)
+}
 
 pub fn sty_cont_no_shadow(theme: &Theme) -> ContainerStyle {
     let base = sty_cont(theme);
@@ -161,7 +166,9 @@ pub fn sty_pane_grid(theme: &Theme) -> PgStyle {
     }
 }
 
-pub fn sty_pane_titlebar(theme: &Theme) -> ContainerStyle { sty_cont(theme) }
+pub fn sty_pane_titlebar(theme: &Theme) -> ContainerStyle {
+    sty_cont(theme)
+}
 
 pub fn sty_pane_body(theme: &Theme) -> ContainerStyle {
     let pe = theme.extended_palette();

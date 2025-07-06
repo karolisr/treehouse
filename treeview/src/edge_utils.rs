@@ -112,7 +112,9 @@ pub fn edge_points_cart(w: Float, h: Float, edge: &Edge) -> EdgePoints {
     EdgePoints { p0, p_mid, p1 }
 }
 
-pub fn edge_angle(opn_angle: Float, edge: &Edge) -> Float { opn_angle * edge.y as Float }
+pub fn edge_angle(opn_angle: Float, edge: &Edge) -> Float {
+    opn_angle * edge.y as Float
+}
 
 pub fn point_pol(angle: Float, radius: Float, offset: Float, edge_x: Float) -> Point {
     let (sin, cos) = angle.sin_cos();

@@ -1,8 +1,6 @@
-use std::sync::OnceLock;
-
-use riced::{Never, Sipper, StreamExt, Subscription, UnboundedSender, sipper, unbounded};
-
 use crate::app::AppMsg;
+use riced::{Never, Sipper, StreamExt, Subscription, UnboundedSender, sipper, unbounded};
+use std::sync::OnceLock;
 
 static SENDER: OnceLock<UnboundedSender<AppMsg>> = OnceLock::new();
 
@@ -14,7 +12,9 @@ pub fn send_os_event(app_msg: AppMsg) {
         .expect("Failed: 'app::platform::macos::events::send_os_event'.");
 }
 
-pub fn os_events() -> Subscription<AppMsg> { Subscription::run(macos_events_sipper) }
+pub fn os_events() -> Subscription<AppMsg> {
+    Subscription::run(macos_events_sipper)
+}
 
 fn macos_events_sipper() -> impl Sipper<Never, AppMsg> {
     sipper(async |mut output| {

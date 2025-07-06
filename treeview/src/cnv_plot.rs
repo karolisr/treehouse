@@ -84,7 +84,9 @@ impl Display for Tick {
 }
 
 impl Debug for Tick {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result { write!(f, "{self}") }
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{self}")
+    }
 }
 
 impl From<&Vec<LttPoint>> for PlotData {
@@ -116,9 +118,17 @@ impl From<&Vec<LttPoint>> for PlotData {
 }
 
 impl PlotCnv {
-    pub(super) fn clear_cache_bnds(&self) { self.cache_bnds.clear() }
-    pub(super) fn clear_cache_cursor_line(&self) { self.cache_cursor_line.clear() }
-    pub(super) fn clear_cache_plot(&self) { self.cache_plot.clear() }
+    pub(super) fn clear_cache_bnds(&self) {
+        self.cache_bnds.clear()
+    }
+
+    pub(super) fn clear_cache_cursor_line(&self) {
+        self.cache_cursor_line.clear()
+    }
+
+    pub(super) fn clear_cache_plot(&self) {
+        self.cache_plot.clear()
+    }
 
     pub(super) fn clear_caches_all(&self) {
         self.clear_cache_bnds();
@@ -134,9 +144,11 @@ impl PlotCnv {
 
 impl Program<TvMsg> for PlotCnv {
     type State = St;
+
     fn mouse_interaction(&self, _st: &St, _bnds: Rectangle, _crsr: Cursor) -> Interaction {
         Interaction::default()
     }
+
     fn update(
         &self, st: &mut St, ev: &Event, bnds: Rectangle, crsr: Cursor,
     ) -> Option<Action<TvMsg>> {

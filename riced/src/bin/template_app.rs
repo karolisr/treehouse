@@ -41,10 +41,22 @@ impl App {
         }
     }
 
-    fn boot() -> Self { Self { ..Default::default() } }
-    fn scale_factor(&self) -> f64 { 1e0 / SF as f64 }
-    fn theme(&self) -> Theme { self.theme.clone() }
-    fn title(&self) -> String { self.title.clone() }
+    fn boot() -> Self {
+        Self { ..Default::default() }
+    }
+
+    fn scale_factor(&self) -> f64 {
+        1e0 / SF as f64
+    }
+
+    fn theme(&self) -> Theme {
+        self.theme.clone()
+    }
+
+    fn title(&self) -> String {
+        self.title.clone()
+    }
+
     fn subscription(&self) -> Subscription<Msg> {
         let mut subs: Vec<Subscription<Msg>> = Vec::with_capacity(4);
         subs.push(on_key_press(|key, mods| Some(Msg::OnKeyPress(key, mods))));

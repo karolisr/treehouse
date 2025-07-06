@@ -774,7 +774,9 @@ impl TreeView {
         self.update_sel_tre_st_idx(next_idx)
     }
 
-    fn tip_count(&self) -> usize { if let Some(ts) = self.sel_tre() { ts.tip_count() } else { 1 } }
+    fn tip_count(&self) -> usize {
+        if let Some(ts) = self.sel_tre() { ts.tip_count() } else { 1 }
+    }
 
     fn is_rooted(&self) -> bool {
         if let Some(ts) = self.sel_tre() { ts.is_rooted() } else { false }
@@ -969,7 +971,9 @@ impl TreeView {
         self.tre_cnv.vis_y1 = (pt.y + scr_h / TWO).max(scr_h).min(cnv_h);
     }
 
-    fn scroll_to_point(&self, pt: &Point) -> Option<Task<TvMsg>> { self.scroll_tre_cnv(pt.x, pt.y) }
+    fn scroll_to_point(&self, pt: &Point) -> Option<Task<TvMsg>> {
+        self.scroll_tre_cnv(pt.x, pt.y)
+    }
 
     fn update_tre_vs(&mut self) -> Float {
         let cnv_w = self.calc_tre_cnv_w(self.tre_scr_w);
@@ -1081,7 +1085,9 @@ impl TreeView {
         self.tre_cnv.tree_state = self.sel_tre();
     }
 
-    pub fn are_any_trees_loaded(&self) -> bool { !self.tre_states.is_empty() }
+    pub fn are_any_trees_loaded(&self) -> bool {
+        !self.tre_states.is_empty()
+    }
 
     pub fn newick_string(&self) -> String {
         let trees: Vec<Tree> = self.tre_states.iter().map(|ts| ts.tree().clone()).collect();
@@ -1094,7 +1100,9 @@ impl TreeView {
     }
 }
 
-fn angle_from_idx(idx: u16) -> Float { (idx as Float).to_radians() }
+fn angle_from_idx(idx: u16) -> Float {
+    (idx as Float).to_radians()
+}
 
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SidebarPosition {
@@ -1148,11 +1156,15 @@ pub(crate) enum TvPane {
 }
 
 impl Display for TvPane {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result { write!(f, "{self:?}") }
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{self:?}")
+    }
 }
 
 impl From<TvPane> for String {
-    fn from(value: TvPane) -> Self { (&value).into() }
+    fn from(value: TvPane) -> Self {
+        (&value).into()
+    }
 }
 
 impl From<&TvPane> for String {

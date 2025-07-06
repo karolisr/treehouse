@@ -16,7 +16,9 @@ fn point_from_angle_and_radius(angle: f32, radius: f32, radius_scaling_factor: f
 }
 
 impl PathBuilder {
-    pub fn new() -> PathBuilder { PathBuilder { raw: lyon_path::Path::builder().with_svg() } }
+    pub fn new() -> PathBuilder {
+        PathBuilder { raw: lyon_path::Path::builder().with_svg() }
+    }
 
     pub fn move_to(mut self, point: Point) -> Self {
         let _ = self.raw.move_to(geom::Point::new(point.x, point.y));
@@ -90,7 +92,9 @@ impl PathBuilder {
         self
     }
 
-    pub fn build(self) -> IcedPath { self.raw.build().into() }
+    pub fn build(self) -> IcedPath {
+        self.raw.build().into()
+    }
 
     // ---------------------------------------------------------------------------------------------
 
@@ -105,7 +109,9 @@ impl PathBuilder {
 }
 
 impl Default for PathBuilder {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 pub fn stroke_rect(rect: Rectangle, stroke: Strk, f: &mut Frame) {

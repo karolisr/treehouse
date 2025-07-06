@@ -45,7 +45,9 @@ pub fn pick_list_common<'a, T: PartialEq + Display + Clone, Msg: Clone + 'a>(
     pl.style(sty_pick_lst)
 }
 
-fn rule_common(rule: Rule<Theme>) -> Rule<Theme> { rule.style(sty_rule) }
+fn rule_common(rule: Rule<Theme>) -> Rule<Theme> {
+    rule.style(sty_rule)
+}
 
 pub fn rule_h<'a>(height: impl Into<Pixels>) -> Rule<'a, Theme> {
     let r: Rule<'_, Theme> = Rule::horizontal(height);
@@ -131,7 +133,9 @@ pub fn toggler<'a, Msg>(label: &'a str, value: bool) -> Toggler<'a, Msg> {
     tglr.style(sty_toggler)
 }
 
-pub fn txt<'a>(s: impl Into<String>) -> Text<'a> { Text::new(s.into()).line_height(LINE_H_PIX) }
+pub fn txt<'a>(s: impl Into<String>) -> Text<'a> {
+    Text::new(s.into()).line_height(LINE_H_PIX)
+}
 
 pub fn txt_bool(b: bool) -> Text<'static> {
     let s = match b {

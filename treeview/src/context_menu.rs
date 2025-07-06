@@ -19,7 +19,9 @@ impl TvContextMenuListing {
             .push(TvMsg::AddRemoveCladeLabel(*node_id), tree_state)
     }
 
-    pub fn items(&self) -> &[TvContextMenuItem] { &self.items }
+    pub fn items(&self) -> &[TvContextMenuItem] {
+        &self.items
+    }
 
     fn push(mut self, tv_msg: TvMsg, tree_state: &TreeState) -> Self {
         struct Values<'a> {

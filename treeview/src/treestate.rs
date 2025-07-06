@@ -56,7 +56,6 @@ impl TreeState {
             },
         }
     }
-    // pub(super) fn tree_original(&self) -> &Tree { &self.t_orig }
 
     pub(super) fn add_remove_clade_label(
         &mut self, node_id: NodeId, color: Color, label: impl Into<String>,
@@ -86,17 +85,30 @@ impl TreeState {
         self.labeled_clades.contains_key(node_id)
     }
 
-    pub(super) fn labeled_clades(&self) -> &HashMap<NodeId, CladeLabel> { &self.labeled_clades }
-    pub(super) fn has_clade_labels(&self) -> bool { !self.labeled_clades().is_empty() }
+    pub(super) fn labeled_clades(&self) -> &HashMap<NodeId, CladeLabel> {
+        &self.labeled_clades
+    }
+
+    pub(super) fn has_clade_labels(&self) -> bool {
+        !self.labeled_clades().is_empty()
+    }
 
     pub(super) fn bounding_tip_edges_for_clade(&self, node_id: &NodeId) -> Option<(&Edge, &Edge)> {
         self.tree().bounding_tip_edges_for_clade(node_id)
     }
 
     // Search & Filter -----------------------------------------------------------------------------
-    pub(super) fn found_edge_idxs(&self) -> &Vec<usize> { &self.found_edge_idxs }
-    pub(super) fn found_node_ids(&self) -> &HashSet<NodeId> { &self.found_node_ids }
-    pub(super) fn found_edge_idx(&self) -> usize { self.vec_idx_to_found_edge_idxs }
+    pub(super) fn found_edge_idxs(&self) -> &Vec<usize> {
+        &self.found_edge_idxs
+    }
+
+    pub(super) fn found_node_ids(&self) -> &HashSet<NodeId> {
+        &self.found_node_ids
+    }
+
+    pub(super) fn found_edge_idx(&self) -> usize {
+        self.vec_idx_to_found_edge_idxs
+    }
 
     pub(super) fn current_found_edge(&self) -> Option<Edge> {
         if !self.found_edge_idxs.is_empty()
@@ -189,11 +201,25 @@ impl TreeState {
     }
 
     // Accessors -----------------------------------------------------------------------------------
-    pub(super) fn edges_srtd_y(&self) -> Option<&Vec<Edge>> { self.tree().edges() }
-    pub(super) fn edges_tip(&self) -> &Vec<Edge> { &self.edges_tip }
-    pub(super) fn edges_tip_tallest(&self) -> &Vec<Edge> { &self.edges_tip_tallest }
-    pub(super) fn edges_tip_idx(&self) -> &Vec<usize> { &self.edges_tip_idx }
-    pub(super) fn edge_root(&self) -> Option<Edge> { self.edge_root.clone() }
+    pub(super) fn edges_srtd_y(&self) -> Option<&Vec<Edge>> {
+        self.tree().edges()
+    }
+
+    pub(super) fn edges_tip(&self) -> &Vec<Edge> {
+        &self.edges_tip
+    }
+
+    pub(super) fn edges_tip_tallest(&self) -> &Vec<Edge> {
+        &self.edges_tip_tallest
+    }
+
+    pub(super) fn edges_tip_idx(&self) -> &Vec<usize> {
+        &self.edges_tip_idx
+    }
+
+    pub(super) fn edge_root(&self) -> Option<Edge> {
+        self.edge_root.clone()
+    }
 
     // Memoized Methods ----------------------------------------------------------------------------
     pub(super) fn tip_count(&self) -> usize {
@@ -246,7 +272,9 @@ impl TreeState {
     }
 
     // Rooting -------------------------------------------------------------------------------------
-    pub(super) fn can_root(&self, node_id: &NodeId) -> bool { self.tree().can_root(node_id) }
+    pub(super) fn can_root(&self, node_id: &NodeId) -> bool {
+        self.tree().can_root(node_id)
+    }
 
     pub(super) fn root(&mut self, node_id: &NodeId) -> Option<NodeId> {
         self.tmp_found_node_id = self.current_found_node_id();
@@ -396,8 +424,13 @@ impl TreeState {
     }
 
     // Selection -----------------------------------------------------------------------------------
-    pub(super) fn sel_edge_idxs(&self) -> &Vec<usize> { &self.sel_edge_idxs }
-    pub(super) fn sel_node_ids(&self) -> &HashSet<NodeId> { &self.sel_node_ids }
+    pub(super) fn sel_edge_idxs(&self) -> &Vec<usize> {
+        &self.sel_edge_idxs
+    }
+
+    pub(super) fn sel_node_ids(&self) -> &HashSet<NodeId> {
+        &self.sel_node_ids
+    }
 
     fn sel_edge_idxs_prep(&self) -> Vec<usize> {
         let sel_node_ids = &self.sel_node_ids;
@@ -444,21 +477,61 @@ impl TreeState {
     }
 
     // Cached Geometries ---------------------------------------------------------------------------
-    pub(super) fn cache_edge(&self) -> &Cache { &self.cache_edge }
-    pub(super) fn cache_lab_tip(&self) -> &Cache { &self.cache_lab_tip }
-    pub(super) fn cache_lab_int(&self) -> &Cache { &self.cache_lab_int }
-    pub(super) fn cache_lab_brnch(&self) -> &Cache { &self.cache_lab_brnch }
-    pub(super) fn cache_sel_nodes(&self) -> &Cache { &self.cache_sel_nodes }
-    pub(super) fn cache_filtered_nodes(&self) -> &Cache { &self.cache_filtered_nodes }
-    pub(super) fn cache_clade_labels(&self) -> &Cache { &self.cache_clade_labels }
+    pub(super) fn cache_edge(&self) -> &Cache {
+        &self.cache_edge
+    }
 
-    pub(super) fn clear_cache_edge(&self) { self.cache_edge.clear(); }
-    pub(super) fn clear_cache_lab_tip(&self) { self.cache_lab_tip.clear(); }
-    pub(super) fn clear_cache_lab_int(&self) { self.cache_lab_int.clear(); }
-    pub(super) fn clear_cache_lab_brnch(&self) { self.cache_lab_brnch.clear(); }
-    pub(super) fn clear_cache_sel_nodes(&self) { self.cache_sel_nodes.clear(); }
-    pub(super) fn clear_cache_filtered_nodes(&self) { self.cache_filtered_nodes.clear(); }
-    pub(super) fn clear_cache_clade_labels(&self) { self.cache_clade_labels.clear(); }
+    pub(super) fn cache_lab_tip(&self) -> &Cache {
+        &self.cache_lab_tip
+    }
+
+    pub(super) fn cache_lab_int(&self) -> &Cache {
+        &self.cache_lab_int
+    }
+
+    pub(super) fn cache_lab_brnch(&self) -> &Cache {
+        &self.cache_lab_brnch
+    }
+
+    pub(super) fn cache_sel_nodes(&self) -> &Cache {
+        &self.cache_sel_nodes
+    }
+
+    pub(super) fn cache_filtered_nodes(&self) -> &Cache {
+        &self.cache_filtered_nodes
+    }
+
+    pub(super) fn cache_clade_labels(&self) -> &Cache {
+        &self.cache_clade_labels
+    }
+
+    pub(super) fn clear_cache_edge(&self) {
+        self.cache_edge.clear();
+    }
+
+    pub(super) fn clear_cache_lab_tip(&self) {
+        self.cache_lab_tip.clear();
+    }
+
+    pub(super) fn clear_cache_lab_int(&self) {
+        self.cache_lab_int.clear();
+    }
+
+    pub(super) fn clear_cache_lab_brnch(&self) {
+        self.cache_lab_brnch.clear();
+    }
+
+    pub(super) fn clear_cache_sel_nodes(&self) {
+        self.cache_sel_nodes.clear();
+    }
+
+    pub(super) fn clear_cache_filtered_nodes(&self) {
+        self.cache_filtered_nodes.clear();
+    }
+
+    pub(super) fn clear_cache_clade_labels(&self) {
+        self.cache_clade_labels.clear();
+    }
 
     pub(super) fn clear_caches_all(&self) {
         self.clear_cache_edge();
@@ -471,8 +544,13 @@ impl TreeState {
     }
 
     // Setup ---------------------------------------------------------------------------------------
-    pub(super) fn new(id: usize) -> Self { Self { id, ..Default::default() } }
-    pub(super) fn id(&self) -> usize { self.id }
+    pub(super) fn new(id: usize) -> Self {
+        Self { id, ..Default::default() }
+    }
+
+    pub(super) fn id(&self) -> usize {
+        self.id
+    }
 
     pub(super) fn init(&mut self, tre: Tree) {
         self.t_orig = tre;

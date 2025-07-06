@@ -12,15 +12,21 @@ use std::collections::HashMap;
 use treeview::{SidebarPosition, TvContextMenuListing};
 
 impl From<muda::MenuItem> for AppMenuItemId {
-    fn from(value: muda::MenuItem) -> Self { value.id().0.clone().into() }
+    fn from(value: muda::MenuItem) -> Self {
+        value.id().0.clone().into()
+    }
 }
 
 impl From<muda::CheckMenuItem> for AppMenuItemId {
-    fn from(value: muda::CheckMenuItem) -> Self { value.id().0.clone().into() }
+    fn from(value: muda::CheckMenuItem) -> Self {
+        value.id().0.clone().into()
+    }
 }
 
 impl From<muda::Submenu> for AppMenuItemId {
-    fn from(value: muda::Submenu) -> Self { value.id().0.clone().into() }
+    fn from(value: muda::Submenu) -> Self {
+        value.id().0.clone().into()
+    }
 }
 
 #[derive(Default, Clone)]
@@ -34,11 +40,15 @@ impl ContextMenu {
         Self { muda_menu }
     }
 
-    pub fn with_muda_menu(muda_menu: muda::Menu) -> Self { Self { muda_menu } }
+    pub fn with_muda_menu(muda_menu: muda::Menu) -> Self {
+        Self { muda_menu }
+    }
 }
 
 impl From<ContextMenu> for muda::Menu {
-    fn from(context_menu: ContextMenu) -> Self { context_menu.muda_menu }
+    fn from(context_menu: ContextMenu) -> Self {
+        context_menu.muda_menu
+    }
 }
 
 impl From<TvContextMenuListing> for ContextMenu {
@@ -60,8 +70,13 @@ pub struct AppMenu {
 }
 
 impl AppMenu {
-    pub fn enable(&mut self, id: &AppMenuItemId) { self.set_enabled(id, true); }
-    pub fn disable(&mut self, id: &AppMenuItemId) { self.set_enabled(id, false); }
+    pub fn enable(&mut self, id: &AppMenuItemId) {
+        self.set_enabled(id, true);
+    }
+
+    pub fn disable(&mut self, id: &AppMenuItemId) {
+        self.set_enabled(id, false);
+    }
 
     fn set_enabled(&mut self, id: &AppMenuItemId, state: bool) {
         if let Some(mik) = self.items.get(id) {

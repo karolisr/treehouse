@@ -60,15 +60,25 @@ where
     ) {
     }
 
-    fn size(&self) -> Size<Length> { Size { width: self.width, height: self.height } }
+    fn size(&self) -> Size<Length> {
+        Size { width: self.width, height: self.height }
+    }
 
-    fn tag(&self) -> Tag { Tag::stateless() }
+    fn tag(&self) -> Tag {
+        Tag::stateless()
+    }
 
-    fn state(&self) -> State { State::None }
+    fn state(&self) -> State {
+        State::None
+    }
 
-    fn children(&self) -> Vec<Tree> { Vec::new() }
+    fn children(&self) -> Vec<Tree> {
+        Vec::new()
+    }
 
-    fn diff(&self, tree: &mut Tree) { tree.children.clear(); }
+    fn diff(&self, tree: &mut Tree) {
+        tree.children.clear();
+    }
 }
 
 impl<'a, Message, Theme, Renderer> From<TheWidget> for Element<'a, Message, Theme, Renderer>
@@ -76,5 +86,7 @@ where
     Message: 'a,
     Renderer: RendererTrait + 'a,
 {
-    fn from(w: TheWidget) -> Self { Element::new(w) }
+    fn from(w: TheWidget) -> Self {
+        Element::new(w)
+    }
 }

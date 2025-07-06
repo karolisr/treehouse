@@ -70,7 +70,9 @@ pub enum ParsedData {
 }
 
 impl App {
-    fn toggle_explain(&mut self) { self.explain = !self.explain; }
+    fn toggle_explain(&mut self) {
+        self.explain = !self.explain;
+    }
 
     pub fn boot() -> (Self, Task<AppMsg>) {
         #[cfg(target_os = "macos")]
@@ -494,8 +496,15 @@ impl App {
     pub fn title(&self, _: WindowId) -> String {
         if let Some(title) = &self.title { title.clone() } else { String::from("") }
     }
-    pub fn scale_factor(&self, _: WindowId) -> f64 { APP_SCALE_FACTOR }
-    pub fn theme(&self, _: WindowId) -> Theme { Theme::default() }
+
+    pub fn scale_factor(&self, _: WindowId) -> f64 {
+        APP_SCALE_FACTOR
+    }
+
+    pub fn theme(&self, _: WindowId) -> Theme {
+        Theme::default()
+    }
+
     pub fn settings() -> IcedAppSettings {
         IcedAppSettings {
             id: None,

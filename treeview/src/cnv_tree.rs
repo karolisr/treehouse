@@ -138,11 +138,25 @@ impl TreeCnv {
         }
     }
 
-    pub(super) fn clear_cache_bnds(&self) { self.cache_bnds.clear() }
-    pub(super) fn clear_cache_cache_palette(&self) { self.cache_palette.clear() }
-    pub(super) fn clear_cache_cursor_line(&self) { self.cache_cursor_line.clear() }
-    pub(super) fn clear_cache_hovered_node(&self) { self.cache_hovered_node.clear() }
-    pub(super) fn clear_cache_legend(&self) { self.cache_legend.clear() }
+    pub(super) fn clear_cache_bnds(&self) {
+        self.cache_bnds.clear()
+    }
+
+    pub(super) fn clear_cache_cache_palette(&self) {
+        self.cache_palette.clear()
+    }
+
+    pub(super) fn clear_cache_cursor_line(&self) {
+        self.cache_cursor_line.clear()
+    }
+
+    pub(super) fn clear_cache_hovered_node(&self) {
+        self.cache_hovered_node.clear()
+    }
+
+    pub(super) fn clear_cache_legend(&self) {
+        self.cache_legend.clear()
+    }
 
     pub(super) fn clear_caches_all(&self) {
         self.clear_cache_bnds();
