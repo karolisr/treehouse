@@ -129,7 +129,9 @@ impl TreeState {
     pub(super) fn add_found_to_sel(&mut self) {
         let max_capacity = self.sel_node_ids.len() + self.found_node_ids.len();
         let mut sel_node_ids: HashSet<NodeId> = HashSet::with_capacity(max_capacity);
-        self.sel_node_ids.union(&self.found_node_ids).collect_into(&mut sel_node_ids);
+        self.sel_node_ids.union(&self.found_node_ids).for_each(|id| {
+            sel_node_ids.insert(*id);
+        });
         self.sel_node_ids = sel_node_ids;
         self.sel_edge_idxs = self.sel_edge_idxs_prep();
         self.clear_cache_sel_nodes();
@@ -137,7 +139,9 @@ impl TreeState {
 
     pub(super) fn rem_found_from_sel(&mut self) {
         let mut sel_node_ids: HashSet<NodeId> = HashSet::with_capacity(self.sel_node_ids.len());
-        self.sel_node_ids.difference(&self.found_node_ids).collect_into(&mut sel_node_ids);
+        self.sel_node_ids.difference(&self.found_node_ids).for_each(|id| {
+            sel_node_ids.insert(*id);
+        });
         self.sel_node_ids = sel_node_ids;
         self.sel_edge_idxs = self.sel_edge_idxs_prep();
         self.clear_cache_sel_nodes();

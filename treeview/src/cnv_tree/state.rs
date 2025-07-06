@@ -121,7 +121,7 @@ impl St {
         {
             let node_idx_range = self.vis_node_idx_range_phygrm(&tip_idx_range, tip_edge_idxs);
             if node_idx_range.end() - node_idx_range.start() <= max_nodes {
-                node_idx_range.collect_into(&mut self.vis_node_idxs);
+                self.vis_node_idxs = node_idx_range.collect();
             }
         }
     }

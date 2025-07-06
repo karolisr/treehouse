@@ -1,9 +1,6 @@
 edition="2024"
 
-condense_wildcard_suffixes=true
 fn_params_layout="Compressed"
-fn_single_line=true
-group_imports="Preserve"
 remove_nested_parens=true
 reorder_imports=true
 reorder_modules=true

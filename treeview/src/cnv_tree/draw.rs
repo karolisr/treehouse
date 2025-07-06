@@ -424,7 +424,9 @@ pub(super) fn node_labs(
                 None
             }
         })
-        .collect_into(results);
+        .for_each(|label| {
+            results.push(label);
+        });
 }
 
 pub(super) fn draw_palette(

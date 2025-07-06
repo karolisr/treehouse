@@ -1,4 +1,3 @@
 [toolchain]
-    # Wait for 1.89 to be stable then change to stable:
-    # because it allows "&&" in "if let Some() blocks".
-    channel="nightly"
+    # >=1.88 allows "&&" in "if let Some() blocks"
+    channel="1.88"

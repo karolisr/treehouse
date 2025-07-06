@@ -1,4 +1,3 @@
-#![feature(iter_collect_into)]
 // -------------------------------------
 // #![allow(dead_code)]
 // #![allow(unused_mut)]

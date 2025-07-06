@@ -1,4 +1,3 @@
-#![feature(const_float_round_methods)]
 // -------------------------------------
 // #![allow(dead_code)]
 // #![allow(unused_mut)]
