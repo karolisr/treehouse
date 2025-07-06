@@ -6,15 +6,13 @@ mod win;
 
 use consts::*;
 use dendros::parse_newick;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
-use riced::RawWindowHandle;
-use riced::{
-    Clr, Element, Font, HasWindowHandle, IcedAppSettings, Key, Modifiers, Pixels, Subscription,
-    Task, Theme, WindowEvent, WindowId, close_window, exit, on_key_press, open_window,
-    run_with_handle, window_events,
-};
-
 use menu::{AppMenu, AppMenuItemId, ContextMenu};
+use riced::{
+    Clr, Element, Font, IcedAppSettings, Key, Modifiers, Pixels, Subscription, Task, Theme,
+    WindowEvent, WindowId, close_window, exit, on_key_press, open_window, window_events,
+};
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+use riced::{HasWindowHandle, RawWindowHandle, run_with_handle};
 use std::path::PathBuf;
 use treeview::{SidebarPosition, TreeView, TvContextMenuListing, TvMsg};
 use win::window_settings;
@@ -194,14 +192,16 @@ impl App {
                 task = Some(Task::done(miid.into()))
             }
             AppMsg::ShowContextMenu(tree_view_context_menu_listing) => {
+                #[cfg(any(target_os = "windows", target_os = "macos"))]
                 if let Some(winid) = self.winid {
                     let task_to_return = run_with_handle(winid, |h| {
                         if let Ok(handle) = h.window_handle() {
                             let context_menu: ContextMenu = tree_view_context_menu_listing.into();
-                            #[cfg(any(target_os = "windows", target_os = "macos"))]
+
                             let muda_menu: muda::Menu = context_menu.into();
+
+                            #[cfg(target_os = "macos")]
                             unsafe {
-                                #[cfg(target_os = "macos")]
                                 if let RawWindowHandle::AppKit(handle_raw) = handle.as_raw() {
                                     muda::ContextMenu::show_context_menu_for_nsview(
                                         &muda_menu,
@@ -209,7 +209,9 @@ impl App {
                                         None,
                                     );
                                 }
-                                #[cfg(target_os = "windows")]
+                            }
+                            #[cfg(target_os = "windows")]
+                            unsafe {
                                 if let RawWindowHandle::Win32(handle_raw) = handle.as_raw() {
                                     muda::ContextMenu::show_context_menu_for_hwnd(
                                         &muda_menu,
@@ -217,12 +219,14 @@ impl App {
                                         None,
                                     );
                                 }
-                            };
+                            }
                         }
                     })
                     .discard();
                     task = Some(task_to_return)
                 }
+                #[cfg(target_os = "linux")]
+                println!("AppMsg::ShowContextMenu({tree_view_context_menu_listing})");
             }
             AppMsg::TvMsg(tv_msg) => {
                 if let Some(treeview) = &mut self.treeview {
