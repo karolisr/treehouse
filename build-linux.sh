@@ -1,27 +1,38 @@
 #!/usr/bin/env bash
 
-# rustc --print=target-cpus
-# rustc --print cfg
-# rustc -Ctarget-cpu=generic --print cfg
-# rustc -Ctarget-cpu=native --print cfg
-# RUSTFLAGS="-Ctarget-cpu=generic"
-# RUSTFLAGS="-Ctarget-cpu=native"
-# export RUSTFLAGS
+# -------------------------------------------
+# Suppress printing of error messages
+# exec 2>/dev/null
 
-# cargo install --locked cargo-zigbuild
-# cargo install cargo-bundle
+# Stop on first error
+set -o errexit
+# Set trap on ERR to be inherited by shell functions
+set -o errtrace
 
-cargo fmt &&
-    # cargo check --profile dev &&
-    # cargo clippy --profile dev &&
-    # cargo build --profile dev &&
-    # -------------------------------------------
-    # cargo check --profile release &&
-    # cargo clippy --profile release &&
-    cargo build --profile release
+# Trap errors
+trap 'echo Error at line: $LINENO' ERR
+# -------------------------------------------
 
-# cargo-bundle bundle --profile release
+# -------------------------------------------
+cargo fmt
+# -------------------------------------------
+cargo check --profile dev
+cargo clippy --profile dev
+cargo build --profile dev --bin treehouse
+# -------------------------------------------
+cargo check --profile release
+cargo clippy --profile release
+cargo build --profile release --bin treehouse
+# -------------------------------------------
 
+# -------------------------------------------
+cargo install cargo-bundle 2>/dev/null
+cargo-bundle bundle --profile release --bin treehouse
+# -------------------------------------------
+
+# -------------------------------------------
+# cargo install --locked cargo-zigbuild 2>/dev/null
 # RUSTFLAGS="-L/usr/lib64"
 # export RUSTFLAGS
-# cargo zigbuild --profile release --target x86_64-unknown-linux-gnu.2.32
+# cargo zigbuild --profile release --bin treehouse --target x86_64-unknown-linux-gnu.2.32
+# -------------------------------------------

@@ -10,7 +10,7 @@
     version.workspace=true
 
     # cargo-bundle (https://github.com/burtonageo/cargo-bundle) ----------------
-    [package.metadata.bundle]
+    [package.metadata.bundle.bin.treehouse]
         category="public.app-category.utilities"
         copyright="Copyright \u00A9 Karolis Ramanauskas 2025\nAll rights reserved"
         deb_depends=[]
@@ -19,11 +19,11 @@
         # linux_exec_args=[]
         linux_mime_types=[]
         linux_use_terminal=false
-        long_description="""Long description."""
+        long_description="""View and edit gene trees and phylogenies."""
         name="TreeHouse"
         osx_frameworks=[]
         osx_url_schemes=["is.karol.treehouse"]
-        short_description="Short description."
+        short_description="View and edit gene trees and phylogenies."
         # --------------------------------------------------------------------------
 
 [dependencies]
