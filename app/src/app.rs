@@ -187,17 +187,27 @@ impl App {
             AppMsg::ShowContextMenu(tree_view_context_menu_listing) => {
                 if let Some(winid) = self.winid {
                     let task_to_return = run_with_handle(winid, |h| {
-                        if let Some(handle) = h.window_handle().ok()
-                            && let RawWindowHandle::AppKit(handle_raw) = handle.as_raw()
-                        {
+                        if let Ok(handle) = h.window_handle() {
                             let context_menu: ContextMenu = tree_view_context_menu_listing.into();
                             let muda_menu: muda::Menu = context_menu.into();
                             unsafe {
-                                muda::ContextMenu::show_context_menu_for_nsview(
-                                    &muda_menu,
-                                    handle_raw.ns_view.as_ptr(),
-                                    None,
-                                )
+                                #[cfg(target_os = "macos")]
+                                if let RawWindowHandle::AppKit(handle_raw) = handle.as_raw() {
+                                    muda::ContextMenu::show_context_menu_for_nsview(
+                                        &muda_menu,
+                                        handle_raw.ns_view.as_ptr(),
+                                        None,
+                                    );
+                                }
+
+                                #[cfg(target_os = "windows")]
+                                if let RawWindowHandle::Win32(handle_raw) = handle.as_raw() {
+                                    muda::ContextMenu::show_context_menu_for_hwnd(
+                                        &muda_menu,
+                                        handle_raw.hwnd.into(),
+                                        None,
+                                    );
+                                }
                             };
                         }
                     })
