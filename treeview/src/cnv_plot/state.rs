@@ -16,7 +16,10 @@ pub struct St {
 }
 
 impl St {
-    pub(super) fn cursor_tracking_point(&mut self, crsr: Cursor) -> Option<Action<TvMsg>> {
+    pub(super) fn cursor_tracking_point(
+        &mut self,
+        crsr: Cursor,
+    ) -> Option<Action<TvMsg>> {
         if let Some(mouse) = crsr.position_in(self.bnds) {
             let adj = mouse - self.translation;
             let crsr_x_rel = adj.x / self.plt_vs.w;
@@ -24,7 +27,9 @@ impl St {
                 && (ZRO - EPSILON..=self.plt_vs.h + EPSILON).contains(&adj.y)
             {
                 self.cursor_tracking_point = Some(adj);
-                Some(Action::publish(TvMsg::CursorOnLttCnv { x: Some(crsr_x_rel) }))
+                Some(Action::publish(TvMsg::CursorOnLttCnv {
+                    x: Some(crsr_x_rel),
+                }))
             } else {
                 self.cursor_tracking_point = None;
                 Some(Action::publish(TvMsg::CursorOnLttCnv { x: None }))

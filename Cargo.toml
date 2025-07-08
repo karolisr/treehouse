@@ -113,7 +113,32 @@
             ]
             version="1.46.1"
 
-    [workspace.lints.clippy]
-        single_match="allow"
-
     [workspace.lints.rust]
+        missing_debug_implementations="deny"
+        # missing_docs="warn"
+        # unsafe_code="deny"
+        unused_results="deny"
+
+    [workspace.lints.clippy]
+        collapsible_if="allow"
+        default_trait_access="allow"
+        filter_map_next="deny"
+        from_over_into="deny"
+        large-enum-variant="allow"
+        manual_let_else="deny"
+        map-entry="allow"
+        match-wildcard-for-single-variants="deny"
+        needless_borrow="deny"
+        new_without_default="deny"
+        redundant-closure-for-method-calls="deny"
+        result_large_err="allow"
+        semicolon_if_nothing_returned="deny"
+        single_match="allow"
+        trivially-copy-pass-by-ref="deny"
+        type-complexity="allow"
+        uninlined_format_args="allow"
+        unused_async="deny"
+        useless_conversion="deny"
+
+    [workspace.lints.rustdoc]
+        broken_intra_doc_links="forbid"

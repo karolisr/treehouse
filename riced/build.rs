@@ -25,8 +25,13 @@ fn main() {
                 }
 
                 let length = bytes.len();
-                let name = name.replace(prefix, "").replace(suffix, "").to_case(Case::Constant);
-                let line = format!("pub(crate) const {name}: [u8; {length}] = {bytes:?};\n");
+                let name = name
+                    .replace(prefix, "")
+                    .replace(suffix, "")
+                    .to_case(Case::Constant);
+                let line = format!(
+                    "pub(crate) const {name}: [u8; {length}] = {bytes:?};\n"
+                );
 
                 lines.push(line);
             }

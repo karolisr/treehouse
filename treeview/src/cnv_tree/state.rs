@@ -55,9 +55,18 @@ impl Default for St {
             root_len: ZRO,
             rotation: ZRO,
             translation: Vector { x: ZRO, y: ZRO },
-            text_w_tip: Some(text_width(SF * TIP_LAB_SIZE_IDX as Float, FNT_NAME_LAB)),
-            text_w_int: Some(text_width(SF * INTERNAL_LAB_SIZE_IDX as Float, FNT_NAME_LAB)),
-            text_w_brnch: Some(text_width(SF * BRANCH_LAB_SIZE_IDX as Float, FNT_NAME_LAB)),
+            text_w_tip: Some(text_width(
+                SF * TIP_LAB_SIZE_IDX as Float,
+                FNT_NAME_LAB,
+            )),
+            text_w_int: Some(text_width(
+                SF * INTERNAL_LAB_SIZE_IDX as Float,
+                FNT_NAME_LAB,
+            )),
+            text_w_brnch: Some(text_width(
+                SF * BRANCH_LAB_SIZE_IDX as Float,
+                FNT_NAME_LAB,
+            )),
             labs_tip: Vec::new(),
             labs_int: Vec::new(),
             labs_brnch: Vec::new(),
@@ -70,13 +79,19 @@ impl St {
     pub(super) fn mouse_point(&mut self, crsr: Cursor) -> Option<Point<Float>> {
         crsr.position_in(self.bnds).map(|mouse| {
             if self.rotation != ZRO {
-                let mouse_dist_from_center =
-                    mouse.distance(Point { x: self.tre_vs.cntr.x, y: self.tre_vs.cntr.y });
+                let mouse_dist_from_center = mouse.distance(Point {
+                    x: self.tre_vs.cntr.x,
+                    y: self.tre_vs.cntr.y,
+                });
                 let mouse_x_untrans = mouse.x - self.translation.x;
                 let mouse_y_untrans = mouse.y - self.translation.y;
-                let angle = mouse_y_untrans.atan2(mouse_x_untrans) - self.rotation;
+                let angle =
+                    mouse_y_untrans.atan2(mouse_x_untrans) - self.rotation;
                 let (sin, cos) = angle.sin_cos();
-                Point { x: cos * mouse_dist_from_center, y: sin * mouse_dist_from_center }
+                Point {
+                    x: cos * mouse_dist_from_center,
+                    y: sin * mouse_dist_from_center,
+                }
             } else {
                 mouse - self.translation
             }
@@ -88,10 +103,15 @@ impl St {
         let closest_node = self
             .vis_nodes
             .iter()
-            .min_by(|&a, &b| mouse.distance(a.points.p1).total_cmp(&mouse.distance(b.points.p1)))
+            .min_by(|&a, &b| {
+                mouse
+                    .distance(a.points.p1)
+                    .total_cmp(&mouse.distance(b.points.p1))
+            })
             .cloned();
         if let Some(closest_node) = closest_node
-            && mouse.distance(closest_node.points.p1) <= self.node_radius + SF * 5e0
+            && mouse.distance(closest_node.points.p1)
+                <= self.node_radius + SF * 5e0
         {
             Some(closest_node)
         } else {
@@ -102,14 +122,21 @@ impl St {
     pub(super) fn cursor_tracking_point(&mut self) -> Option<Point> {
         let mouse = &self.mouse?;
         if let Some(hovered_node) = &self.hovered_node {
-            Some(Point { x: hovered_node.points.p1.x, y: hovered_node.points.p1.y })
+            Some(Point {
+                x: hovered_node.points.p1.x,
+                y: hovered_node.points.p1.y,
+            })
         } else {
             Some(Point { x: mouse.x, y: mouse.y })
         }
     }
 
     pub(super) fn update_vis_node_idxs_phygrm(
-        &mut self, max_tips: usize, max_nodes: usize, node_size: Float, tip_edge_idxs: &[usize],
+        &mut self,
+        max_tips: usize,
+        max_nodes: usize,
+        node_size: Float,
+        tip_edge_idxs: &[usize],
     ) {
         self.vis_node_idxs.clear();
         if let Some(tip_idx_range) = self.vis_tip_idx_range_phygrm(
@@ -119,7 +146,8 @@ impl St {
             tip_edge_idxs,
         ) && tip_idx_range.end() - tip_idx_range.start() <= max_tips
         {
-            let node_idx_range = self.vis_node_idx_range_phygrm(&tip_idx_range, tip_edge_idxs);
+            let node_idx_range =
+                self.vis_node_idx_range_phygrm(&tip_idx_range, tip_edge_idxs);
             if node_idx_range.end() - node_idx_range.start() <= max_nodes {
                 self.vis_node_idxs = node_idx_range.collect();
             }
@@ -127,30 +155,43 @@ impl St {
     }
 
     fn vis_tip_idx_range_phygrm(
-        &self, y0: Float, y1: Float, node_size: Float, tip_edge_idxs: &[usize],
+        &self,
+        y0: Float,
+        y1: Float,
+        node_size: Float,
+        tip_edge_idxs: &[usize],
     ) -> Option<IndexRange> {
         tip_idx_range_between_y_vals(y0, y1, node_size, tip_edge_idxs)
     }
 
     fn vis_node_idx_range_phygrm(
-        &self, tip_idx_range: &IndexRange, tip_edge_idxs: &[usize],
+        &self,
+        tip_idx_range: &IndexRange,
+        tip_edge_idxs: &[usize],
     ) -> IndexRange {
         node_idx_range_for_tip_idx_range(tip_idx_range, tip_edge_idxs)
     }
 
     pub(super) fn update_vis_node_idxs_fan(
-        &mut self, max_tips: usize, max_nodes: usize, opn: Float, edges: &[Edge],
+        &mut self,
+        max_tips: usize,
+        max_nodes: usize,
+        opn: Float,
+        edges: &[Edge],
     ) {
         let mut tip_count: usize = 0;
         self.vis_node_idxs.clear();
         for e in edges {
             let angle = edge_angle(opn, e) + self.rotation;
-            let point = node_point_pol(angle, self.tre_vs.radius_min, self.root_len, e);
+            let point =
+                node_point_pol(angle, self.tre_vs.radius_min, self.root_len, e);
             if self.vis_rect.contains(point + self.translation) {
                 self.vis_node_idxs.push(e.edge_idx);
                 if e.is_tip {
                     tip_count += 1;
-                    if tip_count > max_tips || self.vis_node_idxs.len() > max_nodes {
+                    if tip_count > max_tips
+                        || self.vis_node_idxs.len() > max_nodes
+                    {
                         self.vis_node_idxs.clear();
                         break;
                     }

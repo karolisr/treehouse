@@ -2,13 +2,22 @@ use super::{AxisScaleType, PlotData, St, Tick};
 use crate::cnv_utils::*;
 use crate::*;
 
-pub(super) fn draw_plot(plt: &PlotCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>) {
+pub(super) fn draw_plot(
+    plt: &PlotCnv,
+    st: &St,
+    rndr: &Renderer,
+    sz: Size,
+    g: &mut Vec<Geometry>,
+) {
     g.push(plt.cache_plot.draw(rndr, sz, |f| {
-        let pb_plot =
-            path_builder_plot(&plt.plot_data, &plt.scale_x, &plt.scale_y, st.plt_vs.w, st.plt_vs.h);
+        let pb_plot = path_builder_plot(
+            &plt.plot_data, &plt.scale_x, &plt.scale_y, st.plt_vs.w,
+            st.plt_vs.h,
+        );
 
         let (pb_axes, labs_x, labs_y) = path_builder_axes(
-            &plt.plot_data, &plt.scale_x, &plt.scale_y, st.plt_vs.w, st.plt_vs.h, st.text_size,
+            &plt.plot_data, &plt.scale_x, &plt.scale_y, st.plt_vs.w,
+            st.plt_vs.h, st.text_size,
         );
 
         f.push_transform();
@@ -19,21 +28,37 @@ pub(super) fn draw_plot(plt: &PlotCnv, st: &St, rndr: &Renderer, sz: Size, g: &m
 
         let lab_offset = SF * 5e0;
 
-        draw_labels(&labs_x, Vector { x: ZRO, y: lab_offset }, Some(st.translation), ZRO, f);
-        draw_labels(&labs_y, Vector { x: lab_offset, y: ZRO }, Some(st.translation), ZRO, f);
+        draw_labels(
+            &labs_x,
+            Vector { x: ZRO, y: lab_offset },
+            Some(st.translation),
+            ZRO,
+            f,
+        );
+        draw_labels(
+            &labs_y,
+            Vector { x: lab_offset, y: ZRO },
+            Some(st.translation),
+            ZRO,
+            f,
+        );
     }));
 }
 
 fn path_builder_plot(
-    data: &PlotData, scale_x: &AxisScaleType, scale_y: &AxisScaleType, w: Float, h: Float,
+    data: &PlotData,
+    scale_x: &AxisScaleType,
+    scale_y: &AxisScaleType,
+    w: Float,
+    h: Float,
 ) -> PathBuilder {
     let mut first = true;
     let mut pb: PathBuilder = PathBuilder::new();
     for plot_point in &data.plot_points {
-        let x_relative =
-            transform_value(plot_point.x, scale_x) / transform_value(data.x_max, scale_x);
-        let y_relative =
-            transform_value(plot_point.y, scale_y) / transform_value(data.y_max, scale_y);
+        let x_relative = transform_value(plot_point.x, scale_x)
+            / transform_value(data.x_max, scale_x);
+        let y_relative = transform_value(plot_point.y, scale_y)
+            / transform_value(data.y_max, scale_y);
 
         let pt = Point { x: x_relative * w, y: (ONE - y_relative) * h };
         if first {
@@ -47,19 +72,22 @@ fn path_builder_plot(
 }
 
 fn calc_ticks(
-    tick_count: usize, scale: &AxisScaleType, data_type: &PlotDataType, max: Float,
+    tick_count: usize,
+    scale: &AxisScaleType,
+    data_type: &PlotDataType,
+    max: Float,
 ) -> Vec<Tick> {
     let mut ticks: Vec<Tick> = Vec::new();
     let max_transformed = transform_value(max, scale);
     let mut tt1: Float = max_transformed * ONE / (tick_count) as Float;
     if *scale != AxisScaleType::Linear {
-        tt1 = tt1.floor().max(ONE)
+        tt1 = tt1.floor().max(ONE);
     } else if tt1 > TEN {
-        tt1 = (tt1 / TEN).floor() * TEN
+        tt1 = (tt1 / TEN).floor() * TEN;
     } else if tt1 > TWO {
-        tt1 = tt1.floor()
+        tt1 = tt1.floor();
     } else {
-        tt1 = (tt1 * 2e1).floor() / 2e1
+        tt1 = (tt1 * 2e1).floor() / 2e1;
     }
 
     for i in 0..=tick_count - 1 {
@@ -72,7 +100,8 @@ fn calc_ticks(
         };
 
         ticks.push(Tick {
-            relative_position: transform_value(tick, scale) / transform_value(max, scale),
+            relative_position: transform_value(tick, scale)
+                / transform_value(max, scale),
             label: match data_type {
                 PlotDataType::Continuous => format!("{tick:.2}"),
                 PlotDataType::Discrete => format!("{tick:.2}",),
@@ -84,7 +113,11 @@ fn calc_ticks(
 }
 
 fn path_builder_axes(
-    data: &PlotData, scale_x: &AxisScaleType, scale_y: &AxisScaleType, w: Float, h: Float,
+    data: &PlotData,
+    scale_x: &AxisScaleType,
+    scale_y: &AxisScaleType,
+    w: Float,
+    h: Float,
     lab_size: Float,
 ) -> (PathBuilder, Vec<Label>, Vec<Label>) {
     let ticks_x = calc_ticks(6, scale_x, &data.x_data_type, data.x_max);
@@ -110,7 +143,12 @@ fn path_builder_axes(
         pb = pb.move_to(pt0);
         pb = pb.line_to(pt1);
 
-        let text = lab_text(label.to_string(), pt1, lab_size, TEMPLATE_TXT_LAB_PLOT_AXIS_X);
+        let text = lab_text(
+            label.to_string(),
+            pt1,
+            lab_size,
+            TEMPLATE_TXT_LAB_PLOT_AXIS_X,
+        );
         let label = Label { text, width: ZRO, angle: None };
         labs_x.push(label);
     } // -------------------------------------------------------------------------------------------
@@ -127,7 +165,12 @@ fn path_builder_axes(
         pb = pb.move_to(pt0);
         pb = pb.line_to(pt1);
 
-        let text = lab_text(label.to_string(), pt1, lab_size, TEMPLATE_TXT_LAB_PLOT_AXIS_Y);
+        let text = lab_text(
+            label.to_string(),
+            pt1,
+            lab_size,
+            TEMPLATE_TXT_LAB_PLOT_AXIS_Y,
+        );
         let label = Label { text, width: ZRO, angle: None };
         labs_y.push(label);
     } // -------------------------------------------------------------------------------------------
@@ -136,7 +179,11 @@ fn path_builder_axes(
 }
 
 pub(super) fn draw_bounds(
-    plt: &PlotCnv, st: &St, rndr: &Renderer, bnds: Rectangle, g: &mut Vec<Geometry>,
+    plt: &PlotCnv,
+    st: &St,
+    rndr: &Renderer,
+    bnds: Rectangle,
+    g: &mut Vec<Geometry>,
 ) {
     g.push(plt.cache_bnds.draw(rndr, bnds.size(), |f| {
         stroke_rect(st.plt_rect, STRK_3_GRN_50, f);
@@ -144,7 +191,11 @@ pub(super) fn draw_bounds(
 }
 
 pub(super) fn draw_cursor_line(
-    plt: &PlotCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    plt: &PlotCnv,
+    st: &St,
+    rndr: &Renderer,
+    sz: Size,
+    g: &mut Vec<Geometry>,
 ) {
     g.push(plt.cache_cursor_line.draw(rndr, sz, |f| {
         if let Some(p) = st.cursor_tracking_point
@@ -154,7 +205,10 @@ pub(super) fn draw_cursor_line(
             f.translate(st.translation);
             let p0 = Point { x: p.x, y: ZRO };
             let p1 = Point { x: p.x, y: st.plt_vs.h };
-            f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), STRK_CRSR_LINE);
+            f.stroke(
+                &PathBuilder::new().move_to(p0).line_to(p1).build(),
+                STRK_CRSR_LINE,
+            );
             f.pop_transform();
 
             let mut txt_template = TEMPLATE_TXT_CURSOR_TEXT;
@@ -170,7 +224,13 @@ pub(super) fn draw_cursor_line(
             let name = format!("{tree_height_at_x:.3}");
             let text = lab_text(name, p, st.text_size, txt_template);
             let label = Label { text, width: ZRO, angle: None };
-            draw_labels(&[label], Vector { x: PADDING, y: y_offset }, Some(st.translation), ZRO, f);
+            draw_labels(
+                &[label],
+                Vector { x: PADDING, y: y_offset },
+                Some(st.translation),
+                ZRO,
+                f,
+            );
         }
     }));
 }

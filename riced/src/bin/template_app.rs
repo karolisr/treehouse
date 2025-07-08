@@ -1,7 +1,7 @@
 use riced::{
-    Alignment, BTN_H1, Clr, Element, Horizontal, IcedResult, Key, Length, Modifiers, SF, Size,
-    Subscription, Theme, Vertical, WindowSettings, btn_txt, center, iced_col, iced_row,
-    on_key_press, txt_i64, txt_input,
+    Alignment, BTN_H1, Clr, Element, Horizontal, IcedResult, Key, Length,
+    Modifiers, SF, Size, Subscription, Theme, Vertical, WindowSettings,
+    btn_txt, center, iced_col, iced_row, on_key_press, txt_i64, txt_input,
 };
 
 const PADDING: f32 = 3e1 * SF;
@@ -37,7 +37,9 @@ impl App {
             Msg::SetTitle(title) => self.title = title,
             Msg::Decrement => self.counter -= 1,
             Msg::Increment => self.counter += 1,
-            Msg::OnKeyPress(key, modifiers) => handle_keyboard_press_events(self, key, modifiers),
+            Msg::OnKeyPress(key, modifiers) => {
+                handle_keyboard_press_events(self, key, modifiers);
+            }
         }
     }
 
@@ -69,7 +71,7 @@ fn handle_keyboard_press_events(app: &mut App, key: Key, modifiers: Modifiers) {
         let c = char.as_str();
         if modifiers.contains(Modifiers::CTRL | Modifiers::SHIFT) {
             if c == "e" {
-                app.explain = !app.explain
+                app.explain = !app.explain;
             }
         } else {
             match c {
@@ -84,9 +86,14 @@ fn handle_keyboard_press_events(app: &mut App, key: Key, modifiers: Modifiers) {
 fn view(app: &App) -> Element<'_, Msg> {
     center(
         iced_col![
-            txt_input("Window Title", &app.title, "txt_input_title", Msg::SetTitle)
-                .width(Length::Fixed(MIN_WIN_DIM - PADDING * 2e0))
-                .align_x(Horizontal::Center),
+            txt_input(
+                "Window Title",
+                &app.title,
+                "txt_input_title",
+                Msg::SetTitle
+            )
+            .width(Length::Fixed(MIN_WIN_DIM - PADDING * 2e0))
+            .align_x(Horizontal::Center),
             iced_row![
                 btn_txt("-", Some(Msg::Decrement)),
                 txt_i64(app.counter)

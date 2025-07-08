@@ -4,16 +4,22 @@ use crate::edge_utils::*;
 use crate::*;
 
 fn prepare_nodes(
-    vs: &RectVals<Float>, root_len: Float, tre_sty: TreSty, opn_angle: Float, edges: &[Edge],
-    node_idxs: &[usize], results: &mut Vec<NodeData>,
+    vs: &RectVals<Float>,
+    root_len: Float,
+    tre_sty: TreSty,
+    opn_angle: Float,
+    edges: &[Edge],
+    node_idxs: &[usize],
+    results: &mut Vec<NodeData>,
 ) {
     node_idxs
         .par_iter()
         .map(|&idx| match tre_sty {
             TreSty::PhyGrm => node_data_cart(vs.w, vs.h, &edges[idx]).into(),
-            TreSty::Fan => {
-                node_data_rad(opn_angle, ZRO, vs.radius_min, root_len, &edges[idx]).into()
-            }
+            TreSty::Fan => node_data_rad(
+                opn_angle, ZRO, vs.radius_min, root_len, &edges[idx],
+            )
+            .into(),
         })
         .collect_into_vec(results);
 }
@@ -21,7 +27,11 @@ fn prepare_nodes(
 impl Program<TvMsg> for TreeCnv {
     type State = St;
     fn update(
-        &self, st: &mut St, ev: &Event, bnds: Rectangle, crsr: Cursor,
+        &self,
+        st: &mut St,
+        ev: &Event,
+        bnds: Rectangle,
+        crsr: Cursor,
     ) -> Option<Action<TvMsg>> {
         // -----------------------------------------------------------------------------------------
         let mut action: Option<Action<TvMsg>> = None;
@@ -59,7 +69,11 @@ impl Program<TvMsg> for TreeCnv {
             st.vis_rect = st.vis_vs.clone().into();
             st.stale_vis_rect = true;
         } // ---------------------------------------------------------------------------------------
-        if bnds != st.bnds || st.stale_vis_rect || st.is_new || self.stale_tre_rect {
+        if bnds != st.bnds
+            || st.stale_vis_rect
+            || st.is_new
+            || self.stale_tre_rect
+        {
             st.cnv_vs = RectVals::cnv(bnds);
             st.cnv_rect = st.cnv_vs.clone().into();
             (st.tre_vs, st.root_len) = self.calc_tre_vs(
@@ -81,7 +95,8 @@ impl Program<TvMsg> for TreeCnv {
         match tre_sty {
             TreSty::PhyGrm => {
                 st.rotation = ZRO;
-                st.translation = Vector { x: st.tre_vs.trans.x, y: st.tre_vs.trans.y };
+                st.translation =
+                    Vector { x: st.tre_vs.trans.x, y: st.tre_vs.trans.y };
             }
             TreSty::Fan => {
                 st.rotation = self.rot_angle;
@@ -94,19 +109,21 @@ impl Program<TvMsg> for TreeCnv {
                 TreSty::PhyGrm => {
                     let node_size = st.tre_vs.h / tst.tip_count() as Float;
                     st.update_vis_node_idxs_phygrm(
-                        self.tip_labs_vis_max, self.node_labs_vis_max, node_size, tip_edge_idxs,
+                        self.tip_labs_vis_max, self.node_labs_vis_max,
+                        node_size, tip_edge_idxs,
                     );
                 }
                 TreSty::Fan => {
                     st.update_vis_node_idxs_fan(
-                        self.tip_labs_vis_max, self.node_labs_vis_max, opn_angle, edges,
+                        self.tip_labs_vis_max, self.node_labs_vis_max,
+                        opn_angle, edges,
                     );
                 }
             }
         } // ---------------------------------------------------------------------------------------
         prepare_nodes(
-            &st.tre_vs, st.root_len, tre_sty, opn_angle, edges, &st.vis_node_idxs,
-            &mut st.vis_nodes,
+            &st.tre_vs, st.root_len, tre_sty, opn_angle, edges,
+            &st.vis_node_idxs, &mut st.vis_nodes,
         );
         // -----------------------------------------------------------------------------------------
         prepare_nodes(
@@ -196,13 +213,19 @@ impl Program<TvMsg> for TreeCnv {
                                 }
                             };
 
-                            if (ZRO - EPSILON..=ONE + EPSILON).contains(&crsr_x_rel) {
-                                action = Some(Action::publish(TvMsg::CursorOnTreCnv {
-                                    x: Some(crsr_x_rel),
-                                }))
+                            if (ZRO - EPSILON..=ONE + EPSILON)
+                                .contains(&crsr_x_rel)
+                            {
+                                action = Some(Action::publish(
+                                    TvMsg::CursorOnTreCnv {
+                                        x: Some(crsr_x_rel),
+                                    },
+                                ));
                             } else {
                                 st.cursor_tracking_point = None;
-                                action = Some(Action::publish(TvMsg::CursorOnTreCnv { x: None }))
+                                action = Some(Action::publish(
+                                    TvMsg::CursorOnTreCnv { x: None },
+                                ));
                             }
                         }
                     }
@@ -228,23 +251,29 @@ impl Program<TvMsg> for TreeCnv {
                                 //     ));
                                 // }
                                 // -----------------------------------------------------------------
-                                action = Some(Action::publish(TvMsg::SelectDeselectNode(node_id)));
+                                action = Some(Action::publish(
+                                    TvMsg::SelectDeselectNode(node_id),
+                                ));
                                 // -----------------------------------------------------------------
                             }
                         }
                         MouseButton::Right => {
                             if let Some(hovered_node) = &st.hovered_node {
-                                action = Some(Action::publish(TvMsg::ContextMenuInteractionBegin(
-                                    TvContextMenuListing::for_node(
-                                        &edges[hovered_node.edge_idx].node_id, tst,
+                                action = Some(Action::publish(
+                                    TvMsg::ContextMenuInteractionBegin(
+                                        TvContextMenuListing::for_node(
+                                            edges[hovered_node.edge_idx]
+                                                .node_id,
+                                            tst,
+                                        ),
                                     ),
-                                )));
+                                ));
                             }
                         }
                         _ => {}
                     },
                     MouseEvent::ButtonReleased(_btn) => {}
-                    _ => {}
+                    MouseEvent::WheelScrolled { .. } => {}
                 }
             }
             Event::Keyboard(KeyboardEvent::ModifiersChanged(modifiers)) => {
@@ -260,13 +289,15 @@ impl Program<TvMsg> for TreeCnv {
         if let Some(crsr_x_rel) = self.crsr_x_rel {
             match tre_sty {
                 TreSty::PhyGrm => {
-                    st.cursor_tracking_point = Some(Point { x: crsr_x_rel * st.tre_vs.w, y: ZRO })
+                    st.cursor_tracking_point =
+                        Some(Point { x: crsr_x_rel * st.tre_vs.w, y: ZRO });
                 }
                 TreSty::Fan => {
                     st.cursor_tracking_point = Some(Point {
-                        x: st.root_len + crsr_x_rel * (st.tre_vs.radius_min - st.root_len),
+                        x: st.root_len
+                            + crsr_x_rel * (st.tre_vs.radius_min - st.root_len),
                         y: ZRO,
-                    })
+                    });
                 }
             }
         }
@@ -276,17 +307,31 @@ impl Program<TvMsg> for TreeCnv {
         }
         // -----------------------------------------------------------------------------------------
         if st.is_new {
-            st.is_new = false
+            st.is_new = false;
         }
         action
     }
 
-    fn mouse_interaction(&self, st: &St, _bnds: Rectangle, _crsr: Cursor) -> Interaction {
-        if st.hovered_node.is_some() { Interaction::Pointer } else { Interaction::default() }
+    fn mouse_interaction(
+        &self,
+        st: &St,
+        _bnds: Rectangle,
+        _crsr: Cursor,
+    ) -> Interaction {
+        if st.hovered_node.is_some() {
+            Interaction::Pointer
+        } else {
+            Interaction::default()
+        }
     }
 
     fn draw(
-        &self, st: &St, rndr: &Renderer, thm: &Theme, bnds: Rectangle, _crsr: Cursor,
+        &self,
+        st: &St,
+        rndr: &Renderer,
+        thm: &Theme,
+        bnds: Rectangle,
+        _crsr: Cursor,
     ) -> Vec<Geometry> {
         let tree_state_opt = self.tree_state.as_deref();
         let mut geoms: Vec<Geometry> = Vec::new();

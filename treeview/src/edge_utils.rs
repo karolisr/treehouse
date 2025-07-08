@@ -52,14 +52,22 @@ pub fn edge_path_vert_cart(nd: &NodeDataCart, pb: PathBuilder) -> PathBuilder {
 
 pub fn edge_path_arc_pol(nd: &NodeDataPol, pb: PathBuilder) -> PathBuilder {
     if let Some(angle_parent) = nd.angle_parent {
-        pb.move_to(nd.points.p0).arc(nd.angle, angle_parent, ORIGIN, ORIGIN.distance(nd.points.p0))
+        pb.move_to(nd.points.p0).arc(
+            nd.angle,
+            angle_parent,
+            ORIGIN,
+            ORIGIN.distance(nd.points.p0),
+        )
     } else {
         pb
     }
 }
 
 pub fn tip_idx_range_between_y_vals(
-    y0: Float, y1: Float, node_size: Float, tips: &[usize],
+    y0: Float,
+    y1: Float,
+    node_size: Float,
+    tips: &[usize],
 ) -> Option<IndexRange> {
     if node_size <= ZRO {
         return None;
@@ -78,10 +86,17 @@ pub fn tip_idx_range_between_y_vals(
             tip_idx_1 += 1;
         }
     }
-    if tip_idx_0 < tip_idx_1 { Some(IndexRange::new(tip_idx_0, tip_idx_1)) } else { None }
+    if tip_idx_0 < tip_idx_1 {
+        Some(IndexRange::new(tip_idx_0, tip_idx_1))
+    } else {
+        None
+    }
 }
 
-pub fn node_idx_range_for_tip_idx_range(tip_idx_range: &IndexRange, tips: &[usize]) -> IndexRange {
+pub fn node_idx_range_for_tip_idx_range(
+    tip_idx_range: &IndexRange,
+    tips: &[usize],
+) -> IndexRange {
     let idx_node_0 = tips[*tip_idx_range.start()];
     let idx_node_1 = tips[*tip_idx_range.end()];
     IndexRange::new(idx_node_0, idx_node_1)
@@ -116,7 +131,12 @@ pub fn edge_angle(opn_angle: Float, edge: &Edge) -> Float {
     opn_angle * edge.y as Float
 }
 
-pub fn point_pol(angle: Float, radius: Float, offset: Float, edge_x: Float) -> Point {
+pub fn point_pol(
+    angle: Float,
+    radius: Float,
+    offset: Float,
+    edge_x: Float,
+) -> Point {
     let (sin, cos) = angle.sin_cos();
     let size = radius - offset;
     let x = offset * cos + edge_x * cos * size;
@@ -124,19 +144,39 @@ pub fn point_pol(angle: Float, radius: Float, offset: Float, edge_x: Float) -> P
     Point { x, y }
 }
 
-pub fn edge_point_pol(angle: Float, radius: Float, offset: Float, edge: &Edge) -> Point {
+pub fn edge_point_pol(
+    angle: Float,
+    radius: Float,
+    offset: Float,
+    edge: &Edge,
+) -> Point {
     point_pol(angle, radius, offset, edge.x0 as Float)
 }
 
-pub fn edge_midpoint_pol(angle: Float, radius: Float, offset: Float, edge: &Edge) -> Point {
+pub fn edge_midpoint_pol(
+    angle: Float,
+    radius: Float,
+    offset: Float,
+    edge: &Edge,
+) -> Point {
     point_pol(angle, radius, offset, edge.x_mid as Float)
 }
 
-pub fn node_point_pol(angle: Float, radius: Float, offset: Float, edge: &Edge) -> Point {
+pub fn node_point_pol(
+    angle: Float,
+    radius: Float,
+    offset: Float,
+    edge: &Edge,
+) -> Point {
     point_pol(angle, radius, offset, edge.x1 as Float)
 }
 
-pub fn edge_points_pol(angle: Float, radius: Float, offset: Float, edge: &Edge) -> EdgePoints {
+pub fn edge_points_pol(
+    angle: Float,
+    radius: Float,
+    offset: Float,
+    edge: &Edge,
+) -> EdgePoints {
     let p0 = edge_point_pol(angle, radius, offset, edge);
     let p_mid = edge_midpoint_pol(angle, radius, offset, edge);
     let p1 = node_point_pol(angle, radius, offset, edge);
@@ -153,7 +193,11 @@ pub fn node_data_cart(w: Float, h: Float, edge: &Edge) -> NodeDataCart {
 }
 
 pub fn node_data_rad(
-    opn_angle: Float, rot_angle: Float, radius: Float, offset: Float, edge: &Edge,
+    opn_angle: Float,
+    rot_angle: Float,
+    radius: Float,
+    offset: Float,
+    edge: &Edge,
 ) -> NodeDataPol {
     let angle = edge_angle(opn_angle, edge) + rot_angle;
     let mut angle_parent: Option<Float> = None;

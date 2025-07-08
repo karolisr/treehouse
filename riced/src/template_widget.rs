@@ -14,6 +14,7 @@ use iced::{
     event::Event,
 };
 
+#[derive(Debug)]
 pub struct TheWidget {
     width: Length,
     height: Length,
@@ -24,38 +25,66 @@ where
     Renderer: RendererTrait,
 {
     fn update(
-        &mut self, _tree: &mut Tree, _event: &Event, _layout: Layout<'_>, _cursor: Cursor,
-        _renderer: &Renderer, _clipboard: &mut dyn Clipboard, _shell: &mut Shell<'_, Message>,
+        &mut self,
+        _tree: &mut Tree,
+        _event: &Event,
+        _layout: Layout<'_>,
+        _cursor: Cursor,
+        _renderer: &Renderer,
+        _clipboard: &mut dyn Clipboard,
+        _shell: &mut Shell<'_, Message>,
         _viewport: &Rectangle,
     ) {
     }
 
-    fn layout(&self, _tree: &mut Tree, _renderer: &Renderer, limits: &Limits) -> Node {
+    fn layout(
+        &self,
+        _tree: &mut Tree,
+        _renderer: &Renderer,
+        limits: &Limits,
+    ) -> Node {
         Node::new(limits.min())
     }
 
     fn draw(
-        &self, _tree: &Tree, _renderer: &mut Renderer, _theme: &Theme, _style: &Style,
-        _layout: Layout<'_>, _cursor: Cursor, _viewport: &Rectangle,
+        &self,
+        _tree: &Tree,
+        _renderer: &mut Renderer,
+        _theme: &Theme,
+        _style: &Style,
+        _layout: Layout<'_>,
+        _cursor: Cursor,
+        _viewport: &Rectangle,
     ) {
     }
 
     fn overlay<'a>(
-        &'a mut self, _tree: &'a mut Tree, _layout: Layout<'a>, _renderer: &Renderer,
-        _viewport: &Rectangle, _translation: Vector,
+        &'a mut self,
+        _tree: &'a mut Tree,
+        _layout: Layout<'a>,
+        _renderer: &Renderer,
+        _viewport: &Rectangle,
+        _translation: Vector,
     ) -> Option<overlay::Element<'a, Message, Theme, Renderer>> {
         None
     }
 
     fn mouse_interaction(
-        &self, _tree: &Tree, _layout: Layout<'_>, _cursor: Cursor, _viewport: &Rectangle,
+        &self,
+        _tree: &Tree,
+        _layout: Layout<'_>,
+        _cursor: Cursor,
+        _viewport: &Rectangle,
         _renderer: &Renderer,
     ) -> MouseInteraction {
         MouseInteraction::None
     }
 
     fn operate(
-        &self, _tree: &mut Tree, _layout: Layout<'_>, _renderer: &Renderer,
+        &self,
+        _tree: &mut Tree,
+        _layout: Layout<'_>,
+        _renderer: &Renderer,
         _operation: &mut dyn Operation,
     ) {
     }
@@ -81,7 +110,8 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<TheWidget> for Element<'a, Message, Theme, Renderer>
+impl<'a, Message, Theme, Renderer> From<TheWidget>
+    for Element<'a, Message, Theme, Renderer>
 where
     Message: 'a,
     Renderer: RendererTrait + 'a,

@@ -1,6 +1,7 @@
 use crate::consts::icons::*;
 use crate::*;
 
+#[derive(Debug)]
 pub enum Icon {
     ArrowLeft,
     ArrowRight,

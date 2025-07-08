@@ -4,22 +4,35 @@ use crate::edge_utils::*;
 use crate::*;
 
 pub(super) fn draw_bounds(
-    tc: &TreeCnv, st: &St, rndr: &Renderer, bnds: Rectangle, g: &mut Vec<Geometry>,
+    tc: &TreeCnv,
+    st: &St,
+    rndr: &Renderer,
+    bnds: Rectangle,
+    g: &mut Vec<Geometry>,
 ) {
     g.push(tc.cache_bnds.draw(rndr, bnds.size(), |f| {
         stroke_rect(st.cnv_rect, STRK_5_BLU_50, f);
         stroke_rect(st.tre_rect, STRK_3_GRN_50, f);
-        stroke_rect(st.vis_rect, Strk { line_dash: DASH_010, ..STRK_5_MAG_50 }, f);
+        stroke_rect(
+            st.vis_rect,
+            Strk { line_dash: DASH_010, ..STRK_5_MAG_50 },
+            f,
+        );
     }));
 }
 
 pub(super) fn draw_clade_labels(
-    tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv,
+    st: &St,
+    tst: &TreeState,
+    rndr: &Renderer,
+    sz: Size,
+    g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_clade_labels().draw(rndr, sz, |f| {
         let labeled_clades = tst.labeled_clades();
         for (node_id, clade_label) in labeled_clades {
-            if let Some((e1, e2)) = tst.bounding_tip_edges_for_clade(node_id) {
+            if let Some((e1, e2)) = tst.bounding_tip_edges_for_clade(*node_id) {
                 let color = clade_label.color;
                 let edge = &tst.edges_srtd_y().unwrap()
                     [tst.tree().edge_idx_for_node_id(*node_id).unwrap()];
@@ -29,11 +42,14 @@ pub(super) fn draw_clade_labels(
                 match tc.tre_sty {
                     TreSty::PhyGrm => {
                         let (x, width) = match clade_label.label_type {
-                            CladeLabelType::Outside => {
-                                (st.tre_vs.w + tc.lab_offset_tip, tc.clade_labs_w)
-                            }
+                            CladeLabelType::Outside => (
+                                st.tre_vs.w + tc.lab_offset_tip,
+                                tc.clade_labs_w,
+                            ),
                             CladeLabelType::Inside => {
-                                let nd = node_data_cart(st.tre_vs.w, st.tre_vs.h, edge);
+                                let nd = node_data_cart(
+                                    st.tre_vs.w, st.tre_vs.h, edge,
+                                );
                                 let x = nd.points.p1.x;
                                 (x, st.tre_vs.w - x)
                             }
@@ -49,13 +65,14 @@ pub(super) fn draw_clade_labels(
                         f.rotate(st.rotation);
 
                         let (r1, width) = match clade_label.label_type {
-                            CladeLabelType::Outside => {
-                                (st.tre_vs.radius_min + tc.lab_offset_tip, tc.clade_labs_w)
-                            }
+                            CladeLabelType::Outside => (
+                                st.tre_vs.radius_min + tc.lab_offset_tip,
+                                tc.clade_labs_w,
+                            ),
                             CladeLabelType::Inside => {
                                 let nd = node_data_rad(
-                                    tc.opn_angle, tc.rot_angle, st.tre_vs.radius_min, st.root_len,
-                                    edge,
+                                    tc.opn_angle, tc.rot_angle,
+                                    st.tre_vs.radius_min, st.root_len, edge,
                                 );
                                 let r1 = ONE.max(nd.points.p1.distance(ORIGIN));
                                 let r2 = st.tre_vs.radius_min;
@@ -69,7 +86,10 @@ pub(super) fn draw_clade_labels(
                     }
                 }
                 let path = pb.build();
-                f.fill(&path, CnvFill { style: Solid(color), rule: FillRule::EvenOdd });
+                f.fill(
+                    &path,
+                    CnvFill { style: Solid(color), rule: FillRule::EvenOdd },
+                );
                 f.stroke(&path, STRK_1.with_color(color));
                 f.pop_transform();
             }
@@ -78,7 +98,12 @@ pub(super) fn draw_clade_labels(
 }
 
 pub(super) fn draw_edges(
-    tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv,
+    st: &St,
+    tst: &TreeState,
+    rndr: &Renderer,
+    sz: Size,
+    g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_edge().draw(rndr, sz, |f| match tc.tre_sty {
         TreSty::PhyGrm => stroke_edges_phygrm(
@@ -101,7 +126,12 @@ pub(super) fn draw_edges(
 }
 
 pub(super) fn draw_legend(
-    tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv,
+    st: &St,
+    tst: &TreeState,
+    rndr: &Renderer,
+    sz: Size,
+    g: &mut Vec<Geometry>,
 ) {
     if tst.has_brlen() && tc.draw_legend {
         g.push(tc.cache_legend.draw(rndr, sz, |f| {
@@ -120,7 +150,11 @@ pub(super) fn draw_legend(
 }
 
 pub(super) fn draw_cursor_line(
-    tc: &TreeCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv,
+    st: &St,
+    rndr: &Renderer,
+    sz: Size,
+    g: &mut Vec<Geometry>,
 ) {
     g.push(tc.cache_cursor_line.draw(rndr, sz, |f| {
         if let Some(p) = st.cursor_tracking_point
@@ -132,7 +166,10 @@ pub(super) fn draw_cursor_line(
                 TreSty::PhyGrm => {
                     let p0 = Point { x: p.x, y: ZRO };
                     let p1 = Point { x: p.x, y: st.tre_vs.h };
-                    f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), STRK_CRSR_LINE);
+                    f.stroke(
+                        &PathBuilder::new().move_to(p0).line_to(p1).build(),
+                        STRK_CRSR_LINE,
+                    );
                 }
                 TreSty::Fan => {
                     let r = ORIGIN.distance(p);
@@ -146,7 +183,12 @@ pub(super) fn draw_cursor_line(
 }
 
 pub(super) fn draw_labs_tip(
-    tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv,
+    st: &St,
+    tst: &TreeState,
+    rndr: &Renderer,
+    sz: Size,
+    g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_lab_tip().draw(rndr, sz, |f| {
         draw_labels(
@@ -160,7 +202,12 @@ pub(super) fn draw_labs_tip(
 }
 
 pub(super) fn draw_labs_int(
-    tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv,
+    st: &St,
+    tst: &TreeState,
+    rndr: &Renderer,
+    sz: Size,
+    g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_lab_int().draw(rndr, sz, |f| {
         draw_labels(
@@ -174,7 +221,12 @@ pub(super) fn draw_labs_int(
 }
 
 pub(super) fn draw_labs_brnch(
-    tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv,
+    st: &St,
+    tst: &TreeState,
+    rndr: &Renderer,
+    sz: Size,
+    g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_lab_brnch().draw(rndr, sz, |f| {
         draw_labels(
@@ -188,7 +240,11 @@ pub(super) fn draw_labs_brnch(
 }
 
 pub(super) fn draw_hovered_node(
-    tc: &TreeCnv, st: &St, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv,
+    st: &St,
+    rndr: &Renderer,
+    sz: Size,
+    g: &mut Vec<Geometry>,
 ) {
     g.push(tc.cache_hovered_node.draw(rndr, sz, |f| {
         if let Some(hovered_node) = &st.hovered_node {
@@ -206,10 +262,15 @@ pub(super) fn draw_hovered_node(
 }
 
 pub(super) fn draw_selected_nodes(
-    st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    st: &St,
+    tst: &TreeState,
+    rndr: &Renderer,
+    sz: Size,
+    g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_sel_nodes().draw(rndr, sz, |f| {
-        let points: Vec<Point> = st.selected_nodes.par_iter().map(|nd| nd.points.p1).collect();
+        let points: Vec<Point> =
+            st.selected_nodes.par_iter().map(|nd| nd.points.p1).collect();
         draw_nodes(
             &points,
             st.node_radius + SF * 3e0,
@@ -223,10 +284,16 @@ pub(super) fn draw_selected_nodes(
 }
 
 pub(super) fn draw_filtered_nodes(
-    tc: &TreeCnv, st: &St, tst: &TreeState, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tc: &TreeCnv,
+    st: &St,
+    tst: &TreeState,
+    rndr: &Renderer,
+    sz: Size,
+    g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_filtered_nodes().draw(rndr, sz, |f| {
-        let points: Vec<Point> = st.filtered_nodes.par_iter().map(|nd| nd.points.p1).collect();
+        let points: Vec<Point> =
+            st.filtered_nodes.par_iter().map(|nd| nd.points.p1).collect();
         draw_nodes(
             &points,
             st.node_radius + SF * TWO,
@@ -239,10 +306,14 @@ pub(super) fn draw_filtered_nodes(
 
         if let Some(edge) = tst.current_found_edge() {
             let pt = match tc.tre_sty {
-                TreSty::PhyGrm => node_point_cart(st.tre_vs.w, st.tre_vs.h, &edge),
+                TreSty::PhyGrm => {
+                    node_point_cart(st.tre_vs.w, st.tre_vs.h, &edge)
+                }
                 TreSty::Fan => {
                     let angle = edge_angle(tc.opn_angle, &edge);
-                    node_point_pol(angle, st.tre_vs.radius_min, st.root_len, &edge)
+                    node_point_pol(
+                        angle, st.tre_vs.radius_min, st.root_len, &edge,
+                    )
                 }
             };
             draw_nodes(
@@ -259,8 +330,14 @@ pub(super) fn draw_filtered_nodes(
 }
 
 fn draw_scale_bar(
-    tre_sty: TreSty, tre_vs: &RectVals<Float>, cnv_vs: &RectVals<Float>, lab_size: Float,
-    lab_y_offset: Float, root_len: Float, tre_height: Float, f: &mut Frame,
+    tre_sty: TreSty,
+    tre_vs: &RectVals<Float>,
+    cnv_vs: &RectVals<Float>,
+    lab_size: Float,
+    lab_y_offset: Float,
+    root_len: Float,
+    tre_height: Float,
+    f: &mut Frame,
 ) {
     let stroke = STRK_2_BLK;
     let w = match tre_sty {
@@ -271,7 +348,8 @@ fn draw_scale_bar(
     let a = tre_height / 3.25;
     let b = a.fract();
     let c = a - b;
-    let sb_len = if c > ZRO { (c / TEN).floor() * TEN } else { (a * TEN).floor() / TEN };
+    let sb_len =
+        if c > ZRO { (c / TEN).floor() * TEN } else { (a * TEN).floor() / TEN };
     let sb_frac = sb_len / tre_height;
     let sb_len_on_screen = sb_frac * w;
 
@@ -286,14 +364,24 @@ fn draw_scale_bar(
     let p_lab = Point { x: x.midpoint(p1.x), y };
 
     f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), stroke);
-    let text = lab_text(format!("{sb_len}"), p_lab, lab_size, TEMPLATE_TXT_LAB_SCALEBAR);
+    let text = lab_text(
+        format!("{sb_len}"),
+        p_lab,
+        lab_size,
+        TEMPLATE_TXT_LAB_SCALEBAR,
+    );
     let lab = Label { text, width: sb_len_on_screen, angle: None };
     draw_labels(&[lab], Vector { x: ZRO, y: lab_y_offset }, None, ZRO, f);
 }
 
 fn draw_nodes(
-    points: &[Point], radius: Float, stroke: Strk, fill: CnvFill, trans: Option<Vector>,
-    rot: Float, f: &mut Frame,
+    points: &[Point],
+    radius: Float,
+    stroke: Strk,
+    fill: CnvFill,
+    trans: Option<Vector>,
+    rot: Float,
+    f: &mut Frame,
 ) {
     f.push_transform();
     if let Some(trans) = trans {
@@ -308,7 +396,11 @@ fn draw_nodes(
 }
 
 fn stroke_edges_phygrm(
-    edges: &[Edge], tre_vs: &RectVals<Float>, root_len: Float, root: Option<Edge>, f: &mut Frame,
+    edges: &[Edge],
+    tre_vs: &RectVals<Float>,
+    root_len: Float,
+    root: Option<Edge>,
+    f: &mut Frame,
 ) {
     let mut pb: PathBuilder = PathBuilder::new();
     for e in edges {
@@ -321,14 +413,18 @@ fn stroke_edges_phygrm(
         f.translate(tre_vs.trans);
         f.stroke(&pb.build(), STRK_EDGE);
         stroke_root_phygrm(tre_vs.w, tre_vs.h, root_len, root, f);
-    })
+    });
 }
 
 #[allow(dead_code)]
 // This is correct code, but will not work with the edges the way they are currently calculated.
 // Current method works only for phylograms.
 fn stroke_edges_cladogram(
-    edges: &[Edge], tre_vs: &RectVals<Float>, root_len: Float, root: Option<Edge>, f: &mut Frame,
+    edges: &[Edge],
+    tre_vs: &RectVals<Float>,
+    root_len: Float,
+    root: Option<Edge>,
+    f: &mut Frame,
 ) {
     let mut pb: PathBuilder = PathBuilder::new();
     for e in edges {
@@ -340,24 +436,30 @@ fn stroke_edges_cladogram(
         f.translate(tre_vs.trans);
         f.stroke(&pb.build(), STRK_EDGE);
         stroke_root_phygrm(tre_vs.w, tre_vs.h, root_len, root, f);
-    })
+    });
 }
 
 fn stroke_edges_fan(
-    edges: &[Edge], tre_vs: &RectVals<Float>, rot_angle: Float, opn_angle: Float, root_len: Float,
-    root: Option<Edge>, f: &mut Frame,
+    edges: &[Edge],
+    tre_vs: &RectVals<Float>,
+    rot_angle: Float,
+    opn_angle: Float,
+    root_len: Float,
+    root: Option<Edge>,
+    f: &mut Frame,
 ) {
     let mut pb: PathBuilder = PathBuilder::new();
     if opn_angle >= ONE.to_radians() {
         for e in edges {
-            let nd = node_data_rad(opn_angle, ZRO, tre_vs.radius_min, root_len, e);
+            let nd =
+                node_data_rad(opn_angle, ZRO, tre_vs.radius_min, root_len, e);
             pb = edge_path_pol(&nd, pb);
             pb = edge_path_arc_pol(&nd, pb);
         }
     } else {
         let p0 = Point { x: root_len, y: ZRO };
         let p1 = Point { x: tre_vs.radius_min, y: ZRO };
-        pb = pb.move_to(p0).line_to(p1)
+        pb = pb.move_to(p0).line_to(p1);
     }
 
     f.with_save(|f| {
@@ -365,33 +467,59 @@ fn stroke_edges_fan(
         f.rotate(rot_angle);
         f.stroke(&pb.build(), STRK_EDGE);
         stroke_root_fan(tre_vs.radius_min, opn_angle, root_len, root, f);
-    })
+    });
 }
 
-fn stroke_root_phygrm(w: Float, h: Float, root_len: Float, root_edge: Option<Edge>, f: &mut Frame) {
+fn stroke_root_phygrm(
+    w: Float,
+    h: Float,
+    root_len: Float,
+    root_edge: Option<Edge>,
+    f: &mut Frame,
+) {
     if let Some(root_edge) = root_edge
         && root_len > ZRO
     {
         let nd = node_data_cart(w, h, &root_edge);
         let pt_parent = Point { x: -root_len, y: nd.points.p0.y };
-        f.stroke(&PathBuilder::new().move_to(pt_parent).line_to(nd.points.p0).build(), STRK_ROOT);
+        f.stroke(
+            &PathBuilder::new()
+                .move_to(pt_parent)
+                .line_to(nd.points.p0)
+                .build(),
+            STRK_ROOT,
+        );
     };
 }
 
 fn stroke_root_fan(
-    radius_min: Float, opn_angle: Float, root_len: Float, root_edge: Option<Edge>, f: &mut Frame,
+    radius_min: Float,
+    opn_angle: Float,
+    root_len: Float,
+    root_edge: Option<Edge>,
+    f: &mut Frame,
 ) {
     if let Some(root_edge) = root_edge
         && root_len > ZRO
     {
-        let nd = node_data_rad(opn_angle, ZRO, radius_min, root_len, &root_edge);
-        f.stroke(&PathBuilder::new().move_to(ORIGIN).line_to(nd.points.p0).build(), STRK_ROOT);
+        let nd =
+            node_data_rad(opn_angle, ZRO, radius_min, root_len, &root_edge);
+        f.stroke(
+            &PathBuilder::new().move_to(ORIGIN).line_to(nd.points.p0).build(),
+            STRK_ROOT,
+        );
     };
 }
 
 pub(super) fn node_labs(
-    nodes: &[NodeData], edges: &[Edge], size: Float, tips: bool, branch: bool,
-    trim_to: Option<usize>, text_w: &mut TextWidth, results: &mut Vec<Label>,
+    nodes: &[NodeData],
+    edges: &[Edge],
+    size: Float,
+    tips: bool,
+    branch: bool,
+    trim_to: Option<usize>,
+    text_w: &mut TextWidth,
+    results: &mut Vec<Label>,
 ) {
     nodes
         .iter()
@@ -408,17 +536,26 @@ pub(super) fn node_labs(
 
                 let mut name_trimmed: String = name.to_string();
                 if let Some(nchar) = trim_to {
-                    name_trimmed = ellipsize_unicode(name_trimmed, nchar)
+                    name_trimmed = ellipsize_unicode(name_trimmed, nchar);
                 }
 
                 let width = text_w.width(&name_trimmed);
-                let text = lab_text(name_trimmed.to_string(), nd.points.p1, size, txt_lab_tmpl);
+                let text = lab_text(
+                    name_trimmed.to_string(),
+                    nd.points.p1,
+                    size,
+                    txt_lab_tmpl,
+                );
                 Some(Label { text, width, angle: nd.angle })
             } else if branch && edge.parent_node_id.is_some() {
                 let name = format!("{:.3}", edge.brlen);
                 let width = text_w.width(&name);
-                let text =
-                    lab_text(name.to_string(), nd.points.p_mid, size, TEMPLATE_TXT_LAB_BRANCH);
+                let text = lab_text(
+                    name.to_string(),
+                    nd.points.p_mid,
+                    size,
+                    TEMPLATE_TXT_LAB_BRANCH,
+                );
                 Some(Label { text, width, angle: nd.angle })
             } else {
                 None
@@ -430,7 +567,12 @@ pub(super) fn node_labs(
 }
 
 pub(super) fn draw_palette(
-    tv: &TreeCnv, st: &St, thm: &Theme, rndr: &Renderer, sz: Size, g: &mut Vec<Geometry>,
+    tv: &TreeCnv,
+    st: &St,
+    thm: &Theme,
+    rndr: &Renderer,
+    sz: Size,
+    g: &mut Vec<Geometry>,
 ) {
     let palette = thm.palette();
     let palette_ex = thm.extended_palette();
@@ -451,17 +593,25 @@ pub(super) fn draw_palette(
     let color_danger_base = palette_ex.danger.base.color;
 
     g.push(tv.cache_palette.draw(rndr, sz, |f| {
-        let colors_bg =
-            [color_bg_base, color_bg_weakest, color_bg_weak, color_bg_strong, color_bg_strongest];
-        let colors_primary =
-            [color_primary_base, color_primary_weak, color_primary_strong, color_text];
-        let colors_secondary = [color_secondary_base, color_secondary_weak, color_secondary_strong];
-        let colors_other = [color_success_base, color_warning_base, color_danger_base];
+        let colors_bg = [
+            color_bg_base, color_bg_weakest, color_bg_weak, color_bg_strong,
+            color_bg_strongest,
+        ];
+        let colors_primary = [
+            color_primary_base, color_primary_weak, color_primary_strong,
+            color_text,
+        ];
+        let colors_secondary = [
+            color_secondary_base, color_secondary_weak, color_secondary_strong,
+        ];
+        let colors_other =
+            [color_success_base, color_warning_base, color_danger_base];
         let color_rect_size = TXT_SIZE;
         let palette_rect_w = TWO * PADDING + color_rect_size * 5e0;
         let palette_rect_h = TWO * PADDING + color_rect_size * 4e0;
         let palette_rect_x = st.cnv_vs.x0 + PADDING * 5e0;
-        let palette_rect_y = st.cnv_vs.y0 + st.cnv_vs.h - palette_rect_h - PADDING * 5e0;
+        let palette_rect_y =
+            st.cnv_vs.y0 + st.cnv_vs.h - palette_rect_h - PADDING * 5e0;
 
         f.fill_rectangle(
             Point { x: palette_rect_x, y: palette_rect_y },
@@ -470,7 +620,10 @@ pub(super) fn draw_palette(
         );
 
         f.stroke_rectangle(
-            Point { x: palette_rect_x + SF / TWO, y: palette_rect_y + SF / TWO },
+            Point {
+                x: palette_rect_x + SF / TWO,
+                y: palette_rect_y + SF / TWO,
+            },
             Size {
                 width: TWO * PADDING + color_rect_size * 5e0 - SF,
                 height: TWO * PADDING + color_rect_size * 4e0 - SF,

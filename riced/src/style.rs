@@ -1,14 +1,24 @@
 use crate::*;
 
-pub(crate) fn sty_checkbox(theme: &Theme, status: CheckboxStatus) -> CheckboxStyle {
+pub(crate) fn sty_checkbox(
+    theme: &Theme,
+    status: CheckboxStatus,
+) -> CheckboxStyle {
     let palette = theme.extended_palette();
 
     fn styled(
-        icon_color: Color, border_color: Color, base: PalettePair, accent: PalettePair,
+        icon_color: Color,
+        border_color: Color,
+        base: PalettePair,
+        accent: PalettePair,
         is_checked: bool,
     ) -> CheckboxStyle {
         CheckboxStyle {
-            background: Background::Color(if is_checked { accent.color } else { base.color }),
+            background: Background::Color(if is_checked {
+                accent.color
+            } else {
+                base.color
+            }),
             icon_color,
             border: Border {
                 radius: WIDGET_RADIUS.into(),
@@ -29,13 +39,16 @@ pub(crate) fn sty_checkbox(theme: &Theme, status: CheckboxStatus) -> CheckboxSty
             palette.background.weak, palette.primary.strong, is_checked,
         ),
         CheckboxStatus::Disabled { is_checked } => styled(
-            palette.primary.strong.text, palette.background.weak.color, palette.background.weak,
-            palette.background.strong, is_checked,
+            palette.primary.strong.text, palette.background.weak.color,
+            palette.background.weak, palette.background.strong, is_checked,
         ),
     }
 }
 
-pub(crate) fn sty_text_input(theme: &Theme, status: TextInputStatus) -> TextInputStyle {
+pub(crate) fn sty_text_input(
+    theme: &Theme,
+    status: TextInputStatus,
+) -> TextInputStyle {
     let pe = theme.extended_palette();
 
     let active = TextInputStyle {
@@ -83,7 +96,9 @@ pub fn sty_cont(theme: &Theme) -> ContainerStyle {
     let pe = theme.extended_palette();
     ContainerStyle {
         text_color: Some(pb.text),
-        background: Some(Background::Color(pe.background.strongest.color.scale_alpha(0.11))),
+        background: Some(Background::Color(
+            pe.background.strongest.color.scale_alpha(0.11),
+        )),
         border: Border {
             width: BORDER_W,
             color: pe.background.strong.color,
@@ -117,7 +132,10 @@ pub fn sty_cont_bottom_left(theme: &Theme) -> ContainerStyle {
     let base = sty_cont(theme);
     ContainerStyle {
         border: Border {
-            radius: Radius { bottom_left: WINDOW_BORDER_RADIUS, ..base.border.radius },
+            radius: Radius {
+                bottom_left: WINDOW_BORDER_RADIUS,
+                ..base.border.radius
+            },
             ..base.border
         },
         ..base
@@ -128,7 +146,10 @@ pub fn sty_cont_bottom_right(theme: &Theme) -> ContainerStyle {
     let base = sty_cont(theme);
     ContainerStyle {
         border: Border {
-            radius: Radius { bottom_right: WINDOW_BORDER_RADIUS, ..base.border.radius },
+            radius: Radius {
+                bottom_right: WINDOW_BORDER_RADIUS,
+                ..base.border.radius
+            },
             ..base.border
         },
         ..base
@@ -149,7 +170,11 @@ pub fn sty_cont_no_shadow(theme: &Theme) -> ContainerStyle {
     ContainerStyle {
         background: Some(Background::Color(pe.background.base.color)),
         border: Border { color: pe.background.strongest.color, ..base.border },
-        shadow: Shadow { color: Clr::TRN, offset: Vector { x: ZERO, y: ZERO }, blur_radius: ZERO },
+        shadow: Shadow {
+            color: Clr::TRN,
+            offset: Vector { x: ZERO, y: ZERO },
+            blur_radius: ZERO,
+        },
         ..base
     }
 }
@@ -159,10 +184,17 @@ pub fn sty_pane_grid(theme: &Theme) -> PgStyle {
     PgStyle {
         hovered_region: PgHighlight {
             background: Background::Color(pe.primary.weak.color),
-            border: Border { width: BORDER_W, color: pe.primary.strong.color, radius: ZERO.into() },
+            border: Border {
+                width: BORDER_W,
+                color: pe.primary.strong.color,
+                radius: ZERO.into(),
+            },
         },
         hovered_split: PgLine { color: pe.primary.base.color, width: SF * TWO },
-        picked_split: PgLine { color: pe.primary.strong.color, width: SF * TWO },
+        picked_split: PgLine {
+            color: pe.primary.strong.color,
+            width: SF * TWO,
+        },
     }
 }
 
@@ -173,25 +205,37 @@ pub fn sty_pane_titlebar(theme: &Theme) -> ContainerStyle {
 pub fn sty_pane_body(theme: &Theme) -> ContainerStyle {
     let pe = theme.extended_palette();
     let base = sty_cont(theme);
-    ContainerStyle { background: Some(Background::Color(pe.background.base.color)), ..base }
+    ContainerStyle {
+        background: Some(Background::Color(pe.background.base.color)),
+        ..base
+    }
 }
 
 pub fn sty_pane_body_bottom(theme: &Theme) -> ContainerStyle {
     let pe = theme.extended_palette();
     let base = sty_cont_bottom(theme);
-    ContainerStyle { background: Some(Background::Color(pe.background.base.color)), ..base }
+    ContainerStyle {
+        background: Some(Background::Color(pe.background.base.color)),
+        ..base
+    }
 }
 
 pub fn sty_pane_body_bottom_left(theme: &Theme) -> ContainerStyle {
     let pe = theme.extended_palette();
     let base = sty_cont_bottom_left(theme);
-    ContainerStyle { background: Some(Background::Color(pe.background.base.color)), ..base }
+    ContainerStyle {
+        background: Some(Background::Color(pe.background.base.color)),
+        ..base
+    }
 }
 
 pub fn sty_pane_body_bottom_right(theme: &Theme) -> ContainerStyle {
     let pe = theme.extended_palette();
     let base = sty_cont_bottom_right(theme);
-    ContainerStyle { background: Some(Background::Color(pe.background.base.color)), ..base }
+    ContainerStyle {
+        background: Some(Background::Color(pe.background.base.color)),
+        ..base
+    }
 }
 
 pub(crate) fn sty_btn(theme: &Theme, status: ButtonStatus) -> ButtonStyle {
@@ -200,24 +244,34 @@ pub(crate) fn sty_btn(theme: &Theme, status: ButtonStatus) -> ButtonStyle {
     let base = ButtonStyle {
         background: Some(Background::Color(ep.primary.base.color)),
         text_color: ep.primary.base.text,
-        border: Border { radius: WIDGET_RADIUS.into(), width: ZERO, color: Clr::TRN },
+        border: Border {
+            radius: WIDGET_RADIUS.into(),
+            width: ZERO,
+            color: Clr::TRN,
+        },
         ..ButtonStyle::default()
     };
 
     match status {
         ButtonStatus::Active | ButtonStatus::Pressed => base,
-        ButtonStatus::Hovered => {
-            ButtonStyle { background: Some(Background::Color(ep.primary.strong.color)), ..base }
-        }
+        ButtonStatus::Hovered => ButtonStyle {
+            background: Some(Background::Color(ep.primary.strong.color)),
+            ..base
+        },
         ButtonStatus::Disabled => ButtonStyle {
-            background: base.background.map(|background| background.scale_alpha(0.5)),
+            background: base
+                .background
+                .map(|background| background.scale_alpha(0.5)),
             text_color: base.text_color.scale_alpha(0.5),
             ..base
         },
     }
 }
 
-pub(crate) fn sty_pick_lst(theme: &Theme, status: PickListStatus) -> PickListStyle {
+pub(crate) fn sty_pick_lst(
+    theme: &Theme,
+    status: PickListStatus,
+) -> PickListStyle {
     let palette = theme.extended_palette();
 
     let active = PickListStyle {
@@ -234,10 +288,15 @@ pub(crate) fn sty_pick_lst(theme: &Theme, status: PickListStatus) -> PickListSty
 
     match status {
         PickListStatus::Active => active,
-        PickListStatus::Hovered | PickListStatus::Opened { .. } => PickListStyle {
-            border: Border { color: palette.primary.strong.color, ..active.border },
-            ..active
-        },
+        PickListStatus::Hovered | PickListStatus::Opened { .. } => {
+            PickListStyle {
+                border: Border {
+                    color: palette.primary.strong.color,
+                    ..active.border
+                },
+                ..active
+            }
+        }
     }
 }
 
@@ -267,15 +326,26 @@ pub(crate) fn sty_rule(theme: &Theme) -> RuleStyle {
     }
 }
 
-pub(crate) fn sty_scrlbl(theme: &Theme, status: ScrollableStatus) -> ScrollableStyle {
+pub(crate) fn sty_scrlbl(
+    theme: &Theme,
+    status: ScrollableStatus,
+) -> ScrollableStyle {
     let palette = theme.extended_palette();
 
     let scrollbar = ScrollBarRail {
         background: Some(palette.background.weak.color.into()),
-        border: Border { radius: WIDGET_RADIUS.into(), width: ZERO, color: Clr::TRN },
+        border: Border {
+            radius: WIDGET_RADIUS.into(),
+            width: ZERO,
+            color: Clr::TRN,
+        },
         scroller: Scroller {
             color: palette.background.strong.color,
-            border: Border { radius: WIDGET_RADIUS.into(), width: ZERO, color: Clr::TRN },
+            border: Border {
+                radius: WIDGET_RADIUS.into(),
+                width: ZERO,
+                color: Clr::TRN,
+            },
         },
     };
 
@@ -293,7 +363,10 @@ pub(crate) fn sty_scrlbl(theme: &Theme, status: ScrollableStatus) -> ScrollableS
             ..
         } => {
             let hovered_scrollbar = ScrollBarRail {
-                scroller: Scroller { color: palette.primary.strong.color, ..scrollbar.scroller },
+                scroller: Scroller {
+                    color: palette.primary.strong.color,
+                    ..scrollbar.scroller
+                },
                 ..scrollbar
             };
 
@@ -319,7 +392,10 @@ pub(crate) fn sty_scrlbl(theme: &Theme, status: ScrollableStatus) -> ScrollableS
             ..
         } => {
             let dragged_scrollbar = ScrollBarRail {
-                scroller: Scroller { color: palette.primary.base.color, ..scrollbar.scroller },
+                scroller: Scroller {
+                    color: palette.primary.base.color,
+                    ..scrollbar.scroller
+                },
                 ..scrollbar
             };
 
@@ -354,7 +430,11 @@ pub(crate) fn sty_slider(theme: &Theme, status: SliderStatus) -> SliderStyle {
         rail: SliderRail {
             backgrounds: (color.into(), palette.background.strong.color.into()),
             width: SLIDER_H / THREE,
-            border: Border { radius: WIDGET_RADIUS.into(), width: ZERO, color: Clr::TRN },
+            border: Border {
+                radius: WIDGET_RADIUS.into(),
+                width: ZERO,
+                color: Clr::TRN,
+            },
         },
 
         handle: SliderHandle {
@@ -369,11 +449,15 @@ pub(crate) fn sty_slider(theme: &Theme, status: SliderStatus) -> SliderStyle {
     }
 }
 
-pub(crate) fn sty_toggler(theme: &Theme, status: TogglerStatus) -> TogglerStyle {
+pub(crate) fn sty_toggler(
+    theme: &Theme,
+    status: TogglerStatus,
+) -> TogglerStyle {
     let palette = theme.extended_palette();
 
     let background = match status {
-        TogglerStatus::Active { is_toggled } | TogglerStatus::Hovered { is_toggled } => {
+        TogglerStatus::Active { is_toggled }
+        | TogglerStatus::Hovered { is_toggled } => {
             if is_toggled {
                 palette.primary.strong.color
             } else {

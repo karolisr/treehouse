@@ -58,31 +58,37 @@ impl TreeState {
     }
 
     pub(super) fn add_remove_clade_label(
-        &mut self, node_id: NodeId, color: Color, label: impl Into<String>,
+        &mut self,
+        node_id: NodeId,
+        color: Color,
+        label: impl Into<String>,
         label_type: CladeLabelType,
     ) {
-        if self.clade_has_label(&node_id) {
-            self.remove_clade_label(&node_id);
+        if self.clade_has_label(node_id) {
+            self.remove_clade_label(node_id);
         } else {
             self.add_clade_label(node_id, color, label, label_type);
         }
     }
 
     pub(super) fn add_clade_label(
-        &mut self, node_id: NodeId, color: Color, label: impl Into<String>,
+        &mut self,
+        node_id: NodeId,
+        color: Color,
+        label: impl Into<String>,
         label_type: CladeLabelType,
     ) {
         let clade_label: CladeLabel =
             CladeLabel { node_id, color, label: label.into(), label_type };
-        self.labeled_clades.insert(node_id, clade_label);
+        _ = self.labeled_clades.insert(node_id, clade_label);
     }
 
-    pub(super) fn remove_clade_label(&mut self, node_id: &NodeId) {
-        self.labeled_clades.remove(node_id);
+    pub(super) fn remove_clade_label(&mut self, node_id: NodeId) {
+        _ = self.labeled_clades.remove(&node_id);
     }
 
-    pub(super) fn clade_has_label(&self, node_id: &NodeId) -> bool {
-        self.labeled_clades.contains_key(node_id)
+    pub(super) fn clade_has_label(&self, node_id: NodeId) -> bool {
+        self.labeled_clades.contains_key(&node_id)
     }
 
     pub(super) fn labeled_clades(&self) -> &HashMap<NodeId, CladeLabel> {
@@ -93,8 +99,11 @@ impl TreeState {
         !self.labeled_clades().is_empty()
     }
 
-    pub(super) fn bounding_tip_edges_for_clade(&self, node_id: &NodeId) -> Option<(&Edge, &Edge)> {
-        self.tree().bounding_tip_edges_for_clade(node_id)
+    pub(super) fn bounding_tip_edges_for_clade(
+        &self,
+        node_id: NodeId,
+    ) -> Option<(&Edge, &Edge)> {
+        self.tree().bounding_tip_edges_for_clade(&node_id)
     }
 
     // Search & Filter -----------------------------------------------------------------------------
@@ -114,7 +123,10 @@ impl TreeState {
         if !self.found_edge_idxs.is_empty()
             && let Some(edges) = self.edges_srtd_y()
         {
-            Some(edges[self.found_edge_idxs[self.vec_idx_to_found_edge_idxs]].clone())
+            Some(
+                edges[self.found_edge_idxs[self.vec_idx_to_found_edge_idxs]]
+                    .clone(),
+            )
         } else {
             None
         }
@@ -140,9 +152,10 @@ impl TreeState {
 
     pub(super) fn add_found_to_sel(&mut self) {
         let max_capacity = self.sel_node_ids.len() + self.found_node_ids.len();
-        let mut sel_node_ids: HashSet<NodeId> = HashSet::with_capacity(max_capacity);
+        let mut sel_node_ids: HashSet<NodeId> =
+            HashSet::with_capacity(max_capacity);
         self.sel_node_ids.union(&self.found_node_ids).for_each(|id| {
-            sel_node_ids.insert(*id);
+            _ = sel_node_ids.insert(*id);
         });
         self.sel_node_ids = sel_node_ids;
         self.sel_edge_idxs = self.sel_edge_idxs_prep();
@@ -150,9 +163,10 @@ impl TreeState {
     }
 
     pub(super) fn rem_found_from_sel(&mut self) {
-        let mut sel_node_ids: HashSet<NodeId> = HashSet::with_capacity(self.sel_node_ids.len());
+        let mut sel_node_ids: HashSet<NodeId> =
+            HashSet::with_capacity(self.sel_node_ids.len());
         self.sel_node_ids.difference(&self.found_node_ids).for_each(|id| {
-            sel_node_ids.insert(*id);
+            _ = sel_node_ids.insert(*id);
         });
         self.sel_node_ids = sel_node_ids;
         self.sel_edge_idxs = self.sel_edge_idxs_prep();
@@ -166,14 +180,14 @@ impl TreeState {
         self.vec_idx_to_found_edge_idxs = 0;
     }
 
-    pub(super) fn filter_nodes(&mut self, query: &str, tips_only: bool) -> &Vec<usize> {
+    pub(super) fn filter_nodes(&mut self, query: &str, tips_only: bool) {
         self.found_node_ids.clear();
         self.found_edge_idxs.clear();
         self.clear_cache_filtered_nodes();
         self.vec_idx_to_found_edge_idxs = 0;
 
         if query.len() < 3 {
-            return &self.found_edge_idxs;
+            return;
         };
 
         if let Some(edges) = self.edges_srtd_y() {
@@ -187,9 +201,10 @@ impl TreeState {
 
             for e in edges_to_search {
                 if let Some(n) = &e.name
-                    && let Some(_) = n.to_lowercase().find(&query.to_lowercase())
+                    && let Some(_) =
+                        n.to_lowercase().find(&query.to_lowercase())
                 {
-                    found_node_ids.insert(e.node_id);
+                    _ = found_node_ids.insert(e.node_id);
                     found_edge_idxs.push(e.edge_idx);
                 }
             }
@@ -197,7 +212,6 @@ impl TreeState {
             self.found_node_ids = found_node_ids;
             self.found_edge_idxs = found_edge_idxs;
         }
-        &self.found_edge_idxs
     }
 
     // Accessors -----------------------------------------------------------------------------------
@@ -223,15 +237,27 @@ impl TreeState {
 
     // Memoized Methods ----------------------------------------------------------------------------
     pub(super) fn tip_count(&self) -> usize {
-        if let Some(cached) = self.cache_tip_count { cached } else { self.tree().tip_count_all() }
+        if let Some(cached) = self.cache_tip_count {
+            cached
+        } else {
+            self.tree().tip_count_all()
+        }
     }
 
     pub(super) fn node_count(&self) -> usize {
-        if let Some(cached) = self.cache_node_count { cached } else { self.tree().node_count_all() }
+        if let Some(cached) = self.cache_node_count {
+            cached
+        } else {
+            self.tree().node_count_all()
+        }
     }
 
     pub(super) fn tre_height(&self) -> TreeFloat {
-        if let Some(cached) = self.cache_tre_height { cached } else { self.tree().height() }
+        if let Some(cached) = self.cache_tre_height {
+            cached
+        } else {
+            self.tree().height()
+        }
     }
 
     pub(super) fn has_tip_labs(&self) -> bool {
@@ -268,18 +294,22 @@ impl TreeState {
     }
 
     pub(super) fn is_rooted(&self) -> bool {
-        if let Some(cached) = self.cache_is_rooted { cached } else { self.tree().is_rooted() }
+        if let Some(cached) = self.cache_is_rooted {
+            cached
+        } else {
+            self.tree().is_rooted()
+        }
     }
 
     // Rooting -------------------------------------------------------------------------------------
-    pub(super) fn can_root(&self, node_id: &NodeId) -> bool {
-        self.tree().can_root(node_id)
+    pub(super) fn can_root(&self, node_id: NodeId) -> bool {
+        self.tree().can_root(&node_id)
     }
 
-    pub(super) fn root(&mut self, node_id: &NodeId) -> Option<NodeId> {
+    pub(super) fn root(&mut self, node_id: NodeId) -> Option<NodeId> {
         self.tmp_found_node_id = self.current_found_node_id();
         let mut tre = self.tree().clone();
-        let rslt = tre.root(*node_id);
+        let rslt = tre.root(node_id);
         match rslt {
             Ok(node_id) => {
                 self.init(tre);
@@ -299,7 +329,7 @@ impl TreeState {
             if let Some(yanked_node_id) = yanked_node.node_id()
                 && self.sel_node_ids.contains(yanked_node_id)
             {
-                self.deselect_node(yanked_node_id);
+                self.deselect_node(*yanked_node_id);
             }
             self.init(tre);
             Some(yanked_node)
@@ -346,7 +376,7 @@ impl TreeState {
             }
         }
         for node_id in node_ids_to_drop {
-            self.remove_clade_label(&node_id);
+            self.remove_clade_label(node_id);
         }
         // -----------------------------------------------------------------------------------------
         self.clear_caches_all();
@@ -366,7 +396,7 @@ impl TreeState {
             let mut vec_idx_to_found_edge_idxs: usize = idx;
             for e in edges {
                 if found_node_ids_old.contains(&e.node_id) {
-                    found_node_ids.insert(e.node_id);
+                    _ = found_node_ids.insert(e.node_id);
                     found_edge_idxs.push(e.edge_idx);
                     if e.node_id == current_found_node_id {
                         vec_idx_to_found_edge_idxs = idx;
@@ -401,7 +431,10 @@ impl TreeState {
         tmp.sort_by(|a, b| a.x1.total_cmp(&b.x1));
         let mut rv = tmp[tmp_len_min..tmp.len()].to_vec();
         tmp.sort_by(|a, b| {
-            a.name.clone().map(|name| name.len()).cmp(&b.name.clone().map(|name| name.len()))
+            a.name
+                .clone()
+                .map(|name| name.len())
+                .cmp(&b.name.clone().map(|name| name.len()))
         });
         rv.append(&mut tmp[tmp_len_min..tmp.len()].to_vec());
         rv
@@ -439,15 +472,19 @@ impl TreeState {
             rv_edge_idx = edges
                 .par_iter()
                 .filter_map(|edge| {
-                    if sel_node_ids.contains(&edge.node_id) { Some(edge.edge_idx) } else { None }
+                    if sel_node_ids.contains(&edge.node_id) {
+                        Some(edge.edge_idx)
+                    } else {
+                        None
+                    }
                 })
                 .collect();
         }
         rv_edge_idx
     }
 
-    pub(super) fn select_deselect_node(&mut self, node_id: &NodeId) {
-        if self.sel_node_ids.contains(node_id) {
+    pub(super) fn select_deselect_node(&mut self, node_id: NodeId) {
+        if self.sel_node_ids.contains(&node_id) {
             self.deselect_node(node_id);
         } else {
             self.select_node(node_id);
@@ -455,21 +492,21 @@ impl TreeState {
         self.sel_edge_idxs = self.sel_edge_idxs_prep();
     }
 
-    pub(super) fn select_node(&mut self, node_id: &NodeId) {
-        self.sel_node_ids.insert(*node_id);
+    pub(super) fn select_node(&mut self, node_id: NodeId) {
+        _ = self.sel_node_ids.insert(node_id);
         self.clear_cache_sel_nodes();
     }
 
-    pub(super) fn deselect_node(&mut self, node_id: &NodeId) {
-        self.sel_node_ids.remove(node_id);
+    pub(super) fn deselect_node(&mut self, node_id: NodeId) {
+        _ = self.sel_node_ids.remove(&node_id);
         self.clear_cache_sel_nodes();
     }
 
-    pub(super) fn select_deselect_node_exclusive(&mut self, node_id: &NodeId) {
+    pub(super) fn select_deselect_node_exclusive(&mut self, node_id: NodeId) {
         let selected = self.sel_node_ids.clone();
         selected.iter().for_each(|id| {
-            if id != node_id {
-                self.sel_node_ids.remove(id);
+            if *id != node_id {
+                _ = self.sel_node_ids.remove(id);
             }
         });
         self.select_deselect_node(node_id);

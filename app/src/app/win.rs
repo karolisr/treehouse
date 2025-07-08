@@ -1,4 +1,7 @@
-use riced::{PlatformSpecificWindowSettings, Size, WindowLevel, WindowPosition, WindowSettings};
+use riced::{
+    PlatformSpecificWindowSettings, Size, WindowLevel, WindowPosition,
+    WindowSettings,
+};
 
 #[cfg(target_os = "linux")]
 use super::consts::APP_ID;

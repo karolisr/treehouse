@@ -9,7 +9,12 @@ pub(crate) fn transform_value(raw: Float, scale: &AxisScaleType) -> Float {
     }
 }
 
-pub(crate) fn lab_text(txt: String, pt: Point, size: Float, template: CnvText) -> CnvText {
+pub(crate) fn lab_text(
+    txt: String,
+    pt: Point,
+    size: Float,
+    template: CnvText,
+) -> CnvText {
     let mut text = template.clone();
     text.content = txt;
     text.position = pt;
@@ -18,7 +23,11 @@ pub(crate) fn lab_text(txt: String, pt: Point, size: Float, template: CnvText) -
 }
 
 pub(crate) fn draw_labels(
-    labels: &[Label], offset: Vector, trans: Option<Vector>, rot: Float, f: &mut Frame,
+    labels: &[Label],
+    offset: Vector,
+    trans: Option<Vector>,
+    rot: Float,
+    f: &mut Frame,
 ) {
     f.push_transform();
     if let Some(trans) = trans {

@@ -4,11 +4,16 @@ use crate::*;
 use lyon_path::builder;
 use lyon_path::geom;
 
+#[allow(missing_debug_implementations)]
 pub struct PathBuilder {
     raw: builder::WithSvg<lyon_path::path::BuilderImpl>,
 }
 
-fn point_from_angle_and_radius(angle: f32, radius: f32, radius_scaling_factor: f32) -> Point {
+fn point_from_angle_and_radius(
+    angle: f32,
+    radius: f32,
+    radius_scaling_factor: f32,
+) -> Point {
     let (sin, cos) = angle.sin_cos();
     let x = radius_scaling_factor * cos * radius;
     let y = radius_scaling_factor * sin * radius;
@@ -34,7 +39,10 @@ impl PathBuilder {
         let top_left = rect.position();
         self.move_to(top_left)
             .line_to(Point::new(top_left.x + rect.width, top_left.y))
-            .line_to(Point::new(top_left.x + rect.width, top_left.y + rect.height))
+            .line_to(Point::new(
+                top_left.x + rect.width,
+                top_left.y + rect.height,
+            ))
             .line_to(Point::new(top_left.x, top_left.y + rect.height))
             .close()
     }
@@ -44,10 +52,21 @@ impl PathBuilder {
         self.move_to(start).arc(ZERO, f32::consts::TAU, center, radius)
     }
 
-    pub fn thick_arc(self, a0: f32, a1: f32, center: Point, inner_radius: f32, width: f32) -> Self {
+    pub fn thick_arc(
+        self,
+        a0: f32,
+        a1: f32,
+        center: Point,
+        inner_radius: f32,
+        width: f32,
+    ) -> Self {
         let outer_radius = inner_radius + width;
         let p0 = point_from_angle_and_radius(a0, inner_radius, ONE);
-        let p1 = point_from_angle_and_radius(a1, inner_radius, outer_radius / inner_radius);
+        let p1 = point_from_angle_and_radius(
+            a1,
+            inner_radius,
+            outer_radius / inner_radius,
+        );
         self.move_to(p0)
             .arc(a0, a1, center, inner_radius)
             .line_to(p1)
@@ -59,7 +78,13 @@ impl PathBuilder {
         self.arc_approx_line(a0, a1, center, radius)
     }
 
-    pub fn arc_approx_line(mut self, a0: f32, a1: f32, center: Point, radius: f32) -> Self {
+    pub fn arc_approx_line(
+        mut self,
+        a0: f32,
+        a1: f32,
+        center: Point,
+        radius: f32,
+    ) -> Self {
         let arc = self.prepare_arc_segment(a0, a1, center, radius);
         arc.cast::<f64>().for_each_flattened(0.1, &mut |to| {
             let _ = self.raw.line_to(to.to_f32().to());
@@ -67,7 +92,13 @@ impl PathBuilder {
         self
     }
 
-    pub fn arc_approx_quad_bezier(mut self, a0: f32, a1: f32, center: Point, radius: f32) -> Self {
+    pub fn arc_approx_quad_bezier(
+        mut self,
+        a0: f32,
+        a1: f32,
+        center: Point,
+        radius: f32,
+    ) -> Self {
         let arc = self.prepare_arc_segment(a0, a1, center, radius);
         arc.cast::<f64>().for_each_quadratic_bezier(&mut |curve| {
             let curve = curve.cast::<f32>();
@@ -76,7 +107,13 @@ impl PathBuilder {
         self
     }
 
-    pub fn arc_approx_cubic_bezier(mut self, a0: f32, a1: f32, center: Point, radius: f32) -> Self {
+    pub fn arc_approx_cubic_bezier(
+        mut self,
+        a0: f32,
+        a1: f32,
+        center: Point,
+        radius: f32,
+    ) -> Self {
         let arc = self.prepare_arc_segment(a0, a1, center, radius);
         arc.cast::<f64>().for_each_cubic_bezier(&mut |curve| {
             let ctrl1 = curve.ctrl1.cast::<f32>();
@@ -98,7 +135,13 @@ impl PathBuilder {
 
     // ---------------------------------------------------------------------------------------------
 
-    fn prepare_arc_segment(&self, a0: f32, a1: f32, center: Point, radius: f32) -> geom::Arc<f32> {
+    fn prepare_arc_segment(
+        &self,
+        a0: f32,
+        a1: f32,
+        center: Point,
+        radius: f32,
+    ) -> geom::Arc<f32> {
         let center = geom::Point::new(center.x, center.y);
         let radii = geom::Vector::new(radius, radius);
         let x_rotation = geom::Angle::radians(ZERO);

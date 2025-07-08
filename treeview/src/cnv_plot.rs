@@ -34,8 +34,12 @@ pub enum AxisScaleType {
     LogTen,
 }
 
-pub(super) const AXIS_SCALE_TYPE_OPTS: [AxisScaleType; 4] =
-    [AxisScaleType::Linear, AxisScaleType::LogTwo, AxisScaleType::LogNat, AxisScaleType::LogTen];
+pub(super) const AXIS_SCALE_TYPE_OPTS: [AxisScaleType; 4] = [
+    AxisScaleType::Linear,
+    AxisScaleType::LogTwo,
+    AxisScaleType::LogNat,
+    AxisScaleType::LogTen,
+];
 
 impl Display for AxisScaleType {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
@@ -103,7 +107,8 @@ impl From<&Vec<LttPoint>> for PlotData {
         }
         let mut plot_points = Vec::with_capacity(ltt_points.len());
         for LttPoint { height, count } in ltt_points {
-            plot_points.push(PlotPoint { x: *height as Float, y: *count as Float });
+            plot_points
+                .push(PlotPoint { x: *height as Float, y: *count as Float });
         }
         PlotData {
             x_data_type: PlotDataType::Continuous,
@@ -119,15 +124,15 @@ impl From<&Vec<LttPoint>> for PlotData {
 
 impl PlotCnv {
     pub(super) fn clear_cache_bnds(&self) {
-        self.cache_bnds.clear()
+        self.cache_bnds.clear();
     }
 
     pub(super) fn clear_cache_cursor_line(&self) {
-        self.cache_cursor_line.clear()
+        self.cache_cursor_line.clear();
     }
 
     pub(super) fn clear_cache_plot(&self) {
-        self.cache_plot.clear()
+        self.cache_plot.clear();
     }
 
     pub(super) fn clear_caches_all(&self) {
@@ -145,12 +150,21 @@ impl PlotCnv {
 impl Program<TvMsg> for PlotCnv {
     type State = St;
 
-    fn mouse_interaction(&self, _st: &St, _bnds: Rectangle, _crsr: Cursor) -> Interaction {
+    fn mouse_interaction(
+        &self,
+        _st: &St,
+        _bnds: Rectangle,
+        _crsr: Cursor,
+    ) -> Interaction {
         Interaction::default()
     }
 
     fn update(
-        &self, st: &mut St, ev: &Event, bnds: Rectangle, crsr: Cursor,
+        &self,
+        st: &mut St,
+        ev: &Event,
+        bnds: Rectangle,
+        crsr: Cursor,
     ) -> Option<Action<TvMsg>> {
         // -----------------------------------------------------------------------------------------
         let mut action: Option<Action<TvMsg>> = None;
@@ -200,14 +214,20 @@ impl Program<TvMsg> for PlotCnv {
         }
         // -----------------------------------------------------------------------------------------
         if let Some(crsr_x_rel) = self.crsr_x_rel {
-            st.cursor_tracking_point = Some(Point { x: crsr_x_rel * st.plt_vs.w, y: ZRO });
+            st.cursor_tracking_point =
+                Some(Point { x: crsr_x_rel * st.plt_vs.w, y: ZRO });
         }
         // -----------------------------------------------------------------------------------------
         action
     }
 
     fn draw(
-        &self, st: &St, rndr: &Renderer, _thm: &Theme, bnds: Rectangle, _crsr: Cursor,
+        &self,
+        st: &St,
+        rndr: &Renderer,
+        _thm: &Theme,
+        bnds: Rectangle,
+        _crsr: Cursor,
     ) -> Vec<Geometry> {
         let mut geoms: Vec<Geometry> = Vec::new();
         // -----------------------------------------------------------------------------------------

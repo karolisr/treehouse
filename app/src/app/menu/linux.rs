@@ -24,7 +24,11 @@ impl ContextMenu {
 
 impl From<TvContextMenuListing> for ContextMenu {
     fn from(tv_context_menu_listing: TvContextMenuListing) -> Self {
-        tv_context_menu_listing.items().iter().enumerate().for_each(|(idx, item)| {});
+        tv_context_menu_listing
+            .items()
+            .iter()
+            .enumerate()
+            .for_each(|(idx, item)| {});
         ContextMenu::new()
     }
 }

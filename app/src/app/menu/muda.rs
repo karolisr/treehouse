@@ -29,6 +29,7 @@ impl From<muda::Submenu> for AppMenuItemId {
     }
 }
 
+#[allow(missing_debug_implementations)]
 #[derive(Default, Clone)]
 pub struct ContextMenu {
     muda_menu: muda::Menu,
@@ -54,11 +55,18 @@ impl From<ContextMenu> for muda::Menu {
 impl From<TvContextMenuListing> for ContextMenu {
     fn from(tv_context_menu_listing: TvContextMenuListing) -> Self {
         let muda_menu = muda::Menu::new();
-        tv_context_menu_listing.items().iter().enumerate().for_each(|(idx, item)| {
-            let mii = AppMenuItemId::ContextMenuIndex(idx);
-            let mmi = MenuItem::with_id(mii, item.label.clone(), item.enabled, None);
-            let _ = muda_menu.append(&mmi);
-        });
+        tv_context_menu_listing.items().iter().enumerate().for_each(
+            |(idx, item)| {
+                let mii = AppMenuItemId::ContextMenuIndex(idx);
+                let mmi = MenuItem::with_id(
+                    mii,
+                    item.label.clone(),
+                    item.enabled,
+                    None,
+                );
+                let _ = muda_menu.append(&mmi);
+            },
+        );
         ContextMenu::with_muda_menu(muda_menu)
     }
 }
@@ -102,7 +110,9 @@ impl AppMenu {
                     AppMenuItemId::SetSideBarPositionLeft => {
                         mi.set_checked(true);
                         mi.set_enabled(false);
-                        if let Some(miko) = self.items.get(&AppMenuItemId::SetSideBarPositionRight)
+                        if let Some(miko) = self
+                            .items
+                            .get(&AppMenuItemId::SetSideBarPositionRight)
                             && let Some(mio) = miko.as_check_menuitem()
                         {
                             mio.set_checked(false);
@@ -112,7 +122,9 @@ impl AppMenu {
                     AppMenuItemId::SetSideBarPositionRight => {
                         mi.set_checked(true);
                         mi.set_enabled(false);
-                        if let Some(miko) = self.items.get(&AppMenuItemId::SetSideBarPositionLeft)
+                        if let Some(miko) = self
+                            .items
+                            .get(&AppMenuItemId::SetSideBarPositionLeft)
                             && let Some(mio) = miko.as_check_menuitem()
                         {
                             mio.set_checked(false);
@@ -158,12 +170,17 @@ impl AppMenu {
         let submenu_app = Submenu::with_id("sub_app", "App", true);
         let submenu_file = Submenu::with_id("sub_file", "File", true);
         let submenu_view = Submenu::with_id("sub_view", "View", true);
-        let submenu_sidebar_pos =
-            Submenu::with_id(AppMenuItemId::SideBarPosition, "Sidebar Position", false);
+        let submenu_sidebar_pos = Submenu::with_id(
+            AppMenuItemId::SideBarPosition,
+            "Sidebar Position",
+            false,
+        );
 
         #[cfg(target_os = "macos")]
-        let menu_item_about =
-            muda::PredefinedMenuItem::about(None, Some(muda::AboutMetadata::default()));
+        let menu_item_about = muda::PredefinedMenuItem::about(
+            None,
+            Some(muda::AboutMetadata::default()),
+        );
 
         #[cfg(any(target_os = "windows", target_os = "linux"))]
         let menu_item_close_win = MenuItem::with_id(
@@ -219,48 +236,69 @@ impl AppMenu {
         );
 
         #[cfg(target_os = "macos")]
-        submenu_app.append(&menu_item_about).ok();
+        {
+            _ = submenu_app.append(&menu_item_about).ok();
+        }
         #[cfg(target_os = "macos")]
-        submenu_app.append(&menu_item_quit).ok();
+        {
+            _ = submenu_app.append(&menu_item_quit).ok();
+        }
 
-        submenu_file.append(&menu_item_open).ok();
-        submenu_file.append(&menu_item_save_as).ok();
+        _ = submenu_file.append(&menu_item_open).ok();
+        _ = submenu_file.append(&menu_item_save_as).ok();
         #[cfg(any(target_os = "windows", target_os = "linux"))]
-        submenu_file.append(&menu_item_close_win).ok();
+        {
+            _ = submenu_file.append(&menu_item_close_win).ok();
+        }
 
-        submenu_sidebar_pos.append(&menu_item_sidebar_pos_left).ok();
-        submenu_sidebar_pos.append(&menu_item_sidebar_pos_right).ok();
-        submenu_view.append(&submenu_sidebar_pos).ok();
-        submenu_view.append(&menu_item_toggle_search_bar).ok();
-
-        #[cfg(target_os = "macos")]
-        menu.append(&submenu_app).ok();
-        menu.append(&submenu_file).ok();
-        menu.append(&submenu_view).ok();
+        _ = submenu_sidebar_pos.append(&menu_item_sidebar_pos_left).ok();
+        _ = submenu_sidebar_pos.append(&menu_item_sidebar_pos_right).ok();
+        _ = submenu_view.append(&submenu_sidebar_pos).ok();
+        _ = submenu_view.append(&menu_item_toggle_search_bar).ok();
 
         #[cfg(target_os = "macos")]
-        items.insert(menu_item_quit.clone().into(), MenuItemKind::MenuItem(menu_item_quit));
-        items.insert(menu_item_open.clone().into(), MenuItemKind::MenuItem(menu_item_open));
-        items.insert(menu_item_save_as.clone().into(), MenuItemKind::MenuItem(menu_item_save_as));
+        {
+            _ = menu.append(&submenu_app).ok();
+        }
+        _ = menu.append(&submenu_file).ok();
+        _ = menu.append(&submenu_view).ok();
+
+        #[cfg(target_os = "macos")]
+        {
+            _ = items.insert(
+                menu_item_quit.clone().into(),
+                MenuItemKind::MenuItem(menu_item_quit),
+            );
+        }
+        _ = items.insert(
+            menu_item_open.clone().into(),
+            MenuItemKind::MenuItem(menu_item_open),
+        );
+        _ = items.insert(
+            menu_item_save_as.clone().into(),
+            MenuItemKind::MenuItem(menu_item_save_as),
+        );
         #[cfg(any(target_os = "windows", target_os = "linux"))]
         items.insert(
             menu_item_close_win.clone().into(),
             MenuItemKind::MenuItem(menu_item_close_win),
         );
-        items.insert(
+        _ = items.insert(
             menu_item_sidebar_pos_left.clone().into(),
             MenuItemKind::Check(menu_item_sidebar_pos_left),
         );
-        items.insert(
+        _ = items.insert(
             menu_item_sidebar_pos_right.clone().into(),
             MenuItemKind::Check(menu_item_sidebar_pos_right),
         );
-        items.insert(
+        _ = items.insert(
             menu_item_toggle_search_bar.clone().into(),
             MenuItemKind::MenuItem(menu_item_toggle_search_bar),
         );
-        items
-            .insert(submenu_sidebar_pos.clone().into(), MenuItemKind::Submenu(submenu_sidebar_pos));
+        _ = items.insert(
+            submenu_sidebar_pos.clone().into(),
+            MenuItemKind::Submenu(submenu_sidebar_pos),
+        );
 
         (menu, items)
     }

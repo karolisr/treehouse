@@ -9,7 +9,10 @@ fn btn_common<Msg>(btn: Button<'_, Msg>, msg: Option<Msg>) -> Button<'_, Msg> {
     btn.style(sty_btn)
 }
 
-pub fn btn_svg<Msg>(handle: impl Into<SvgHandle>, msg: Option<Msg>) -> Button<'static, Msg> {
+pub fn btn_svg<Msg>(
+    handle: impl Into<SvgHandle>,
+    msg: Option<Msg>,
+) -> Button<'static, Msg> {
     let svg = Svg::new(handle).style(sty_svg);
     btn_common(Button::new(svg), msg).padding(PADDING / THREE)
 }
@@ -22,7 +25,9 @@ pub fn btn_txt<Msg>(lab: &'_ str, msg: Option<Msg>) -> Button<'_, Msg> {
 }
 
 pub fn checkbox<Msg>(
-    lab: &str, is_checked: bool, msg: impl Fn(bool) -> Msg + 'static,
+    lab: &str,
+    is_checked: bool,
+    msg: impl Fn(bool) -> Msg + 'static,
 ) -> Checkbox<'_, Msg> {
     Checkbox::new(lab, is_checked)
         .on_toggle(msg)
@@ -60,7 +65,9 @@ pub fn rule_v<'a>(width: impl Into<Pixels>) -> Rule<'a, Theme> {
 }
 
 pub fn scrollable_common<Msg>(
-    scrl: Scrollable<Msg>, w: impl Into<Length>, h: impl Into<Length>,
+    scrl: Scrollable<Msg>,
+    w: impl Into<Length>,
+    h: impl Into<Length>,
 ) -> Scrollable<Msg> {
     let mut s = scrl;
     s = s.width(w.into());
@@ -75,7 +82,9 @@ pub fn scroll_bar() -> Scrollbar {
 }
 
 pub fn scrollable_v<'a, Msg: Clone + 'a>(
-    content: impl Into<Element<'a, Msg>>, w: impl Into<Length>, h: impl Into<Length>,
+    content: impl Into<Element<'a, Msg>>,
+    w: impl Into<Length>,
+    h: impl Into<Length>,
 ) -> Scrollable<'a, Msg> {
     let mut s: Scrollable<Msg> = Scrollable::new(content);
     s = s.direction(ScrollableDirection::Vertical(scroll_bar()));
@@ -83,7 +92,13 @@ pub fn scrollable_v<'a, Msg: Clone + 'a>(
 }
 
 pub fn slider<'a, T, Msg: Clone + 'a>(
-    lab: Option<&str>, min: T, max: T, sel: T, step: T, shift_step: T, msg: impl 'a + Fn(T) -> Msg,
+    lab: Option<&str>,
+    min: T,
+    max: T,
+    sel: T,
+    step: T,
+    shift_step: T,
+    msg: impl 'a + Fn(T) -> Msg,
 ) -> Element<'a, Msg>
 where
     f64: From<T>,
@@ -177,7 +192,10 @@ pub fn txt_i64(n: impl Into<i64>) -> Text<'static> {
 }
 
 pub fn txt_input<'a, Msg: Clone + 'a>(
-    placeholder: &str, value: &str, id: &'static str, msg: impl Fn(String) -> Msg + 'a,
+    placeholder: &str,
+    value: &str,
+    id: &'static str,
+    msg: impl Fn(String) -> Msg + 'a,
 ) -> TextInput<'a, Msg> {
     TextInput::new(placeholder, value)
         .style(sty_text_input)

@@ -20,14 +20,18 @@ use crate::app::AppMsg;
 
 pub fn register_ns_application_delegate_handlers() {
     extern "C" fn handle_application_open_files(
-        _this: &mut AnyObject, _sel: objc2::runtime::Sel, _sender: &objc2::runtime::AnyObject,
+        _this: &mut AnyObject,
+        _sel: objc2::runtime::Sel,
+        _sender: &objc2::runtime::AnyObject,
         files: &mut NSArray<NSString>,
     ) {
         autoreleasepool(|pool| {
             for file in files.iter() {
                 let path = unsafe { file.to_str(pool).to_owned() };
                 if !path.is_empty() {
-                    send_os_event(AppMsg::PathToOpen(Some(PathBuf::from(path))));
+                    send_os_event(AppMsg::PathToOpen(Some(PathBuf::from(
+                        path,
+                    ))));
                 }
             }
         });
@@ -43,12 +47,13 @@ pub fn register_ns_application_delegate_handlers() {
 
         my_class.add_method(
             sel!(application:openFiles:),
-            handle_application_open_files as unsafe extern "C" fn(_, _, _, _) -> _,
+            handle_application_open_files
+                as unsafe extern "C" fn(_, _, _, _) -> _,
         );
 
         let class = my_class.register();
 
         let delegate_obj = Retained::cast_unchecked::<AnyObject>(delegate);
-        AnyObject::set_class(&delegate_obj, class);
+        _ = AnyObject::set_class(&delegate_obj, class);
     }
 }

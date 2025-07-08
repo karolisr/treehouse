@@ -6,7 +6,7 @@
     ],
     "settings": {
         "editor.rulers": [
-            100,
+            80,
         ],
         "launch": {
             "configurations": [],

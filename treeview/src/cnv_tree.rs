@@ -139,23 +139,23 @@ impl TreeCnv {
     }
 
     pub(super) fn clear_cache_bnds(&self) {
-        self.cache_bnds.clear()
+        self.cache_bnds.clear();
     }
 
     pub(super) fn clear_cache_cache_palette(&self) {
-        self.cache_palette.clear()
+        self.cache_palette.clear();
     }
 
     pub(super) fn clear_cache_cursor_line(&self) {
-        self.cache_cursor_line.clear()
+        self.cache_cursor_line.clear();
     }
 
     pub(super) fn clear_cache_hovered_node(&self) {
-        self.cache_hovered_node.clear()
+        self.cache_hovered_node.clear();
     }
 
     pub(super) fn clear_cache_legend(&self) {
-        self.cache_legend.clear()
+        self.cache_legend.clear();
     }
 
     pub(super) fn clear_caches_all(&self) {
@@ -167,10 +167,15 @@ impl TreeCnv {
     }
 
     pub(super) fn calc_tre_vs(
-        &self, cnv_vs: &RectVals<Float>, edges_tip_tallest: &[Edge], is_rooted: bool,
-        has_clade_labels: bool, text_w_tip: &mut TextWidth<'static>,
+        &self,
+        cnv_vs: &RectVals<Float>,
+        edges_tip_tallest: &[Edge],
+        is_rooted: bool,
+        has_clade_labels: bool,
+        text_w_tip: &mut TextWidth<'static>,
     ) -> (RectVals<Float>, Float) {
-        let tre_vs_prelim = cnv_vs.padded(self.padd_l, self.padd_r, self.padd_t, self.padd_b);
+        let tre_vs_prelim =
+            cnv_vs.padded(self.padd_l, self.padd_r, self.padd_t, self.padd_b);
         let mut tip_w: Float = ZRO;
         let trim_to = match self.trim_tip_labs {
             true => Some(self.trim_tip_labs_to_nchar as usize),
@@ -178,8 +183,8 @@ impl TreeCnv {
         };
         if self.draw_labs_tip && self.draw_labs_allowed {
             tip_w = calc_tip_w(
-                self.tre_sty, &tre_vs_prelim, edges_tip_tallest, self.lab_offset_tip, trim_to,
-                text_w_tip,
+                self.tre_sty, &tre_vs_prelim, edges_tip_tallest,
+                self.lab_offset_tip, trim_to, text_w_tip,
             );
         }
         let mut offset_due_to_clade_lab = ZRO;
@@ -196,7 +201,8 @@ impl TreeCnv {
                     offset_due_to_tip_lab = self.lab_size_tip / TWO;
                 }
                 if self.draw_labs_allowed && self.draw_labs_brnch {
-                    offset_due_to_brnch_lab = self.lab_size_brnch + self.lab_offset_brnch.abs();
+                    offset_due_to_brnch_lab =
+                        self.lab_size_brnch + self.lab_offset_brnch.abs();
                 }
                 let right = tip_w + offset_due_to_clade_lab;
                 let top = (offset_due_to_tip_lab).max(offset_due_to_brnch_lab);
@@ -233,20 +239,29 @@ impl TreeCnv {
 }
 
 fn calc_tip_w(
-    tre_sty: TreSty, tre_vs: &RectVals<Float>, edges_tip_tallest: &[Edge], lab_offset_tip: Float,
-    trim_to: Option<usize>, text_w_tip: &mut TextWidth,
+    tre_sty: TreSty,
+    tre_vs: &RectVals<Float>,
+    edges_tip_tallest: &[Edge],
+    lab_offset_tip: Float,
+    trim_to: Option<usize>,
+    text_w_tip: &mut TextWidth,
 ) -> Float {
     let tre_vs_w = match tre_sty {
         TreSty::PhyGrm => tre_vs.w,
         TreSty::Fan => tre_vs.radius_min,
     };
-    let tip_w: Float =
-        lab_offset_tip + calc_tip_lab_extra_w(tre_vs_w, edges_tip_tallest, trim_to, text_w_tip);
+    let tip_w: Float = lab_offset_tip
+        + calc_tip_lab_extra_w(
+            tre_vs_w, edges_tip_tallest, trim_to, text_w_tip,
+        );
     tip_w.min(tre_vs_w / TWO)
 }
 
 fn calc_tip_lab_extra_w(
-    tre_vs_w: Float, edges_tip_tallest: &[Edge], trim_to: Option<usize>, text_w_tip: &mut TextWidth,
+    tre_vs_w: Float,
+    edges_tip_tallest: &[Edge],
+    trim_to: Option<usize>,
+    text_w_tip: &mut TextWidth,
 ) -> Float {
     let mut max_w: Float = ZRO;
     let mut max_offset: Float = ZRO;
@@ -254,14 +269,15 @@ fn calc_tip_lab_extra_w(
         if let Some(name) = &edge.name {
             let offset = edge.x1 as Float * tre_vs_w;
             if offset >= max_offset {
-                max_offset = offset
+                max_offset = offset;
             };
             let mut name_trimmed = name.to_string();
             if let Some(nchar) = trim_to {
                 name_trimmed = ellipsize_unicode(name_trimmed, nchar);
             }
             let tip_name_w = text_w_tip.width(&name_trimmed);
-            let curr_max_w = tip_name_w + (max_offset + offset) / TWO - tre_vs_w;
+            let curr_max_w =
+                tip_name_w + (max_offset + offset) / TWO - tre_vs_w;
             if curr_max_w >= max_w {
                 max_w = curr_max_w;
             }

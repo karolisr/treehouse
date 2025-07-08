@@ -29,7 +29,8 @@ impl From<String> for AppMenuItemId {
             "ToggleSearchBar" => AppMenuItemId::ToggleSearchBar,
             // -------------------------------------------------------------------------------------
             val if val.starts_with("ContextMenuIndex") => {
-                let idx_str = val.replace("ContextMenuIndex(", "").replace(")", "");
+                let idx_str =
+                    val.replace("ContextMenuIndex(", "").replace(")", "");
                 if let Ok(idx) = idx_str.parse::<usize>() {
                     AppMenuItemId::ContextMenuIndex(idx)
                 } else {
@@ -61,7 +62,9 @@ impl From<&AppMenuItemId> for AppMsg {
             AppMenuItemId::SetSideBarPositionRight => {
                 AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPosition::Right))
             }
-            AppMenuItemId::ToggleSearchBar => AppMsg::TvMsg(TvMsg::ToggleSearchBar),
+            AppMenuItemId::ToggleSearchBar => {
+                AppMsg::TvMsg(TvMsg::ToggleSearchBar)
+            }
             AppMenuItemId::ContextMenuIndex(idx) => {
                 AppMsg::TvMsg(TvMsg::ContextMenuChosenIdx(*idx))
             }

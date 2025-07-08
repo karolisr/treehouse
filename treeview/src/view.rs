@@ -25,11 +25,13 @@ impl TreeView {
         tool_bar_and_content_col = tool_bar_and_content_col.spacing(PADDING);
 
         if self.show_tool_bar {
-            tool_bar_and_content_col = tool_bar_and_content_col.push(toolbar(self, ts.clone()));
+            tool_bar_and_content_col =
+                tool_bar_and_content_col.push(toolbar(self, ts.clone()));
         }
 
         if self.show_search_bar {
-            tool_bar_and_content_col = tool_bar_and_content_col.push(search_bar(self, ts.clone()));
+            tool_bar_and_content_col =
+                tool_bar_and_content_col.push(search_bar(self, ts.clone()));
         }
 
         tool_bar_and_content_col = tool_bar_and_content_col.push(content(self));
@@ -58,15 +60,18 @@ fn content<'a>(tv: &'a TreeView) -> Element<'a, TvMsg> {
     let ele: Element<'a, TvMsg> = if let Some(pane_grid) = &tv.pane_grid {
         PaneGrid::new(pane_grid, |pane_idx, tv_pane, _is_maximized| {
             PgContent::new(
-                center(responsive(move |size| pane_content(tv, tv_pane, size))).padding(PADDING),
+                center(responsive(move |size| pane_content(tv, tv_pane, size)))
+                    .padding(PADDING),
             )
-            .style(match &pane_idx == pane_grid.panes.last_key_value().unwrap().0 {
-                true => match tv.sidebar_pos {
-                    SidebarPosition::Left => sty_pane_body_bottom_right,
-                    SidebarPosition::Right => sty_pane_body_bottom_left,
+            .style(
+                match &pane_idx == pane_grid.panes.last_key_value().unwrap().0 {
+                    true => match tv.sidebar_pos {
+                        SidebarPosition::Left => sty_pane_body_bottom_right,
+                        SidebarPosition::Right => sty_pane_body_bottom_left,
+                    },
+                    false => sty_pane_body,
                 },
-                false => sty_pane_body,
-            })
+            )
         })
         .style(sty_pane_grid)
         .on_resize(ZRO, TvMsg::PaneResized)
@@ -79,7 +84,11 @@ fn content<'a>(tv: &'a TreeView) -> Element<'a, TvMsg> {
     center(ele).into()
 }
 
-fn pane_content<'a>(tv: &'a TreeView, tv_pane: &TvPane, size: Size) -> Element<'a, TvMsg> {
+fn pane_content<'a>(
+    tv: &'a TreeView,
+    tv_pane: &TvPane,
+    size: Size,
+) -> Element<'a, TvMsg> {
     let w = size.width;
     let h = size.height;
     let cnv_w = tv.calc_tre_cnv_w(w);
@@ -146,12 +155,20 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         center(
             iced_row![
                 match tv.show_search_bar {
-                    true => btn_svg(Icon::HideSearch, Some(TvMsg::ToggleSearchBar)),
-                    false => btn_svg(Icon::ShowSearch, Some(TvMsg::ToggleSearchBar)),
+                    true =>
+                        btn_svg(Icon::HideSearch, Some(TvMsg::ToggleSearchBar)),
+                    false =>
+                        btn_svg(Icon::ShowSearch, Some(TvMsg::ToggleSearchBar)),
                 },
                 match tv.show_ltt {
-                    true => btn_svg(Icon::HidePlot, Some(TvMsg::LttVisChanged(false))),
-                    false => btn_svg(Icon::ShowPlot, Some(TvMsg::LttVisChanged(true))),
+                    true => btn_svg(
+                        Icon::HidePlot,
+                        Some(TvMsg::LttVisChanged(false))
+                    ),
+                    false => btn_svg(
+                        Icon::ShowPlot,
+                        Some(TvMsg::LttVisChanged(true))
+                    ),
                 },
                 match tv.sidebar_pos {
                     SidebarPosition::Left => btn_svg(
@@ -184,8 +201,12 @@ fn search_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     let mut row1: Row<TvMsg> = Row::new();
     let mut row2: Row<TvMsg> = Row::new();
 
-    row1 =
-        row1.push(txt_input("Search", &tv.search_string, tv.search_text_input_id, TvMsg::Search));
+    row1 = row1.push(txt_input(
+        "Search",
+        &tv.search_string,
+        tv.search_text_input_id,
+        TvMsg::Search,
+    ));
 
     let nxt_prv_btn_row = iced_row![
         btn_svg(Icon::ArrowLeft, {
@@ -243,10 +264,16 @@ fn search_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
 
     row1 = row1.push(nxt_prv_btn_row);
     row1 = row1.push(add_rem_btn_row);
-    row2 = row2.push(checkbox("Tips Only", tv.tip_only_search, TvMsg::TipOnlySearchSelChanged));
+    row2 = row2.push(checkbox(
+        "Tips Only",
+        tv.tip_only_search,
+        TvMsg::TipOnlySearchSelChanged,
+    ));
 
-    row1 = row1.spacing(PADDING).height(Length::Shrink).align_y(Vertical::Center);
-    row2 = row2.spacing(PADDING).height(Length::Shrink).align_y(Vertical::Center);
+    row1 =
+        row1.spacing(PADDING).height(Length::Shrink).align_y(Vertical::Center);
+    row2 =
+        row2.spacing(PADDING).height(Length::Shrink).align_y(Vertical::Center);
 
     main_col = main_col.push(row1);
     main_col = main_col.push(row2);
@@ -375,12 +402,16 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
                 2,
                 TvMsg::RootLenSelChanged,
             )
-        ])
+        ]);
     } else {
-        sb_col = sb_col.push(toggler_root(ts.is_rooted(), tv.tre_cnv.draw_root))
+        sb_col =
+            sb_col.push(toggler_root(ts.is_rooted(), tv.tre_cnv.draw_root));
     }
 
-    if ts.has_tip_labs() && tv.tre_cnv.draw_labs_tip && tv.tre_cnv.draw_labs_allowed {
+    if ts.has_tip_labs()
+        && tv.tre_cnv.draw_labs_tip
+        && tv.tre_cnv.draw_labs_allowed
+    {
         sb_col = sb_col.push(iced_col![
             toggler_label_tip(true, tv.tre_cnv.draw_labs_tip,),
             space_v(ZRO, PADDING / TWO),
@@ -414,15 +445,18 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
                     iced_col![]
                 }
             },
-        ])
+        ]);
     } else {
         sb_col = sb_col.push(toggler_label_tip(
             ts.has_tip_labs() && tv.tre_cnv.draw_labs_allowed,
             tv.tre_cnv.draw_labs_tip,
-        ))
+        ));
     }
 
-    if ts.has_int_labs() && tv.tre_cnv.draw_labs_int && tv.tre_cnv.draw_labs_allowed {
+    if ts.has_int_labs()
+        && tv.tre_cnv.draw_labs_int
+        && tv.tre_cnv.draw_labs_allowed
+    {
         sb_col = sb_col.push(iced_col![
             toggler_label_int(true, tv.tre_cnv.draw_labs_int),
             space_v(ZRO, PADDING / TWO),
@@ -435,15 +469,18 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
                 2,
                 TvMsg::IntLabSizeChanged,
             )
-        ])
+        ]);
     } else {
         sb_col = sb_col.push(toggler_label_int(
             ts.has_int_labs() && tv.tre_cnv.draw_labs_allowed,
             tv.tre_cnv.draw_labs_int,
-        ))
+        ));
     }
 
-    if ts.has_brlen() && tv.tre_cnv.draw_labs_brnch && tv.tre_cnv.draw_labs_allowed {
+    if ts.has_brlen()
+        && tv.tre_cnv.draw_labs_brnch
+        && tv.tre_cnv.draw_labs_allowed
+    {
         sb_col = sb_col.push(iced_col![
             toggler_label_branch(true, tv.tre_cnv.draw_labs_brnch),
             space_v(ZRO, PADDING / TWO),
@@ -456,22 +493,26 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
                 2,
                 TvMsg::BrnchLabSizeChanged,
             )
-        ])
+        ]);
     } else {
         sb_col = sb_col.push(toggler_label_branch(
             ts.has_brlen() && tv.tre_cnv.draw_labs_allowed,
             tv.tre_cnv.draw_labs_brnch,
-        ))
+        ));
     }
 
-    sb_col = sb_col.push(iced_col![toggler_legend(ts.has_brlen(), tv.tre_cnv.draw_legend)]);
+    sb_col = sb_col.push(iced_col![toggler_legend(
+        ts.has_brlen(),
+        tv.tre_cnv.draw_legend
+    )]);
     sb_col = sb_col.push(iced_col![toggler_cursor_line(
         true, tv.tre_cnv.draw_cursor_line, tv.tre_cnv.tre_sty
     )]);
     sb_col = sb_col.push(rule_h(SF));
 
     if tv.show_ltt {
-        sb_col = sb_col.push(pick_list_ltt_y_axis_scale_type(&tv.ltt_cnv.scale_y));
+        sb_col =
+            sb_col.push(pick_list_ltt_y_axis_scale_type(&tv.ltt_cnv.scale_y));
     }
 
     container(container(sb_col).clip(true))
@@ -522,31 +563,42 @@ pub(crate) fn btn_unroot(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
 pub(crate) fn pick_list_ltt_y_axis_scale_type<'a>(
     axis_scale_type: &AxisScaleType,
 ) -> Row<'a, TvMsg> {
-    let mut pl: PickList<AxisScaleType, &[AxisScaleType], AxisScaleType, TvMsg> = PickList::new(
+    let mut pl: PickList<
+        AxisScaleType,
+        &[AxisScaleType],
+        AxisScaleType,
+        TvMsg,
+    > = PickList::new(
         &AXIS_SCALE_TYPE_OPTS,
         Some(axis_scale_type.clone()),
         TvMsg::LttYAxisScaleTypeChanged,
     );
     pl = pick_list_common(pl);
-    iced_row![txt("Y-Axis Scale").width(Length::FillPortion(9)), pl].align_y(Vertical::Center)
+    iced_row![txt("Y-Axis Scale").width(Length::FillPortion(9)), pl]
+        .align_y(Vertical::Center)
 }
 
 pub(crate) fn pick_list_node_ordering<'a>(node_ord: NodeOrd) -> Row<'a, TvMsg> {
     let mut pl: PickList<NodeOrd, &[NodeOrd], NodeOrd, TvMsg> =
         PickList::new(&NODE_ORD_OPTS, Some(node_ord), TvMsg::NodeOrdOptChanged);
     pl = pick_list_common(pl);
-    iced_row![txt("Node Order").width(Length::FillPortion(9)), pl].align_y(Vertical::Center)
+    iced_row![txt("Node Order").width(Length::FillPortion(9)), pl]
+        .align_y(Vertical::Center)
 }
 
 pub(crate) fn pick_list_tre_sty<'a>(tre_sty: TreSty) -> Row<'a, TvMsg> {
     let mut pl: PickList<TreSty, &[TreSty], TreSty, TvMsg> =
         PickList::new(&TRE_STY_OPTS, Some(tre_sty), TvMsg::TreStyOptChanged);
     pl = pick_list_common(pl);
-    iced_row![txt("Style").width(Length::FillPortion(9)), pl].align_y(Vertical::Center)
+    iced_row![txt("Style").width(Length::FillPortion(9)), pl]
+        .align_y(Vertical::Center)
 }
 
 pub(crate) fn scrollable_cnv_ltt<'a>(
-    id: &'static str, cnv: Cnv<&'a PlotCnv, TvMsg>, w: impl Into<Length>, h: impl Into<Length>,
+    id: &'static str,
+    cnv: Cnv<&'a PlotCnv, TvMsg>,
+    w: impl Into<Length>,
+    h: impl Into<Length>,
 ) -> Scrollable<'a, TvMsg> {
     let mut s: Scrollable<TvMsg> = Scrollable::new(cnv);
     s = s.direction(ScrollableDirection::Horizontal(scroll_bar()));
@@ -556,17 +608,25 @@ pub(crate) fn scrollable_cnv_ltt<'a>(
 }
 
 pub(crate) fn scrollable_cnv_tre<'a>(
-    id: &'static str, cnv: Cnv<&'a TreeCnv, TvMsg>, w: impl Into<Length>, h: impl Into<Length>,
+    id: &'static str,
+    cnv: Cnv<&'a TreeCnv, TvMsg>,
+    w: impl Into<Length>,
+    h: impl Into<Length>,
 ) -> Scrollable<'a, TvMsg> {
     let mut s: Scrollable<TvMsg> = Scrollable::new(cnv);
-    s = s.direction(ScrollableDirection::Both { horizontal: scroll_bar(), vertical: scroll_bar() });
+    s = s.direction(ScrollableDirection::Both {
+        horizontal: scroll_bar(),
+        vertical: scroll_bar(),
+    });
     s = s.id(id);
     s = s.on_scroll(TvMsg::TreCnvScrolledOrResized);
     scrollable_common(s, w, h)
 }
 
 pub(crate) fn toggler_cursor_line<'a>(
-    enabled: bool, draw_cursor_line: bool, tre_sty: TreSty,
+    enabled: bool,
+    draw_cursor_line: bool,
+    tre_sty: TreSty,
 ) -> Toggler<'a, TvMsg> {
     let lab = match tre_sty {
         TreSty::PhyGrm => "Cursor Tracking Line",
@@ -579,7 +639,10 @@ pub(crate) fn toggler_cursor_line<'a>(
     tglr
 }
 
-pub(crate) fn toggler_label_branch<'a>(enabled: bool, draw_brnch_labs: bool) -> Toggler<'a, TvMsg> {
+pub(crate) fn toggler_label_branch<'a>(
+    enabled: bool,
+    draw_brnch_labs: bool,
+) -> Toggler<'a, TvMsg> {
     let mut tglr = toggler("Branch Lengths", draw_brnch_labs);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::BrnchLabVisChanged);
@@ -587,7 +650,10 @@ pub(crate) fn toggler_label_branch<'a>(enabled: bool, draw_brnch_labs: bool) -> 
     tglr
 }
 
-pub(crate) fn toggler_label_int<'a>(enabled: bool, draw_int_labs: bool) -> Toggler<'a, TvMsg> {
+pub(crate) fn toggler_label_int<'a>(
+    enabled: bool,
+    draw_int_labs: bool,
+) -> Toggler<'a, TvMsg> {
     let mut tglr = toggler("Internal Labels", draw_int_labs);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::IntLabVisChanged);
@@ -595,7 +661,10 @@ pub(crate) fn toggler_label_int<'a>(enabled: bool, draw_int_labs: bool) -> Toggl
     tglr
 }
 
-pub(crate) fn toggler_label_tip<'a>(enabled: bool, draw_tip_labs: bool) -> Toggler<'a, TvMsg> {
+pub(crate) fn toggler_label_tip<'a>(
+    enabled: bool,
+    draw_tip_labs: bool,
+) -> Toggler<'a, TvMsg> {
     let mut tglr = toggler("Tip Labels", draw_tip_labs);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::TipLabVisChanged);
@@ -603,7 +672,10 @@ pub(crate) fn toggler_label_tip<'a>(enabled: bool, draw_tip_labs: bool) -> Toggl
     tglr
 }
 
-pub(crate) fn toggler_label_tip_trim<'a>(enabled: bool, trim_tip_labs: bool) -> Toggler<'a, TvMsg> {
+pub(crate) fn toggler_label_tip_trim<'a>(
+    enabled: bool,
+    trim_tip_labs: bool,
+) -> Toggler<'a, TvMsg> {
     let mut tglr = toggler("Trim Tip Labels", trim_tip_labs);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::TipLabTrimOptChanged);
@@ -611,7 +683,10 @@ pub(crate) fn toggler_label_tip_trim<'a>(enabled: bool, trim_tip_labs: bool) -> 
     tglr
 }
 
-pub(crate) fn toggler_legend<'a>(enabled: bool, draw_legend: bool) -> Toggler<'a, TvMsg> {
+pub(crate) fn toggler_legend<'a>(
+    enabled: bool,
+    draw_legend: bool,
+) -> Toggler<'a, TvMsg> {
     let mut tglr = toggler("Legend", draw_legend);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::LegendVisChanged);
@@ -619,7 +694,10 @@ pub(crate) fn toggler_legend<'a>(enabled: bool, draw_legend: bool) -> Toggler<'a
     tglr
 }
 
-pub(crate) fn toggler_root<'a>(enabled: bool, draw_root: bool) -> Toggler<'a, TvMsg> {
+pub(crate) fn toggler_root<'a>(
+    enabled: bool,
+    draw_root: bool,
+) -> Toggler<'a, TvMsg> {
     let mut tglr = toggler("Root", draw_root);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::RootVisChanged);

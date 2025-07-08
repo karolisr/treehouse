@@ -1,5 +1,6 @@
 use iced::Color;
 
+#[derive(Debug)]
 pub struct Clr {}
 
 impl Clr {

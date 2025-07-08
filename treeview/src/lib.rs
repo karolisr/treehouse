@@ -40,7 +40,9 @@ use cnv_plot::AXIS_SCALE_TYPE_OPTS;
 use cnv_plot::{AxisScaleType, PlotCnv, PlotDataType};
 use cnv_tree::TreeCnv;
 use consts::*;
-use dendros::{Edge, LttPoint, Node, NodeId, Tree, TreeFloat, ltt, write_newick};
+use dendros::{
+    Edge, LttPoint, Node, NodeId, Tree, TreeFloat, ltt, write_newick,
+};
 use rayon::prelude::*;
 use riced::*;
 use treestate::TreeState;
@@ -143,7 +145,13 @@ impl RectVals<Float> {
         Rectangle { x, y, width: w, height: h }.into()
     }
 
-    pub fn padded(&self, left: Float, right: Float, top: Float, bottom: Float) -> RectVals<Float> {
+    pub fn padded(
+        &self,
+        left: Float,
+        right: Float,
+        top: Float,
+        bottom: Float,
+    ) -> RectVals<Float> {
         let x = self.x0 + left;
         let y = self.y0 + top;
         let width = self.w - right - left;
@@ -221,18 +229,25 @@ where
 
 impl Display for RectVals<Float> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "({:7.2}, {:7.2}), ({:7.2}, {:7.2})", self.x0, self.y0, self.x1, self.y1)
+        write!(
+            f,
+            "({:7.2}, {:7.2}), ({:7.2}, {:7.2})",
+            self.x0, self.y0, self.x1, self.y1
+        )
     }
 }
 
 fn ellipsize_unicode(name: impl Into<String>, width: usize) -> String {
     let tmp = name.into();
-    let mut rv = tmp.char_indices().fold(String::new(), |mut string_accum, (i, character)| {
-        if i < width {
-            string_accum.push(character);
-        }
-        string_accum
-    });
+    let mut rv = tmp.char_indices().fold(
+        String::new(),
+        |mut string_accum, (i, character)| {
+            if i < width {
+                string_accum.push(character);
+            }
+            string_accum
+        },
+    );
     if tmp.len() > rv.len() {
         rv.push('\u{2026}'); // ellipsis
     }

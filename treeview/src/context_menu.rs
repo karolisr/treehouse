@@ -13,10 +13,10 @@ pub struct TvContextMenuListing {
 }
 
 impl TvContextMenuListing {
-    pub(crate) fn for_node(node_id: &NodeId, tree_state: &TreeState) -> Self {
+    pub(crate) fn for_node(node_id: NodeId, tree_state: &TreeState) -> Self {
         Self::default()
-            .push(TvMsg::Root(*node_id), tree_state)
-            .push(TvMsg::AddRemoveCladeLabel(*node_id), tree_state)
+            .push(TvMsg::Root(node_id), tree_state)
+            .push(TvMsg::AddRemoveCladeLabel(node_id), tree_state)
     }
 
     pub fn items(&self) -> &[TvContextMenuItem] {
@@ -30,12 +30,13 @@ impl TvContextMenuListing {
         }
 
         let Values { enabled, label } = match tv_msg {
-            TvMsg::Root(node_id) => {
-                Values { enabled: tree_state.can_root(&node_id), label: "Root here" }
-            }
+            TvMsg::Root(node_id) => Values {
+                enabled: tree_state.can_root(node_id),
+                label: "Root here",
+            },
 
             TvMsg::AddRemoveCladeLabel(node_id) => {
-                let label = match tree_state.clade_has_label(&node_id) {
+                let label = match tree_state.clade_has_label(node_id) {
                     true => "Unlabel",
                     false => "Label",
                 };
@@ -44,8 +45,11 @@ impl TvContextMenuListing {
             _ => return self,
         };
 
-        let item: TvContextMenuItem =
-            TvContextMenuItem { msg: tv_msg, label: label.to_string(), enabled };
+        let item: TvContextMenuItem = TvContextMenuItem {
+            msg: tv_msg,
+            label: label.to_string(),
+            enabled,
+        };
 
         self.items.push(item);
         self
@@ -57,8 +61,11 @@ impl Display for TvContextMenuListing {
         let mut s: String = String::new();
         self.items().iter().enumerate().for_each(|(i, item)| {
             s.push_str(
-                format!("\n\t{i}: {} [enabled={}] {:?}", item.label, item.enabled, item.msg)
-                    .as_str(),
+                format!(
+                    "\n\t{i}: {} [enabled={}] {:?}",
+                    item.label, item.enabled, item.msg
+                )
+                .as_str(),
             );
         });
         writeln!(f, "{s}")

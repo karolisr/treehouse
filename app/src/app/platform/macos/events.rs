@@ -1,5 +1,7 @@
 use crate::app::AppMsg;
-use riced::{Never, Sipper, StreamExt, Subscription, UnboundedSender, sipper, unbounded};
+use riced::{
+    Never, Sipper, StreamExt, Subscription, UnboundedSender, sipper, unbounded,
+};
 use std::sync::OnceLock;
 
 static SENDER: OnceLock<UnboundedSender<AppMsg>> = OnceLock::new();
@@ -19,10 +21,12 @@ pub fn os_events() -> Subscription<AppMsg> {
 fn macos_events_sipper() -> impl Sipper<Never, AppMsg> {
     sipper(async |mut output| {
         let (sender, mut receiver) = unbounded();
-        SENDER.set(sender).expect("SENDER for os_events_sipper was set once previously.");
+        SENDER
+            .set(sender)
+            .expect("SENDER for os_events_sipper was set once previously.");
         loop {
             let app_msg = receiver.select_next_some().await;
-            output.send(app_msg).await
+            output.send(app_msg).await;
         }
     })
 }
