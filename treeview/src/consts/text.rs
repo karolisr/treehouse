@@ -19,7 +19,7 @@ pub(crate) const TEMPLATE_TXT_LAB_TIP: CnvText = CnvText {
 };
 
 pub(crate) const TEMPLATE_TXT_LAB_INTERNAL: CnvText = CnvText {
-    color: Clr::RED,
+    color: Clr::BLK,
     size: Pixels(SF),
     line_height: LineHeight::Absolute(Pixels(SF)),
     align_x: TextAlignment::Left,
@@ -37,7 +37,7 @@ pub(crate) const TEMPLATE_TXT_LAB_INTERNAL: CnvText = CnvText {
 };
 
 pub(crate) const TEMPLATE_TXT_LAB_BRANCH: CnvText = CnvText {
-    color: Clr::BLU,
+    color: Clr::BLK,
     size: Pixels(SF),
     line_height: LineHeight::Absolute(Pixels(SF)),
     align_x: TextAlignment::Center,

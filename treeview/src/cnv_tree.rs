@@ -10,6 +10,7 @@ pub(super) struct TreeCnv {
     pub(super) tre_sty: TreSty,
     // ---------------------------------------------------------------------------------------------
     cache_bnds: Cache,
+    cache_tip_lab_w_resize_area: Cache,
     cache_legend: Cache,
     cache_hovered_node: Cache,
     cache_cursor_line: Cache,
@@ -66,8 +67,12 @@ pub(super) struct TreeCnv {
     // ---------------------------------------------------------------------------------------------
     pub(super) tree_state: Option<Rc<TreeState>>,
     // ---------------------------------------------------------------------------------------------
+    pub(super) align_tip_labs: bool,
     pub(super) trim_tip_labs: bool,
     pub(super) trim_tip_labs_to_nchar: u16,
+    // ---------------------------------------------------------------------------------------------
+    // pub(crate) tip_w_is_set_by_user: bool,
+    pub(crate) tip_w_set_by_user: Option<Float>,
 }
 
 impl TreeCnv {
@@ -110,6 +115,7 @@ impl TreeCnv {
             clade_labs_w: ZRO,
             // -------------------------------------------------------------------------------------
             cache_bnds: Default::default(),
+            cache_tip_lab_w_resize_area: Default::default(),
             cache_legend: Default::default(),
             cache_hovered_node: Default::default(),
             cache_cursor_line: Default::default(),
@@ -132,14 +138,21 @@ impl TreeCnv {
             // -------------------------------------------------------------------------------------
             tree_state: None,
             // -------------------------------------------------------------------------------------
+            align_tip_labs: true,
             trim_tip_labs: true,
             trim_tip_labs_to_nchar: 20,
             // -------------------------------------------------------------------------------------
+            // tip_w_is_set_by_user: false,
+            tip_w_set_by_user: None,
         }
     }
 
     pub(super) fn clear_cache_bnds(&self) {
         self.cache_bnds.clear();
+    }
+
+    pub(super) fn clear_cache_tip_lab_w_resize_area(&self) {
+        self.cache_tip_lab_w_resize_area.clear();
     }
 
     pub(super) fn clear_cache_cache_palette(&self) {
@@ -160,6 +173,7 @@ impl TreeCnv {
 
     pub(super) fn clear_caches_all(&self) {
         self.clear_cache_bnds();
+        self.clear_cache_tip_lab_w_resize_area();
         self.clear_cache_cache_palette();
         self.clear_cache_cursor_line();
         self.clear_cache_hovered_node();
@@ -183,8 +197,8 @@ impl TreeCnv {
         };
         if self.draw_labs_tip && self.draw_labs_allowed {
             tip_w = calc_tip_w(
-                self.tre_sty, &tre_vs_prelim, edges_tip_tallest,
-                self.lab_offset_tip, trim_to, text_w_tip,
+                self.tre_sty, &tre_vs_prelim, self.tip_w_set_by_user,
+                edges_tip_tallest, self.lab_offset_tip, trim_to, text_w_tip,
             );
         }
         let mut offset_due_to_clade_lab = ZRO;
@@ -241,7 +255,8 @@ impl TreeCnv {
 fn calc_tip_w(
     tre_sty: TreSty,
     tre_vs: &RectVals<Float>,
-    edges_tip_tallest: &[Edge],
+    tip_w_set_by_user: Option<Float>,
+    edges_to_consider: &[Edge],
     lab_offset_tip: Float,
     trim_to: Option<usize>,
     text_w_tip: &mut TextWidth,
@@ -250,11 +265,17 @@ fn calc_tip_w(
         TreSty::PhyGrm => tre_vs.w,
         TreSty::Fan => tre_vs.radius_min,
     };
-    let tip_w: Float = lab_offset_tip
-        + calc_tip_lab_extra_w(
-            tre_vs_w, edges_tip_tallest, trim_to, text_w_tip,
-        );
-    tip_w.min(tre_vs_w / TWO)
+
+    let tip_w: Float = if let Some(tip_w_set_by_user) = tip_w_set_by_user {
+        tip_w_set_by_user
+    } else {
+        lab_offset_tip
+            + calc_tip_lab_extra_w(
+                tre_vs_w, edges_to_consider, trim_to, text_w_tip,
+            )
+    };
+
+    tip_w.min(tre_vs_w / TWO).max(PADDING)
 }
 
 fn calc_tip_lab_extra_w(

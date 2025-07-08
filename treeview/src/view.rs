@@ -430,6 +430,8 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
                 TvMsg::TipLabSizeChanged,
             ),
             space_v(ZRO, PADDING / TWO),
+            toggler_label_tip_align(true, tv.tre_cnv.align_tip_labs),
+            space_v(ZRO, PADDING / TWO),
             toggler_label_tip_trim(true, tv.tre_cnv.trim_tip_labs),
             match tv.tre_cnv.trim_tip_labs {
                 true => {
@@ -673,6 +675,17 @@ pub(crate) fn toggler_label_tip<'a>(
     let mut tglr = toggler("Tip Labels", draw_tip_labs);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::TipLabVisChanged);
+    }
+    tglr
+}
+
+pub(crate) fn toggler_label_tip_align<'a>(
+    enabled: bool,
+    align_tip_labs: bool,
+) -> Toggler<'a, TvMsg> {
+    let mut tglr = toggler("Align Tip Labels", align_tip_labs);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::TipLabAlignOptChanged);
     }
     tglr
 }

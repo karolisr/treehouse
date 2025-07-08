@@ -155,8 +155,8 @@ impl Program<TvMsg> for PlotCnv {
         _st: &St,
         _bnds: Rectangle,
         _crsr: Cursor,
-    ) -> Interaction {
-        Interaction::default()
+    ) -> MouseInteraction {
+        MouseInteraction::default()
     }
 
     fn update(

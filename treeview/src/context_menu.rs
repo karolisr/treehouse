@@ -15,35 +15,50 @@ pub struct TvContextMenuListing {
 impl TvContextMenuListing {
     pub(crate) fn for_node(node_id: NodeId, tree_state: &TreeState) -> Self {
         Self::default()
-            .push(TvMsg::Root(node_id), tree_state)
-            .push(TvMsg::AddRemoveCladeLabel(node_id), tree_state)
+            .push(TvMsg::Root(node_id), Some(tree_state))
+            .push(TvMsg::AddRemoveCladeLabel(node_id), Some(tree_state))
+    }
+
+    pub(crate) fn for_tip_lab_w_resize_area() -> Self {
+        Self::default().push(TvMsg::TipLabWidthSetByUser(None), None)
     }
 
     pub fn items(&self) -> &[TvContextMenuItem] {
         &self.items
     }
 
-    fn push(mut self, tv_msg: TvMsg, tree_state: &TreeState) -> Self {
+    fn push(mut self, tv_msg: TvMsg, tree_state: Option<&TreeState>) -> Self {
         struct Values<'a> {
             enabled: bool,
             label: &'a str,
         }
 
-        let Values { enabled, label } = match tv_msg {
-            TvMsg::Root(node_id) => Values {
-                enabled: tree_state.can_root(node_id),
-                label: "Root here",
-            },
+        let enabled: bool;
+        let label: &str;
+        if let Some(tree_state) = tree_state {
+            Values { enabled, label } = match tv_msg {
+                TvMsg::Root(node_id) => Values {
+                    enabled: tree_state.can_root(node_id),
+                    label: "Root here",
+                },
 
-            TvMsg::AddRemoveCladeLabel(node_id) => {
-                let label = match tree_state.clade_has_label(node_id) {
-                    true => "Unlabel",
-                    false => "Label",
-                };
-                Values { enabled: true, label }
+                TvMsg::AddRemoveCladeLabel(node_id) => {
+                    let label = match tree_state.clade_has_label(node_id) {
+                        true => "Unlabel",
+                        false => "Label",
+                    };
+                    Values { enabled: true, label }
+                }
+                _ => return self,
+            };
+        } else {
+            Values { enabled, label } = match tv_msg {
+                TvMsg::TipLabWidthSetByUser(None) => {
+                    Values { enabled: true, label: "Reset tip position" }
+                }
+                _ => return self,
             }
-            _ => return self,
-        };
+        }
 
         let item: TvContextMenuItem = TvContextMenuItem {
             msg: tv_msg,

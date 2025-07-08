@@ -51,7 +51,8 @@ pub use i::keyboard::{
     key::Named as KeyName, on_key_press,
 };
 pub use i::mouse::{
-    Button as MouseButton, Cursor, Event as MouseEvent, Interaction,
+    Button as MouseButton, Cursor, Event as MouseEvent,
+    Interaction as MouseInteraction,
 };
 pub use i::task::{Never, Sipper, sipper};
 pub use i::theme::{Theme, palette::Pair as PalettePair};

@@ -84,6 +84,22 @@ impl Program<TvMsg> for TreeCnv {
                 st.text_w_tip.as_mut()?,
             );
             st.tre_rect = st.tre_vs.clone().into();
+
+            match tre_sty {
+                TreSty::PhyGrm => {
+                    st.tip_lab_w_ring = None;
+                    let tip_lab_w_rect: Rectangle = st
+                        .tre_vs
+                        .padded(st.tre_vs.w + SF, -PADDING - SF, ZRO, ZRO)
+                        .into();
+                    st.tip_lab_w_rect = Some(tip_lab_w_rect);
+                }
+                TreSty::Fan => {
+                    st.tip_lab_w_rect = None;
+                    st.tip_lab_w_ring = Some(st.tre_vs.radius_min + SF);
+                }
+            }
+
             st.bnds = bnds;
             // -----------------------------------------------------------------
             self.clear_cache_bnds();
@@ -92,13 +108,16 @@ impl Program<TvMsg> for TreeCnv {
             tst.clear_cache_lab_brnch();
         }
         // ---------------------------------------------------------------------
+        let align_tips_at: Float;
         match tre_sty {
             TreSty::PhyGrm => {
+                align_tips_at = st.tre_vs.w;
                 st.rotation = ZRO;
                 st.translation =
                     Vector { x: st.tre_vs.trans.x, y: st.tre_vs.trans.y };
             }
             TreSty::Fan => {
+                align_tips_at = st.tre_vs.radius_min;
                 st.rotation = self.rot_angle;
                 st.translation = st.tre_vs.cntr;
             }
@@ -157,6 +176,10 @@ impl Program<TvMsg> for TreeCnv {
                 self.lab_size_tip,
                 true,
                 false,
+                match self.align_tip_labs {
+                    true => Some(align_tips_at),
+                    false => None,
+                },
                 match self.trim_tip_labs {
                     true => Some(self.trim_tip_labs_to_nchar as usize),
                     false => None,
@@ -173,6 +196,7 @@ impl Program<TvMsg> for TreeCnv {
                 false,
                 false,
                 None,
+                None,
                 st.text_w_int.as_mut()?,
                 &mut st.labs_int,
             );
@@ -185,6 +209,7 @@ impl Program<TvMsg> for TreeCnv {
                 false,
                 true,
                 None,
+                None,
                 st.text_w_brnch.as_mut()?,
                 &mut st.labs_brnch,
             );
@@ -195,16 +220,31 @@ impl Program<TvMsg> for TreeCnv {
                 self.clear_cache_cursor_line();
                 match mouse_ev {
                     MouseEvent::CursorEntered => {
+                        st.mouse_angle = None;
+                        st.mouse_zone = None;
                         st.mouse = st.mouse_point(crsr);
                         st.hovered_node = None;
                         st.cursor_tracking_point = None;
+                        st.mouse_is_over_tip_w_resize_area = false;
                     }
                     MouseEvent::CursorMoved { position: _ } => {
                         st.mouse = st.mouse_point(crsr);
+                        st.mouse_angle = st.mouse_angle(crsr);
+                        st.mouse_zone = st.mouse_angle_to_zone();
                         st.hovered_node = st.hovered_node();
                         st.cursor_tracking_point = st.cursor_tracking_point();
+                        st.mouse_is_over_tip_w_resize_area = self.draw_labs_tip
+                            && self.draw_labs_allowed
+                            && st.is_mouse_over_tip_w_resize_area();
 
-                        if let Some(pt) = st.cursor_tracking_point {
+                        if st.tip_lab_w_is_being_resized {
+                            st.cursor_tracking_point = None;
+                            action = Some(Action::publish(
+                                TvMsg::TipLabWidthSetByUser(Some(
+                                    st.calc_tip_lab_w(),
+                                )),
+                            ));
+                        } else if let Some(pt) = st.cursor_tracking_point {
                             let crsr_x_rel = match tre_sty {
                                 TreSty::PhyGrm => pt.x / st.tre_vs.w,
                                 TreSty::Fan => {
@@ -230,13 +270,19 @@ impl Program<TvMsg> for TreeCnv {
                         }
                     }
                     MouseEvent::CursorLeft => {
+                        st.mouse_angle = None;
+                        st.mouse_zone = None;
                         st.mouse = None;
                         st.hovered_node = None;
                         st.cursor_tracking_point = None;
+                        st.mouse_is_over_tip_w_resize_area = false;
                     }
                     MouseEvent::ButtonPressed(btn) => match btn {
                         MouseButton::Left => {
-                            if let Some(hovered_node) = &st.hovered_node {
+                            if st.mouse_is_over_tip_w_resize_area {
+                                st.tip_lab_w_is_being_resized = true;
+                            } else if let Some(hovered_node) = &st.hovered_node
+                            {
                                 let edge = &edges[hovered_node.edge_idx];
                                 let node_id = edge.node_id;
                                 // ---------------------------------------------
@@ -261,7 +307,15 @@ impl Program<TvMsg> for TreeCnv {
                             }
                         }
                         MouseButton::Right => {
-                            if let Some(hovered_node) = &st.hovered_node {
+                            if st.mouse_is_over_tip_w_resize_area
+                                && self.tip_w_set_by_user.is_some()
+                            {
+                                let listing = TvContextMenuListing::for_tip_lab_w_resize_area();
+                                action = Some(Action::publish(
+                                    TvMsg::ContextMenuInteractionBegin(listing),
+                                ));
+                            } else if let Some(hovered_node) = &st.hovered_node
+                            {
                                 action = Some(Action::publish(
                                     TvMsg::ContextMenuInteractionBegin(
                                         TvContextMenuListing::for_node(
@@ -275,7 +329,12 @@ impl Program<TvMsg> for TreeCnv {
                         }
                         _ => {}
                     },
-                    MouseEvent::ButtonReleased(_btn) => {}
+                    MouseEvent::ButtonReleased(_btn) => {
+                        st.tip_lab_w_is_being_resized = false;
+                        // action = Some(Action::publish(
+                        //     TvMsg::TipLabWidthSetByUser(None),
+                        // ));
+                    }
                     MouseEvent::WheelScrolled { .. } => {}
                 }
             }
@@ -320,11 +379,39 @@ impl Program<TvMsg> for TreeCnv {
         st: &St,
         _bnds: Rectangle,
         _crsr: Cursor,
-    ) -> Interaction {
-        if st.hovered_node.is_some() {
-            Interaction::Pointer
+    ) -> MouseInteraction {
+        if st.mouse_is_over_tip_w_resize_area || st.tip_lab_w_is_being_resized {
+            if st.tip_lab_w_rect.is_some() {
+                MouseInteraction::ResizingHorizontally
+            } else if st.tip_lab_w_ring.is_some() {
+                match &st.mouse_zone {
+                    Some(zone) => match zone {
+                        Zone::TopLeft => {
+                            MouseInteraction::ResizingDiagonallyDown
+                        }
+                        Zone::TopRight => {
+                            MouseInteraction::ResizingDiagonallyUp
+                        }
+                        Zone::BottomLeft => {
+                            MouseInteraction::ResizingDiagonallyUp
+                        }
+                        Zone::BottomRight => {
+                            MouseInteraction::ResizingDiagonallyDown
+                        }
+                        Zone::Top => MouseInteraction::ResizingVertically,
+                        Zone::Left => MouseInteraction::ResizingHorizontally,
+                        Zone::Right => MouseInteraction::ResizingHorizontally,
+                        Zone::Bottom => MouseInteraction::ResizingVertically,
+                    },
+                    None => MouseInteraction::default(),
+                }
+            } else {
+                MouseInteraction::default()
+            }
+        } else if st.hovered_node.is_some() {
+            MouseInteraction::Pointer
         } else {
-            Interaction::default()
+            MouseInteraction::default()
         }
     }
 
@@ -349,6 +436,11 @@ impl Program<TvMsg> for TreeCnv {
             }
             draw_clade_labels(self, st, tst, rndr, size, &mut geoms);
             draw_edges(self, st, tst, rndr, size, &mut geoms);
+            if st.mouse_is_over_tip_w_resize_area
+                || st.tip_lab_w_is_being_resized
+            {
+                draw_tip_lab_w_resize_area(self, st, rndr, bnds, &mut geoms);
+            }
             draw_legend(self, st, tst, rndr, size, &mut geoms);
             draw_cursor_line(self, st, rndr, size, &mut geoms);
             draw_labs_tip(self, st, tst, rndr, size, &mut geoms);

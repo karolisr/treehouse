@@ -12,7 +12,7 @@ pub(crate) const THREE: Float = 3e0;
 pub(crate) const FOUR: Float = 4e0;
 pub(crate) const FIVE: Float = 5e0;
 
-pub const SF: Float = 1.0;
+pub const SF: Float = TWO;
 pub const TXT_SIZE: Float = SF * 13.0;
 
 pub const LINE_H: Float = TXT_SIZE + SF * THREE;

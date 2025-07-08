@@ -50,6 +50,18 @@ use treeview::{NODE_ORD_OPTS, NodeOrd, TRE_STY_OPTS, TreSty, TvPane};
 
 pub type IndexRange = RangeInclusive<usize>;
 
+#[derive(Debug)]
+pub(crate) enum Zone {
+    Top,
+    TopLeft,
+    TopRight,
+    Left,
+    Right,
+    BottomLeft,
+    BottomRight,
+    Bottom,
+}
+
 #[allow(dead_code)]
 #[derive(Debug)]
 pub(crate) enum CladeLabelType {
@@ -71,6 +83,7 @@ struct Label {
     text: CnvText,
     width: Float,
     angle: Option<Float>,
+    aligned_from: Option<Point>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]

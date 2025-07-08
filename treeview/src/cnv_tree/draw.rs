@@ -13,6 +13,9 @@ pub(super) fn draw_bounds(
     g.push(tc.cache_bnds.draw(rndr, bnds.size(), |f| {
         stroke_rect(st.cnv_rect, STRK_5_BLU_50, f);
         stroke_rect(st.tre_rect, STRK_3_GRN_50, f);
+        if let Some(tip_lab_w_rect) = st.tip_lab_w_rect {
+            stroke_rect(tip_lab_w_rect, STRK_1_RED_50, f);
+        }
         stroke_rect(
             st.vis_rect,
             Strk { line_dash: DASH_010, ..STRK_5_MAG_50 },
@@ -122,6 +125,34 @@ pub(super) fn draw_edges(
             tst.edge_root(),
             f,
         ),
+    }));
+}
+
+pub(super) fn draw_tip_lab_w_resize_area(
+    tc: &TreeCnv,
+    st: &St,
+    rndr: &Renderer,
+    bnds: Rectangle,
+    g: &mut Vec<Geometry>,
+) {
+    g.push(tc.cache_tip_lab_w_resize_area.draw(rndr, bnds.size(), |f| {
+        match tc.tre_sty {
+            TreSty::PhyGrm => {
+                if let Some(tip_lab_w_rect) = st.tip_lab_w_rect {
+                    fill_rect(tip_lab_w_rect, FILL_BLU_50, f);
+                }
+            }
+            TreSty::Fan => {
+                if let Some(tip_lab_w_ring) = st.tip_lab_w_ring {
+                    f.push_transform();
+                    f.translate(st.translation);
+                    let pb = PathBuilder::new()
+                        .thick_arc(ZRO, TAU, ORIGIN, tip_lab_w_ring, PADDING);
+                    f.fill(&pb.build(), FILL_BLU_50);
+                    f.pop_transform();
+                }
+            }
+        }
     }));
 }
 
@@ -370,7 +401,12 @@ fn draw_scale_bar(
         lab_size,
         TEMPLATE_TXT_LAB_SCALEBAR,
     );
-    let lab = Label { text, width: sb_len_on_screen, angle: None };
+    let lab = Label {
+        text,
+        width: sb_len_on_screen,
+        angle: None,
+        aligned_from: None,
+    };
     draw_labels(&[lab], Vector { x: ZRO, y: lab_y_offset }, None, ZRO, f);
 }
 
@@ -517,6 +553,7 @@ pub(super) fn node_labs(
     size: Float,
     tips: bool,
     branch: bool,
+    align_at: Option<Float>,
     trim_to: Option<usize>,
     text_w: &mut TextWidth,
     results: &mut Vec<Label>,
@@ -539,14 +576,28 @@ pub(super) fn node_labs(
                     name_trimmed = ellipsize_unicode(name_trimmed, nchar);
                 }
 
+                let mut lab_pt: Point = nd.points.p1;
+                if let Some(align_at) = align_at {
+                    if let Some(angle) = nd.angle {
+                        lab_pt = point_pol(angle, align_at, ZRO, ONE);
+                    } else {
+                        lab_pt = Point { y: lab_pt.y, x: align_at }
+                    }
+                }
+
                 let width = text_w.width(&name_trimmed);
                 let text = lab_text(
                     name_trimmed.to_string(),
-                    nd.points.p1,
+                    lab_pt,
                     size,
                     txt_lab_tmpl,
                 );
-                Some(Label { text, width, angle: nd.angle })
+                Some(Label {
+                    text,
+                    width,
+                    angle: nd.angle,
+                    aligned_from: Some(nd.points.p1),
+                })
             } else if branch && edge.parent_node_id.is_some() {
                 let name = format!("{:.3}", edge.brlen);
                 let width = text_w.width(&name);
@@ -556,7 +607,7 @@ pub(super) fn node_labs(
                     size,
                     TEMPLATE_TXT_LAB_BRANCH,
                 );
-                Some(Label { text, width, angle: nd.angle })
+                Some(Label { text, width, angle: nd.angle, aligned_from: None })
             } else {
                 None
             }

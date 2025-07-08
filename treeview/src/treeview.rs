@@ -88,6 +88,7 @@ pub enum TvMsg {
     TipLabSizeChanged(u16),
     IntLabSizeChanged(u16),
     BrnchLabSizeChanged(u16),
+    TipLabAlignOptChanged(bool),
     TipLabTrimOptChanged(bool),
     TipLabTrimValChanged(u16),
     PrevTre,
@@ -128,6 +129,7 @@ pub enum TvMsg {
     RemFoundFromSelection,
     TipOnlySearchSelChanged(bool),
     // -------------------------------------------
+    TipLabWidthSetByUser(Option<Float>),
 }
 
 impl TreeView {
@@ -143,7 +145,7 @@ impl TreeView {
             node_ord_opt: NodeOrd::Unordered,
             // -----------------------------------------------------------
             opn_angle_idx_min: 45,
-            opn_angle_idx: 359,
+            opn_angle_idx: 345,
             opn_angle_idx_max: 359,
             // -----------------------------------------------------------
             rot_angle_idx_min: 360 - 180,
@@ -208,6 +210,12 @@ impl TreeView {
     pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
         let mut task: Option<Task<TvMsg>> = None;
         match tv_msg {
+            TvMsg::TipLabWidthSetByUser(opt_w) => {
+                self.tre_cnv.tip_w_set_by_user = opt_w;
+                self.tre_cnv.stale_tre_rect = true;
+                self.clear_caches_all();
+            }
+
             TvMsg::ContextMenuInteractionBegin(
                 tree_view_context_menu_listing,
             ) => {
@@ -558,6 +566,13 @@ impl TreeView {
                     text_w_tip.set_font_size(self.tre_cnv.lab_size_tip);
                 };
                 // -------------------------------------------------------------
+                task = self.scroll_to_current_found_edge();
+                self.tre_cnv.stale_tre_rect = true;
+                self.clear_caches_all();
+            }
+
+            TvMsg::TipLabAlignOptChanged(state) => {
+                self.tre_cnv.align_tip_labs = state;
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_all();

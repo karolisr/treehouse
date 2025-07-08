@@ -29,6 +29,12 @@ pub struct St {
     pub(crate) labs_tip: Vec<Label>,
     pub(crate) labs_int: Vec<Label>,
     pub(crate) labs_brnch: Vec<Label>,
+    pub(crate) mouse_angle: Option<Float>,
+    pub(crate) mouse_zone: Option<Zone>,
+    pub(crate) tip_lab_w_rect: Option<Rectangle<Float>>,
+    pub(crate) tip_lab_w_ring: Option<Float>,
+    pub(crate) mouse_is_over_tip_w_resize_area: bool,
+    pub(crate) tip_lab_w_is_being_resized: bool,
     pub(crate) is_new: bool,
 }
 
@@ -70,12 +76,45 @@ impl Default for St {
             labs_tip: Vec::new(),
             labs_int: Vec::new(),
             labs_brnch: Vec::new(),
+            mouse_angle: None,
+            mouse_zone: None,
+            tip_lab_w_rect: None,
+            tip_lab_w_ring: None,
+            mouse_is_over_tip_w_resize_area: false,
+            tip_lab_w_is_being_resized: false,
             is_new: true, // sometimes canvas state gets recreated losing all the stored state.
         }
     }
 }
 
 impl St {
+    pub(super) fn mouse_angle(&mut self, crsr: Cursor) -> Option<Float> {
+        crsr.position_in(self.bnds).map(|mouse| {
+            if self.rotation == ZRO {
+                let x = (mouse.x - self.vis_vs.cntr_x) / self.vis_vs.w;
+                let y = (mouse.y - self.vis_vs.cntr_y) / self.vis_vs.h;
+                y.atan2(x) + PI
+            } else {
+                let mouse_x_untrans = mouse.x - self.translation.x;
+                let mouse_y_untrans = mouse.y - self.translation.y;
+                mouse_y_untrans.atan2(mouse_x_untrans) + PI
+            }
+        })
+    }
+
+    pub(super) fn mouse_angle_to_zone(&mut self) -> Option<Zone> {
+        match self.mouse_angle?.to_degrees() {
+            a if (015.0..075.0).contains(&a) => Some(Zone::TopLeft),
+            a if (075.0..105.0).contains(&a) => Some(Zone::Top),
+            a if (105.0..165.0).contains(&a) => Some(Zone::TopRight),
+            a if (165.0..195.0).contains(&a) => Some(Zone::Right),
+            a if (195.0..255.0).contains(&a) => Some(Zone::BottomRight),
+            a if (255.0..285.0).contains(&a) => Some(Zone::Bottom),
+            a if (285.0..345.0).contains(&a) => Some(Zone::BottomLeft),
+            _ => Some(Zone::Left),
+        }
+    }
+
     pub(super) fn mouse_point(&mut self, crsr: Cursor) -> Option<Point<Float>> {
         crsr.position_in(self.bnds).map(|mouse| {
             if self.rotation != ZRO {
@@ -116,6 +155,35 @@ impl St {
             Some(closest_node)
         } else {
             None
+        }
+    }
+
+    pub(super) fn is_mouse_over_tip_w_resize_area(&mut self) -> bool {
+        if let Some(mouse) = self.mouse {
+            if let Some(tip_lab_w_rect) = self.tip_lab_w_rect {
+                tip_lab_w_rect.contains(mouse + self.translation)
+            } else if let Some(tip_lab_w_ring) = self.tip_lab_w_ring {
+                let d = mouse.distance(ORIGIN);
+                d > tip_lab_w_ring && d < tip_lab_w_ring + PADDING
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    }
+
+    pub(super) fn calc_tip_lab_w(&mut self) -> Float {
+        if let Some(mouse) = self.mouse {
+            if self.tip_lab_w_rect.is_some() {
+                self.bnds.width - mouse.x - self.translation.x + PADDING / TWO
+            } else if self.tip_lab_w_ring.is_some() {
+                self.cnv_vs.radius_min - mouse.distance(ORIGIN) + PADDING / TWO
+            } else {
+                ZRO
+            }
+        } else {
+            ZRO
         }
     }
 

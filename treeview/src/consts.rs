@@ -23,6 +23,8 @@ pub(crate) const TREE_CNV_SIZE_DELTA: Float = SF * 5e2;
 pub(crate) const TREE_PADDING: Float = SF;
 
 pub(crate) const STRK_EDGE: Strk = STRK_1_BLK;
+pub(crate) const STRK_EDGE_LAB_ALN: Strk =
+    Strk { line_dash: DASH_001, ..STRK_H_BLK };
 pub(crate) const STRK_ROOT: Strk = Strk { line_dash: DASH_002, ..STRK_EDGE };
 pub(crate) const STRK_CRSR_LINE: Strk = STRK_1_BLU_75;
 
@@ -47,5 +49,8 @@ pub(crate) const E: Float = float::consts::E;
 pub(crate) const PI: Float = float::consts::PI;
 pub(crate) const TAU: Float = float::consts::TAU;
 pub(crate) const FRAC_PI_2: Float = float::consts::FRAC_PI_2;
+pub(crate) const FRAC_PI_3: Float = float::consts::FRAC_PI_3;
+pub(crate) const FRAC_PI_4: Float = float::consts::FRAC_PI_4;
+pub(crate) const FRAC_PI_6: Float = float::consts::FRAC_PI_6;
 
 pub(crate) const ORIGIN: Point = Point::ORIGIN;

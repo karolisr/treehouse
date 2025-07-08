@@ -131,7 +131,7 @@ fn path_builder_axes(
     let mut labs_x: Vec<Label> = Vec::with_capacity(ticks_x.len());
     let mut labs_y: Vec<Label> = Vec::with_capacity(ticks_y.len());
 
-    // x-axis ticks --------------------------------------------------------------------------------
+    // x-axis ticks ------------------------------------------------------------
     let pt_min = Point { x: ZRO, y: y_for_ticks_x };
     let pt_max = Point { x: w, y: y_for_ticks_x };
     pb = pb.move_to(pt_min);
@@ -149,11 +149,11 @@ fn path_builder_axes(
             lab_size,
             TEMPLATE_TXT_LAB_PLOT_AXIS_X,
         );
-        let label = Label { text, width: ZRO, angle: None };
+        let label = Label { text, width: ZRO, angle: None, aligned_from: None };
         labs_x.push(label);
-    } // -------------------------------------------------------------------------------------------
+    } // -----------------------------------------------------------------------
 
-    // y-axis ticks --------------------------------------------------------------------------------
+    // y-axis ticks ------------------------------------------------------------
     let pt_min = Point { x: x_for_ticks_y, y: ZRO };
     let pt_max = Point { x: x_for_ticks_y, y: h };
     pb = pb.move_to(pt_min);
@@ -171,9 +171,9 @@ fn path_builder_axes(
             lab_size,
             TEMPLATE_TXT_LAB_PLOT_AXIS_Y,
         );
-        let label = Label { text, width: ZRO, angle: None };
+        let label = Label { text, width: ZRO, angle: None, aligned_from: None };
         labs_y.push(label);
-    } // -------------------------------------------------------------------------------------------
+    } // -----------------------------------------------------------------------
 
     (pb, labs_x, labs_y)
 }
@@ -223,7 +223,8 @@ pub(super) fn draw_cursor_line(
 
             let name = format!("{tree_height_at_x:.3}");
             let text = lab_text(name, p, st.text_size, txt_template);
-            let label = Label { text, width: ZRO, angle: None };
+            let label =
+                Label { text, width: ZRO, angle: None, aligned_from: None };
             draw_labels(
                 &[label],
                 Vector { x: PADDING, y: y_offset },

@@ -36,9 +36,9 @@ pub(crate) fn draw_labels(
     f.rotate(rot);
     f.translate(offset);
 
-    for Label { text, width, angle } in labels {
+    for Label { text, width, angle, aligned_from } in labels {
         let mut text = text.clone();
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         let magic = text.size.0 / 8.75;
         let adjust_h_base = text.size.0 / TWO - magic;
         let mut adjust_h = match text.align_y {
@@ -47,8 +47,9 @@ pub(crate) fn draw_labels(
             Vertical::Bottom => -adjust_h_base.ceil(),
         };
         text.align_y = Vertical::Center;
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         if let Some(angle) = angle {
+            let angle_orig = *angle;
             let mut angle = *angle;
             let mut adjust_w = match text.align_x {
                 TextAlignment::Left => offset.x,
@@ -56,7 +57,7 @@ pub(crate) fn draw_labels(
                 _ => ZRO,
             };
             adjust_h += offset.y;
-            // = Rotate labels on the left side of the circle by 180 degrees =======================
+            // = Rotate labels on the left side of the circle by 180 degrees ===
             let a = (angle + rot) % TAU;
             if a > FRAC_PI_2 && a < PI + FRAC_PI_2 {
                 angle += PI;
@@ -65,7 +66,27 @@ pub(crate) fn draw_labels(
                     TextAlignment::Right => width + offset.x,
                     _ => ZRO,
                 };
-            } // ===================================================================================
+            } // ===============================================================
+            if let Some(aligned_from) = aligned_from {
+                let (sin, cos) = angle_orig.sin_cos();
+
+                let aligned_from_adj = Point {
+                    x: aligned_from.x + cos * (offset.x + SF),
+                    y: aligned_from.y + sin * (offset.x + SF),
+                };
+
+                if aligned_from.distance(text.position) > offset.x * 2e0 {
+                    let path = PathBuilder::new()
+                        .move_to(text.position)
+                        .line_to(aligned_from_adj)
+                        .build();
+
+                    f.push_transform();
+                    f.translate(Vector { x: -offset.x, y: -offset.y });
+                    f.stroke(&path, STRK_EDGE_LAB_ALN);
+                    f.pop_transform();
+                }
+            } // ---------------------------------------------------------------
             f.push_transform();
             let (sin, cos) = angle.sin_cos();
             f.translate(Vector {
@@ -79,6 +100,20 @@ pub(crate) fn draw_labels(
         } else {
             f.push_transform();
             f.translate(Vector { x: ZRO, y: adjust_h });
+            // -----------------------------------------------------------------
+            if let Some(aligned_from) = aligned_from {
+                let aligned_from_adj =
+                    Point { x: aligned_from.x + SF, y: aligned_from.y };
+                let text_pos_adj =
+                    Point { x: text.position.x - offset.x, y: text.position.y };
+                if aligned_from.distance(text.position) > offset.x * 2e0 {
+                    let path = PathBuilder::new()
+                        .move_to(text_pos_adj)
+                        .line_to(aligned_from_adj)
+                        .build();
+                    f.stroke(&path, STRK_EDGE_LAB_ALN);
+                }
+            } // ---------------------------------------------------------------
             f.fill_text(text);
             f.pop_transform();
         }
