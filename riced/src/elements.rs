@@ -9,10 +9,10 @@ fn btn_common<Msg>(btn: Button<'_, Msg>, msg: Option<Msg>) -> Button<'_, Msg> {
     btn.style(sty_btn)
 }
 
-pub fn btn_svg<Msg>(
+pub fn btn_svg<'a, Msg>(
     handle: impl Into<SvgHandle>,
     msg: Option<Msg>,
-) -> Button<'static, Msg> {
+) -> Button<'a, Msg> {
     let svg = Svg::new(handle).style(sty_svg);
     btn_common(Button::new(svg), msg).padding(PADDING / THREE)
 }
@@ -24,11 +24,11 @@ pub fn btn_txt<Msg>(lab: &'_ str, msg: Option<Msg>) -> Button<'_, Msg> {
     btn_common(Button::new(txt), msg).padding(ZERO)
 }
 
-pub fn checkbox<Msg>(
+pub fn checkbox<'a, Msg>(
     lab: &str,
     is_checked: bool,
-    msg: impl Fn(bool) -> Msg + 'static,
-) -> Checkbox<'_, Msg> {
+    msg: impl Fn(bool) -> Msg + 'a,
+) -> Checkbox<'a, Msg> {
     Checkbox::new(lab, is_checked)
         .on_toggle(msg)
         .size(CHECKBOX_H)

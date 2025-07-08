@@ -118,35 +118,7 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
 
     if tv.tre_states.len() > 1 {
-        tb_row = tb_row.push(
-            center(
-                iced_row![
-                    btn_prev_tre(tv.prev_tre_exists()),
-                    center(
-                        iced_row![
-                            txt_usize(ts.id())
-                                .align_x(Alignment::Center)
-                                .width(Length::Fixed(TXT_SIZE * 3e0)),
-                            rule_v(SF),
-                            txt_usize(tv.tre_states.len())
-                                .align_x(Alignment::Center)
-                                .width(Length::Fixed(TXT_SIZE * 3e0))
-                        ]
-                        .spacing(PADDING / TWO)
-                        .padding(PADDING / TWO)
-                        .align_y(Vertical::Center),
-                    )
-                    .width(Length::Shrink)
-                    .style(sty_cont_no_shadow),
-                    btn_next_tre(tv.next_tre_exists())
-                ]
-                .spacing(SF * 3e0)
-                .width(Length::Shrink)
-                .align_y(Vertical::Center),
-            )
-            .width(Length::Shrink)
-            .height(Length::Fixed(BTN_H1)),
-        );
+        tb_row = tb_row.push(tree_switcher(tv, ts));
     }
 
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
@@ -194,6 +166,39 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         .height(Length::Shrink)
         .align_x(Horizontal::Center)
         .align_y(Vertical::Center)
+}
+
+fn tree_switcher<'a>(
+    tv: &'a TreeView,
+    ts: Rc<TreeState>,
+) -> Container<'a, TvMsg> {
+    center(
+        iced_row![
+            btn_prev_tre(tv.prev_tre_exists()),
+            center(
+                iced_row![
+                    txt_usize(ts.id())
+                        .align_x(Alignment::Center)
+                        .width(Length::Fixed(TXT_SIZE * 3e0)),
+                    rule_v(SF),
+                    txt_usize(tv.tre_states.len())
+                        .align_x(Alignment::Center)
+                        .width(Length::Fixed(TXT_SIZE * 3e0))
+                ]
+                .spacing(PADDING / TWO)
+                .padding(PADDING / TWO)
+                .align_y(Vertical::Center),
+            )
+            .width(Length::Shrink)
+            .style(sty_cont_no_shadow),
+            btn_next_tre(tv.next_tre_exists())
+        ]
+        .spacing(SF * 3e0)
+        .width(Length::Shrink)
+        .align_y(Vertical::Center),
+    )
+    .width(Length::Shrink)
+    .height(Length::Fixed(BTN_H1))
 }
 
 fn search_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
@@ -537,7 +542,7 @@ pub(crate) fn btn_prev_tre(enabled: bool) -> Button<'static, TvMsg> {
     .height(BTN_H2)
 }
 
-pub(crate) fn btn_next_tre(enabled: bool) -> Button<'static, TvMsg> {
+pub(crate) fn btn_next_tre<'a>(enabled: bool) -> Button<'a, TvMsg> {
     btn_svg(
         Icon::ArrowRight,
         match enabled {
@@ -549,7 +554,7 @@ pub(crate) fn btn_next_tre(enabled: bool) -> Button<'static, TvMsg> {
     .height(BTN_H2)
 }
 
-pub(crate) fn btn_unroot(sel_tre: Rc<TreeState>) -> Button<'static, TvMsg> {
+pub(crate) fn btn_unroot<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
     btn_txt(
         "Unroot",
         match sel_tre.is_rooted() {

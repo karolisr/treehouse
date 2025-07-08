@@ -33,9 +33,9 @@ impl Program<TvMsg> for TreeCnv {
         bnds: Rectangle,
         crsr: Cursor,
     ) -> Option<Action<TvMsg>> {
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         let mut action: Option<Action<TvMsg>> = None;
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         let tree_state_opt = self.tree_state.as_deref();
         if !self.drawing_enabled || tree_state_opt.is_none() {
             return None;
@@ -45,7 +45,7 @@ impl Program<TvMsg> for TreeCnv {
         let tip_edge_idxs = tst.edges_tip_idx();
         let tre_sty = self.tre_sty;
         let opn_angle = self.opn_angle;
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         if st.text_w_tip.as_mut()?.font_size() != self.lab_size_tip {
             st.text_w_tip.as_mut()?.set_font_size(self.lab_size_tip);
         }
@@ -54,7 +54,7 @@ impl Program<TvMsg> for TreeCnv {
         }
         if st.text_w_brnch.as_mut()?.font_size() != self.lab_size_brnch {
             st.text_w_brnch.as_mut()?.set_font_size(self.lab_size_brnch);
-        } // ---------------------------------------------------------------------------------------
+        } // -------------------------------------------------------------------
         st.stale_vis_rect = false;
         let vis_x0 = self.vis_x0;
         let vis_y0 = self.vis_y0;
@@ -68,7 +68,7 @@ impl Program<TvMsg> for TreeCnv {
             st.vis_vs = RectVals::corners(vis_x0, vis_y0, vis_x1, vis_y1);
             st.vis_rect = st.vis_vs.clone().into();
             st.stale_vis_rect = true;
-        } // ---------------------------------------------------------------------------------------
+        } // -------------------------------------------------------------------
         if bnds != st.bnds
             || st.stale_vis_rect
             || st.is_new
@@ -85,13 +85,13 @@ impl Program<TvMsg> for TreeCnv {
             );
             st.tre_rect = st.tre_vs.clone().into();
             st.bnds = bnds;
-            // -------------------------------------------------------------------------------------
+            // -----------------------------------------------------------------
             self.clear_cache_bnds();
             tst.clear_cache_lab_tip();
             tst.clear_cache_lab_int();
             tst.clear_cache_lab_brnch();
         }
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         match tre_sty {
             TreSty::PhyGrm => {
                 st.rotation = ZRO;
@@ -103,7 +103,7 @@ impl Program<TvMsg> for TreeCnv {
                 st.translation = st.tre_vs.cntr;
             }
         }
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         if st.stale_vis_rect || st.is_new || self.stale_tre_rect {
             match tre_sty {
                 TreSty::PhyGrm => {
@@ -120,12 +120,12 @@ impl Program<TvMsg> for TreeCnv {
                     );
                 }
             }
-        } // ---------------------------------------------------------------------------------------
+        } // -------------------------------------------------------------------
         prepare_nodes(
             &st.tre_vs, st.root_len, tre_sty, opn_angle, edges,
             &st.vis_node_idxs, &mut st.vis_nodes,
         );
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         prepare_nodes(
             &st.tre_vs,
             st.root_len,
@@ -135,7 +135,7 @@ impl Program<TvMsg> for TreeCnv {
             tst.found_edge_idxs(),
             &mut st.filtered_nodes,
         );
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         prepare_nodes(
             &st.tre_vs,
             st.root_len,
@@ -145,11 +145,11 @@ impl Program<TvMsg> for TreeCnv {
             tst.sel_edge_idxs(),
             &mut st.selected_nodes,
         );
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         st.labs_tip.clear();
         st.labs_int.clear();
         st.labs_brnch.clear();
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         if tst.has_tip_labs() && self.draw_labs_tip && self.draw_labs_allowed {
             node_labs(
                 &st.vis_nodes,
@@ -164,7 +164,7 @@ impl Program<TvMsg> for TreeCnv {
                 st.text_w_tip.as_mut()?,
                 &mut st.labs_tip,
             );
-        } // ---------------------------------------------------------------------------------------
+        } // -------------------------------------------------------------------
         if tst.has_int_labs() && self.draw_labs_int && self.draw_labs_allowed {
             node_labs(
                 &st.vis_nodes,
@@ -176,7 +176,7 @@ impl Program<TvMsg> for TreeCnv {
                 st.text_w_int.as_mut()?,
                 &mut st.labs_int,
             );
-        } // ---------------------------------------------------------------------------------------
+        } // -------------------------------------------------------------------
         if tst.has_brlen() && self.draw_labs_brnch && self.draw_labs_allowed {
             node_labs(
                 &st.vis_nodes,
@@ -188,7 +188,7 @@ impl Program<TvMsg> for TreeCnv {
                 st.text_w_brnch.as_mut()?,
                 &mut st.labs_brnch,
             );
-        } // ---------------------------------------------------------------------------------------
+        } // -------------------------------------------------------------------
         match ev {
             Event::Mouse(mouse_ev) => {
                 self.clear_cache_hovered_node();
@@ -239,22 +239,25 @@ impl Program<TvMsg> for TreeCnv {
                             if let Some(hovered_node) = &st.hovered_node {
                                 let edge = &edges[hovered_node.edge_idx];
                                 let node_id = edge.node_id;
-                                // -----------------------------------------------------------------
+                                // ---------------------------------------------
                                 // if let Some(modifiers) = st.modifiers
                                 //     && modifiers == Modifiers::SHIFT
                                 // {
-                                //     action =
-                                //         Some(Action::publish(TvMsg::SelectDeselectNode(node_id)));
+                                //     action = Some(Action::publish(
+                                //         TvMsg::SelectDeselectNode(node_id),
+                                //     ));
                                 // } else {
                                 //     action = Some(Action::publish(
-                                //         TvMsg::SelectDeselectNodeExclusive(node_id),
+                                //         TvMsg::SelectDeselectNodeExclusive(
+                                //             node_id,
+                                //         ),
                                 //     ));
                                 // }
-                                // -----------------------------------------------------------------
+                                // ---------------------------------------------
                                 action = Some(Action::publish(
                                     TvMsg::SelectDeselectNode(node_id),
                                 ));
-                                // -----------------------------------------------------------------
+                                // ---------------------------------------------
                             }
                         }
                         MouseButton::Right => {
@@ -285,7 +288,7 @@ impl Program<TvMsg> for TreeCnv {
             Event::Window(WindowEvent::RedrawRequested(_)) => action = None,
             _ => {}
         }
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         if let Some(crsr_x_rel) = self.crsr_x_rel {
             match tre_sty {
                 TreSty::PhyGrm => {
@@ -301,11 +304,11 @@ impl Program<TvMsg> for TreeCnv {
                 }
             }
         }
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         if self.stale_tre_rect {
             action = Some(Action::publish(TvMsg::TreeRectNoLongerStale));
         }
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         if st.is_new {
             st.is_new = false;
         }
@@ -338,7 +341,7 @@ impl Program<TvMsg> for TreeCnv {
         if let Some(tree_state_opt) = tree_state_opt
             && self.drawing_enabled
         {
-            // -------------------------------------------------------------------------------------
+            // -----------------------------------------------------------------
             let size = bnds.size();
             let tst: &TreeState = tree_state_opt;
             if self.draw_debug {
@@ -357,7 +360,7 @@ impl Program<TvMsg> for TreeCnv {
             if self.draw_debug {
                 draw_palette(self, st, thm, rndr, size, &mut geoms);
             }
-            // -------------------------------------------------------------------------------------
+            // -----------------------------------------------------------------
         }
         geoms
     }
