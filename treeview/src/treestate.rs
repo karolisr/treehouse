@@ -99,11 +99,19 @@ impl TreeState {
         !self.labeled_clades().is_empty()
     }
 
+    #[allow(dead_code)]
     pub(super) fn bounding_tip_edges_for_clade(
         &self,
         node_id: NodeId,
     ) -> Option<(&Edge, &Edge)> {
         self.tree().bounding_tip_edges_for_clade(&node_id)
+    }
+
+    pub(super) fn bounding_edges_for_clade(
+        &self,
+        node_id: NodeId,
+    ) -> Option<(Vec<Edge>, Vec<Edge>)> {
+        self.tree().bounding_edges_for_clade(&node_id)
     }
 
     // Search & Filter -----------------------------------------------------------------------------

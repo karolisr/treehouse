@@ -147,27 +147,27 @@ impl App {
                                 "f" => {
                                     task = Some(Task::done(AppMsg::TvMsg(
                                         TvMsg::ToggleSearchBar,
-                                    )))
+                                    )));
                                 }
                                 "o" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
                                         AppMenuItemId::OpenFile,
-                                    )))
+                                    )));
                                 }
                                 "s" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
                                         AppMenuItemId::SaveAs,
-                                    )))
+                                    )));
                                 }
                                 "[" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
                                         AppMenuItemId::SetSideBarPositionLeft,
-                                    )))
+                                    )));
                                 }
                                 "]" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
                                         AppMenuItemId::SetSideBarPositionRight,
-                                    )))
+                                    )));
                                 }
                                 _ => {}
                             }
@@ -188,7 +188,20 @@ impl App {
                                 "q" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
                                         AppMenuItemId::CloseWindow,
-                                    )))
+                                    )));
+                                }
+                                _ => {}
+                            }
+                            match k {
+                                "=" => {
+                                    task = Some(Task::done(AppMsg::TvMsg(
+                                        TvMsg::CnvHeightIncrement,
+                                    )));
+                                }
+                                "-" => {
+                                    task = Some(Task::done(AppMsg::TvMsg(
+                                        TvMsg::CnvHeightDecrement,
+                                    )));
                                 }
                                 _ => {}
                             }

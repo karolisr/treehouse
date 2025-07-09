@@ -35,70 +35,248 @@ pub(super) fn draw_clade_labels(
     g.push(tst.cache_clade_labels().draw(rndr, sz, |f| {
         let labeled_clades = tst.labeled_clades();
         for (node_id, clade_label) in labeled_clades {
-            if let Some((e1, e2)) = tst.bounding_tip_edges_for_clade(*node_id) {
-                let color = clade_label.color;
-                let edge = &tst.edges_srtd_y().unwrap()
-                    [tst.tree().edge_idx_for_node_id(*node_id).unwrap()];
-                let mut pb: PathBuilder = PathBuilder::new();
-                f.push_transform();
-                f.translate(st.translation);
-                match tc.tre_sty {
-                    TreSty::PhyGrm => {
-                        let (x, width) = match clade_label.label_type {
-                            CladeLabelType::Outside => (
-                                st.tre_vs.w + tc.lab_offset_tip,
-                                tc.clade_labs_w,
-                            ),
-                            CladeLabelType::Inside => {
-                                let nd = node_data_cart(
-                                    st.tre_vs.w, st.tre_vs.h, edge,
-                                );
-                                let x = nd.points.p1.x;
-                                (x, st.tre_vs.w - x)
-                            }
-                        };
-                        let y1_rel = e1.y as Float;
-                        let y2_rel = e2.y as Float;
-                        let y = y1_rel * st.tre_vs.h;
-                        let height = (y2_rel - y1_rel) * st.tre_vs.h;
-                        let rect = Rectangle { x, y, width, height };
-                        pb = pb.rectangle(rect);
-                    }
-                    TreSty::Fan => {
-                        f.rotate(st.rotation);
+            let (edges_top, edges_bottom) =
+                tst.bounding_edges_for_clade(*node_id).unwrap_or_default();
 
-                        let (r1, width) = match clade_label.label_type {
-                            CladeLabelType::Outside => (
-                                st.tre_vs.radius_min + tc.lab_offset_tip,
-                                tc.clade_labs_w,
-                            ),
-                            CladeLabelType::Inside => {
-                                let nd = node_data_rad(
-                                    tc.opn_angle, tc.rot_angle,
-                                    st.tre_vs.radius_min, st.root_len, edge,
-                                );
-                                let r1 = ONE.max(nd.points.p1.distance(ORIGIN));
-                                let r2 = st.tre_vs.radius_min;
-                                let width = r2 - r1;
-                                (r1, width)
-                            }
-                        };
-                        let a0 = edge_angle(tc.opn_angle, e1);
-                        let a1 = edge_angle(tc.opn_angle, e2);
-                        pb = pb.thick_arc(a0, a1, ORIGIN, r1, width);
+            let color = clade_label.color;
+
+            match tc.tre_sty {
+                TreSty::PhyGrm => {
+                    // ---------------------------------------------------------
+                    let mut pb: PathBuilder = PathBuilder::new();
+                    // ---------------------------------------------------------
+                    let y_top =
+                        edges_top.first().unwrap().y as Float * st.tre_vs.h;
+                    let top_right = Point { x: st.tre_vs.w, y: y_top };
+                    pb = pb.move_to(top_right);
+
+                    for e in &edges_top {
+                        let nd = node_data_cart(st.tre_vs.w, st.tre_vs.h, e);
+                        pb = pb.line_to(nd.points.p0);
+                        if let Some(y_parent) = nd.y_parent {
+                            let pt_parent =
+                                Point { x: nd.points.p0.x, y: y_parent };
+                            pb = pb.line_to(pt_parent);
+                        }
                     }
+
+                    for e in &edges_bottom {
+                        let nd = node_data_cart(st.tre_vs.w, st.tre_vs.h, e);
+                        if let Some(y_parent) = nd.y_parent {
+                            let pt_parent =
+                                Point { x: nd.points.p0.x, y: y_parent };
+                            pb = pb.line_to(pt_parent);
+                        }
+                        pb = pb.line_to(nd.points.p0);
+                    }
+
+                    let y_bottom =
+                        edges_bottom.last().unwrap().y as Float * st.tre_vs.h;
+                    let bottom_right = Point { x: st.tre_vs.w, y: y_bottom };
+                    pb = pb.line_to(bottom_right);
+                    pb = pb.line_to(top_right);
+                    // ---------------------------------------------------------
+                    let path = pb.build();
+                    // ---------------------------------------------------------
+                    f.push_transform();
+                    f.translate(st.translation);
+                    f.fill(
+                        &path,
+                        CnvFill {
+                            style: Solid(color),
+                            rule: FillRule::EvenOdd,
+                        },
+                    );
+                    f.stroke(&path, STRK_1_RED);
+                    f.pop_transform();
+                    // ---------------------------------------------------------
+                    // stroke_edges_phygrm(
+                    //     &edges_top, &st.tre_vs, st.root_len, None, STRK_1_RED,
+                    //     f,
+                    // );
+                    // stroke_edges_phygrm(
+                    //     &edges_bottom, &st.tre_vs, st.root_len, None,
+                    //     STRK_1_RED, f,
+                    // );
+                    // ---------------------------------------------------------
                 }
-                let path = pb.build();
-                f.fill(
-                    &path,
-                    CnvFill { style: Solid(color), rule: FillRule::EvenOdd },
-                );
-                f.stroke(&path, STRK_1.with_color(color));
-                f.pop_transform();
+                TreSty::Fan => {
+                    // ---------------------------------------------------------
+                    let mut pb: PathBuilder = PathBuilder::new();
+                    // ---------------------------------------------------------
+                    let nd = node_data_rad(
+                        tc.opn_angle,
+                        ZRO,
+                        st.tre_vs.radius_min,
+                        st.root_len,
+                        edges_top.first().unwrap(),
+                    );
+
+                    let angle_top = nd.angle;
+
+                    let top_right = point_pol(
+                        angle_top, st.tre_vs.radius_min, st.root_len, ONE,
+                    );
+
+                    pb = pb.move_to(top_right);
+
+                    for e in &edges_top {
+                        let nd = node_data_rad(
+                            tc.opn_angle, ZRO, st.tre_vs.radius_min,
+                            st.root_len, e,
+                        );
+                        pb = pb.line_to(nd.points.p0);
+                        if let Some(angle_parent) = nd.angle_parent {
+                            pb = pb.arc(
+                                nd.angle,
+                                angle_parent,
+                                ORIGIN,
+                                ORIGIN.distance(nd.points.p0),
+                            );
+                        }
+                    }
+
+                    for e in &edges_bottom {
+                        let nd = node_data_rad(
+                            tc.opn_angle, ZRO, st.tre_vs.radius_min,
+                            st.root_len, e,
+                        );
+                        if let Some(angle_parent) = nd.angle_parent {
+                            pb = pb.arc(
+                                angle_parent,
+                                nd.angle,
+                                ORIGIN,
+                                ORIGIN.distance(nd.points.p0),
+                            );
+                        }
+                        pb = pb.line_to(nd.points.p1);
+                    }
+
+                    let nd = node_data_rad(
+                        tc.opn_angle,
+                        ZRO,
+                        st.tre_vs.radius_min,
+                        st.root_len,
+                        edges_bottom.last().unwrap(),
+                    );
+
+                    let bottom_right = point_pol(
+                        nd.angle, st.tre_vs.radius_min, st.root_len, ONE,
+                    );
+
+                    pb = pb.line_to(bottom_right);
+                    pb = pb.arc(
+                        nd.angle,
+                        angle_top,
+                        ORIGIN,
+                        ORIGIN.distance(bottom_right),
+                    );
+                    // ---------------------------------------------------------
+                    let path = pb.build();
+                    // ---------------------------------------------------------
+                    f.push_transform();
+                    f.translate(st.translation);
+                    f.rotate(st.rotation);
+                    f.fill(
+                        &path,
+                        CnvFill {
+                            style: Solid(color),
+                            rule: FillRule::EvenOdd,
+                        },
+                    );
+                    f.stroke(&path, STRK_1_RED);
+                    f.pop_transform();
+                    // ---------------------------------------------------------
+                    // stroke_edges_fan(
+                    //     &edges_top, &st.tre_vs, tc.rot_angle, tc.opn_angle,
+                    //     st.root_len, None, STRK_3_RED, f,
+                    // );
+                    // stroke_edges_fan(
+                    //     &edges_bottom, &st.tre_vs, tc.rot_angle, tc.opn_angle,
+                    //     st.root_len, None, STRK_3_YEL, f,
+                    // );
+                    // ---------------------------------------------------------
+                }
             }
         }
     }));
 }
+
+// pub(super) fn draw_clade_labels(
+//     tc: &TreeCnv,
+//     st: &St,
+//     tst: &TreeState,
+//     rndr: &Renderer,
+//     sz: Size,
+//     g: &mut Vec<Geometry>,
+// ) {
+//     g.push(tst.cache_clade_labels().draw(rndr, sz, |f| {
+//         let labeled_clades = tst.labeled_clades();
+//         for (node_id, clade_label) in labeled_clades {
+//             if let Some((e1, e2)) = tst.bounding_tip_edges_for_clade(*node_id) {
+//                 let color = clade_label.color;
+//                 let edge = &tst.edges_srtd_y().unwrap()
+//                     [tst.tree().edge_idx_for_node_id(*node_id).unwrap()];
+//                 let mut pb: PathBuilder = PathBuilder::new();
+//                 f.push_transform();
+//                 f.translate(st.translation);
+//                 match tc.tre_sty {
+//                     TreSty::PhyGrm => {
+//                         let (x, width) = match clade_label.label_type {
+//                             CladeLabelType::Outside => (
+//                                 st.tre_vs.w + tc.lab_offset_tip,
+//                                 tc.clade_labs_w,
+//                             ),
+//                             CladeLabelType::Inside => {
+//                                 let nd = node_data_cart(
+//                                     st.tre_vs.w, st.tre_vs.h, edge,
+//                                 );
+//                                 let x = nd.points.p1.x;
+//                                 (x, st.tre_vs.w - x)
+//                             }
+//                         };
+//                         let y1_rel = e1.y as Float;
+//                         let y2_rel = e2.y as Float;
+//                         let y = y1_rel * st.tre_vs.h;
+//                         let height = (y2_rel - y1_rel) * st.tre_vs.h;
+//                         let rect = Rectangle { x, y, width, height };
+//                         pb = pb.rectangle(rect);
+//                     }
+//                     TreSty::Fan => {
+//                         f.rotate(st.rotation);
+
+//                         let (r1, width) = match clade_label.label_type {
+//                             CladeLabelType::Outside => (
+//                                 st.tre_vs.radius_min + tc.lab_offset_tip,
+//                                 tc.clade_labs_w,
+//                             ),
+//                             CladeLabelType::Inside => {
+//                                 let nd = node_data_rad(
+//                                     tc.opn_angle, tc.rot_angle,
+//                                     st.tre_vs.radius_min, st.root_len, edge,
+//                                 );
+//                                 let r1 = ONE.max(nd.points.p1.distance(ORIGIN));
+//                                 let r2 = st.tre_vs.radius_min;
+//                                 let width = r2 - r1;
+//                                 (r1, width)
+//                             }
+//                         };
+//                         let a0 = edge_angle(tc.opn_angle, e1);
+//                         let a1 = edge_angle(tc.opn_angle, e2);
+//                         pb = pb.thick_arc(a0, a1, ORIGIN, r1, width);
+//                     }
+//                 }
+//                 let path = pb.build();
+//                 f.fill(
+//                     &path,
+//                     CnvFill { style: Solid(color), rule: FillRule::EvenOdd },
+//                 );
+//                 f.stroke(&path, STRK_1.with_color(color));
+//                 f.pop_transform();
+//             }
+//         }
+//     }));
+// }
 
 pub(super) fn draw_edges(
     tc: &TreeCnv,
@@ -114,6 +292,7 @@ pub(super) fn draw_edges(
             &st.tre_vs,
             st.root_len,
             tst.edge_root(),
+            STRK_EDGE,
             f,
         ),
         TreSty::Fan => stroke_edges_fan(
@@ -123,6 +302,7 @@ pub(super) fn draw_edges(
             tc.opn_angle,
             st.root_len,
             tst.edge_root(),
+            STRK_EDGE,
             f,
         ),
     }));
@@ -436,6 +616,7 @@ fn stroke_edges_phygrm(
     tre_vs: &RectVals<Float>,
     root_len: Float,
     root: Option<Edge>,
+    stroke: Strk,
     f: &mut Frame,
 ) {
     let mut pb: PathBuilder = PathBuilder::new();
@@ -447,7 +628,7 @@ fn stroke_edges_phygrm(
 
     f.with_save(|f| {
         f.translate(tre_vs.trans);
-        f.stroke(&pb.build(), STRK_EDGE);
+        f.stroke(&pb.build(), stroke);
         stroke_root_phygrm(tre_vs.w, tre_vs.h, root_len, root, f);
     });
 }
@@ -482,6 +663,7 @@ fn stroke_edges_fan(
     opn_angle: Float,
     root_len: Float,
     root: Option<Edge>,
+    stroke: Strk,
     f: &mut Frame,
 ) {
     let mut pb: PathBuilder = PathBuilder::new();
@@ -501,7 +683,7 @@ fn stroke_edges_fan(
     f.with_save(|f| {
         f.translate(tre_vs.cntr);
         f.rotate(rot_angle);
-        f.stroke(&pb.build(), STRK_EDGE);
+        f.stroke(&pb.build(), stroke);
         stroke_root_fan(tre_vs.radius_min, opn_angle, root_len, root, f);
     });
 }

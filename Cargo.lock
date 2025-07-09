@@ -574,8 +574,8 @@ checksum = "5c297a1c74b71ae29df00c3e22dd9534821d60eb9af5a0192823fa2acea70c2a"
 
 [[package]]
 name = "dendros"
-version = "0.1.0"
-source = "git+https://github.com/karolisr/dendros.git?branch=main#59c92757262f51882becdcc3438c3b58c6a2d128"
+version = "0.2.0"
+source = "git+https://github.com/karolisr/dendros.git?branch=main#fcaf3819fe5ba15b25b17fcd8316a55f8c9c2232"
 dependencies = [
  "rayon",
  "slotmap",
@@ -2549,7 +2549,7 @@ dependencies = [
 
 [[package]]
 name = "riced"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "convert_case",
  "iced",
@@ -3140,7 +3140,7 @@ dependencies = [
 
 [[package]]
 name = "treehouse"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "dendros",
  "muda",
@@ -3154,7 +3154,7 @@ dependencies = [
 
 [[package]]
 name = "treeview"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "dendros",
  "rayon",
