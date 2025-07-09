@@ -80,7 +80,11 @@ pub enum TvMsg {
     CursorLineVisChanged(bool),
     CnvWidthSelChanged(u16),
     CnvHeightSelChanged(u16),
+    CnvHeightIncrement,
+    CnvHeightDecrement,
     CnvZoomSelChanged(u16),
+    CnvZoomIncrement,
+    CnvZoomDecrement,
     TipLabVisChanged(bool),
     IntLabVisChanged(bool),
     BrnchLabVisChanged(bool),
@@ -519,6 +523,32 @@ impl TreeView {
                 }
             }
 
+            TvMsg::CnvHeightIncrement => match self.tre_cnv.tre_sty {
+                TreSty::PhyGrm => {
+                    if self.tre_cnv_h_idx < u16::MAX {
+                        task = Some(Task::done(TvMsg::CnvHeightSelChanged(
+                            self.tre_cnv_h_idx + 1,
+                        )));
+                    }
+                }
+                TreSty::Fan => {
+                    task = Some(Task::done(TvMsg::CnvZoomIncrement));
+                }
+            },
+
+            TvMsg::CnvHeightDecrement => match self.tre_cnv.tre_sty {
+                TreSty::PhyGrm => {
+                    if self.tre_cnv_h_idx > 1 {
+                        task = Some(Task::done(TvMsg::CnvHeightSelChanged(
+                            self.tre_cnv_h_idx - 1,
+                        )));
+                    }
+                }
+                TreSty::Fan => {
+                    task = Some(Task::done(TvMsg::CnvZoomDecrement));
+                }
+            },
+
             TvMsg::CnvZoomSelChanged(idx) => {
                 if idx != self.tre_cnv_z_idx {
                     self.update_rel_scrl_pos();
@@ -533,6 +563,22 @@ impl TreeView {
                     }
                     self.tre_cnv.stale_tre_rect = true;
                     self.clear_cache_edge();
+                }
+            }
+
+            TvMsg::CnvZoomIncrement => {
+                if self.tre_cnv_z_idx < u16::MAX {
+                    task = Some(Task::done(TvMsg::CnvZoomSelChanged(
+                        self.tre_cnv_z_idx + 1,
+                    )));
+                }
+            }
+
+            TvMsg::CnvZoomDecrement => {
+                if self.tre_cnv_z_idx > 1 {
+                    task = Some(Task::done(TvMsg::CnvZoomSelChanged(
+                        self.tre_cnv_z_idx - 1,
+                    )));
                 }
             }
 
