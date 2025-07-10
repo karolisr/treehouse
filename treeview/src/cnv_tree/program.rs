@@ -1,28 +1,6 @@
 use super::St;
 use super::draw::*;
-use crate::edge_utils::*;
 use crate::*;
-
-fn prepare_nodes(
-    vs: &RectVals<Float>,
-    root_len: Float,
-    tre_sty: TreSty,
-    opn_angle: Float,
-    edges: &[Edge],
-    node_idxs: &[usize],
-    results: &mut Vec<NodeData>,
-) {
-    node_idxs
-        .par_iter()
-        .map(|&idx| match tre_sty {
-            TreSty::PhyGrm => node_data_cart(vs.w, vs.h, &edges[idx]).into(),
-            TreSty::Fan => node_data_rad(
-                opn_angle, ZRO, vs.radius_min, root_len, &edges[idx],
-            )
-            .into(),
-        })
-        .collect_into_vec(results);
-}
 
 impl Program<TvMsg> for TreeCnv {
     type State = St;
@@ -43,8 +21,8 @@ impl Program<TvMsg> for TreeCnv {
         let tst: &TreeState = tree_state_opt?;
         let edges = tst.edges_srtd_y()?;
         let tip_edge_idxs = tst.edges_tip_idx();
-        let tre_sty = self.tre_sty;
-        let opn_angle = self.opn_angle;
+        st.tre_sty = self.tre_sty;
+        st.opn_angle = self.opn_angle;
         // ---------------------------------------------------------------------
         if st.text_w_tip.as_mut()?.font_size() != self.lab_size_tip {
             st.text_w_tip.as_mut()?.set_font_size(self.lab_size_tip);
@@ -85,7 +63,7 @@ impl Program<TvMsg> for TreeCnv {
             );
             st.tre_rect = st.tre_vs.clone().into();
 
-            match tre_sty {
+            match st.tre_sty {
                 TreSty::PhyGrm => {
                     st.tip_lab_w_ring = None;
                     let tip_lab_w_rect: Rectangle = st
@@ -109,7 +87,7 @@ impl Program<TvMsg> for TreeCnv {
         }
         // ---------------------------------------------------------------------
         let align_tips_at: Float;
-        match tre_sty {
+        match st.tre_sty {
             TreSty::PhyGrm => {
                 align_tips_at = st.tre_vs.w;
                 st.rotation = ZRO;
@@ -124,46 +102,20 @@ impl Program<TvMsg> for TreeCnv {
         }
         // ---------------------------------------------------------------------
         if st.stale_vis_rect || st.is_new || self.stale_tre_rect {
-            match tre_sty {
+            match st.tre_sty {
                 TreSty::PhyGrm => {
                     let node_size = st.tre_vs.h / tst.tip_count() as Float;
-                    st.update_vis_node_idxs_phygrm(
-                        self.tip_labs_vis_max, self.node_labs_vis_max,
-                        node_size, tip_edge_idxs,
-                    );
+                    st.update_vis_node_idxs_phygrm(node_size, tip_edge_idxs);
                 }
                 TreSty::Fan => {
-                    st.update_vis_node_idxs_fan(
-                        self.tip_labs_vis_max, self.node_labs_vis_max,
-                        opn_angle, edges,
-                    );
+                    st.update_vis_node_idxs_fan(edges);
                 }
             }
-        } // -------------------------------------------------------------------
-        prepare_nodes(
-            &st.tre_vs, st.root_len, tre_sty, opn_angle, edges,
-            &st.vis_node_idxs, &mut st.vis_nodes,
-        );
+        }
         // ---------------------------------------------------------------------
-        prepare_nodes(
-            &st.tre_vs,
-            st.root_len,
-            tre_sty,
-            opn_angle,
-            edges,
-            tst.found_edge_idxs(),
-            &mut st.filtered_nodes,
-        );
-        // ---------------------------------------------------------------------
-        prepare_nodes(
-            &st.tre_vs,
-            st.root_len,
-            tre_sty,
-            opn_angle,
-            edges,
-            tst.sel_edge_idxs(),
-            &mut st.selected_nodes,
-        );
+        st.update_vis_nodes(edges);
+        st.update_filtered_nodes(edges, tst.found_edge_idxs());
+        st.update_selected_nodes(edges, tst.sel_edge_idxs());
         // ---------------------------------------------------------------------
         st.labs_tip.clear();
         st.labs_int.clear();
@@ -231,7 +183,7 @@ impl Program<TvMsg> for TreeCnv {
                         st.mouse = st.mouse_point(crsr);
                         st.mouse_angle = st.mouse_angle(crsr);
                         st.mouse_zone = st.mouse_angle_to_zone();
-                        st.hovered_node = st.hovered_node();
+                        st.hovered_node = st.hovered_node(edges);
                         st.cursor_tracking_point = st.cursor_tracking_point();
                         st.mouse_is_over_tip_w_resize_area = self.draw_labs_tip
                             && self.draw_labs_allowed
@@ -245,7 +197,7 @@ impl Program<TvMsg> for TreeCnv {
                                 )),
                             ));
                         } else if let Some(pt) = st.cursor_tracking_point {
-                            let crsr_x_rel = match tre_sty {
+                            let crsr_x_rel = match st.tre_sty {
                                 TreSty::PhyGrm => pt.x / st.tre_vs.w,
                                 TreSty::Fan => {
                                     (pt.distance(ORIGIN) - st.root_len)
@@ -277,79 +229,152 @@ impl Program<TvMsg> for TreeCnv {
                         st.cursor_tracking_point = None;
                         st.mouse_is_over_tip_w_resize_area = false;
                     }
-                    MouseEvent::ButtonPressed(btn) => match btn {
-                        MouseButton::Left => {
-                            if st.mouse_is_over_tip_w_resize_area {
-                                st.tip_lab_w_is_being_resized = true;
-                            } else if let Some(hovered_node) = &st.hovered_node
-                            {
-                                let edge = &edges[hovered_node.edge_idx];
-                                let node_id = edge.node_id;
-                                // ---------------------------------------------
-                                // if let Some(modifiers) = st.modifiers
-                                //     && modifiers == Modifiers::SHIFT
-                                // {
-                                //     action = Some(Action::publish(
-                                //         TvMsg::SelectDeselectNode(node_id),
-                                //     ));
-                                // } else {
-                                //     action = Some(Action::publish(
-                                //         TvMsg::SelectDeselectNodeExclusive(
-                                //             node_id,
-                                //         ),
-                                //     ));
-                                // }
-                                // ---------------------------------------------
-                                action = Some(Action::publish(
-                                    TvMsg::SelectDeselectNode(node_id),
-                                ));
-                                // ---------------------------------------------
+                    MouseEvent::ButtonPressed(btn) => {
+                        match btn {
+                            MouseButton::Left => {
+                                if st.mouse_is_over_tip_w_resize_area {
+                                    st.tip_lab_w_is_being_resized = true;
+                                } else if let Some((node_id, _)) =
+                                    &st.hovered_node
+                                {
+                                    match self.selection_lock {
+                                        true => action = Some(Action::publish(
+                                        TvMsg::SelectDeselectNode(*node_id),
+                                    )),
+                                        false => action = Some(Action::publish(
+                                        TvMsg::SelectDeselectNodeExclusive(*node_id),
+                                    )),
+                                }
+                                }
                             }
-                        }
-                        MouseButton::Right => {
-                            if st.mouse_is_over_tip_w_resize_area
-                                && self.tip_w_set_by_user.is_some()
-                            {
-                                let listing = TvContextMenuListing::for_tip_lab_w_resize_area();
-                                action = Some(Action::publish(
-                                    TvMsg::ContextMenuInteractionBegin(listing),
-                                ));
-                            } else if let Some(hovered_node) = &st.hovered_node
-                            {
-                                action = Some(Action::publish(
-                                    TvMsg::ContextMenuInteractionBegin(
-                                        TvContextMenuListing::for_node(
-                                            edges[hovered_node.edge_idx]
-                                                .node_id,
-                                            tst,
+                            MouseButton::Right => {
+                                if st.mouse_is_over_tip_w_resize_area
+                                    && self.tip_w_set_by_user.is_some()
+                                {
+                                    let listing = TvContextMenuListing::for_tip_lab_w_resize_area();
+                                    action = Some(Action::publish(
+                                        TvMsg::ContextMenuInteractionBegin(
+                                            listing,
                                         ),
-                                    ),
-                                ));
+                                    ));
+                                } else if let Some((node_id, _)) =
+                                    &st.hovered_node
+                                {
+                                    action = Some(Action::publish(
+                                        TvMsg::ContextMenuInteractionBegin(
+                                            TvContextMenuListing::for_node(
+                                                *node_id, tst,
+                                            ),
+                                        ),
+                                    ));
+                                }
                             }
+                            _ => {}
                         }
-                        _ => {}
-                    },
+                    }
                     MouseEvent::ButtonReleased(_btn) => {
                         st.tip_lab_w_is_being_resized = false;
-                        // action = Some(Action::publish(
-                        //     TvMsg::TipLabWidthSetByUser(None),
-                        // ));
                     }
                     MouseEvent::WheelScrolled { .. } => {}
                 }
             }
-            Event::Keyboard(KeyboardEvent::ModifiersChanged(modifiers)) => {
-                st.modifiers = match *modifiers {
-                    Modifiers::SHIFT => Some(Modifiers::SHIFT),
-                    _ => None,
-                };
-            }
+            Event::Keyboard(e) => match e {
+                KeyboardEvent::ModifiersChanged(modifs) => {
+                    let shift = Modifiers::SHIFT;
+                    if modifs.contains(shift) && !st.modifs.contains(shift) {
+                        action = Some(Action::publish(
+                            TvMsg::SelectionLockChanged(!self.selection_lock),
+                        ));
+                        st.modifs.insert(shift);
+                    } else if !modifs.contains(shift)
+                        && st.modifs.contains(shift)
+                    {
+                        action = Some(Action::publish(
+                            TvMsg::SelectionLockChanged(!self.selection_lock),
+                        ));
+                        st.modifs.remove(shift);
+                    }
+                }
+                KeyboardEvent::KeyPressed {
+                    key,
+                    modified_key: _,
+                    physical_key: _,
+                    location: _,
+                    modifiers: _,
+                    text: _,
+                } => {
+                    if let Some((node_id, _)) = &st.hovered_node
+                        && let Key::Character(k) = key
+                    {
+                        let k: &str = k.as_str();
+                        match k {
+                            "1" => {
+                                action = Some(Action::publish(
+                                    TvMsg::AddCladeLabel((
+                                        *node_id,
+                                        Clr::BLU_25,
+                                    )),
+                                ));
+                            }
+                            "2" => {
+                                action = Some(Action::publish(
+                                    TvMsg::AddCladeLabel((
+                                        *node_id,
+                                        Clr::CYA_25,
+                                    )),
+                                ));
+                            }
+                            "3" => {
+                                action = Some(Action::publish(
+                                    TvMsg::AddCladeLabel((
+                                        *node_id,
+                                        Clr::GRN_25,
+                                    )),
+                                ));
+                            }
+                            "4" => {
+                                action = Some(Action::publish(
+                                    TvMsg::AddCladeLabel((
+                                        *node_id,
+                                        Clr::MAG_25,
+                                    )),
+                                ));
+                            }
+                            "5" => {
+                                action = Some(Action::publish(
+                                    TvMsg::AddCladeLabel((
+                                        *node_id,
+                                        Clr::YEL_25,
+                                    )),
+                                ));
+                            }
+                            "6" => {
+                                action = Some(Action::publish(
+                                    TvMsg::AddCladeLabel((
+                                        *node_id,
+                                        Clr::RED_25,
+                                    )),
+                                ));
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                KeyboardEvent::KeyReleased {
+                    key: _,
+                    modified_key: _,
+                    physical_key: _,
+                    location: _,
+                    modifiers: _,
+                } => {}
+            },
+
             Event::Window(WindowEvent::RedrawRequested(_)) => action = None,
             _ => {}
         }
         // ---------------------------------------------------------------------
         if let Some(crsr_x_rel) = self.crsr_x_rel {
-            match tre_sty {
+            match st.tre_sty {
                 TreSty::PhyGrm => {
                     st.cursor_tracking_point =
                         Some(Point { x: crsr_x_rel * st.tre_vs.w, y: ZRO });
@@ -434,19 +459,19 @@ impl Program<TvMsg> for TreeCnv {
             if self.draw_debug {
                 draw_bounds(self, st, rndr, bnds, &mut geoms);
             }
-            draw_clade_labels(self, st, tst, rndr, size, &mut geoms);
+            draw_clade_labels(st, tst, rndr, size, &mut geoms);
             draw_edges(self, st, tst, rndr, size, &mut geoms);
             if st.mouse_is_over_tip_w_resize_area
                 || st.tip_lab_w_is_being_resized
             {
                 draw_tip_lab_w_resize_area(self, st, rndr, bnds, &mut geoms);
             }
+            draw_hovered_node(self, st, tst, rndr, size, &mut geoms);
             draw_legend(self, st, tst, rndr, size, &mut geoms);
             draw_cursor_line(self, st, rndr, size, &mut geoms);
             draw_labs_tip(self, st, tst, rndr, size, &mut geoms);
             draw_labs_int(self, st, tst, rndr, size, &mut geoms);
             draw_labs_brnch(self, st, tst, rndr, size, &mut geoms);
-            draw_hovered_node(self, st, rndr, size, &mut geoms);
             draw_selected_nodes(st, tst, rndr, size, &mut geoms);
             draw_filtered_nodes(self, st, tst, rndr, size, &mut geoms);
             if self.draw_debug {

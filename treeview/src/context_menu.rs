@@ -1,4 +1,4 @@
-use crate::{Display, Formatter, NodeId, Result, TreeState, TvMsg};
+use crate::{Clr, Display, Formatter, NodeId, Result, TreeState, TvMsg};
 
 #[derive(Debug, Clone)]
 pub struct TvContextMenuItem {
@@ -14,9 +14,10 @@ pub struct TvContextMenuListing {
 
 impl TvContextMenuListing {
     pub(crate) fn for_node(node_id: NodeId, tree_state: &TreeState) -> Self {
-        Self::default()
-            .push(TvMsg::Root(node_id), Some(tree_state))
-            .push(TvMsg::AddRemoveCladeLabel(node_id), Some(tree_state))
+        Self::default().push(TvMsg::Root(node_id), Some(tree_state)).push(
+            TvMsg::AddRemoveCladeLabel((node_id, Clr::GRN_25)),
+            Some(tree_state),
+        )
     }
 
     pub(crate) fn for_tip_lab_w_resize_area() -> Self {
@@ -42,7 +43,7 @@ impl TvContextMenuListing {
                     label: "Root here",
                 },
 
-                TvMsg::AddRemoveCladeLabel(node_id) => {
+                TvMsg::AddRemoveCladeLabel((node_id, _)) => {
                     let label = match tree_state.clade_has_label(node_id) {
                         true => "Unlabel",
                         false => "Label",

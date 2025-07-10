@@ -114,9 +114,9 @@ pub enum TvMsg {
     RootLenSelChanged(u16),
     LttVisChanged(bool),
     // -------------------------------------------
-    AddCladeLabel(NodeId),
+    AddCladeLabel((NodeId, Color)),
     RemoveCladeLabel(NodeId),
-    AddRemoveCladeLabel(NodeId),
+    AddRemoveCladeLabel((NodeId, Color)),
     AddRemoveCladeLabelForSelectedNode,
     // -------------------------------------------
     TreCnvScrolledOrResized(Viewport),
@@ -134,6 +134,7 @@ pub enum TvMsg {
     TipOnlySearchSelChanged(bool),
     // -------------------------------------------
     TipLabWidthSetByUser(Option<Float>),
+    SelectionLockChanged(bool),
 }
 
 impl TreeView {
@@ -214,6 +215,10 @@ impl TreeView {
     pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
         let mut task: Option<Task<TvMsg>> = None;
         match tv_msg {
+            TvMsg::SelectionLockChanged(state) => {
+                self.tre_cnv.selection_lock = state;
+            }
+
             TvMsg::TipLabWidthSetByUser(opt_w) => {
                 self.tre_cnv.tip_w_set_by_user = opt_w;
                 self.tre_cnv.stale_tre_rect = true;
@@ -233,11 +238,11 @@ impl TreeView {
                 task = Some(Task::done(msg));
             }
 
-            TvMsg::AddCladeLabel(node_id) => {
+            TvMsg::AddCladeLabel((node_id, color)) => {
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
                     tre.add_clade_label(
                         node_id,
-                        Clr::GRN_25,
+                        color,
                         node_id,
                         CladeLabelType::Inside,
                     );
@@ -254,11 +259,11 @@ impl TreeView {
                 self.clear_caches_all();
             }
 
-            TvMsg::AddRemoveCladeLabel(node_id) => {
+            TvMsg::AddRemoveCladeLabel((node_id, color)) => {
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
                     tre.add_remove_clade_label(
                         node_id,
-                        Clr::GRN_25,
+                        color,
                         node_id,
                         CladeLabelType::Inside,
                     );
@@ -268,24 +273,18 @@ impl TreeView {
             }
 
             TvMsg::AddRemoveCladeLabelForSelectedNode => {
-                let mut node_id: Option<NodeId> = None;
                 if let Some(sel_tre) = self.sel_tre() {
-                    node_id = match sel_tre.sel_node_ids().len() == 1 {
+                    if let Some(node_id) = match sel_tre.sel_node_ids().len()
+                        == 1
+                    {
                         true => sel_tre.sel_node_ids().iter().last().copied(),
                         false => None,
+                    } {
+                        task = Some(Task::done(TvMsg::AddRemoveCladeLabel((
+                            node_id,
+                            Clr::RED_25,
+                        ))));
                     }
-                }
-                if let Some(node_id) = node_id {
-                    self.with_exclusive_sel_tre_mut(&mut |tre| {
-                        tre.add_remove_clade_label(
-                            node_id,
-                            Clr::GRN_25,
-                            node_id,
-                            CladeLabelType::Inside,
-                        );
-                    });
-                    self.tre_cnv.stale_tre_rect = true;
-                    self.clear_caches_all();
                 }
             }
 
@@ -684,6 +683,7 @@ impl TreeView {
                 self.opn_angle_idx = idx;
                 self.tre_cnv.opn_angle = angle_from_idx(idx);
                 task = self.scroll_to_current_found_edge();
+                self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_all();
             }
 

@@ -4,8 +4,8 @@ use crate::*;
 #[derive(Debug)]
 pub struct St {
     pub(crate) mouse: Option<Point>,
-    pub(crate) modifiers: Option<Modifiers>,
-    pub(crate) hovered_node: Option<NodeData>,
+    pub(crate) modifs: Modifiers,
+    pub(crate) hovered_node: Option<(NodeId, NodeData)>,
     pub(crate) cursor_tracking_point: Option<Point>,
     pub(crate) bnds: Rectangle<Float>,
     pub(crate) cnv_vs: RectVals<Float>,
@@ -36,13 +36,15 @@ pub struct St {
     pub(crate) mouse_is_over_tip_w_resize_area: bool,
     pub(crate) tip_lab_w_is_being_resized: bool,
     pub(crate) is_new: bool,
+    pub(crate) tre_sty: TreSty,
+    pub(crate) opn_angle: Float,
 }
 
 impl Default for St {
     fn default() -> Self {
         Self {
             mouse: None,
-            modifiers: None,
+            modifs: Modifiers::empty(),
             hovered_node: None,
             cursor_tracking_point: None,
             bnds: Default::default(),
@@ -83,11 +85,63 @@ impl Default for St {
             mouse_is_over_tip_w_resize_area: false,
             tip_lab_w_is_being_resized: false,
             is_new: true, // sometimes canvas state gets recreated losing all the stored state.
+            opn_angle: ZRO,
+            tre_sty: TreSty::PhyGrm,
         }
     }
 }
 
+fn prepare_nodes(
+    vs: &RectVals<Float>,
+    root_len: Float,
+    tre_sty: TreSty,
+    opn_angle: Float,
+    edges: &[Edge],
+    node_idxs: &[usize],
+    results: &mut Vec<NodeData>,
+) {
+    node_idxs
+        .par_iter()
+        .map(|&idx| match tre_sty {
+            TreSty::PhyGrm => node_data_cart(vs.w, vs.h, &edges[idx]).into(),
+            TreSty::Fan => node_data_rad(
+                opn_angle, ZRO, vs.radius_min, root_len, &edges[idx],
+            )
+            .into(),
+        })
+        .collect_into_vec(results);
+}
+
 impl St {
+    pub(super) fn update_vis_nodes(&mut self, edges: &[Edge]) {
+        prepare_nodes(
+            &self.tre_vs, self.root_len, self.tre_sty, self.opn_angle, edges,
+            &self.vis_node_idxs, &mut self.vis_nodes,
+        );
+    }
+
+    pub(super) fn update_filtered_nodes(
+        &mut self,
+        edges: &[Edge],
+        found_edge_idxs: &[usize],
+    ) {
+        prepare_nodes(
+            &self.tre_vs, self.root_len, self.tre_sty, self.opn_angle, edges,
+            found_edge_idxs, &mut self.filtered_nodes,
+        );
+    }
+
+    pub(super) fn update_selected_nodes(
+        &mut self,
+        edges: &[Edge],
+        sel_edge_idxs: &[usize],
+    ) {
+        prepare_nodes(
+            &self.tre_vs, self.root_len, self.tre_sty, self.opn_angle, edges,
+            sel_edge_idxs, &mut self.selected_nodes,
+        );
+    }
+
     pub(super) fn mouse_angle(&mut self, crsr: Cursor) -> Option<Float> {
         crsr.position_in(self.bnds).map(|mouse| {
             if self.rotation == ZRO {
@@ -137,7 +191,10 @@ impl St {
         })
     }
 
-    pub(super) fn hovered_node(&mut self) -> Option<NodeData> {
+    pub(super) fn hovered_node(
+        &mut self,
+        edges: &[Edge],
+    ) -> Option<(NodeId, NodeData)> {
         let mouse = &self.mouse?;
         let closest_node = self
             .vis_nodes
@@ -152,7 +209,7 @@ impl St {
             && mouse.distance(closest_node.points.p1)
                 <= self.node_radius + SF * 5e0
         {
-            Some(closest_node)
+            Some((edges[closest_node.edge_idx].node_id, closest_node))
         } else {
             None
         }
@@ -189,7 +246,7 @@ impl St {
 
     pub(super) fn cursor_tracking_point(&mut self) -> Option<Point> {
         let mouse = &self.mouse?;
-        if let Some(hovered_node) = &self.hovered_node {
+        if let Some((_, hovered_node)) = &self.hovered_node {
             Some(Point {
                 x: hovered_node.points.p1.x,
                 y: hovered_node.points.p1.y,
@@ -201,8 +258,6 @@ impl St {
 
     pub(super) fn update_vis_node_idxs_phygrm(
         &mut self,
-        max_tips: usize,
-        max_nodes: usize,
         node_size: Float,
         tip_edge_idxs: &[usize],
     ) {
@@ -212,13 +267,10 @@ impl St {
             self.vis_vs.y1 - self.tre_vs.y0,
             node_size,
             tip_edge_idxs,
-        ) && tip_idx_range.end() - tip_idx_range.start() <= max_tips
-        {
+        ) {
             let node_idx_range =
                 self.vis_node_idx_range_phygrm(&tip_idx_range, tip_edge_idxs);
-            if node_idx_range.end() - node_idx_range.start() <= max_nodes {
-                self.vis_node_idxs = node_idx_range.collect();
-            }
+            self.vis_node_idxs = node_idx_range.collect();
         }
     }
 
@@ -240,30 +292,14 @@ impl St {
         node_idx_range_for_tip_idx_range(tip_idx_range, tip_edge_idxs)
     }
 
-    pub(super) fn update_vis_node_idxs_fan(
-        &mut self,
-        max_tips: usize,
-        max_nodes: usize,
-        opn: Float,
-        edges: &[Edge],
-    ) {
-        let mut tip_count: usize = 0;
+    pub(super) fn update_vis_node_idxs_fan(&mut self, edges: &[Edge]) {
         self.vis_node_idxs.clear();
         for e in edges {
-            let angle = edge_angle(opn, e) + self.rotation;
+            let angle = edge_angle(self.opn_angle, e) + self.rotation;
             let point =
                 node_point_pol(angle, self.tre_vs.radius_min, self.root_len, e);
             if self.vis_rect.contains(point + self.translation) {
                 self.vis_node_idxs.push(e.edge_idx);
-                if e.is_tip {
-                    tip_count += 1;
-                    if tip_count > max_tips
-                        || self.vis_node_idxs.len() > max_nodes
-                    {
-                        self.vis_node_idxs.clear();
-                        break;
-                    }
-                }
             }
         }
     }

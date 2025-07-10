@@ -44,7 +44,7 @@ pub(super) struct TreeCnv {
     pub(super) drawing_enabled: bool,
     // -------------------------------------------------------------------------
     pub(super) tip_labs_vis_max: usize,
-    pub(super) node_labs_vis_max: usize,
+    // pub(super) node_labs_vis_max: usize,
     // -------------------------------------------------------------------------
     pub(super) lab_size_min: Float,
     pub(super) lab_size_max: Float,
@@ -71,8 +71,8 @@ pub(super) struct TreeCnv {
     pub(super) trim_tip_labs: bool,
     pub(super) trim_tip_labs_to_nchar: u16,
     // -------------------------------------------------------------------------
-    // pub(crate) tip_w_is_set_by_user: bool,
     pub(crate) tip_w_set_by_user: Option<Float>,
+    pub(crate) selection_lock: bool,
 }
 
 impl TreeCnv {
@@ -97,7 +97,7 @@ impl TreeCnv {
             draw_cursor_line: false,
             // -----------------------------------------------------------------
             tip_labs_vis_max: 400,
-            node_labs_vis_max: 900,
+            // node_labs_vis_max: 900,
             // -----------------------------------------------------------------
             opn_angle: ZRO,
             rot_angle: ZRO,
@@ -142,8 +142,8 @@ impl TreeCnv {
             trim_tip_labs: true,
             trim_tip_labs_to_nchar: 20,
             // -----------------------------------------------------------------
-            // tip_w_is_set_by_user: false,
             tip_w_set_by_user: None,
+            selection_lock: false,
         }
     }
 

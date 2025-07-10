@@ -2549,7 +2549,7 @@ dependencies = [
 
 [[package]]
 name = "riced"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "convert_case",
  "iced",
@@ -3140,7 +3140,7 @@ dependencies = [
 
 [[package]]
 name = "treehouse"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "dendros",
  "muda",
@@ -3154,7 +3154,7 @@ dependencies = [
 
 [[package]]
 name = "treeview"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "dendros",
  "rayon",

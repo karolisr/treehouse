@@ -1,48 +1,8 @@
-[profile.dev] # ---------------------
-    codegen-units=6       # 256
-    debug=true            # true
-    debug-assertions=true # true
-    incremental=true      # true
-    lto=false             # false
-    opt-level=1           # 1
-    overflow-checks=true  # true
-    panic="abort"         # "unwind"
-    rpath=false           # false
-    strip=false           # false
-
-    [profile.dev.package.objc2]
-        debug-assertions=false
-
-[profile.custom] # -----------------
-    codegen-units=2
-    debug=false
-    debug-assertions=false
-    incremental=false
-    inherits="release"
-    lto=false
-    opt-level=2
-    overflow-checks=true
-    panic="abort"
-    rpath=false
-    strip=true
-
-[profile.release] # -----------------
-    codegen-units=1        # 16
-    debug=false            # false
-    debug-assertions=false # false
-    incremental=false      # false
-    lto=true               # false
-    opt-level=3            # 3
-    overflow-checks=true   # false
-    panic="abort"          # "unwind"
-    rpath=false            # false
-    strip=true             # "none"
-
 [workspace]
     members=["app", "riced", "treeview"]
     resolver="3"
 
-    [workspace.package]
+    [workspace.package] # ------------------------------------------------------
         authors=["Karolis Ramanauskas"]
         categories=[
             "gui",
@@ -63,9 +23,9 @@
         readme="README.md"
         repository="https://github.com/karolisr/treehouse"
         rust-version="1.88"
-        version="0.3.0"
+        version="0.3.1"
 
-    [workspace.dependencies]
+    [workspace.dependencies] # -------------------------------------------------
         num-traits="0.2.19"
         numfmt="1.1.1"
         objc2="0.6.1"
@@ -113,13 +73,13 @@
             ]
             version="1.46.1"
 
-    [workspace.lints.rust]
+    [workspace.lints.rust] # ---------------------------------------------------
         missing_debug_implementations="deny"
         # missing_docs="warn"
         # unsafe_code="deny"
         unused_results="deny"
 
-    [workspace.lints.clippy]
+    [workspace.lints.clippy] # -------------------------------------------------
         collapsible_if="allow"
         default_trait_access="allow"
         filter_map_next="deny"
@@ -140,5 +100,32 @@
         unused_async="deny"
         useless_conversion="deny"
 
-    [workspace.lints.rustdoc]
+    [workspace.lints.rustdoc] # ------------------------------------------------
         broken_intra_doc_links="forbid"
+
+[profile.dev] # ----------------------------------------------------------------
+    codegen-units=6       # 256
+    debug=true            # true
+    debug-assertions=true # true
+    incremental=true      # true
+    lto=false             # false
+    opt-level=1           # 1
+    overflow-checks=true  # true
+    panic="abort"         # "unwind"
+    rpath=false           # false
+    strip=false           # false
+
+    [profile.dev.package.objc2]
+        debug-assertions=false
+
+[profile.release] # ------------------------------------------------------------
+    codegen-units=1        # 16
+    debug=false            # false
+    debug-assertions=false # false
+    incremental=false      # false
+    lto=true               # false
+    opt-level=3            # 3
+    overflow-checks=true   # false
+    panic="abort"          # "unwind"
+    rpath=false            # false
+    strip=true             # "none"

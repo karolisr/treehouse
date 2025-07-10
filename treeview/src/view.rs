@@ -159,6 +159,8 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         .height(Length::Shrink),
     );
 
+    tb_row = tb_row.height(Length::Shrink);
+
     container(tb_row)
         .padding(PADDING)
         .style(sty_cont_tool_bar)
@@ -517,6 +519,9 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
     )]);
     sb_col = sb_col.push(rule_h(SF));
 
+    sb_col =
+        sb_col.push(toggler_selection_lock(true, tv.tre_cnv.selection_lock));
+
     if tv.show_ltt {
         sb_col =
             sb_col.push(pick_list_ltt_y_axis_scale_type(&tv.ltt_cnv.scale_y));
@@ -719,6 +724,17 @@ pub(crate) fn toggler_root<'a>(
     let mut tglr = toggler("Root", draw_root);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::RootVisChanged);
+    }
+    tglr
+}
+
+pub(crate) fn toggler_selection_lock<'a>(
+    enabled: bool,
+    selection_lock: bool,
+) -> Toggler<'a, TvMsg> {
+    let mut tglr = toggler("Selection Lock", selection_lock);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::SelectionLockChanged);
     }
     tglr
 }

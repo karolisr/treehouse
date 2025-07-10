@@ -514,28 +514,32 @@ impl TreeState {
         } else {
             self.select_node(node_id);
         }
-        self.sel_edge_idxs = self.sel_edge_idxs_prep();
     }
 
     pub(super) fn select_node(&mut self, node_id: NodeId) {
         _ = self.sel_node_ids.insert(node_id);
+        self.sel_edge_idxs = self.sel_edge_idxs_prep();
         self.clear_cache_sel_nodes();
     }
 
     pub(super) fn deselect_node(&mut self, node_id: NodeId) {
         _ = self.sel_node_ids.remove(&node_id);
+        self.sel_edge_idxs = self.sel_edge_idxs_prep();
         self.clear_cache_sel_nodes();
     }
 
     pub(super) fn select_deselect_node_exclusive(&mut self, node_id: NodeId) {
         let selected = self.sel_node_ids.clone();
+        let n_selected = selected.len();
         selected.iter().for_each(|id| {
             if *id != node_id {
                 _ = self.sel_node_ids.remove(id);
             }
         });
         self.select_deselect_node(node_id);
-        self.clear_cache_sel_nodes();
+        if n_selected > 1 {
+            self.select_node(node_id);
+        }
     }
 
     // Cached Geometries -------------------------------------------------------
