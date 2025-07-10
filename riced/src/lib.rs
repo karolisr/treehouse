@@ -73,7 +73,7 @@ pub use i::{
 };
 pub use w::button::{Status as ButtonStatus, Style as ButtonStyle};
 pub use w::canvas::{
-    Action, Cache, Canvas as Cnv, Frame, Geometry, Program,
+    Action, Cache as CnvCache, Canvas as Cnv, Frame, Geometry, Program,
     Style::Solid,
     Text as CnvText,
     fill::Fill as CnvFill,

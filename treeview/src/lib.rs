@@ -30,7 +30,6 @@ pub use context_menu::{TvContextMenuItem, TvContextMenuListing};
 pub use riced::{SF, TXT_SIZE};
 pub use treeview::{SidebarPosition, TreeView, TvMsg};
 
-use std::collections::{HashMap, HashSet};
 use std::f32 as float;
 use std::fmt::{Debug, Display, Formatter, Result};
 use std::ops::RangeInclusive;
@@ -40,9 +39,7 @@ use cnv_plot::AXIS_SCALE_TYPE_OPTS;
 use cnv_plot::{AxisScaleType, PlotCnv, PlotDataType};
 use cnv_tree::TreeCnv;
 use consts::*;
-use dendros::{
-    Edge, LttPoint, Node, NodeId, Tree, TreeFloat, ltt, write_newick,
-};
+use dendros::{Edge, LttPoint, Node, NodeId, Tree, ltt, write_newick};
 use rayon::prelude::*;
 use riced::*;
 use treestate::TreeState;

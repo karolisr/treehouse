@@ -1,4 +1,21 @@
-use crate::*;
+use crate::CladeLabel;
+use crate::CladeLabelType;
+use crate::NodeOrd;
+
+use riced::CnvCache;
+use riced::Color;
+
+use dendros::Edge;
+use dendros::Node;
+use dendros::NodeId;
+use dendros::Tree;
+use dendros::TreeFloat;
+
+use rayon::iter::IntoParallelRefIterator;
+use rayon::iter::ParallelIterator;
+
+use std::collections::HashMap;
+use std::collections::HashSet;
 
 #[derive(Default, Debug)]
 pub(super) struct TreeState {
@@ -17,15 +34,15 @@ pub(super) struct TreeState {
     edges_tip_idx: Vec<usize>,
     edges_tip_tallest: Vec<Edge>,
 
-    cache_edge: Cache,
-    cache_lab_tip: Cache,
-    cache_lab_int: Cache,
-    cache_lab_brnch: Cache,
-    cache_sel_nodes: Cache,
-    cache_filtered_nodes: Cache,
-    cache_clade_labels: Cache,
+    cache_edge: CnvCache,
+    cache_lab_tip: CnvCache,
+    cache_lab_int: CnvCache,
+    cache_lab_brnch: CnvCache,
+    cache_sel_nodes: CnvCache,
+    cache_filtered_nodes: CnvCache,
+    cache_clade_labels: CnvCache,
 
-    // Memoized Values ---------------------------------------------------
+    // Memoized Values ---------------------------------------------------------
     cache_tip_count: Option<usize>,
     cache_node_count: Option<usize>,
     cache_tre_height: Option<TreeFloat>,
@@ -35,7 +52,7 @@ pub(super) struct TreeState {
     cache_is_ultrametric: Option<Option<bool>>,
     cache_is_rooted: Option<bool>,
 
-    // Search & Filter ---------------------------------------------------
+    // Search & Filter ---------------------------------------------------------
     vec_idx_to_found_edge_idxs: usize,
     found_edge_idxs: Vec<usize>,
     found_node_ids: HashSet<NodeId>,
@@ -114,7 +131,7 @@ impl TreeState {
         self.tree().bounding_edges_for_clade(&node_id)
     }
 
-    // Search & Filter -----------------------------------------------------------------------------
+    // Search & Filter ---------------------------------------------------------
     pub(super) fn found_edge_idxs(&self) -> &Vec<usize> {
         &self.found_edge_idxs
     }
@@ -222,7 +239,7 @@ impl TreeState {
         }
     }
 
-    // Accessors -----------------------------------------------------------------------------------
+    // Accessors ---------------------------------------------------------------
     pub(super) fn edges_srtd_y(&self) -> Option<&Vec<Edge>> {
         self.tree().edges()
     }
@@ -243,7 +260,7 @@ impl TreeState {
         self.edge_root.clone()
     }
 
-    // Memoized Methods ----------------------------------------------------------------------------
+    // Memoized Methods --------------------------------------------------------
     pub(super) fn tip_count(&self) -> usize {
         if let Some(cached) = self.cache_tip_count {
             cached
@@ -309,7 +326,7 @@ impl TreeState {
         }
     }
 
-    // Rooting -------------------------------------------------------------------------------------
+    // Rooting -----------------------------------------------------------------
     pub(super) fn can_root(&self, node_id: NodeId) -> bool {
         self.tree().can_root(&node_id)
     }
@@ -346,7 +363,7 @@ impl TreeState {
         }
     }
 
-    // Sorting -------------------------------------------------------------------------------------
+    // Sorting -----------------------------------------------------------------
     pub(super) fn sort(&mut self, node_ord_opt: NodeOrd) {
         let current_found_node_id;
         if let Some(node_id) = self.tmp_found_node_id {
@@ -375,7 +392,7 @@ impl TreeState {
         self.edge_root = self.edge_root_prep();
         self.update_filter_results(current_found_node_id);
         self.sel_edge_idxs = self.sel_edge_idxs_prep();
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         // Drop clade label for nodes that may not exist anymore.
         let mut node_ids_to_drop: Vec<NodeId> = Vec::new();
         for &node_id in self.labeled_clades.keys() {
@@ -386,7 +403,7 @@ impl TreeState {
         for node_id in node_ids_to_drop {
             self.remove_clade_label(node_id);
         }
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         self.clear_caches_all();
     }
 
@@ -464,7 +481,7 @@ impl TreeState {
         }
     }
 
-    // Selection -----------------------------------------------------------------------------------
+    // Selection ---------------------------------------------------------------
     pub(super) fn sel_edge_idxs(&self) -> &Vec<usize> {
         &self.sel_edge_idxs
     }
@@ -521,32 +538,32 @@ impl TreeState {
         self.clear_cache_sel_nodes();
     }
 
-    // Cached Geometries ---------------------------------------------------------------------------
-    pub(super) fn cache_edge(&self) -> &Cache {
+    // Cached Geometries -------------------------------------------------------
+    pub(super) fn cache_edge(&self) -> &CnvCache {
         &self.cache_edge
     }
 
-    pub(super) fn cache_lab_tip(&self) -> &Cache {
+    pub(super) fn cache_lab_tip(&self) -> &CnvCache {
         &self.cache_lab_tip
     }
 
-    pub(super) fn cache_lab_int(&self) -> &Cache {
+    pub(super) fn cache_lab_int(&self) -> &CnvCache {
         &self.cache_lab_int
     }
 
-    pub(super) fn cache_lab_brnch(&self) -> &Cache {
+    pub(super) fn cache_lab_brnch(&self) -> &CnvCache {
         &self.cache_lab_brnch
     }
 
-    pub(super) fn cache_sel_nodes(&self) -> &Cache {
+    pub(super) fn cache_sel_nodes(&self) -> &CnvCache {
         &self.cache_sel_nodes
     }
 
-    pub(super) fn cache_filtered_nodes(&self) -> &Cache {
+    pub(super) fn cache_filtered_nodes(&self) -> &CnvCache {
         &self.cache_filtered_nodes
     }
 
-    pub(super) fn cache_clade_labels(&self) -> &Cache {
+    pub(super) fn cache_clade_labels(&self) -> &CnvCache {
         &self.cache_clade_labels
     }
 
@@ -588,7 +605,7 @@ impl TreeState {
         self.clear_cache_clade_labels();
     }
 
-    // Setup ---------------------------------------------------------------------------------------
+    // Setup -------------------------------------------------------------------
     pub(super) fn new(id: usize) -> Self {
         Self { id, ..Default::default() }
     }

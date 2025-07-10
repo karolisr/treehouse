@@ -102,9 +102,14 @@ pub fn node_idx_range_for_tip_idx_range(
     IndexRange::new(idx_node_0, idx_node_1)
 }
 
-pub fn point_cart(w: Float, h: Float, edge_x: Float, edge_y: Float) -> Point {
-    let x = edge_x * w;
-    let y = edge_y * h;
+pub fn point_cart(
+    w: Float,
+    h: Float,
+    x_relative: Float,
+    y_relative: Float,
+) -> Point {
+    let x = x_relative * w;
+    let y = y_relative * h;
     Point { x, y }
 }
 
@@ -131,16 +136,23 @@ pub fn edge_angle(opn_angle: Float, edge: &Edge) -> Float {
     opn_angle * edge.y as Float
 }
 
+/// Calculates coordinates of a point given the angle and radius.
+///
+/// `radius = radius_relative * size_max + offset_absolute`
+///
+/// `size_max = radius_absolute - offset_absolute`
+///
 pub fn point_pol(
     angle: Float,
-    radius: Float,
-    offset: Float,
-    edge_x: Float,
+    radius_absolute: Float,
+    offset_absolute: Float,
+    radius_relative: Float,
 ) -> Point {
     let (sin, cos) = angle.sin_cos();
-    let size = radius - offset;
-    let x = offset * cos + edge_x * cos * size;
-    let y = offset * sin + edge_x * sin * size;
+    let size_max = radius_absolute - offset_absolute;
+    let radius = radius_relative * size_max + offset_absolute;
+    let x = radius * cos;
+    let y = radius * sin;
     Point { x, y }
 }
 
