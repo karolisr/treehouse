@@ -26,6 +26,10 @@ cargo build --profile release --bin treehouse
 # -------------------------------------------
 
 # -------------------------------------------
+cargo doc --profile release --document-private-items --no-deps --workspace
+# -------------------------------------------
+
+# -------------------------------------------
 cargo install cargo-bundle 2>/dev/null
 cargo-bundle bundle --profile release --bin treehouse
 # -------------------------------------------
