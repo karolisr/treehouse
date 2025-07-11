@@ -66,11 +66,17 @@ cargo doc --profile release --document-private-items --no-deps --workspace
 EXPORT_PATH="./target/release/bundle/osx"
 PRODUCT_NAME="TreeHouse"
 APP="${PRODUCT_NAME}.app"
-ZIP="${PRODUCT_NAME}.zip"
 DMG="${PRODUCT_NAME}.dmg"
-NOTARIZATION_RESPONSE_APP="${PRODUCT_NAME}_APP_NotarizationResponse.plist"
-NOTARIZATION_RESPONSE_DMG="${PRODUCT_NAME}_DMG_NotarizationResponse.plist"
-BUNDLE_PATH="${EXPORT_PATH}/${APP}/Contents"
+PKG="${PRODUCT_NAME}.pkg"
+ZIP="${PRODUCT_NAME}.zip"
+NOTARIZATION_RESPONSE_APP_PATH="${EXPORT_PATH}/${PRODUCT_NAME}_APP_NotarizationResponse.plist"
+NOTARIZATION_RESPONSE_DMG_PATH="${EXPORT_PATH}/${PRODUCT_NAME}_DMG_NotarizationResponse.plist"
+NOTARIZATION_RESPONSE_PKG_PATH="${EXPORT_PATH}/${PRODUCT_NAME}_PKG_NotarizationResponse.plist"
+APP_PATH="${EXPORT_PATH}/${APP}"
+DMG_PATH="${EXPORT_PATH}/${DMG}"
+PKG_PATH="${EXPORT_PATH}/${PKG}"
+ZIP_PATH="${EXPORT_PATH}/${ZIP}"
+BUNDLE_PATH="${APP_PATH}/Contents"
 # -------------------------------------------
 
 # -------------------------------------------
@@ -90,53 +96,82 @@ cat "./resources/macos/info_plist_tail.txt" >>"${FILE}"
 cp "./resources/macos/"*".icns" "${BUNDLE_PATH}/Resources/"
 # -------------------------------------------
 
-cd "${EXPORT_PATH}"
-xattr -rc "${APP}"
+APP_PLIST="${BUNDLE_PATH}/Info.plist"
+VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "${APP_PLIST}")
+IDENTIFIER=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "${APP_PLIST}")
+
+xattr -rc "${APP_PATH}"
 if [[ -n "${SIGN}" ]]; then
-    if [[ -n "${SIGNING_IDENTITY}" ]]; then
-        echo -e "\nSigning identity: ${SIGNING_IDENTITY}"
-        codesign --sign "${SIGNING_IDENTITY}" --options runtime "${APP}"
+    if [[ -n "${SIGNING_IDENTITY_APPLICATION}" ]]; then
+        echo -e "\nSigning identity: ${SIGNING_IDENTITY_APPLICATION}"
+        codesign --sign "${SIGNING_IDENTITY_APPLICATION}" --options runtime "${APP_PATH}"
+
         if [[ -n "${NOTARIZE}" ]]; then
-            zip -r "${ZIP}" "${APP}"
+            zip -r "${ZIP_PATH}" "${APP_PATH}"
             if [[ -n "${NOTARYTOOL_KEYCHAIN_PROFILE}" ]]; then
                 xcrun notarytool submit \
                     --keychain-profile "${NOTARYTOOL_KEYCHAIN_PROFILE}" \
-                    --verbose "${ZIP}" \
+                    --verbose "${ZIP_PATH}" \
                     --wait \
                     --timeout 2h \
-                    --output-format plist >"${NOTARIZATION_RESPONSE_APP}"
+                    --output-format plist >"${NOTARIZATION_RESPONSE_APP_PATH}"
 
                 return_code=$?
 
                 if [ $return_code -eq 0 ]; then
-                    xcrun stapler staple "${APP}"
-                    xcrun stapler validate "${APP}"
+                    xcrun stapler staple "${APP_PATH}"
+                    xcrun stapler validate "${APP_PATH}"
 
-                    rm -rf "${ZIP}"
-
-                    mkdir -p "${PRODUCT_NAME}"
-                    mv -v "${APP}" "${PRODUCT_NAME}"
-
-                    /usr/bin/hdiutil create -srcfolder "${PRODUCT_NAME}" -format UDBZ "${DMG}"
+                    # ---------------------------------------------------------
+                    pkgbuild --component "${APP_PATH}" \
+                             --identifier "${IDENTIFIER}" \
+                             --version "${VERSION}" \
+                             --ownership preserve \
+                             --install-location "/Applications" \
+                             --sign "${SIGNING_IDENTITY_INSTALLER}" \
+                             "${PKG_PATH}"
 
                     xcrun notarytool submit \
                         --keychain-profile "${NOTARYTOOL_KEYCHAIN_PROFILE}" \
-                        --verbose "${DMG}" \
+                        --verbose "${PKG_PATH}" \
                         --wait \
                         --timeout 2h \
-                        --output-format plist >"${NOTARIZATION_RESPONSE_DMG}"
+                        --output-format plist >"${NOTARIZATION_RESPONSE_PKG_PATH}"
 
                     return_code=$?
 
                     if [ $return_code -eq 0 ]; then
-                        xcrun stapler staple "${DMG}"
-                        xcrun stapler validate "${DMG}"
+                    xcrun stapler staple "${PKG_PATH}"
+                    xcrun stapler validate "${PKG_PATH}"
                     fi
+                    # ---------------------------------------------------------
+                    rm -rf "${ZIP_PATH}"
+                    # ---------------------------------------------------------
+                    # mkdir -p "${EXPORT_PATH}/${PRODUCT_NAME}"
+                    # mv -v "${APP_PATH}" "${EXPORT_PATH}/${PRODUCT_NAME}"
+
+                    # /usr/bin/hdiutil create -srcfolder "${EXPORT_PATH}/${PRODUCT_NAME}" -format UDBZ "${DMG_PATH}"
+
+                    # xcrun notarytool submit \
+                    #     --keychain-profile "${NOTARYTOOL_KEYCHAIN_PROFILE}" \
+                    #     --verbose "${DMG_PATH}" \
+                    #     --wait \
+                    #     --timeout 2h \
+                    #     --output-format plist >"${NOTARIZATION_RESPONSE_DMG_PATH}"
+
+                    # return_code=$?
+
+                    # if [ $return_code -eq 0 ]; then
+                    #     xcrun stapler staple "${DMG_PATH}"
+                    #     xcrun stapler validate "${DMG_PATH}"
+                    # fi
+                    # ---------------------------------------------------------
+                    rm -rf "${APP_PATH}"
                 fi
             fi
         fi
     else
-        codesign --deep --force --sign - "${APP}"
+        codesign --deep --force --sign - "${APP_PATH}"
     fi
 fi
 # -------------------------------------------
