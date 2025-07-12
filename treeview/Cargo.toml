@@ -13,6 +13,8 @@
     dendros={workspace=true}
     rayon={workspace=true}
     riced={workspace=true}
+    roarsvg="0.5.0"
+    usvg-tree="0.36.0"
 
 [lints]
     workspace=true

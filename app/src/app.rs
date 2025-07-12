@@ -37,6 +37,7 @@ pub enum AppMsg {
     // --------------------------------
     OpenFile,
     SaveAs,
+    ExportSvg,
     PathToOpen(Option<PathBuf>),
     PathToSave(Option<PathBuf>),
     // --------------------------------
@@ -60,6 +61,7 @@ pub enum AppMsg {
 pub enum FileType {
     Newick,
     Nexus,
+    Svg,
     Other(String),
     Exception,
 }
@@ -388,6 +390,11 @@ impl App {
             AppMsg::SaveAs => {
                 task = Some(Task::future(ops::choose_file_to_save()));
             }
+
+            AppMsg::ExportSvg => {
+                task = Some(Task::future(ops::choose_file_to_svg_export()));
+            }
+
             AppMsg::PathToSave(path_buf_opt) => {
                 if let Some(path_buf) = path_buf_opt {
                     println!("{path_buf:?}");
@@ -398,6 +405,7 @@ impl App {
                                 "tree" | "trees" | "nexus" | "nex" => {
                                     FileType::Nexus
                                 }
+                                "svg" => FileType::Svg,
                                 ext => FileType::Other(ext.to_string()),
                             },
                             None => FileType::Exception,
@@ -425,6 +433,11 @@ impl App {
                                 }
                             }
                             FileType::Nexus => {} // Save Nexus file
+                            FileType::Svg => {
+                                task = Some(Task::done(AppMsg::TvMsg(
+                                    TvMsg::ExportSvg(path_buf),
+                                )));
+                            }
                             _ => {}
                         },
                     }

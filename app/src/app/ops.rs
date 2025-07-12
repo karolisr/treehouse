@@ -8,7 +8,7 @@ pub async fn choose_file_to_open() -> AppMsg {
         .add_filter("nexus", &["tree", "trees", "nex", "nexus"])
         .pick_file()
         .await;
-    AppMsg::PathToOpen(chosen.map(|pb| pb.path().into()))
+    AppMsg::PathToOpen(chosen.map(|file_handle| file_handle.path().into()))
 }
 
 pub fn choose_file_to_open_sync() -> AppMsg {
@@ -16,7 +16,7 @@ pub fn choose_file_to_open_sync() -> AppMsg {
         .add_filter("newick", &["newick", "tre"])
         .add_filter("nexus", &["tree", "trees", "nex", "nexus"])
         .pick_file();
-    AppMsg::PathToOpen(chosen.map(|pb| pb.as_path().into()))
+    AppMsg::PathToOpen(chosen.map(|path_buf| path_buf.as_path().into()))
 }
 
 pub async fn choose_file_to_save() -> AppMsg {
@@ -24,7 +24,15 @@ pub async fn choose_file_to_save() -> AppMsg {
         .add_filter("newick", &["newick", "tre"])
         .save_file()
         .await;
-    AppMsg::PathToSave(chosen.map(|pb| pb.path().into()))
+    AppMsg::PathToSave(chosen.map(|file_handle| file_handle.path().into()))
+}
+
+pub async fn choose_file_to_svg_export() -> AppMsg {
+    let chosen = rfd::AsyncFileDialog::new()
+        .add_filter("svg", &["svg"])
+        .save_file()
+        .await;
+    AppMsg::PathToSave(chosen.map(|file_handle| file_handle.path().into()))
 }
 
 pub fn read_text_file(path_buf: PathBuf) -> String {

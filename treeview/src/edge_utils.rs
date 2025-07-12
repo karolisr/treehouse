@@ -219,3 +219,38 @@ pub fn node_data_rad(
     let points = edge_points_pol(angle, radius, offset, edge);
     NodeDataPol { edge_idx: edge.edge_idx, points, angle, angle_parent }
 }
+
+pub fn path_builder_edges_phygrm(
+    edges: &[Edge],
+    w: Float,
+    h: Float,
+) -> PathBuilder {
+    let mut pb: PathBuilder = PathBuilder::new();
+    for e in edges {
+        let nd = node_data_cart(w, h, e);
+        pb = edge_path_cart(&nd, pb);
+        pb = edge_path_vert_cart(&nd, pb);
+    }
+    pb
+}
+
+pub fn path_builder_edges_fan(
+    edges: &[Edge],
+    opn_angle: Float,
+    root_len: Float,
+    radius: Float,
+) -> PathBuilder {
+    let mut pb: PathBuilder = PathBuilder::new();
+    if opn_angle >= ONE.to_radians() {
+        for e in edges {
+            let nd = node_data_rad(opn_angle, ZRO, radius, root_len, e);
+            pb = edge_path_pol(&nd, pb);
+            pb = edge_path_arc_pol(&nd, pb);
+        }
+    } else {
+        let p0 = Point { x: root_len, y: ZRO };
+        let p1 = Point { x: radius, y: ZRO };
+        pb = pb.move_to(p0).line_to(p1);
+    }
+    pb
+}

@@ -212,6 +212,13 @@ impl AppMenu {
             Some(Accelerator::new(Some(modifier), Code::KeyS)),
         );
 
+        let menu_item_export_svg = MenuItem::with_id(
+            AppMenuItemId::ExportSvg,
+            "Export SVG",
+            true,
+            Some(Accelerator::new(Some(modifier), Code::KeyE)),
+        );
+
         let menu_item_sidebar_pos_left = CheckMenuItem::with_id(
             AppMenuItemId::SetSideBarPositionLeft,
             "Left",
@@ -246,6 +253,7 @@ impl AppMenu {
 
         _ = submenu_file.append(&menu_item_open).ok();
         _ = submenu_file.append(&menu_item_save_as).ok();
+        _ = submenu_file.append(&menu_item_export_svg).ok();
         #[cfg(any(target_os = "windows", target_os = "linux"))]
         {
             _ = submenu_file.append(&menu_item_close_win).ok();
@@ -277,6 +285,10 @@ impl AppMenu {
         _ = items.insert(
             menu_item_save_as.clone().into(),
             MenuItemKind::MenuItem(menu_item_save_as),
+        );
+        _ = items.insert(
+            menu_item_export_svg.clone().into(),
+            MenuItemKind::MenuItem(menu_item_export_svg),
         );
         #[cfg(any(target_os = "windows", target_os = "linux"))]
         items.insert(

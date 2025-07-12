@@ -1,4 +1,5 @@
 use crate::edge_utils::*;
+use crate::svg::svg_writer_tree;
 use crate::*;
 
 #[allow(missing_debug_implementations)]
@@ -76,6 +77,7 @@ pub enum TvMsg {
     ContextMenuInteractionBegin(TvContextMenuListing),
     ContextMenuChosenIdx(usize),
     // -------------------------------------------
+    ExportSvg(std::path::PathBuf),
     TreeRectNoLongerStale,
     CursorLineVisChanged(bool),
     CnvWidthSelChanged(u16),
@@ -215,6 +217,21 @@ impl TreeView {
     pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
         let mut task: Option<Task<TvMsg>> = None;
         match tv_msg {
+            TvMsg::ExportSvg(path_buf) => {
+                if let Some(tree_state) = self.sel_tre() {
+                    let root_len = self.update_tre_vs();
+                    let w = self.tre_cnv.tre_vs.w;
+                    let h = self.tre_cnv.tre_vs.h;
+                    let opn_angle = self.tre_cnv.opn_angle;
+                    let rot_angle = self.tre_cnv.rot_angle;
+                    let radius = self.tre_cnv.tre_vs.radius_min;
+                    _ = svg_writer_tree(
+                        path_buf, tree_state, self.tre_cnv.tre_sty, w, h,
+                        opn_angle, rot_angle, root_len, radius,
+                    );
+                }
+            }
+
             TvMsg::SelectionLockChanged(state) => {
                 self.tre_cnv.selection_lock = state;
             }

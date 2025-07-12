@@ -516,13 +516,7 @@ fn stroke_edges_phygrm(
     stroke: Strk,
     f: &mut Frame,
 ) {
-    let mut pb: PathBuilder = PathBuilder::new();
-    for e in edges {
-        let nd = node_data_cart(tre_vs.w, tre_vs.h, e);
-        pb = edge_path_cart(&nd, pb);
-        pb = edge_path_vert_cart(&nd, pb);
-    }
-
+    let pb = path_builder_edges_phygrm(edges, tre_vs.w, tre_vs.h);
     f.with_save(|f| {
         f.translate(tre_vs.trans);
         f.stroke(&pb.build(), stroke);
@@ -563,20 +557,8 @@ fn stroke_edges_fan(
     stroke: Strk,
     f: &mut Frame,
 ) {
-    let mut pb: PathBuilder = PathBuilder::new();
-    if opn_angle >= ONE.to_radians() {
-        for e in edges {
-            let nd =
-                node_data_rad(opn_angle, ZRO, tre_vs.radius_min, root_len, e);
-            pb = edge_path_pol(&nd, pb);
-            pb = edge_path_arc_pol(&nd, pb);
-        }
-    } else {
-        let p0 = Point { x: root_len, y: ZRO };
-        let p1 = Point { x: tre_vs.radius_min, y: ZRO };
-        pb = pb.move_to(p0).line_to(p1);
-    }
-
+    let pb =
+        path_builder_edges_fan(edges, opn_angle, root_len, tre_vs.radius_min);
     f.with_save(|f| {
         f.translate(tre_vs.cntr);
         f.rotate(rot_angle);

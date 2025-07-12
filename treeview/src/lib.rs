@@ -20,6 +20,7 @@ mod cnv_utils;
 mod consts;
 mod context_menu;
 mod edge_utils;
+mod svg;
 mod treestate;
 mod treeview;
 mod view;
