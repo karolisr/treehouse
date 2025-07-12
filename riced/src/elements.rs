@@ -149,7 +149,9 @@ pub fn toggler<'a, Msg>(label: &'a str, value: bool) -> Toggler<'a, Msg> {
 }
 
 pub fn txt<'a>(s: impl Into<String>) -> Text<'a> {
-    Text::new(s.into()).line_height(LINE_H_PIX)
+    Text::new(s.into())
+        .line_height(LINE_H_PIX)
+        .align_y(Vertical::Center)
 }
 
 pub fn txt_bool(b: bool) -> Text<'static> {

@@ -527,7 +527,7 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
             sb_col.push(pick_list_ltt_y_axis_scale_type(&tv.ltt_cnv.scale_y));
     }
 
-    container(container(sb_col).clip(true))
+    container(sb_col.clip(true))
         .style(match tv.sidebar_pos {
             SidebarPosition::Left => sty_cont_bottom_left,
             SidebarPosition::Right => sty_cont_bottom_right,
