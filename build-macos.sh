@@ -67,14 +67,12 @@ EXPORT_PATH="./target/release/bundle/osx"
 PRODUCT_NAME="TreeHouse"
 APP="${PRODUCT_NAME}.app"
 DMG="${PRODUCT_NAME}.dmg"
-PKG="${PRODUCT_NAME}.pkg"
 ZIP="${PRODUCT_NAME}.zip"
 NOTARIZATION_RESPONSE_APP_PATH="${EXPORT_PATH}/${PRODUCT_NAME}_APP_NotarizationResponse.plist"
 NOTARIZATION_RESPONSE_DMG_PATH="${EXPORT_PATH}/${PRODUCT_NAME}_DMG_NotarizationResponse.plist"
 NOTARIZATION_RESPONSE_PKG_PATH="${EXPORT_PATH}/${PRODUCT_NAME}_PKG_NotarizationResponse.plist"
 APP_PATH="${EXPORT_PATH}/${APP}"
 DMG_PATH="${EXPORT_PATH}/${DMG}"
-PKG_PATH="${EXPORT_PATH}/${PKG}"
 ZIP_PATH="${EXPORT_PATH}/${ZIP}"
 BUNDLE_PATH="${APP_PATH}/Contents"
 # -------------------------------------------
@@ -99,6 +97,8 @@ cp "./resources/macos/"*".icns" "${BUNDLE_PATH}/Resources/"
 APP_PLIST="${BUNDLE_PATH}/Info.plist"
 VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "${APP_PLIST}")
 IDENTIFIER=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "${APP_PLIST}")
+
+PKG_PATH="${EXPORT_PATH}/${PRODUCT_NAME} v${VERSION}.pkg"
 
 xattr -rc "${APP_PATH}"
 if [[ -n "${SIGN}" ]]; then
