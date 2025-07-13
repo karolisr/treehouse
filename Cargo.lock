@@ -2603,7 +2603,7 @@ dependencies = [
 
 [[package]]
 name = "riced"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "convert_case",
  "iced",
@@ -2613,9 +2613,8 @@ dependencies = [
 
 [[package]]
 name = "roarsvg"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78aea61190fe7552febc5d436d52bde2144a69ab0a0df1e69de2e28972e4e992"
+version = "0.5.1"
+source = "git+https://github.com/karolisr/roarsvg#d0adb7afc6018e15e02e8a4db8f3b5a6f6bfbd0e"
 dependencies = [
  "console_error_panic_hook",
  "js-sys",
@@ -3268,7 +3267,7 @@ dependencies = [
 
 [[package]]
 name = "treehouse"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "dendros",
  "muda",
@@ -3282,12 +3281,13 @@ dependencies = [
 
 [[package]]
 name = "treeview"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "dendros",
  "rayon",
  "riced",
  "roarsvg",
+ "usvg 0.36.0",
  "usvg-tree",
 ]
 
@@ -3390,8 +3390,7 @@ checksum = "4a1a07cc7db3810833284e8d372ccdc6da29741639ecc70c9ec107df0fa6154c"
 [[package]]
 name = "usvg"
 version = "0.36.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c51daa774fe9ee5efcf7b4fec13019b8119cda764d9a8b5b06df02bb1445c656"
+source = "git+https://github.com/karolisr/resvg?branch=v36#5b509a45859f1a2e9768ab90985390c1495101d3"
 dependencies = [
  "base64 0.21.7",
  "log",
@@ -3432,8 +3431,7 @@ dependencies = [
 [[package]]
 name = "usvg-parser"
 version = "0.36.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45c88a5ffaa338f0e978ecf3d4e00d8f9f493e29bed0752e1a808a1db16afc40"
+source = "git+https://github.com/karolisr/resvg?branch=v36#5b509a45859f1a2e9768ab90985390c1495101d3"
 dependencies = [
  "data-url",
  "flate2",
@@ -3450,8 +3448,7 @@ dependencies = [
 [[package]]
 name = "usvg-text-layout"
 version = "0.36.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d2374378cb7a3fb8f33894e0fdb8625e1bbc4f25312db8d91f862130b541593"
+source = "git+https://github.com/karolisr/resvg?branch=v36#5b509a45859f1a2e9768ab90985390c1495101d3"
 dependencies = [
  "fontdb 0.15.0",
  "kurbo 0.9.5",
@@ -3466,8 +3463,7 @@ dependencies = [
 [[package]]
 name = "usvg-tree"
 version = "0.36.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6cacb0c5edeaf3e80e5afcf5b0d4004cc1d36318befc9a7c6606507e5d0f4062"
+source = "git+https://github.com/karolisr/resvg?branch=v36#5b509a45859f1a2e9768ab90985390c1495101d3"
 dependencies = [
  "rctree",
  "strict-num",

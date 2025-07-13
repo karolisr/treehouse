@@ -228,6 +228,14 @@ impl TreeView {
                     _ = svg_writer_tree(
                         path_buf, tree_state, self.tre_cnv.tre_sty, w, h,
                         opn_angle, rot_angle, root_len, radius,
+                        self.tre_cnv.lab_size_tip, self.tre_cnv.lab_size_int,
+                        self.tre_cnv.lab_size_brnch,
+                        self.tre_cnv.lab_offset_tip,
+                        self.tre_cnv.lab_offset_int,
+                        self.tre_cnv.lab_offset_brnch,
+                        self.tre_cnv.align_tip_labs,
+                        self.tre_cnv.trim_tip_labs,
+                        self.tre_cnv.trim_tip_labs_to_nchar,
                     );
                 }
             }

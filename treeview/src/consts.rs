@@ -8,6 +8,7 @@ pub(crate) use fill::*;
 pub(crate) use stroke::*;
 pub(crate) use text::*;
 
+use crate::CnvStrk as Strk;
 use crate::*;
 
 pub(crate) const FNT_NAME: &str = "JetBrains Mono";

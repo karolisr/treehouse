@@ -1,3 +1,4 @@
+use crate::GeomStyle::Solid;
 use crate::*;
 
 const TEMPLATE_FILL: CnvFill =

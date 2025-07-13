@@ -157,7 +157,7 @@ impl Default for PathBuilder {
     }
 }
 
-pub fn stroke_rect(rect: Rectangle, stroke: Strk, f: &mut Frame) {
+pub fn stroke_rect(rect: Rectangle, stroke: CnvStrk, f: &mut Frame) {
     f.stroke(&PathBuilder::new().rectangle(rect).build(), stroke);
 }
 
@@ -165,7 +165,12 @@ pub fn fill_rect(rect: Rectangle, fill: CnvFill, f: &mut Frame) {
     f.fill(&PathBuilder::new().rectangle(rect).build(), fill);
 }
 
-pub fn stroke_circle(point: Point, stroke: Strk, radius: f32, f: &mut Frame) {
+pub fn stroke_circle(
+    point: Point,
+    stroke: CnvStrk,
+    radius: f32,
+    f: &mut Frame,
+) {
     f.stroke(&PathBuilder::new().circle(point, radius).build(), stroke);
 }
 

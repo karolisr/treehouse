@@ -1,6 +1,7 @@
 use super::St;
 use crate::cnv_utils::*;
 use crate::edge_utils::*;
+use crate::path_builders::*;
 use crate::*;
 
 pub(super) fn draw_bounds(
@@ -18,38 +19,10 @@ pub(super) fn draw_bounds(
         }
         stroke_rect(
             st.vis_rect,
-            Strk { line_dash: DASH_010, ..STRK_5_MAG_50 },
+            CnvStrk { line_dash: DASH_010, ..STRK_5_MAG_50 },
             f,
         );
     }));
-}
-
-fn draw_clade_highlight(
-    node_id: NodeId,
-    color: Color,
-    st: &St,
-    tst: &TreeState,
-    f: &mut Frame,
-) {
-    f.push_transform();
-    f.translate(st.translation);
-    let mut pb: PathBuilder = PathBuilder::new();
-    pb = match st.tre_sty {
-        TreSty::PhyGrm => {
-            clade_highlight_phygrm(node_id, tst, st.tre_vs.w, st.tre_vs.h, pb)
-        }
-        TreSty::Fan => {
-            f.rotate(st.rotation);
-            clade_highlight_fan(
-                node_id, tst, st.tre_vs.radius_min, st.root_len, st.opn_angle,
-                pb,
-            )
-        }
-    };
-    let path = pb.build();
-    f.fill(&path, CnvFill { style: Solid(color), rule: FillRule::EvenOdd });
-    f.stroke(&path, STRK_1.with_color(color));
-    f.pop_transform();
 }
 
 pub(super) fn draw_clade_labels(
@@ -337,106 +310,6 @@ pub(super) fn draw_filtered_nodes(
     }));
 }
 
-fn clade_highlight_phygrm(
-    node_id: NodeId,
-    tree_state: &TreeState,
-    w: Float,
-    h: Float,
-    pb: PathBuilder,
-) -> PathBuilder {
-    let (edges_top, edges_bottom) =
-        tree_state.bounding_edges_for_clade(node_id).unwrap_or_default();
-
-    let y_top = edges_top.first().unwrap().y as Float * h;
-    let top_right = Point { x: w, y: y_top };
-    let mut pb = pb.move_to(top_right);
-
-    for e in &edges_top {
-        let nd = node_data_cart(w, h, e);
-        pb = pb.line_to(nd.points.p0);
-        if let Some(y_parent) = nd.y_parent {
-            let pt_parent = Point { x: nd.points.p0.x, y: y_parent };
-            pb = pb.line_to(pt_parent);
-        }
-    }
-
-    for e in &edges_bottom {
-        let nd = node_data_cart(w, h, e);
-        if let Some(y_parent) = nd.y_parent {
-            let pt_parent = Point { x: nd.points.p0.x, y: y_parent };
-            pb = pb.line_to(pt_parent);
-        }
-        pb = pb.line_to(nd.points.p0);
-    }
-
-    let y_bottom = edges_bottom.last().unwrap().y as Float * h;
-    let bottom_right = Point { x: w, y: y_bottom };
-    pb = pb.line_to(bottom_right);
-    pb.line_to(top_right)
-}
-
-fn clade_highlight_fan(
-    node_id: NodeId,
-    tree_state: &TreeState,
-    radius: Float,
-    root_len: Float,
-    opn_angle: Float,
-    pb: PathBuilder,
-) -> PathBuilder {
-    let (edges_top, edges_bottom) =
-        tree_state.bounding_edges_for_clade(node_id).unwrap_or_default();
-
-    let nd = node_data_rad(
-        opn_angle,
-        ZRO,
-        radius,
-        root_len,
-        edges_top.first().unwrap(),
-    );
-
-    let angle_top = nd.angle;
-    let top_right = point_pol(angle_top, radius, root_len, ONE);
-    let mut pb = pb.move_to(top_right);
-
-    for e in &edges_top {
-        let nd = node_data_rad(opn_angle, ZRO, radius, root_len, e);
-        pb = pb.line_to(nd.points.p0);
-        if let Some(angle_parent) = nd.angle_parent {
-            pb = pb.arc(
-                nd.angle,
-                angle_parent,
-                ORIGIN,
-                ORIGIN.distance(nd.points.p0),
-            );
-        }
-    }
-
-    for e in &edges_bottom {
-        let nd = node_data_rad(opn_angle, ZRO, radius, root_len, e);
-        if let Some(angle_parent) = nd.angle_parent {
-            pb = pb.arc(
-                angle_parent,
-                nd.angle,
-                ORIGIN,
-                ORIGIN.distance(nd.points.p0),
-            );
-        }
-        pb = pb.line_to(nd.points.p1);
-    }
-
-    let nd = node_data_rad(
-        opn_angle,
-        ZRO,
-        radius,
-        root_len,
-        edges_bottom.last().unwrap(),
-    );
-
-    let bottom_right = point_pol(nd.angle, radius, root_len, ONE);
-    pb = pb.line_to(bottom_right);
-    pb.arc(nd.angle, angle_top, ORIGIN, ORIGIN.distance(bottom_right))
-}
-
 fn draw_scale_bar(
     tre_sty: TreSty,
     tre_vs: &RectVals<Float>,
@@ -490,7 +363,7 @@ fn draw_scale_bar(
 fn draw_nodes(
     points: &[Point],
     radius: Float,
-    stroke: Strk,
+    stroke: CnvStrk,
     fill: CnvFill,
     trans: Option<Vector>,
     rot: Float,
@@ -513,15 +386,44 @@ fn stroke_edges_phygrm(
     tre_vs: &RectVals<Float>,
     root_len: Float,
     root: Option<Edge>,
-    stroke: Strk,
+    stroke: CnvStrk,
     f: &mut Frame,
 ) {
-    let pb = path_builder_edges_phygrm(edges, tre_vs.w, tre_vs.h);
+    let pb: PathBuilder = path_builder_edges_phygrm(edges, tre_vs.w, tre_vs.h);
     f.with_save(|f| {
         f.translate(tre_vs.trans);
         f.stroke(&pb.build(), stroke);
         stroke_root_phygrm(tre_vs.w, tre_vs.h, root_len, root, f);
     });
+}
+
+fn draw_clade_highlight(
+    node_id: NodeId,
+    color: Color,
+    st: &St,
+    tst: &TreeState,
+    f: &mut Frame,
+) {
+    f.push_transform();
+    f.translate(st.translation);
+    let pb = match st.tre_sty {
+        TreSty::PhyGrm => path_builder_clade_highlight_phygrm(
+            node_id, tst, st.tre_vs.w, st.tre_vs.h,
+        ),
+        TreSty::Fan => {
+            f.rotate(st.rotation);
+            path_builder_clade_highlight_fan(
+                node_id, tst, st.tre_vs.radius_min, st.root_len, st.opn_angle,
+            )
+        }
+    };
+    let path = pb.build();
+    f.fill(
+        &path,
+        CnvFill { style: GeomStyle::Solid(color), rule: FillRule::EvenOdd },
+    );
+    f.stroke(&path, STRK_1.with_color(color));
+    f.pop_transform();
 }
 
 #[allow(dead_code)]
@@ -536,7 +438,7 @@ fn stroke_edges_cladogram(
 ) {
     let mut pb: PathBuilder = PathBuilder::new();
     for e in edges {
-        let nd = node_data_cart(tre_vs.w, tre_vs.h, e);
+        let nd: NodeDataCart = node_data_cart(tre_vs.w, tre_vs.h, e);
         pb = edge_path_diag_cart(&nd, pb);
     }
 
@@ -554,10 +456,10 @@ fn stroke_edges_fan(
     opn_angle: Float,
     root_len: Float,
     root: Option<Edge>,
-    stroke: Strk,
+    stroke: CnvStrk,
     f: &mut Frame,
 ) {
-    let pb =
+    let pb: PathBuilder =
         path_builder_edges_fan(edges, opn_angle, root_len, tre_vs.radius_min);
     f.with_save(|f| {
         f.translate(tre_vs.cntr);
@@ -577,20 +479,13 @@ fn stroke_root_phygrm(
     if let Some(root_edge) = root_edge
         && root_len > ZRO
     {
-        let nd = node_data_cart(w, h, &root_edge);
-        let pt_parent = Point { x: -root_len, y: nd.points.p0.y };
-        f.stroke(
-            &PathBuilder::new()
-                .move_to(pt_parent)
-                .line_to(nd.points.p0)
-                .build(),
-            STRK_ROOT,
-        );
+        let pb = path_builder_root_edge_phygrm(w, h, root_len, &root_edge);
+        f.stroke(&pb.build(), STRK_ROOT);
     };
 }
 
 fn stroke_root_fan(
-    radius_min: Float,
+    radius: Float,
     opn_angle: Float,
     root_len: Float,
     root_edge: Option<Edge>,
@@ -599,12 +494,9 @@ fn stroke_root_fan(
     if let Some(root_edge) = root_edge
         && root_len > ZRO
     {
-        let nd =
-            node_data_rad(opn_angle, ZRO, radius_min, root_len, &root_edge);
-        f.stroke(
-            &PathBuilder::new().move_to(ORIGIN).line_to(nd.points.p0).build(),
-            STRK_ROOT,
-        );
+        let pb =
+            path_builder_root_edge_fan(radius, opn_angle, root_len, &root_edge);
+        f.stroke(&pb.build(), STRK_ROOT);
     };
 }
 
@@ -622,7 +514,7 @@ pub(super) fn node_labs(
     nodes
         .iter()
         .filter_map(|nd| {
-            let edge = &edges[nd.edge_idx];
+            let edge: &Edge = &edges[nd.edge_idx];
             if let Some(name) = &edge.name
                 && !branch
                 && ((tips && edge.is_tip) || (!tips && !edge.is_tip))

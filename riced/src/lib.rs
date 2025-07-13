@@ -66,20 +66,19 @@ pub use i::window::{
     settings::PlatformSpecific as PlatformSpecificWindowSettings,
 };
 pub use i::{
-    Alignment, Background, Color, Element, Event, Font, Length, Padding,
-    Pixels, Point, Rectangle, Renderer, Result as IcedResult,
+    Alignment, Background, Color, Element, Event, Font, Gradient, Length,
+    Padding, Pixels, Point, Rectangle, Renderer, Result as IcedResult,
     Settings as IcedAppSettings, Shadow, Size, Subscription, Task, Vector,
     daemon, exit,
 };
 pub use w::button::{Status as ButtonStatus, Style as ButtonStyle};
 pub use w::canvas::{
     Action, Cache as CnvCache, Canvas as Cnv, Frame, Geometry, Program,
-    Style::Solid,
-    Text as CnvText,
+    Style as GeomStyle, Text as CnvText,
     fill::Fill as CnvFill,
     fill::Rule as FillRule,
     path::{Path as IcedPath, lyon_path},
-    stroke::{LineCap, LineDash, LineJoin, Stroke as Strk},
+    stroke::{LineCap, LineDash, LineJoin, Stroke as CnvStrk},
 };
 pub use w::center;
 pub use w::checkbox::{

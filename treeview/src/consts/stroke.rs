@@ -1,3 +1,5 @@
+use crate::CnvStrk as Strk;
+use crate::GeomStyle::Solid;
 use crate::*;
 
 const TEMPLATE_STRK: Strk = Strk {
