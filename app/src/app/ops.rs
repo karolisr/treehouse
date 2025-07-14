@@ -27,13 +27,13 @@ pub async fn choose_file_to_save() -> AppMsg {
     AppMsg::PathToSave(chosen.map(|file_handle| file_handle.path().into()))
 }
 
-pub async fn choose_file_to_svg_export() -> AppMsg {
-    let chosen = rfd::AsyncFileDialog::new()
-        .add_filter("svg", &["svg"])
-        .save_file()
-        .await;
-    AppMsg::PathToSave(chosen.map(|file_handle| file_handle.path().into()))
-}
+// pub async fn choose_file_to_svg_export() -> AppMsg {
+//     let chosen = rfd::AsyncFileDialog::new()
+//         .add_filter("svg", &["svg"])
+//         .save_file()
+//         .await;
+//     AppMsg::PathToSave(chosen.map(|file_handle| file_handle.path().into()))
+// }
 
 pub fn read_text_file(path_buf: PathBuf) -> String {
     let data = std::fs::read(path_buf)

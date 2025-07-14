@@ -21,7 +21,7 @@ mod consts;
 mod context_menu;
 mod edge_utils;
 mod path_builders;
-mod svg;
+// mod svg;
 mod treestate;
 mod treeview;
 mod view;

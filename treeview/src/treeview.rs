@@ -1,5 +1,5 @@
 use crate::edge_utils::*;
-use crate::svg::svg_writer_tree;
+// use crate::svg::svg_writer_tree;
 use crate::*;
 
 #[allow(missing_debug_implementations)]
@@ -77,7 +77,8 @@ pub enum TvMsg {
     ContextMenuInteractionBegin(TvContextMenuListing),
     ContextMenuChosenIdx(usize),
     // -------------------------------------------
-    ExportSvg(std::path::PathBuf),
+    // ExportSvg(std::path::PathBuf),
+    // -------------------------------------------
     TreeRectNoLongerStale,
     CursorLineVisChanged(bool),
     CnvWidthSelChanged(u16),
@@ -217,29 +218,28 @@ impl TreeView {
     pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
         let mut task: Option<Task<TvMsg>> = None;
         match tv_msg {
-            TvMsg::ExportSvg(path_buf) => {
-                if let Some(tree_state) = self.sel_tre() {
-                    let root_len = self.update_tre_vs();
-                    let w = self.tre_cnv.tre_vs.w;
-                    let h = self.tre_cnv.tre_vs.h;
-                    let opn_angle = self.tre_cnv.opn_angle;
-                    let rot_angle = self.tre_cnv.rot_angle;
-                    let radius = self.tre_cnv.tre_vs.radius_min;
-                    _ = svg_writer_tree(
-                        path_buf, tree_state, self.tre_cnv.tre_sty, w, h,
-                        opn_angle, rot_angle, root_len, radius,
-                        self.tre_cnv.lab_size_tip, self.tre_cnv.lab_size_int,
-                        self.tre_cnv.lab_size_brnch,
-                        self.tre_cnv.lab_offset_tip,
-                        self.tre_cnv.lab_offset_int,
-                        self.tre_cnv.lab_offset_brnch,
-                        self.tre_cnv.align_tip_labs,
-                        self.tre_cnv.trim_tip_labs,
-                        self.tre_cnv.trim_tip_labs_to_nchar,
-                    );
-                }
-            }
-
+            // TvMsg::ExportSvg(path_buf) => {
+            //     if let Some(tree_state) = self.sel_tre() {
+            //         let root_len = self.update_tre_vs();
+            //         let w = self.tre_cnv.tre_vs.w;
+            //         let h = self.tre_cnv.tre_vs.h;
+            //         let opn_angle = self.tre_cnv.opn_angle;
+            //         let rot_angle = self.tre_cnv.rot_angle;
+            //         let radius = self.tre_cnv.tre_vs.radius_min;
+            //         _ = svg_writer_tree(
+            //             path_buf, tree_state, self.tre_cnv.tre_sty, w, h,
+            //             opn_angle, rot_angle, root_len, radius,
+            //             self.tre_cnv.lab_size_tip, self.tre_cnv.lab_size_int,
+            //             self.tre_cnv.lab_size_brnch,
+            //             self.tre_cnv.lab_offset_tip,
+            //             self.tre_cnv.lab_offset_int,
+            //             self.tre_cnv.lab_offset_brnch,
+            //             self.tre_cnv.align_tip_labs,
+            //             self.tre_cnv.trim_tip_labs,
+            //             self.tre_cnv.trim_tip_labs_to_nchar,
+            //         );
+            //     }
+            // }
             TvMsg::SelectionLockChanged(state) => {
                 self.tre_cnv.selection_lock = state;
             }

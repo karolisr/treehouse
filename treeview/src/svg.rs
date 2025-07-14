@@ -3,10 +3,7 @@ use crate::path_builders::*;
 use crate::{Float, Rc, TreSty, TreeState};
 use dendros::Edge;
 use riced::PathBuilder;
-use roarsvg::{
-    FontProvider, LyonWriter, NoText, SvgTransform, create_text_node, fill,
-    stroke,
-};
+use roarsvg::{LyonWriter, NoText, SvgTransform};
 use std::path::PathBuf;
 use usvg_tree::{
     Color, DominantBaseline, Fill, FillRule, LineCap, LineJoin, Opacity, Paint,

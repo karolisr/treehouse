@@ -23,7 +23,7 @@
         readme="README.md"
         repository="https://github.com/karolisr/treehouse"
         rust-version="1.88"
-        version="0.4.0"
+        version="0.5.0"
 
     [workspace.dependencies] # -------------------------------------------------
         num-traits="0.2.19"
@@ -33,9 +33,16 @@
         objc2-foundation="0.3.1"
         rayon="1.10.0"
         riced={path="riced", features=["crisp"]}
-        roarsvg="0.5.0"
-        tracing-subscriber="0.3.19"
         treeview={path="treeview"}
+        # tracing-subscriber="0.3.19"
+        # ----------------------------------------------------------------------
+        # roarsvg="0.5.0"
+        # roarsvg={git="https://github.com/karolisr/roarsvg"}
+        # usvg="0.36.0"
+        # usvg={git="https://github.com/karolisr/resvg", branch="v36"}
+        # usvg-tree="0.36.0"
+        # usvg-tree={git="https://github.com/karolisr/resvg", branch="v36"}
+        # ----------------------------------------------------------------------
 
         [workspace.dependencies.dendros]
             branch="main"
@@ -75,9 +82,9 @@
 
     [workspace.lints.rust] # ---------------------------------------------------
         missing_debug_implementations="deny"
+        unused_results="deny"
         # missing_docs="warn"
         # unsafe_code="deny"
-        unused_results="deny"
 
     [workspace.lints.clippy] # -------------------------------------------------
         collapsible_if="allow"
