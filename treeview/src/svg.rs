@@ -96,12 +96,12 @@ pub fn svg_writer_tree(
                     font_families.clone(),
                     font_size,
                     SvgTransform::from_translate(
-                        edge.x1 as Float * w,
-                        edge.y as Float * h + font_size / 2e0,
+                        edge.x1 as Float * w + lab_offset_tip,
+                        edge.y as Float * h,
                     ),
                     Some(Fill::default()),
-                    Some(Stroke::default()),
-                    DominantBaseline::Auto,
+                    None,
+                    DominantBaseline::Middle,
                 )
                 .ok()?;
         }
