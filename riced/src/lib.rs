@@ -77,7 +77,10 @@ pub use w::canvas::{
     Style as GeomStyle, Text as CnvText,
     fill::Fill as CnvFill,
     fill::Rule as FillRule,
-    path::{Path as IcedPath, lyon_path},
+    path::{
+        Path as IcedPath, lyon_path, lyon_path::Event as LyonPathEvent,
+        lyon_path::Path as LyonPath,
+    },
     stroke::{LineCap, LineDash, LineJoin, Stroke as CnvStrk},
 };
 pub use w::center;

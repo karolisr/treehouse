@@ -389,10 +389,10 @@ fn stroke_edges_phygrm(
     stroke: CnvStrk,
     f: &mut Frame,
 ) {
-    let pb: PathBuilder = path_builder_edges_phygrm(edges, tre_vs.w, tre_vs.h);
+    let path = path_edges_phygrm(edges, tre_vs.w, tre_vs.h);
     f.with_save(|f| {
         f.translate(tre_vs.trans);
-        f.stroke(&pb.build(), stroke);
+        f.stroke(&path, stroke);
         stroke_root_phygrm(tre_vs.w, tre_vs.h, root_len, root, f);
     });
 }
@@ -406,18 +406,17 @@ fn draw_clade_highlight(
 ) {
     f.push_transform();
     f.translate(st.translation);
-    let pb = match st.tre_sty {
-        TreSty::PhyGrm => path_builder_clade_highlight_phygrm(
-            node_id, tst, st.tre_vs.w, st.tre_vs.h,
-        ),
+    let path = match st.tre_sty {
+        TreSty::PhyGrm => {
+            path_clade_highlight_phygrm(node_id, tst, st.tre_vs.w, st.tre_vs.h)
+        }
         TreSty::Fan => {
             f.rotate(st.rotation);
-            path_builder_clade_highlight_fan(
+            path_clade_highlight_fan(
                 node_id, tst, st.tre_vs.radius_min, st.root_len, st.opn_angle,
             )
         }
     };
-    let path = pb.build();
     f.fill(
         &path,
         CnvFill { style: GeomStyle::Solid(color), rule: FillRule::EvenOdd },
@@ -459,12 +458,11 @@ fn stroke_edges_fan(
     stroke: CnvStrk,
     f: &mut Frame,
 ) {
-    let pb: PathBuilder =
-        path_builder_edges_fan(edges, opn_angle, root_len, tre_vs.radius_min);
+    let path = path_edges_fan(edges, opn_angle, root_len, tre_vs.radius_min);
     f.with_save(|f| {
         f.translate(tre_vs.cntr);
         f.rotate(rot_angle);
-        f.stroke(&pb.build(), stroke);
+        f.stroke(&path, stroke);
         stroke_root_fan(tre_vs.radius_min, opn_angle, root_len, root, f);
     });
 }
@@ -479,8 +477,8 @@ fn stroke_root_phygrm(
     if let Some(root_edge) = root_edge
         && root_len > ZRO
     {
-        let pb = path_builder_root_edge_phygrm(w, h, root_len, &root_edge);
-        f.stroke(&pb.build(), STRK_ROOT);
+        let path = path_root_edge_phygrm(w, h, root_len, &root_edge);
+        f.stroke(&path, STRK_ROOT);
     };
 }
 
@@ -494,9 +492,8 @@ fn stroke_root_fan(
     if let Some(root_edge) = root_edge
         && root_len > ZRO
     {
-        let pb =
-            path_builder_root_edge_fan(radius, opn_angle, root_len, &root_edge);
-        f.stroke(&pb.build(), STRK_ROOT);
+        let path = path_root_edge_fan(radius, opn_angle, root_len, &root_edge);
+        f.stroke(&path, STRK_ROOT);
     };
 }
 

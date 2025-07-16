@@ -1,4 +1,5 @@
 use crate::edge_utils::*;
+use crate::pdf::tree_to_pdf;
 // use crate::svg::svg_writer_tree;
 use crate::*;
 
@@ -77,6 +78,7 @@ pub enum TvMsg {
     ContextMenuInteractionBegin(TvContextMenuListing),
     ContextMenuChosenIdx(usize),
     // -------------------------------------------
+    ExportPdf(std::path::PathBuf),
     // ExportSvg(std::path::PathBuf),
     // -------------------------------------------
     TreeRectNoLongerStale,
@@ -156,9 +158,12 @@ impl TreeView {
             opn_angle_idx: 345,
             opn_angle_idx_max: 359,
             // -----------------------------------------------------------
-            rot_angle_idx_min: 360 - 180,
-            rot_angle_idx: 360,
-            rot_angle_idx_max: 360 + 180,
+            // rot_angle_idx_min: 360 - 180,
+            // rot_angle_idx: 360,
+            // rot_angle_idx_max: 360 + 180,
+            rot_angle_idx_min: 0,
+            rot_angle_idx: 0,
+            rot_angle_idx_max: 360,
             // -----------------------------------------------------------
             lab_size_idx_min: 8,
             lab_size_idx_tip: TIP_LAB_SIZE_IDX,
@@ -218,6 +223,29 @@ impl TreeView {
     pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
         let mut task: Option<Task<TvMsg>> = None;
         match tv_msg {
+            TvMsg::ExportPdf(path_buf) => {
+                if let Some(tree_state) = self.sel_tre() {
+                    let root_len = self.update_tre_vs();
+                    let w = self.tre_cnv.tre_vs.w;
+                    let h = self.tre_cnv.tre_vs.h;
+                    let opn_angle = self.tre_cnv.opn_angle;
+                    let rot_angle = self.tre_cnv.rot_angle;
+                    let radius = self.tre_cnv.tre_vs.radius_min;
+                    _ = tree_to_pdf(
+                        path_buf, tree_state, self.tre_cnv.tre_sty, w, h,
+                        opn_angle, rot_angle, root_len,
+                        radius,
+                        // self.tre_cnv.lab_size_tip, self.tre_cnv.lab_size_int,
+                        // self.tre_cnv.lab_size_brnch,
+                        // self.tre_cnv.lab_offset_tip,
+                        // self.tre_cnv.lab_offset_int,
+                        // self.tre_cnv.lab_offset_brnch,
+                        // self.tre_cnv.align_tip_labs,
+                        // self.tre_cnv.trim_tip_labs,
+                        // self.tre_cnv.trim_tip_labs_to_nchar,
+                    );
+                }
+            }
             // TvMsg::ExportSvg(path_buf) => {
             //     if let Some(tree_state) = self.sel_tre() {
             //         let root_len = self.update_tre_vs();
