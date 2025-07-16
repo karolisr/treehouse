@@ -27,7 +27,7 @@
 
     [workspace.dependencies] # -------------------------------------------------
         num-traits="0.2.19"
-        numfmt="1.1.1"
+        numfmt="1.2.0"
         objc2="0.6.1"
         objc2-app-kit="0.3.1"
         objc2-foundation="0.3.1"
@@ -61,7 +61,7 @@
         [workspace.dependencies.rfd]
             default-features=false
             features=[]
-            version="0.15.3"
+            version="0.15.4"
 
         [workspace.dependencies.tokio]
             default-features=false
