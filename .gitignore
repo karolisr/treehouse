@@ -6,3 +6,4 @@ submodules/*
 .cargo/config.toml
 *.example.rs
 icons-unused
+*.pdf

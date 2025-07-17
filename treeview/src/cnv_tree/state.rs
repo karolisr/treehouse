@@ -91,27 +91,6 @@ impl Default for St {
     }
 }
 
-fn prepare_nodes(
-    vs: &RectVals<Float>,
-    root_len: Float,
-    tre_sty: TreSty,
-    opn_angle: Float,
-    edges: &[Edge],
-    node_idxs: &[usize],
-    results: &mut Vec<NodeData>,
-) {
-    node_idxs
-        .par_iter()
-        .map(|&idx| match tre_sty {
-            TreSty::PhyGrm => node_data_cart(vs.w, vs.h, &edges[idx]).into(),
-            TreSty::Fan => node_data_rad(
-                opn_angle, ZRO, vs.radius_min, root_len, &edges[idx],
-            )
-            .into(),
-        })
-        .collect_into_vec(results);
-}
-
 impl St {
     pub(super) fn update_vis_nodes(&mut self, edges: &[Edge]) {
         prepare_nodes(

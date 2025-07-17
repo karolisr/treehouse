@@ -4,8 +4,8 @@ use crate::*;
 
 const TEMPLATE_STRK: Strk = Strk {
     width: ONE,
-    line_cap: LineCap::Square,
-    line_join: LineJoin::Round,
+    line_cap: LineCap::Round,
+    line_join: LineJoin::Bevel,
     style: Solid(Clr::BLK),
     line_dash: LineDash { segments: &[], offset: 0 },
 };
