@@ -19,6 +19,7 @@ mod app;
 use app::App;
 
 fn main() -> riced::IcedResult {
+    // tracing_subscriber::fmt::init();
     riced::daemon(App::boot, App::update, App::view)
         .title(App::title)
         .subscription(App::subscription)

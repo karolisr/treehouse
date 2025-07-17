@@ -28,9 +28,10 @@ pub fn window_settings() -> WindowSettings {
         #[cfg(target_os = "linux")]
         platform_specific: PlatformSpecificWindowSettings {
             application_id: String::from(APP_ID),
-            override_redirect: true,
+            override_redirect: false,
         },
         exit_on_close_request: false,
+        decorations: true,
         ..Default::default()
     }
 }
