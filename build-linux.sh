@@ -13,6 +13,9 @@ set -o errtrace
 trap 'echo Error at line: $LINENO' ERR
 # -------------------------------------------
 
+# Arch
+# paru -S vulkan-intel vulkan-mesa-layers
+
 # -------------------------------------------
 cargo fmt
 # -------------------------------------------

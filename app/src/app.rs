@@ -558,7 +558,7 @@ impl App {
                 }
                 #[cfg(any(target_os = "windows", target_os = "linux"))]
                 {
-                    task = Some(Task::done(AppMsg::Quit))
+                    task = Some(Task::done(AppMsg::Quit));
                 }
             }
             AppMsg::Quit => task = Some(exit()),
