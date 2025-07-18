@@ -548,7 +548,7 @@ impl App {
             #[cfg(target_os = "windows")]
             AppMsg::AddMenuForHwnd(hwnd) => {
                 if let Some(menu) = &self.menu {
-                    menu.init_for_hwnd(hwnd)
+                    menu.init_for_hwnd(hwnd);
                 }
             }
         }
