@@ -303,10 +303,12 @@ impl AppMenu {
         //     MenuItemKind::MenuItem(menu_item_export_svg),
         // );
         #[cfg(any(target_os = "windows", target_os = "linux"))]
-        items.insert(
-            menu_item_close_win.clone().into(),
-            MenuItemKind::MenuItem(menu_item_close_win),
-        );
+        {
+            _ = items.insert(
+                menu_item_close_win.clone().into(),
+                MenuItemKind::MenuItem(menu_item_close_win),
+            );
+        }
         _ = items.insert(
             menu_item_sidebar_pos_left.clone().into(),
             MenuItemKind::Check(menu_item_sidebar_pos_left),
