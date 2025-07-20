@@ -78,7 +78,7 @@ pub(super) struct TreeCnv {
 impl TreeCnv {
     pub fn new() -> Self {
         Self {
-            tre_sty: TreSty::PhyGrm,
+            tre_sty: TreSty::Fan,
             // -----------------------------------------------------------------
             padd_l: TREE_PADDING,
             padd_r: TREE_PADDING,

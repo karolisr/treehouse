@@ -226,9 +226,20 @@ impl TreeView {
                     let tre_vs = self.tre_cnv.tre_vs.clone();
                     let opn_angle = self.tre_cnv.opn_angle;
                     let rot_angle = self.tre_cnv.rot_angle;
+
+                    let draw_labs_tip = self.tre_cnv.draw_labs_tip
+                        && self.tre_cnv.draw_labs_allowed;
+                    let draw_labs_int = self.tre_cnv.draw_labs_int
+                        && self.tre_cnv.draw_labs_allowed;
+                    let draw_labs_brnch = self.tre_cnv.draw_labs_brnch
+                        && self.tre_cnv.draw_labs_allowed;
+
+                    let cnv_w = self.calc_tre_cnv_w(self.tre_scr_w);
+                    let cnv_h = self.calc_tre_cnv_h(self.tre_scr_h);
+
                     _ = tree_to_pdf(
-                        path_buf, tre_vs, tree_state, self.tre_cnv.tre_sty,
-                        opn_angle, rot_angle, root_len,
+                        path_buf, tre_vs, cnv_w, cnv_h, tree_state,
+                        self.tre_cnv.tre_sty, opn_angle, rot_angle, root_len,
                         self.tre_cnv.lab_size_tip, self.tre_cnv.lab_size_int,
                         self.tre_cnv.lab_size_brnch,
                         self.tre_cnv.lab_offset_tip,
@@ -236,7 +247,9 @@ impl TreeView {
                         self.tre_cnv.lab_offset_brnch,
                         self.tre_cnv.align_tip_labs,
                         self.tre_cnv.trim_tip_labs,
-                        self.tre_cnv.trim_tip_labs_to_nchar,
+                        self.tre_cnv.trim_tip_labs_to_nchar, draw_labs_tip,
+                        draw_labs_int, draw_labs_brnch,
+                        self.tre_cnv.draw_clade_labs, self.tre_cnv.draw_legend,
                     );
                 }
             }

@@ -1,31 +1,31 @@
 // #![allow(unused_imports)]
-use crate::consts::{STRK_EDGE, STRK_ROOT};
-use crate::edge_utils::{node_data_cart, node_data_rad, prepare_nodes};
+use crate::consts::{STRK_3_BLU_75, STRK_EDGE, STRK_ROOT};
+use crate::edge_utils::{node_data_cart, node_data_rad};
 use crate::{Float, NodeData, Rc, TreSty, TreeState};
 use crate::{RectVals, path_builders::*};
 use dendros::Edge;
 use oxidize_pdf::{
     Document, Page, PdfError,
     graphics::{Color, GraphicsContext, LineCap, LineJoin},
-    text::{Font, TextContext, measure_text},
+    text::{Font, measure_text},
 };
 use rayon::prelude::*;
-use riced::{CnvStrk, IcedPath, LyonPath, LyonPathEvent};
+use riced::{CnvStrk, IcedPath, LyonPath, LyonPathEvent, PathBuilder, Point};
+use std::f64::consts::{FRAC_PI_2, PI, TAU};
 use std::path::PathBuf;
 
 #[allow(clippy::too_many_arguments)]
-// #[allow(unused_variables)]
+#[allow(unused_variables)]
 pub fn tree_to_pdf(
     path_buf: PathBuf,
     tre_vs: RectVals<Float>,
+    cnv_w: Float,
+    cnv_h: Float,
     tree_state: Rc<TreeState>,
     tree_style: TreSty,
-    // w: Float,
-    // h: Float,
     opn_angle: Float,
     rot_angle: Float,
     root_len: Float,
-    // radius: Float,
     // --------------------------------
     lab_size_tip: Float,
     lab_size_int: Float,
@@ -39,10 +39,17 @@ pub fn tree_to_pdf(
     trim_tip_labs: bool,
     trim_tip_labs_to_nchar: u16,
     // --------------------------------
+    draw_labs_tip: bool,
+    draw_labs_int: bool,
+    draw_labs_brnch: bool,
+    draw_clade_labs: bool,
+    draw_legend: bool,
 ) -> Result<(), PdfError> {
     let scaling: f64 = 2e0;
     let w = tre_vs.w as f64 * scaling;
     let h = tre_vs.h as f64 * scaling;
+    let cnv_w = cnv_w as f64 * scaling;
+    let cnv_h = cnv_h as f64 * scaling;
     let radius = tre_vs.radius_min as f64 * scaling;
     let margin = radius / 1e1;
     let root_len = root_len as f64 * scaling;
@@ -54,7 +61,8 @@ pub fn tree_to_pdf(
     let lab_offset_int = lab_offset_int as f64 * scaling;
     let lab_offset_brnch = lab_offset_brnch as f64 * scaling;
 
-    let mut pg = Page::new(w + margin * 2.0 + root_len, h + margin * 2.0);
+    let mut pg =
+        Page::new(cnv_w + margin * 2.0 + root_len, cnv_h + margin * 2.0);
 
     _ = pg.graphics().translate(margin + root_len, margin);
 
@@ -116,46 +124,71 @@ pub fn tree_to_pdf(
 
     for nd in node_data {
         let edge = &edges[nd.edge_idx];
-        if let Some(text) = &edge.name {
-            // let text_w = measure_text(text, Font::Helvetica, lab_size_tip);
-            if edge.is_tip {
-                _ = pg.text().set_font(Font::Helvetica, lab_size_tip).at(
-                    nd.points.p1.x as f64 + lab_offset_tip,
-                    -nd.points.p1.y as f64 - lab_size_tip / 4e0,
-                );
+        let font = Font::Helvetica;
 
-                // _ = pg.graphics().save_state();
-                // if let Some(angle) = nd.angle {
-                //     _ = pg.graphics().rotate(-angle as f64);
-                // }
-                // _ = pg.graphics().translate(20e0, 20e0);
-                _ = pg.text().write(text);
-                // _ = pg.graphics().translate(20e0, 20e0);
-                // _ = pg.graphics().restore_state();
-            }
-            // else {
-            //     _ = pg
-            //         .text()
-            //         .set_font(Font::Helvetica, lab_size_int)
-            //         .at(
-            //             nd.points.p1.x as f64 + lab_offset_int,
-            //             -nd.points.p1.y as f64 - lab_size_int / 4e0,
-            //         )
-            //         .write(text);
-            // }
+        let mut angle = 0e0;
+
+        if let Some(a) = nd.angle {
+            angle = a as f64;
         }
-        // if edge.parent_node_id.is_some() {
-        //     let text = format!("{:.3}", edge.brlen);
-        //     let text_w = measure_text(&text, Font::Helvetica, lab_size_brnch);
-        //     _ = pg
-        //         .text()
-        //         .set_font(Font::Helvetica, lab_size_brnch)
-        //         .at(
-        //             nd.points.p_mid.x as f64 - text_w / 2e0,
-        //             -nd.points.p_mid.y as f64 - lab_offset_brnch,
-        //         )
-        //         .write(&text);
-        // }
+
+        if let Some(text) = &edge.name {
+            let lab_size;
+            let lab_offset_x;
+            let lab_offset_y;
+            let mut align_at: Option<f64> = None;
+
+            if edge.is_tip {
+                lab_size = lab_size_tip;
+                lab_offset_x = lab_offset_tip;
+                lab_offset_y = lab_size_tip / 4e0;
+                if align_tip_labs {
+                    align_at = Some(match tree_style {
+                        TreSty::PhyGrm => w,
+                        TreSty::Fan => radius,
+                    });
+                }
+            } else {
+                lab_size = lab_size_int;
+                lab_offset_x = lab_offset_int;
+                lab_offset_y = lab_size_int / 4e0;
+            }
+
+            let text_w = measure_text(text, font, lab_size);
+            write_text(
+                text,
+                nd.points.p1.x as f64,
+                -nd.points.p1.y as f64,
+                text_w,
+                lab_size,
+                lab_offset_x,
+                lab_offset_y,
+                align_at,
+                angle,
+                rot_angle,
+                Font::Helvetica,
+                &mut pg,
+            );
+        }
+
+        if edge.parent_node_id.is_some() {
+            let text = format!("{:.3}", edge.brlen);
+            let text_w = measure_text(&text, font, lab_size_brnch);
+            write_text(
+                &text,
+                nd.points.p_mid.x as f64,
+                -nd.points.p_mid.y as f64,
+                text_w,
+                lab_size_brnch,
+                -text_w / 2e0,
+                lab_offset_brnch,
+                None,
+                angle,
+                rot_angle,
+                Font::Helvetica,
+                &mut pg,
+            );
+        }
     }
     // -------------------------------------------------------------------------
 
@@ -163,6 +196,81 @@ pub fn tree_to_pdf(
     doc.set_title("TreeHouse Exported PDF");
     doc.add_page(pg);
     doc.save(path_buf)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn write_text(
+    text: &str,
+    x: f64,
+    y: f64,
+    text_w: f64,
+    lab_size: f64,
+    lab_offset_x: f64,
+    lab_offset_y: f64,
+    align_at: Option<f64>,
+    angle: f64,
+    rot_angle: f64,
+    font: Font,
+    pg: &mut Page,
+) {
+    let mut lab_offset_x = lab_offset_x;
+    let mut lab_offset_y = lab_offset_y;
+    let mut x = x;
+    let mut y = y;
+
+    let mut x_orig = x;
+    let mut y_orig = y;
+
+    let mut angle = angle;
+    let angle_orig = angle;
+
+    if let Some(align_at) = align_at {
+        if angle == 0.0 {
+            x = align_at;
+        } else {
+            let (sin, cos) = (-angle_orig).sin_cos();
+            x = align_at * cos;
+            y = align_at * sin;
+        }
+    }
+
+    if align_at.is_some() {
+        let (sin, cos) = (angle_orig).sin_cos();
+        x_orig += cos * lab_offset_x;
+        y_orig -= sin * lab_offset_x;
+
+        let pt_lab = Point { x: x as Float, y: -y as Float };
+        let pt_edge = Point { x: x_orig as Float, y: -y_orig as Float };
+        if pt_lab.distance(pt_edge) > lab_offset_x as Float * 2e0 {
+            let path =
+                PathBuilder::new().move_to(pt_lab).line_to(pt_edge).build();
+
+            _ = apply_iced_path_to_gc(
+                path,
+                apply_iced_stroke_to_gc(STRK_3_BLU_75, pg.graphics()),
+            );
+
+            _ = pg.graphics().stroke();
+        }
+    }
+
+    let (sin, cos) = angle.sin_cos();
+    // = Rotate labels on the left side of the circle by 180 degrees
+    let a = (angle + rot_angle) % TAU;
+    if a > FRAC_PI_2 && a < PI + FRAC_PI_2 {
+        angle += PI;
+        lab_offset_x += text_w;
+        lab_offset_y = -lab_offset_y;
+    } // ===========================================================
+    _ = pg
+        .text()
+        .set_text_angle(-angle)
+        .set_font(font, lab_size)
+        .at(
+            x + (cos * lab_offset_x - sin * lab_offset_y),
+            y - (sin * lab_offset_x + cos * lab_offset_y),
+        )
+        .write(text);
 }
 
 fn draw_root(
