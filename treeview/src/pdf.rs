@@ -1,8 +1,10 @@
-// #![allow(unused_imports)]
-use crate::consts::{STRK_3_BLU_75, STRK_EDGE, STRK_ROOT};
+use crate::consts::{STRK_EDGE, STRK_EDGE_LAB_ALN, STRK_ROOT};
 use crate::edge_utils::{node_data_cart, node_data_rad};
-use crate::{Float, NodeData, Rc, TreSty, TreeState};
-use crate::{RectVals, path_builders::*};
+use crate::path_builders::{
+    path_edges_fan, path_edges_phygrm, path_root_edge_fan,
+    path_root_edge_phygrm,
+};
+use crate::{Float, NodeData, Rc, RectVals, TreSty, TreeState};
 use dendros::Edge;
 use oxidize_pdf::{
     Document, Page, PdfError,
@@ -10,12 +12,13 @@ use oxidize_pdf::{
     text::{Font, measure_text},
 };
 use rayon::prelude::*;
-use riced::{CnvStrk, IcedPath, LyonPath, LyonPathEvent, PathBuilder, Point};
+use riced::{
+    CnvStrk, IcedPath, LyonPath, LyonPathEvent, PathBuilder, Point, Rectangle,
+};
 use std::f64::consts::{FRAC_PI_2, PI, TAU};
 use std::path::PathBuf;
 
 #[allow(clippy::too_many_arguments)]
-#[allow(unused_variables)]
 pub fn tree_to_pdf(
     path_buf: PathBuf,
     tre_vs: RectVals<Float>,
@@ -36,20 +39,22 @@ pub fn tree_to_pdf(
     lab_offset_brnch: Float,
     // --------------------------------
     align_tip_labs: bool,
-    trim_tip_labs: bool,
-    trim_tip_labs_to_nchar: u16,
+    _trim_tip_labs: bool,
+    _trim_tip_labs_to_nchar: u16,
     // --------------------------------
     draw_labs_tip: bool,
     draw_labs_int: bool,
     draw_labs_brnch: bool,
-    draw_clade_labs: bool,
-    draw_legend: bool,
+    _draw_clade_labs: bool,
+    _draw_legend: bool,
+    draw_debug: bool,
+    // --------------------------------
 ) -> Result<(), PdfError> {
-    let scaling: f64 = 2e0;
-    let w = tre_vs.w as f64 * scaling;
-    let h = tre_vs.h as f64 * scaling;
+    let scaling: f64 = 1e0;
     let cnv_w = cnv_w as f64 * scaling;
     let cnv_h = cnv_h as f64 * scaling;
+    let tre_w = tre_vs.w as f64 * scaling;
+    let tre_h = tre_vs.h as f64 * scaling;
     let radius = tre_vs.radius_min as f64 * scaling;
     let margin = radius / 1e1;
     let root_len = root_len as f64 * scaling;
@@ -61,17 +66,50 @@ pub fn tree_to_pdf(
     let lab_offset_int = lab_offset_int as f64 * scaling;
     let lab_offset_brnch = lab_offset_brnch as f64 * scaling;
 
-    let mut pg =
-        Page::new(cnv_w + margin * 2.0 + root_len, cnv_h + margin * 2.0);
+    let mut pg = Page::new(cnv_w + margin * 2e0, cnv_h + margin * 2e0);
 
-    _ = pg.graphics().translate(margin + root_len, margin);
+    pg.set_margins(margin, margin, margin, margin);
+
+    _ = pg.graphics().translate(margin, cnv_h + margin);
+
+    // Bounds ------------------------------------------------------------------
+    if draw_debug {
+        let path_cnv_bounds = PathBuilder::new()
+            .rectangle(Rectangle {
+                x: 0e0,
+                y: 0e0,
+                width: cnv_w as Float,
+                height: cnv_h as Float,
+            })
+            .build();
+        let path_tre_bounds = PathBuilder::new()
+            .rectangle(Rectangle {
+                x: tre_vs.x0 * scaling as Float,
+                y: tre_vs.y0 * scaling as Float,
+                width: tre_w as Float,
+                height: tre_h as Float,
+            })
+            .build();
+        _ = pg.graphics().save_state();
+        _ = apply_iced_path_to_gc(path_cnv_bounds, pg.graphics());
+        _ = apply_iced_path_to_gc(path_tre_bounds, pg.graphics());
+        _ = pg.graphics().stroke();
+        _ = pg.graphics().restore_state();
+    }
+    // -------------------------------------------------------------------------
 
     match tree_style {
         TreSty::PhyGrm => {
-            _ = pg.graphics().translate(0.0, h);
+            _ = pg.graphics().translate(
+                tre_vs.x0 as f64 * scaling,
+                -tre_vs.y0 as f64 * scaling,
+            );
         }
         TreSty::Fan => {
-            _ = pg.graphics().translate(w / 2.0, h / 2.0);
+            _ = pg.graphics().translate(
+                tre_vs.cntr_x as f64 * scaling,
+                -tre_vs.cntr_y as f64 * scaling,
+            );
             _ = pg.graphics().rotate(-rot_angle);
         }
     };
@@ -85,8 +123,8 @@ pub fn tree_to_pdf(
     {
         draw_root(
             tree_style,
-            w as Float,
-            h as Float,
+            tre_w as Float,
+            tre_h as Float,
             opn_angle,
             root_len as Float,
             radius as Float,
@@ -99,8 +137,8 @@ pub fn tree_to_pdf(
     draw_edges(
         tree_state.clone(),
         tree_style,
-        w as Float,
-        h as Float,
+        tre_w as Float,
+        tre_h as Float,
         opn_angle,
         root_len as Float,
         radius as Float,
@@ -113,7 +151,7 @@ pub fn tree_to_pdf(
         .par_iter()
         .map(|edge| match tree_style {
             TreSty::PhyGrm => {
-                node_data_cart(w as Float, h as Float, edge).into()
+                node_data_cart(tre_w as Float, tre_h as Float, edge).into()
             }
             TreSty::Fan => node_data_rad(
                 opn_angle, 0e0, radius as Float, root_len as Float, edge,
@@ -132,26 +170,47 @@ pub fn tree_to_pdf(
             angle = a as f64;
         }
 
+        if edge.parent_node_id.is_some() && draw_labs_brnch {
+            let text = format!("{:.3}", edge.brlen);
+            let text_w = measure_text(&text, font, lab_size_brnch);
+            write_text(
+                &text,
+                nd.points.p_mid.x as f64,
+                -nd.points.p_mid.y as f64,
+                text_w,
+                lab_size_brnch,
+                -text_w / 2e0,
+                lab_offset_brnch,
+                None,
+                angle,
+                rot_angle,
+                Font::Helvetica,
+                &mut pg,
+            );
+        }
+
         if let Some(text) = &edge.name {
             let lab_size;
             let lab_offset_x;
             let lab_offset_y;
             let mut align_at: Option<f64> = None;
 
-            if edge.is_tip {
+            if edge.is_tip && draw_labs_tip {
                 lab_size = lab_size_tip;
                 lab_offset_x = lab_offset_tip;
                 lab_offset_y = lab_size_tip / 4e0;
                 if align_tip_labs {
                     align_at = Some(match tree_style {
-                        TreSty::PhyGrm => w,
+                        TreSty::PhyGrm => tre_w,
                         TreSty::Fan => radius,
                     });
                 }
-            } else {
+            } else if draw_labs_int {
                 lab_size = lab_size_int;
                 lab_offset_x = lab_offset_int;
                 lab_offset_y = lab_size_int / 4e0;
+            } else {
+                continue;
             }
 
             let text_w = measure_text(text, font, lab_size);
@@ -170,31 +229,13 @@ pub fn tree_to_pdf(
                 &mut pg,
             );
         }
-
-        if edge.parent_node_id.is_some() {
-            let text = format!("{:.3}", edge.brlen);
-            let text_w = measure_text(&text, font, lab_size_brnch);
-            write_text(
-                &text,
-                nd.points.p_mid.x as f64,
-                -nd.points.p_mid.y as f64,
-                text_w,
-                lab_size_brnch,
-                -text_w / 2e0,
-                lab_offset_brnch,
-                None,
-                angle,
-                rot_angle,
-                Font::Helvetica,
-                &mut pg,
-            );
-        }
     }
     // -------------------------------------------------------------------------
 
     let mut doc = Document::new();
-    doc.set_title("TreeHouse Exported PDF");
     doc.add_page(pg);
+    doc.set_title("TreeHouse Exported PDF");
+    doc.set_producer("TreeHouse");
     doc.save(path_buf)
 }
 
@@ -247,7 +288,7 @@ fn write_text(
 
             _ = apply_iced_path_to_gc(
                 path,
-                apply_iced_stroke_to_gc(STRK_3_BLU_75, pg.graphics()),
+                apply_iced_stroke_to_gc(STRK_EDGE_LAB_ALN, pg.graphics()),
             );
 
             _ = pg.graphics().stroke();

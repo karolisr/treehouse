@@ -250,6 +250,7 @@ impl TreeView {
                         self.tre_cnv.trim_tip_labs_to_nchar, draw_labs_tip,
                         draw_labs_int, draw_labs_brnch,
                         self.tre_cnv.draw_clade_labs, self.tre_cnv.draw_legend,
+                        self.tre_cnv.draw_debug,
                     );
                 }
             }
