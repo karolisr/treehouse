@@ -13,7 +13,6 @@ pub enum AppMenuItemId {
     SetSideBarPositionRight,
     ToggleSearchBar,
     ExportPdf,
-    // ExportSvg,
     Undefined,
     ContextMenuIndex(usize),
 }
@@ -30,7 +29,6 @@ impl From<String> for AppMenuItemId {
             "SetSideBarPositionRight" => AppMenuItemId::SetSideBarPositionRight,
             "ToggleSearchBar" => AppMenuItemId::ToggleSearchBar,
             "ExportPdf" => AppMenuItemId::ExportPdf,
-            // "ExportSvg" => AppMenuItemId::ExportSvg,
             // -------------------------------------------------------------------------------------
             val if val.starts_with("ContextMenuIndex") => {
                 let idx_str =
@@ -73,7 +71,6 @@ impl From<&AppMenuItemId> for AppMsg {
                 AppMsg::TvMsg(TvMsg::ContextMenuChosenIdx(*idx))
             }
             AppMenuItemId::ExportPdf => AppMsg::ExportPdf,
-            // AppMenuItemId::ExportSvg => AppMsg::ExportSvg,
             _ => AppMsg::Other(Some(value.to_string())),
         }
     }

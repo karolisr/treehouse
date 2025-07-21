@@ -14,11 +14,6 @@
     oxidize-pdf={workspace=true}
     rayon={workspace=true}
     riced={workspace=true}
-    # --------------------------------------------------------------------------
-    # roarsvg={workspace=true}
-    # usvg={workspace=true}
-    # usvg-tree={workspace=true}
-    # --------------------------------------------------------------------------
 
 [lints]
     workspace=true

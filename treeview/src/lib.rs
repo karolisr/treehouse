@@ -22,7 +22,6 @@ mod context_menu;
 mod edge_utils;
 mod path_builders;
 mod pdf;
-// mod svg;
 mod treestate;
 mod treeview;
 mod view;

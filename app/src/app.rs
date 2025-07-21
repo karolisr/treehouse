@@ -38,7 +38,6 @@ pub enum AppMsg {
     OpenFile,
     SaveAs,
     ExportPdf,
-    // ExportSvg,
     PathToOpen(Option<PathBuf>),
     PathToSave(Option<PathBuf>),
     // --------------------------------
@@ -63,7 +62,6 @@ pub enum FileType {
     Newick,
     Nexus,
     Pdf,
-    // Svg,
     Other(String),
     Exception,
 }
@@ -161,6 +159,11 @@ impl App {
                                 "s" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
                                         AppMenuItemId::SaveAs,
+                                    )));
+                                }
+                                "p" => {
+                                    task = Some(Task::done(AppMsg::MenuEvent(
+                                        AppMenuItemId::ExportPdf,
                                     )));
                                 }
                                 "[" => {
@@ -399,9 +402,6 @@ impl App {
             AppMsg::ExportPdf => {
                 task = Some(Task::future(ops::choose_file_to_pdf_export()));
             }
-            // AppMsg::ExportSvg => {
-            //     task = Some(Task::future(ops::choose_file_to_svg_export()));
-            // }
             AppMsg::PathToSave(path_buf_opt) => {
                 if let Some(path_buf) = path_buf_opt {
                     println!("{path_buf:?}");
@@ -413,7 +413,6 @@ impl App {
                                     FileType::Nexus
                                 }
                                 "pdf" => FileType::Pdf,
-                                // "svg" => FileType::Svg,
                                 ext => FileType::Other(ext.to_string()),
                             },
                             None => FileType::Exception,
@@ -446,11 +445,6 @@ impl App {
                                     TvMsg::ExportPdf(path_buf),
                                 )));
                             }
-                            // FileType::Svg => {
-                            //     task = Some(Task::done(AppMsg::TvMsg(
-                            //         TvMsg::ExportSvg(path_buf),
-                            //     )));
-                            // }
                             _ => {}
                         },
                     }

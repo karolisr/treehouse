@@ -182,7 +182,7 @@ impl AppMenu {
             Some(muda::AboutMetadata::default()),
         );
 
-        #[cfg(any(target_os = "windows", target_os = "linux"))]
+        #[cfg(target_os = "windows")]
         let menu_item_close_win = MenuItem::with_id(
             AppMenuItemId::CloseWindow,
             "Close Window",
@@ -216,15 +216,8 @@ impl AppMenu {
             AppMenuItemId::ExportPdf,
             "Export PDF",
             false,
-            Some(Accelerator::new(Some(modifier), Code::KeyE)),
+            Some(Accelerator::new(Some(modifier), Code::KeyP)),
         );
-
-        // let menu_item_export_svg = MenuItem::with_id(
-        //     AppMenuItemId::ExportSvg,
-        //     "Export SVG",
-        //     false,
-        //     Some(Accelerator::new(Some(modifier), Code::KeyE)),
-        // );
 
         let menu_item_sidebar_pos_left = CheckMenuItem::with_id(
             AppMenuItemId::SetSideBarPositionLeft,
@@ -261,8 +254,7 @@ impl AppMenu {
         _ = submenu_file.append(&menu_item_open).ok();
         _ = submenu_file.append(&menu_item_save_as).ok();
         _ = submenu_file.append(&menu_item_export_pdf).ok();
-        // _ = submenu_file.append(&menu_item_export_svg).ok();
-        #[cfg(any(target_os = "windows", target_os = "linux"))]
+        #[cfg(target_os = "windows")]
         {
             _ = submenu_file.append(&menu_item_close_win).ok();
         }
@@ -298,11 +290,7 @@ impl AppMenu {
             menu_item_export_pdf.clone().into(),
             MenuItemKind::MenuItem(menu_item_export_pdf),
         );
-        // _ = items.insert(
-        //     menu_item_export_svg.clone().into(),
-        //     MenuItemKind::MenuItem(menu_item_export_svg),
-        // );
-        #[cfg(any(target_os = "windows", target_os = "linux"))]
+        #[cfg(target_os = "windows")]
         {
             _ = items.insert(
                 menu_item_close_win.clone().into(),

@@ -31,20 +31,13 @@
         objc2="0.6.1"
         objc2-app-kit="0.3.1"
         objc2-foundation="0.3.1"
-        # oxidize-pdf="0.1.3"
-        oxidize-pdf={git="https://github.com/karolisr/oxidizePdf", branch="custom"}
         rayon="1.10.0"
         riced={path="riced", features=["crisp"]}
         treeview={path="treeview"}
         # ----------------------------------------------------------------------
         # tracing-subscriber="0.3.19"
-        # ----------------------------------------------------------------------
-        # roarsvg="0.5.0"
-        # roarsvg={git="https://github.com/karolisr/roarsvg"}
-        # usvg="0.36.0"
-        # usvg={git="https://github.com/karolisr/resvg", branch="v36"}
-        # usvg-tree="0.36.0"
-        # usvg-tree={git="https://github.com/karolisr/resvg", branch="v36"}
+        # oxidize-pdf="0.1.3"
+        oxidize-pdf={git="https://github.com/karolisr/oxidizePdf", branch="custom"}
         # ----------------------------------------------------------------------
 
         [workspace.dependencies.dendros]
