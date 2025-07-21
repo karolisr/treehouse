@@ -113,7 +113,15 @@ fn pane_content<'a>(
 fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     let mut tb_row: Row<TvMsg> = Row::new();
 
-    tb_row = tb_row.push(btn_unroot(ts.clone()));
+    tb_row = tb_row.push(
+        center(
+            iced_row![btn_unroot(ts.clone()), btn_root(ts.clone())].spacing(SF),
+        )
+        .width(Length::Shrink)
+        .height(Length::Shrink),
+    );
+
+    tb_row = tb_row.push(btn_clade_label(ts.clone()));
 
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
 
@@ -159,7 +167,7 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         .height(Length::Shrink),
     );
 
-    tb_row = tb_row.height(Length::Shrink);
+    tb_row = tb_row.height(Length::Shrink).spacing(PADDING);
 
     container(tb_row)
         .padding(PADDING)
@@ -399,7 +407,7 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
     if ts.is_rooted() && tv.tre_cnv.draw_root {
         sb_col = sb_col.push(iced_col![
             toggler_root(true, tv.tre_cnv.draw_root),
-            space_v(ZRO, PADDING / TWO),
+            space_v(ONE, PADDING / TWO),
             slider(
                 None,
                 tv.root_len_idx_min,
@@ -421,7 +429,7 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
     {
         sb_col = sb_col.push(iced_col![
             toggler_label_tip(true, tv.tre_cnv.draw_labs_tip,),
-            space_v(ZRO, PADDING / TWO),
+            space_v(ONE, PADDING / TWO),
             slider(
                 None,
                 tv.lab_size_idx_min,
@@ -431,14 +439,14 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
                 2,
                 TvMsg::TipLabSizeChanged,
             ),
-            space_v(ZRO, PADDING / TWO),
+            space_v(ONE, PADDING / TWO),
             toggler_label_tip_align(true, tv.tre_cnv.align_tip_labs),
-            space_v(ZRO, PADDING / TWO),
+            space_v(ONE, PADDING / TWO),
             toggler_label_tip_trim(true, tv.tre_cnv.trim_tip_labs),
             match tv.tre_cnv.trim_tip_labs {
                 true => {
                     iced_col![
-                        space_v(ZRO, PADDING / TWO),
+                        space_v(ONE, PADDING / TWO),
                         slider(
                             None,
                             3,
@@ -468,7 +476,7 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
     {
         sb_col = sb_col.push(iced_col![
             toggler_label_int(true, tv.tre_cnv.draw_labs_int),
-            space_v(ZRO, PADDING / TWO),
+            space_v(ONE, PADDING / TWO),
             slider(
                 None,
                 tv.lab_size_idx_min,
@@ -492,7 +500,7 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
     {
         sb_col = sb_col.push(iced_col![
             toggler_label_branch(true, tv.tre_cnv.draw_labs_brnch),
-            space_v(ZRO, PADDING / TWO),
+            space_v(ONE, PADDING / TWO),
             slider(
                 None,
                 tv.lab_size_idx_min,
@@ -559,6 +567,38 @@ pub(crate) fn btn_next_tre<'a>(enabled: bool) -> Button<'a, TvMsg> {
     )
     .width(BTN_H2)
     .height(BTN_H2)
+}
+
+pub(crate) fn btn_clade_label<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
+    let (lab, msg) = match sel_tre.sel_node_ids().len() == 1 {
+        true => {
+            let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
+            match sel_tre.clade_has_label(node_id) {
+                false => (
+                    "Label",
+                    Some(TvMsg::AddCladeLabel((node_id, Clr::BLU_25))),
+                ),
+                true => ("Unlabel", Some(TvMsg::RemoveCladeLabel(node_id))),
+            }
+        }
+        false => ("Label", None),
+    };
+    btn_txt(lab, msg).width(BTN_H1 * TWO)
+}
+
+pub(crate) fn btn_root<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
+    btn_txt("Root", {
+        if sel_tre.sel_node_ids().len() == 1 {
+            let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
+            match sel_tre.can_root(node_id) {
+                true => Some(TvMsg::Root(node_id)),
+                false => None,
+            }
+        } else {
+            None
+        }
+    })
+    .width(BTN_H1 * TWO)
 }
 
 pub(crate) fn btn_unroot<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {

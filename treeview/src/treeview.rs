@@ -79,7 +79,6 @@ pub enum TvMsg {
     ContextMenuChosenIdx(usize),
     // -------------------------------------------
     ExportPdf(std::path::PathBuf),
-    // ExportSvg(std::path::PathBuf),
     // -------------------------------------------
     TreeRectNoLongerStale,
     CursorLineVisChanged(bool),
@@ -1259,9 +1258,7 @@ impl TreeView {
                     (self.tre_scr_h / node_size).floor() as usize;
                 tip_labs_vis <= self.tre_cnv.tip_labs_vis_max
             }
-            TreSty::Fan => {
-                self.tip_count() <= self.tre_cnv.tip_labs_vis_max * 2
-            }
+            TreSty::Fan => self.tip_count() <= self.tre_cnv.tip_labs_vis_max,
         };
     }
 
