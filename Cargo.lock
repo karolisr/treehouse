@@ -596,7 +596,7 @@ checksum = "5c297a1c74b71ae29df00c3e22dd9534821d60eb9af5a0192823fa2acea70c2a"
 [[package]]
 name = "dendros"
 version = "0.2.0"
-source = "git+https://github.com/karolisr/dendros.git?branch=main#fcaf3819fe5ba15b25b17fcd8316a55f8c9c2232"
+source = "git+https://github.com/karolisr/dendros.git?branch=main#da5f8b32f4a58d0f8a6c13ac636e94bf8117c08e"
 dependencies = [
  "rayon",
  "slotmap",
@@ -1243,7 +1243,7 @@ dependencies = [
 [[package]]
 name = "iced"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#e8ffda53a212a2edf25fa4b24d2dd15daa94a7af"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#3c158e5b20307e0a0f9f7e8750aaeaae7d6d35b2"
 dependencies = [
  "iced_core",
  "iced_debug",
@@ -1258,7 +1258,7 @@ dependencies = [
 [[package]]
 name = "iced_core"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#e8ffda53a212a2edf25fa4b24d2dd15daa94a7af"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#3c158e5b20307e0a0f9f7e8750aaeaae7d6d35b2"
 dependencies = [
  "bitflags 2.9.1",
  "bytes",
@@ -1275,7 +1275,7 @@ dependencies = [
 [[package]]
 name = "iced_debug"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#e8ffda53a212a2edf25fa4b24d2dd15daa94a7af"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#3c158e5b20307e0a0f9f7e8750aaeaae7d6d35b2"
 dependencies = [
  "iced_core",
  "iced_futures",
@@ -1285,7 +1285,7 @@ dependencies = [
 [[package]]
 name = "iced_futures"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#e8ffda53a212a2edf25fa4b24d2dd15daa94a7af"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#3c158e5b20307e0a0f9f7e8750aaeaae7d6d35b2"
 dependencies = [
  "futures",
  "iced_core",
@@ -1299,7 +1299,7 @@ dependencies = [
 [[package]]
 name = "iced_graphics"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#e8ffda53a212a2edf25fa4b24d2dd15daa94a7af"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#3c158e5b20307e0a0f9f7e8750aaeaae7d6d35b2"
 dependencies = [
  "bitflags 2.9.1",
  "bytemuck",
@@ -1318,7 +1318,7 @@ dependencies = [
 [[package]]
 name = "iced_program"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#e8ffda53a212a2edf25fa4b24d2dd15daa94a7af"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#3c158e5b20307e0a0f9f7e8750aaeaae7d6d35b2"
 dependencies = [
  "iced_graphics",
  "iced_runtime",
@@ -1327,7 +1327,7 @@ dependencies = [
 [[package]]
 name = "iced_renderer"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#e8ffda53a212a2edf25fa4b24d2dd15daa94a7af"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#3c158e5b20307e0a0f9f7e8750aaeaae7d6d35b2"
 dependencies = [
  "iced_graphics",
  "iced_tiny_skia",
@@ -1339,7 +1339,7 @@ dependencies = [
 [[package]]
 name = "iced_runtime"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#e8ffda53a212a2edf25fa4b24d2dd15daa94a7af"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#3c158e5b20307e0a0f9f7e8750aaeaae7d6d35b2"
 dependencies = [
  "bytes",
  "iced_core",
@@ -1353,7 +1353,7 @@ dependencies = [
 [[package]]
 name = "iced_tiny_skia"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#e8ffda53a212a2edf25fa4b24d2dd15daa94a7af"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#3c158e5b20307e0a0f9f7e8750aaeaae7d6d35b2"
 dependencies = [
  "bytemuck",
  "cosmic-text",
@@ -1370,7 +1370,7 @@ dependencies = [
 [[package]]
 name = "iced_wgpu"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#e8ffda53a212a2edf25fa4b24d2dd15daa94a7af"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#3c158e5b20307e0a0f9f7e8750aaeaae7d6d35b2"
 dependencies = [
  "bitflags 2.9.1",
  "bytemuck",
@@ -1391,7 +1391,7 @@ dependencies = [
 [[package]]
 name = "iced_widget"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#e8ffda53a212a2edf25fa4b24d2dd15daa94a7af"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#3c158e5b20307e0a0f9f7e8750aaeaae7d6d35b2"
 dependencies = [
  "iced_renderer",
  "iced_runtime",
@@ -1406,7 +1406,7 @@ dependencies = [
 [[package]]
 name = "iced_winit"
 version = "0.14.0-dev"
-source = "git+https://github.com/karolisr/iced.git?branch=custom#e8ffda53a212a2edf25fa4b24d2dd15daa94a7af"
+source = "git+https://github.com/karolisr/iced.git?branch=custom#3c158e5b20307e0a0f9f7e8750aaeaae7d6d35b2"
 dependencies = [
  "iced_debug",
  "iced_program",
@@ -2294,6 +2294,7 @@ dependencies = [
 [[package]]
 name = "oxidize-pdf"
 version = "1.0.0"
+source = "git+https://github.com/karolisr/oxidizePdf?branch=custom#1b921d93b03299bc2a52dd0e6eeaa81318e4078e"
 dependencies = [
  "chrono",
  "flate2",

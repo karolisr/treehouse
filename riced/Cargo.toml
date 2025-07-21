@@ -15,6 +15,7 @@
 [dependencies]
     num-traits={workspace=true}
     numfmt={workspace=true}
+    oxidize-pdf={workspace=true}
 
     [dependencies.iced]
         branch="custom"

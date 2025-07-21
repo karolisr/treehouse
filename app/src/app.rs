@@ -37,6 +37,7 @@ pub enum AppMsg {
     // --------------------------------
     OpenFile,
     SaveAs,
+    ExportPdf,
     // ExportSvg,
     PathToOpen(Option<PathBuf>),
     PathToSave(Option<PathBuf>),
@@ -61,6 +62,7 @@ pub enum AppMsg {
 pub enum FileType {
     Newick,
     Nexus,
+    Pdf,
     // Svg,
     Other(String),
     Exception,
@@ -355,6 +357,7 @@ impl App {
                                 );
                                 if let Some(menu) = &mut self.menu {
                                     menu.enable(&AppMenuItemId::SaveAs);
+                                    menu.enable(&AppMenuItemId::ExportPdf);
                                     menu.enable(
                                         &AppMenuItemId::SideBarPosition,
                                     );
@@ -370,6 +373,7 @@ impl App {
                                 println!("ParsedData::Trees(None)");
                                 if let Some(menu) = &mut self.menu {
                                     menu.disable(&AppMenuItemId::SaveAs);
+                                    menu.disable(&AppMenuItemId::ExportPdf);
                                 };
                             }
                         },
@@ -377,11 +381,13 @@ impl App {
                             println!("ParsedData::Other({s})");
                             if let Some(menu) = &mut self.menu {
                                 menu.disable(&AppMenuItemId::SaveAs);
+                                menu.disable(&AppMenuItemId::ExportPdf);
                             };
                         }
                         ParsedData::Exception => {
                             if let Some(menu) = &mut self.menu {
                                 menu.disable(&AppMenuItemId::SaveAs);
+                                menu.disable(&AppMenuItemId::ExportPdf);
                             };
                         }
                     }
@@ -389,6 +395,9 @@ impl App {
             }
             AppMsg::SaveAs => {
                 task = Some(Task::future(ops::choose_file_to_save()));
+            }
+            AppMsg::ExportPdf => {
+                task = Some(Task::future(ops::choose_file_to_pdf_export()));
             }
             // AppMsg::ExportSvg => {
             //     task = Some(Task::future(ops::choose_file_to_svg_export()));
@@ -403,6 +412,7 @@ impl App {
                                 "tree" | "trees" | "nexus" | "nex" => {
                                     FileType::Nexus
                                 }
+                                "pdf" => FileType::Pdf,
                                 // "svg" => FileType::Svg,
                                 ext => FileType::Other(ext.to_string()),
                             },
@@ -431,6 +441,11 @@ impl App {
                                 }
                             }
                             FileType::Nexus => {} // Save Nexus file
+                            FileType::Pdf => {
+                                task = Some(Task::done(AppMsg::TvMsg(
+                                    TvMsg::ExportPdf(path_buf),
+                                )));
+                            }
                             // FileType::Svg => {
                             //     task = Some(Task::done(AppMsg::TvMsg(
                             //         TvMsg::ExportSvg(path_buf),
@@ -445,6 +460,7 @@ impl App {
                 self.menu = AppMenu::new(consts::SIDEBAR_POSITION);
                 if let Some(menu) = &mut self.menu {
                     menu.disable(&AppMenuItemId::SaveAs);
+                    menu.disable(&AppMenuItemId::ExportPdf);
                 }
                 task = Some(Task::done(AppMsg::WinOpen));
             }
@@ -532,6 +548,7 @@ impl App {
                 if let Some(menu) = &mut self.menu {
                     menu.disable(&AppMenuItemId::CloseWindow);
                     menu.disable(&AppMenuItemId::SaveAs);
+                    menu.disable(&AppMenuItemId::ExportPdf);
                     menu.disable(&AppMenuItemId::SideBarPosition);
                     menu.disable(&AppMenuItemId::ToggleSearchBar);
                 }

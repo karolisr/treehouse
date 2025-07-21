@@ -11,6 +11,7 @@
 
 [dependencies]
     dendros={workspace=true}
+    oxidize-pdf={workspace=true}
     rayon={workspace=true}
     riced={workspace=true}
     # --------------------------------------------------------------------------

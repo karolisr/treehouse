@@ -219,3 +219,26 @@ pub fn node_data_rad(
     let points = edge_points_pol(angle, radius, offset, edge);
     NodeDataPol { edge_idx: edge.edge_idx, points, angle, angle_parent }
 }
+
+pub fn prepare_nodes(
+    tre_vs: &RectVals<Float>,
+    root_len: Float,
+    tre_sty: TreSty,
+    opn_angle: Float,
+    edges: &[Edge],
+    node_idxs: &[usize],
+    results: &mut Vec<NodeData>,
+) {
+    node_idxs
+        .par_iter()
+        .map(|&idx| match tre_sty {
+            TreSty::PhyGrm => {
+                node_data_cart(tre_vs.w, tre_vs.h, &edges[idx]).into()
+            }
+            TreSty::Fan => node_data_rad(
+                opn_angle, ZRO, tre_vs.radius_min, root_len, &edges[idx],
+            )
+            .into(),
+        })
+        .collect_into_vec(results);
+}

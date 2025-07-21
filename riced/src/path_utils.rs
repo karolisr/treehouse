@@ -4,9 +4,11 @@ use crate::*;
 use lyon_path::builder;
 use lyon_path::geom;
 
+type IcedPB = builder::WithSvg<lyon_path::path::BuilderImpl>;
+
 #[allow(missing_debug_implementations)]
 pub struct PathBuilder {
-    raw: builder::WithSvg<lyon_path::path::BuilderImpl>,
+    raw: IcedPB,
 }
 
 fn point_from_angle_and_radius(

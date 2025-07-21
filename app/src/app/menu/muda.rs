@@ -212,10 +212,17 @@ impl AppMenu {
             Some(Accelerator::new(Some(modifier), Code::KeyS)),
         );
 
+        let menu_item_export_pdf = MenuItem::with_id(
+            AppMenuItemId::ExportPdf,
+            "Export PDF",
+            false,
+            Some(Accelerator::new(Some(modifier), Code::KeyE)),
+        );
+
         // let menu_item_export_svg = MenuItem::with_id(
         //     AppMenuItemId::ExportSvg,
         //     "Export SVG",
-        //     true,
+        //     false,
         //     Some(Accelerator::new(Some(modifier), Code::KeyE)),
         // );
 
@@ -253,6 +260,7 @@ impl AppMenu {
 
         _ = submenu_file.append(&menu_item_open).ok();
         _ = submenu_file.append(&menu_item_save_as).ok();
+        _ = submenu_file.append(&menu_item_export_pdf).ok();
         // _ = submenu_file.append(&menu_item_export_svg).ok();
         #[cfg(any(target_os = "windows", target_os = "linux"))]
         {
@@ -285,6 +293,10 @@ impl AppMenu {
         _ = items.insert(
             menu_item_save_as.clone().into(),
             MenuItemKind::MenuItem(menu_item_save_as),
+        );
+        _ = items.insert(
+            menu_item_export_pdf.clone().into(),
+            MenuItemKind::MenuItem(menu_item_export_pdf),
         );
         // _ = items.insert(
         //     menu_item_export_svg.clone().into(),
