@@ -4,7 +4,9 @@ use crate::path_builders::{
     path_edges_fan, path_edges_phygrm, path_root_edge_fan,
     path_root_edge_phygrm,
 };
-use crate::{Float, NodeData, Rc, RectVals, TreSty, TreeState};
+use crate::{
+    Float, NodeData, Rc, RectVals, TreSty, TreeState, ellipsize_unicode,
+};
 use dendros::Edge;
 use oxidize_pdf::{
     Document, Page, PdfError,
@@ -39,8 +41,8 @@ pub fn tree_to_pdf(
     lab_offset_brnch: Float,
     // --------------------------------
     align_tip_labs: bool,
-    _trim_tip_labs: bool,
-    _trim_tip_labs_to_nchar: u16,
+    trim_tip_labs: bool,
+    trim_tip_labs_to_nchar: u16,
     // --------------------------------
     draw_labs_tip: bool,
     draw_labs_int: bool,
@@ -67,7 +69,6 @@ pub fn tree_to_pdf(
     let lab_offset_brnch = lab_offset_brnch as f64 * scaling;
 
     let mut pg = Page::new(cnv_w + margin * 2e0, cnv_h + margin * 2e0);
-
     pg.set_margins(margin, margin, margin, margin);
 
     _ = pg.graphics().translate(margin, cnv_h + margin);
@@ -162,7 +163,7 @@ pub fn tree_to_pdf(
 
     for nd in node_data {
         let edge = &edges[nd.edge_idx];
-        let font = Font::Helvetica;
+        let font = Font::Courier;
 
         let mut angle = 0e0;
 
@@ -184,7 +185,7 @@ pub fn tree_to_pdf(
                 None,
                 angle,
                 rot_angle,
-                Font::Helvetica,
+                font,
                 &mut pg,
             );
         }
@@ -194,8 +195,15 @@ pub fn tree_to_pdf(
             let lab_offset_x;
             let lab_offset_y;
             let mut align_at: Option<f64> = None;
-
+            let mut text_trimmed: String = text.to_string();
             if edge.is_tip && draw_labs_tip {
+                if trim_tip_labs {
+                    text_trimmed = ellipsize_unicode(
+                        text_trimmed,
+                        trim_tip_labs_to_nchar.into(),
+                    );
+                }
+
                 lab_size = lab_size_tip;
                 lab_offset_x = lab_offset_tip;
                 lab_offset_y = lab_size_tip / 4e0;
@@ -213,20 +221,11 @@ pub fn tree_to_pdf(
                 continue;
             }
 
-            let text_w = measure_text(text, font, lab_size);
+            let text_w = measure_text(&text_trimmed, font, lab_size);
             write_text(
-                text,
-                nd.points.p1.x as f64,
-                -nd.points.p1.y as f64,
-                text_w,
-                lab_size,
-                lab_offset_x,
-                lab_offset_y,
-                align_at,
-                angle,
-                rot_angle,
-                Font::Helvetica,
-                &mut pg,
+                &text_trimmed, nd.points.p1.x as f64, -nd.points.p1.y as f64,
+                text_w, lab_size, lab_offset_x, lab_offset_y, align_at, angle,
+                rot_angle, font, &mut pg,
             );
         }
     }

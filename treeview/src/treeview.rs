@@ -1,6 +1,5 @@
 use crate::edge_utils::*;
 use crate::pdf::tree_to_pdf;
-// use crate::svg::svg_writer_tree;
 use crate::*;
 
 #[allow(missing_debug_implementations)]

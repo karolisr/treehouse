@@ -521,11 +521,6 @@ pub(super) fn node_labs(
                     txt_lab_tmpl = TEMPLATE_TXT_LAB_INTERNAL;
                 }
 
-                let mut name_trimmed: String = name.to_string();
-                if let Some(nchar) = trim_to {
-                    name_trimmed = ellipsize_unicode(name_trimmed, nchar);
-                }
-
                 let mut lab_pt: Point = nd.points.p1;
                 if let Some(align_at) = align_at {
                     if let Some(angle) = nd.angle {
@@ -533,6 +528,11 @@ pub(super) fn node_labs(
                     } else {
                         lab_pt = Point { y: lab_pt.y, x: align_at }
                     }
+                }
+
+                let mut name_trimmed: String = name.to_string();
+                if let Some(nchar) = trim_to {
+                    name_trimmed = ellipsize_unicode(name_trimmed, nchar);
                 }
 
                 let width = text_w.width(&name_trimmed);
