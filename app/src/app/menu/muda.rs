@@ -219,6 +219,22 @@ impl AppMenu {
             Some(Accelerator::new(Some(modifier), Code::KeyP)),
         );
 
+        #[cfg(all(target_os = "windows", debug_assertions))]
+        let menu_item_register_filetypes = MenuItem::with_id(
+            AppMenuItemId::RegisterFileTypes,
+            "Register File Associations",
+            true,
+            None,
+        );
+
+        #[cfg(all(target_os = "windows", debug_assertions))]
+        let menu_item_unregister_filetypes = MenuItem::with_id(
+            AppMenuItemId::UnregisterFileTypes,
+            "Unregister File Associations",
+            true,
+            None,
+        );
+
         let menu_item_sidebar_pos_left = CheckMenuItem::with_id(
             AppMenuItemId::SetSideBarPositionLeft,
             "Left",
@@ -254,6 +270,17 @@ impl AppMenu {
         _ = submenu_file.append(&menu_item_open).ok();
         _ = submenu_file.append(&menu_item_save_as).ok();
         _ = submenu_file.append(&menu_item_export_pdf).ok();
+        #[cfg(all(target_os = "windows", debug_assertions))]
+        {
+            _ = submenu_file
+                .append(&muda::PredefinedMenuItem::separator())
+                .ok();
+            _ = submenu_file.append(&menu_item_register_filetypes).ok();
+            _ = submenu_file.append(&menu_item_unregister_filetypes).ok();
+            _ = submenu_file
+                .append(&muda::PredefinedMenuItem::separator())
+                .ok();
+        }
         #[cfg(target_os = "windows")]
         {
             _ = submenu_file.append(&menu_item_close_win).ok();
@@ -296,6 +323,17 @@ impl AppMenu {
                 menu_item_close_win.clone().into(),
                 MenuItemKind::MenuItem(menu_item_close_win),
             );
+            #[cfg(debug_assertions)]
+            {
+                _ = items.insert(
+                    menu_item_register_filetypes.clone().into(),
+                    MenuItemKind::MenuItem(menu_item_register_filetypes),
+                );
+                _ = items.insert(
+                    menu_item_unregister_filetypes.clone().into(),
+                    MenuItemKind::MenuItem(menu_item_unregister_filetypes),
+                );
+            }
         }
         _ = items.insert(
             menu_item_sidebar_pos_left.clone().into(),

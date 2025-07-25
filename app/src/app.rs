@@ -56,6 +56,10 @@ pub enum AppMsg {
     // --------------------------------
     #[cfg(target_os = "windows")]
     AddMenuForHwnd(u64),
+    #[cfg(target_os = "windows")]
+    RegisterFileTypes,
+    #[cfg(target_os = "windows")]
+    UnregisterFileTypes,
 }
 
 pub enum FileType {
@@ -80,6 +84,17 @@ impl App {
     pub fn boot() -> (Self, Task<AppMsg>) {
         #[cfg(target_os = "macos")]
         platform::register_ns_application_delegate_handlers();
+
+        #[cfg(target_os = "windows")]
+        {
+            if let Err(e) = platform::setup_file_handling() {
+                eprintln!(
+                    "Warning: Failed to set up file type associations: {}",
+                    e
+                );
+            }
+        }
+
         (
             App {
                 winid: None,
@@ -505,6 +520,24 @@ impl App {
                         .map(AppMsg::AddMenuForHwnd);
                 }
 
+                #[cfg(any(target_os = "windows", target_os = "linux"))]
+                {
+                    let args: Vec<String> = std::env::args().collect();
+                    if args.len() > 1 {
+                        let file_path = &args[1];
+                        task_to_return = task_to_return.chain({
+                            let path_buf = PathBuf::from(file_path);
+                            let path: &std::path::Path =
+                                &path_buf.clone().into_boxed_path();
+                            if path.exists() {
+                                Task::done(AppMsg::PathToOpen(Some(path_buf)))
+                            } else {
+                                Task::none()
+                            }
+                        });
+                    }
+                }
+
                 #[cfg(debug_assertions)]
                 {
                     task_to_return = task_to_return.chain({
@@ -560,6 +593,38 @@ impl App {
             AppMsg::AddMenuForHwnd(hwnd) => {
                 if let Some(menu) = &self.menu {
                     menu.init_for_hwnd(hwnd);
+                }
+            }
+            #[cfg(target_os = "windows")]
+            AppMsg::RegisterFileTypes => {
+                match platform::register_file_associations() {
+                    Ok(()) => {
+                        println!(
+                            "File type associations registered successfully!"
+                        );
+                    }
+                    Err(e) => {
+                        eprintln!(
+                            "Failed to register file type associations: {}",
+                            e
+                        );
+                    }
+                }
+            }
+            #[cfg(target_os = "windows")]
+            AppMsg::UnregisterFileTypes => {
+                match platform::unregister_file_associations() {
+                    Ok(()) => {
+                        println!(
+                            "File type associations unregistered successfully!"
+                        );
+                    }
+                    Err(e) => {
+                        eprintln!(
+                            "Failed to unregister file type associations: {}",
+                            e
+                        );
+                    }
                 }
             }
         }

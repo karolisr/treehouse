@@ -13,6 +13,10 @@ pub enum AppMenuItemId {
     SetSideBarPositionRight,
     ToggleSearchBar,
     ExportPdf,
+    #[cfg(target_os = "windows")]
+    RegisterFileTypes,
+    #[cfg(target_os = "windows")]
+    UnregisterFileTypes,
     Undefined,
     ContextMenuIndex(usize),
 }
@@ -29,6 +33,10 @@ impl From<String> for AppMenuItemId {
             "SetSideBarPositionRight" => AppMenuItemId::SetSideBarPositionRight,
             "ToggleSearchBar" => AppMenuItemId::ToggleSearchBar,
             "ExportPdf" => AppMenuItemId::ExportPdf,
+            #[cfg(target_os = "windows")]
+            "RegisterFileTypes" => AppMenuItemId::RegisterFileTypes,
+            #[cfg(target_os = "windows")]
+            "UnregisterFileTypes" => AppMenuItemId::UnregisterFileTypes,
             // -------------------------------------------------------------------------------------
             val if val.starts_with("ContextMenuIndex") => {
                 let idx_str =
@@ -71,6 +79,10 @@ impl From<&AppMenuItemId> for AppMsg {
                 AppMsg::TvMsg(TvMsg::ContextMenuChosenIdx(*idx))
             }
             AppMenuItemId::ExportPdf => AppMsg::ExportPdf,
+            #[cfg(target_os = "windows")]
+            AppMenuItemId::RegisterFileTypes => AppMsg::RegisterFileTypes,
+            #[cfg(target_os = "windows")]
+            AppMenuItemId::UnregisterFileTypes => AppMsg::UnregisterFileTypes,
             _ => AppMsg::Other(Some(value.to_string())),
         }
     }

@@ -23,7 +23,7 @@
         readme="README.md"
         repository="https://github.com/karolisr/treehouse"
         rust-version="1.88"
-        version="0.5.2"
+        version="0.5.3"
 
     [workspace.dependencies] # -------------------------------------------------
         num-traits="0.2.19"
@@ -34,6 +34,8 @@
         rayon="1.10.0"
         riced={path="riced", features=["crisp"]}
         treeview={path="treeview"}
+        windows="0.61.3"
+        winreg="0.55.0"
         # ----------------------------------------------------------------------
         # tracing-subscriber="0.3.19"
         # oxidize-pdf="1.1.1"
