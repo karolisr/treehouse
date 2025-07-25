@@ -161,9 +161,10 @@ pub fn tree_to_pdf(
         })
         .collect();
 
+    let font = Font::Courier.with_recommended_encoding();
+
     for nd in node_data {
         let edge = &edges[nd.edge_idx];
-        let font = Font::Courier;
 
         let mut angle = 0e0;
 
@@ -173,7 +174,7 @@ pub fn tree_to_pdf(
 
         if edge.parent_node_id.is_some() && draw_labs_brnch {
             let text = format!("{:.3}", edge.brlen);
-            let text_w = measure_text(&text, font, lab_size_brnch);
+            let text_w = measure_text(&text, font.font, lab_size_brnch);
             write_text(
                 &text,
                 nd.points.p_mid.x as f64,
@@ -185,7 +186,7 @@ pub fn tree_to_pdf(
                 None,
                 angle,
                 rot_angle,
-                font,
+                font.font,
                 &mut pg,
             );
         }
@@ -221,17 +222,18 @@ pub fn tree_to_pdf(
                 continue;
             }
 
-            let text_w = measure_text(&text_trimmed, font, lab_size);
+            let text_w = measure_text(&text_trimmed, font.font, lab_size);
             write_text(
                 &text_trimmed, nd.points.p1.x as f64, -nd.points.p1.y as f64,
                 text_w, lab_size, lab_offset_x, lab_offset_y, align_at, angle,
-                rot_angle, font, &mut pg,
+                rot_angle, font.font, &mut pg,
             );
         }
     }
     // -------------------------------------------------------------------------
 
     let mut doc = Document::new();
+    doc.set_default_font_encoding(font.encoding);
     doc.add_page(pg);
     doc.set_title("TreeHouse Exported PDF");
     doc.set_producer("TreeHouse");
