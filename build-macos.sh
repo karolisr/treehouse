@@ -83,7 +83,7 @@ rm -rf "${EXPORT_PATH}"
 
 # -------------------------------------------
 cargo install cargo-bundle 2>/dev/null
-cargo-bundle bundle --profile release --bin treehouse
+cargo-bundle bundle --profile release --package treehouse --bin treehouse
 # -------------------------------------------
 
 # -------------------------------------------
