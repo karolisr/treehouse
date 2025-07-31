@@ -76,7 +76,7 @@
                 "test-util",       # testing based infrastructure for the Tokio runtime.
                 "time",            # tokio::time types and allows the schedulers to enable the built in timer.
             ]
-            version="1.46.1"
+            version="1.47.0"
 
     [workspace.lints.rust] # ---------------------------------------------------
         missing_debug_implementations="deny"
