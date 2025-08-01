@@ -1,3 +1,2 @@
 [toolchain]
-    # >=1.88 allows "&&" in "if let Some() blocks"
     channel="stable"
