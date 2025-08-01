@@ -681,7 +681,7 @@ checksum = "5c297a1c74b71ae29df00c3e22dd9534821d60eb9af5a0192823fa2acea70c2a"
 [[package]]
 name = "dendros"
 version = "0.2.0"
-source = "git+https://github.com/karolisr/dendros.git?branch=main#da5f8b32f4a58d0f8a6c13ac636e94bf8117c08e"
+source = "git+https://github.com/karolisr/dendros.git?branch=main#a3755e4482e1b02e67b0edff61eb2b60c5d59117"
 dependencies = [
  "rayon",
  "slotmap",
