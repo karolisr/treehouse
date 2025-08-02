@@ -6,7 +6,9 @@ mod win;
 
 use consts::*;
 use dendros::parse_newick;
-use menu::{AppMenu, AppMenuItemId, ContextMenu};
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+use menu::ContextMenu;
+use menu::{AppMenu, AppMenuItemId};
 use riced::{
     Clr, Element, Font, IcedAppSettings, Key, Modifiers, Pixels, Subscription,
     Task, Theme, WindowEvent, WindowId, close_window, exit, on_key_press,
@@ -505,14 +507,18 @@ impl App {
                     menu.enable(&AppMenuItemId::CloseWindow);
                 }
 
-                #[cfg(any(debug_assertions, target_os = "windows"))]
+                #[cfg(any(
+                    debug_assertions,
+                    target_os = "windows",
+                    target_os = "linux"
+                ))]
                 let mut task_to_return = Task::none();
 
                 #[cfg(all(not(debug_assertions), target_os = "macos"))]
                 let task_to_return = Task::none();
 
-                #[cfg(all(not(debug_assertions), target_os = "linux"))]
-                let task_to_return = Task::none();
+                // #[cfg(all(not(debug_assertions), target_os = "linux"))]
+                // let mut task_to_return = Task::none();
 
                 #[cfg(target_os = "windows")]
                 if let Some(id) = self.winid {

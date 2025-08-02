@@ -18,7 +18,7 @@
         icon=["resources/icons/treehouse*.icns"]
         identifier="is.karol.treehouse"
         # linux_exec_args=[]
-        linux_mime_types=[]
+        linux_mime_types=["newick", "tre"]
         linux_use_terminal=false
         long_description="""View and edit gene trees and phylogenies."""
         name="TreeHouse"

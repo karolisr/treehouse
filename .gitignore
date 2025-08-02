@@ -7,3 +7,4 @@ submodules/*
 *.example.rs
 icons-unused
 *.pdf
+/release

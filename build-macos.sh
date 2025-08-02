@@ -175,3 +175,7 @@ if [[ -n "${SIGN}" ]]; then
     fi
 fi
 # -------------------------------------------
+
+mkdir -p release
+cp target/release/treehouse release/treehouse_macos
+cp target/release/bundle/osx/TreeHouse*.pkg release/

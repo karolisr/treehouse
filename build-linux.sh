@@ -37,6 +37,11 @@ cargo install cargo-bundle 2>/dev/null
 cargo-bundle bundle --profile release --package treehouse --bin treehouse
 # -------------------------------------------
 
+mkdir -p release
+cp target/release/treehouse release/treehouse_linux
+cp target/release/bundle/deb/treehouse_*.deb release/
+cp target/release/bundle/appimage/treehouse_*.AppImage release/
+
 # -------------------------------------------
 # cargo install --locked cargo-zigbuild 2>/dev/null
 # RUSTFLAGS="-L/usr/lib64"
