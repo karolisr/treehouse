@@ -1,8 +1,8 @@
 use crate::consts::{STRK_EDGE, STRK_EDGE_LAB_ALN, STRK_ROOT};
 use crate::edge_utils::{node_data_cart, node_data_rad};
 use crate::path_builders::{
-    path_edges_fan, path_edges_phygrm, path_root_edge_fan,
-    path_root_edge_phygrm,
+    path_clade_highlight, path_edges_fan, path_edges_phygrm,
+    path_root_edge_fan, path_root_edge_phygrm,
 };
 use crate::{
     Float, NodeData, Rc, RectVals, TreSty, TreeState, ellipsize_unicode,
@@ -10,7 +10,7 @@ use crate::{
 use dendros::Edge;
 use oxidize_pdf::{
     Document, Page, PdfError,
-    graphics::{Color, GraphicsContext, LineCap, LineJoin},
+    graphics::{Color, GraphicsContext, LineCap, LineDashPattern, LineJoin},
     text::{Font, measure_text},
 };
 use rayon::prelude::*;
@@ -47,7 +47,7 @@ pub fn tree_to_pdf(
     draw_labs_tip: bool,
     draw_labs_int: bool,
     draw_labs_brnch: bool,
-    _draw_clade_labs: bool,
+    draw_clade_labs: bool,
     _draw_legend: bool,
     draw_debug: bool,
     // --------------------------------
@@ -96,8 +96,7 @@ pub fn tree_to_pdf(
         _ = apply_iced_path_to_gc(path_tre_bounds, pg.graphics());
         _ = pg.graphics().stroke();
         _ = pg.graphics().restore_state();
-    }
-    // -------------------------------------------------------------------------
+    } // -----------------------------------------------------------------------
 
     match tree_style {
         TreSty::PhyGrm => {
@@ -116,7 +115,31 @@ pub fn tree_to_pdf(
     };
 
     // Clade highlights --------------------------------------------------------
-    // -------------------------------------------------------------------------
+    if draw_clade_labs {
+        let labeled_clades = tree_state.labeled_clades();
+        for node_id in tree_state.node_ids_srtd_asc() {
+            if labeled_clades.contains_key(&node_id) {
+                let clade_label = labeled_clades.get(&node_id).unwrap();
+
+                let iced_path = path_clade_highlight(
+                    node_id, &tree_state, tre_w as Float, tre_h as Float,
+                    radius as Float, root_len as Float, opn_angle, tree_style,
+                );
+
+                let color = color_from_iced_color(clade_label.color);
+                let opacity = opacity_from_iced_color(clade_label.color);
+
+                _ = pg.graphics().save_state();
+                _ = apply_iced_path_to_gc(iced_path.clone(), pg.graphics());
+                _ = pg
+                    .graphics()
+                    .set_fill_color(color)
+                    .set_fill_opacity(opacity);
+                _ = pg.graphics().fill();
+                _ = pg.graphics().restore_state();
+            }
+        }
+    } // -----------------------------------------------------------------------
 
     // Root edge ---------------------------------------------------------------
     if let Some(root_edge) = tree_state.edge_root()
@@ -130,6 +153,7 @@ pub fn tree_to_pdf(
             root_len as Float,
             radius as Float,
             &root_edge,
+            scaling,
             pg.graphics(),
         );
     } // -----------------------------------------------------------------------
@@ -143,6 +167,7 @@ pub fn tree_to_pdf(
         opn_angle,
         root_len as Float,
         radius as Float,
+        scaling,
         pg.graphics(),
     ); // ----------------------------------------------------------------------
 
@@ -187,6 +212,7 @@ pub fn tree_to_pdf(
                 angle,
                 rot_angle,
                 font.font,
+                scaling,
                 &mut pg,
             );
         }
@@ -223,14 +249,14 @@ pub fn tree_to_pdf(
             }
 
             let text_w = measure_text(&text_trimmed, font.font, lab_size);
+
             write_text(
                 &text_trimmed, nd.points.p1.x as f64, -nd.points.p1.y as f64,
                 text_w, lab_size, lab_offset_x, lab_offset_y, align_at, angle,
-                rot_angle, font.font, &mut pg,
+                rot_angle, font.font, scaling, &mut pg,
             );
         }
-    }
-    // -------------------------------------------------------------------------
+    } // -----------------------------------------------------------------------
 
     let mut doc = Document::new();
     doc.set_default_font_encoding(font.encoding);
@@ -253,6 +279,7 @@ fn write_text(
     angle: f64,
     rot_angle: f64,
     font: Font,
+    scaling: f64,
     pg: &mut Page,
 ) {
     let mut lab_offset_x = lab_offset_x;
@@ -289,7 +316,11 @@ fn write_text(
 
             _ = apply_iced_path_to_gc(
                 path,
-                apply_iced_stroke_to_gc(STRK_EDGE_LAB_ALN, pg.graphics()),
+                apply_iced_stroke_to_gc(
+                    STRK_EDGE_LAB_ALN,
+                    scaling,
+                    pg.graphics(),
+                ),
             );
 
             _ = pg.graphics().stroke();
@@ -323,6 +354,7 @@ fn draw_root(
     root_len: Float,
     radius: Float,
     root_edge: &Edge,
+    scaling: f64,
     gc: &mut GraphicsContext,
 ) {
     _ = apply_iced_path_to_gc(
@@ -332,8 +364,9 @@ fn draw_root(
                 path_root_edge_fan(radius, opn_angle, root_len, root_edge)
             }
         },
-        apply_iced_stroke_to_gc(STRK_ROOT, gc),
-    );
+        apply_iced_stroke_to_gc(STRK_ROOT, scaling, gc),
+    )
+    .stroke();
 }
 
 fn draw_edges(
@@ -344,6 +377,7 @@ fn draw_edges(
     opn_angle: Float,
     root_len: Float,
     radius: Float,
+    scaling: f64,
     gc: &mut GraphicsContext,
 ) {
     if let Some(edges) = tree_state.edges_srtd_y() {
@@ -354,7 +388,7 @@ fn draw_edges(
                     path_edges_fan(edges, opn_angle, root_len, radius)
                 }
             },
-            apply_iced_stroke_to_gc(STRK_EDGE, gc),
+            apply_iced_stroke_to_gc(STRK_EDGE, scaling, gc),
         )
         .stroke();
     }
@@ -368,81 +402,124 @@ fn apply_iced_path_to_gc(
     gc
 }
 
-fn apply_iced_stroke_to_gc<'a>(
-    stroke_iced: CnvStrk<'a>,
-    gc: &'a mut GraphicsContext,
-) -> &'a mut GraphicsContext {
-    let line_cap = line_cap_from_iced(stroke_iced.line_cap);
-    let line_join = line_join_from_iced(stroke_iced.line_join);
-    let line_width = stroke_iced.width as f64;
-    let stroke_color = color_from_iced_stroke(stroke_iced);
-    gc.set_line_cap(line_cap)
-        .set_line_join(line_join)
-        .set_line_width(line_width)
-        .set_stroke_color(stroke_color)
-}
-
 fn apply_lyon_path_to_gc(lyon_path: &LyonPath, gc: &mut GraphicsContext) {
     let mut current = None;
     for event in lyon_path.iter() {
         match event {
             LyonPathEvent::Begin { at } => {
+                if let Some(current) = current {
+                    if at != current {
+                        _ = gc.move_to(at.x as f64, -at.y as f64);
+                        // println!("move_to: {} {}", at.x, at.y);
+                    }
+                } else {
+                    _ = gc.move_to(at.x as f64, -at.y as f64);
+                    // println!("move_to: {} {}", at.x, at.y);
+                }
+
                 current = Some(at);
-                _ = gc.move_to(at.x as f64, -at.y as f64);
             }
-            LyonPathEvent::Line { mut from, to } => {
-                from.y *= -1e0;
+
+            LyonPathEvent::Line { from, to } => {
                 if let Some(current) = current {
                     if from != current {
-                        _ = gc.move_to(from.x as f64, from.y as f64);
+                        _ = gc.move_to(from.x as f64, -from.y as f64);
+                        // println!("move_to: {} {}", from.x, from.y);
+                    }
+
+                    if to != current {
+                        _ = gc.line_to(to.x as f64, -to.y as f64);
+                        // println!("line_to: {} {}", to.x, to.y);
                     }
                 }
-                _ = gc.line_to(to.x as f64, -to.y as f64);
+
                 current = Some(to);
             }
-            LyonPathEvent::Quadratic { from: _, ctrl: _, to } => {
-                // if let Some(current) = current {
-                //     from.y *= -1e0;
-                //     if from != current {
-                //         _ = gc.move_to(from.x as f64, from.y as f64);
-                //     }
-                // }
-                _ = gc.move_to(to.x as f64, -to.y as f64);
-                current = Some(to);
-            }
-            LyonPathEvent::Cubic { mut from, ctrl1, ctrl2, to } => {
+
+            LyonPathEvent::Quadratic { from, ctrl: _, to } => {
                 if let Some(current) = current {
-                    from.y *= -1e0;
                     if from != current {
-                        _ = gc.move_to(from.x as f64, from.y as f64);
+                        _ = gc.move_to(from.x as f64, -from.y as f64);
+                        // println!("move_to: {} {}", from.x, from.y);
+                    }
+
+                    if to != current {
+                        _ = gc.move_to(to.x as f64, -to.y as f64);
+                        // println!("move_to: {} {}", to.x, to.y);
                     }
                 }
-                _ = gc.curve_to(
-                    ctrl1.x as f64, -ctrl1.y as f64, ctrl2.x as f64,
-                    -ctrl2.y as f64, to.x as f64, -to.y as f64,
-                );
+
                 current = Some(to);
             }
-            LyonPathEvent::End { mut last, first, close } => {
+
+            LyonPathEvent::Cubic { from, ctrl1, ctrl2, to } => {
                 if let Some(current) = current {
-                    last.y *= -1e0;
+                    if from != current {
+                        _ = gc.move_to(from.x as f64, -from.y as f64);
+                        // println!("move_to: {} {}", from.x, from.y);
+                    }
+
+                    if to != current {
+                        _ = gc.curve_to(
+                            ctrl1.x as f64, -ctrl1.y as f64, ctrl2.x as f64,
+                            -ctrl2.y as f64, to.x as f64, -to.y as f64,
+                        );
+                        // println!("curve_to: {} {}", to.x, to.y);
+                    }
+                }
+
+                current = Some(to);
+            }
+
+            LyonPathEvent::End { last, first, close } => {
+                if let Some(current) = current {
                     if last != current {
-                        _ = gc.move_to(last.x as f64, last.y as f64);
+                        _ = gc.move_to(last.x as f64, -last.y as f64);
+                        // println!("move_to: {} {}", last.x, last.y);
+                    }
+
+                    if close {
+                        if first != current {
+                            _ = gc.line_to(first.x as f64, -first.y as f64);
+                            // println!("line_to: {} {}", first.x, first.y);
+                        }
+
+                        _ = gc.close_path();
+                        // println!("close_path");
                     }
                 }
-                if close {
-                    _ = gc.line_to(first.x as f64, -first.y as f64);
-                    _ = gc.close_path();
-                }
+
                 current = Some(last);
             }
         }
     }
 }
 
+fn apply_iced_stroke_to_gc<'a>(
+    stroke_iced: CnvStrk<'a>,
+    scaling: f64,
+    gc: &'a mut GraphicsContext,
+) -> &'a mut GraphicsContext {
+    let line_cap = line_cap_from_iced(stroke_iced.line_cap);
+    let line_join = line_join_from_iced(stroke_iced.line_join);
+    let line_width = stroke_iced.width as f64;
+    let stroke_color = color_from_iced_stroke(stroke_iced);
+    let line_dash = line_dash_from_iced(stroke_iced.line_dash, scaling);
+    gc.set_line_cap(line_cap)
+        .set_line_join(line_join)
+        .set_line_width(line_width)
+        .set_line_dash_pattern(line_dash)
+        .set_stroke_color(stroke_color)
+}
+
 fn color_from_iced_color(color_iced: riced::Color) -> Color {
     let c: [f32; 4] = color_iced.into_linear();
     Color::Rgb(c[0] as f64, c[1] as f64, c[2] as f64)
+}
+
+fn opacity_from_iced_color(color_iced: riced::Color) -> f64 {
+    let c: [f32; 4] = color_iced.into_linear();
+    c[3] as f64
 }
 
 fn color_from_iced_stroke(stroke_iced: CnvStrk) -> Color {
@@ -466,5 +543,19 @@ fn line_join_from_iced(line_join_iced: riced::LineJoin) -> LineJoin {
         riced::LineJoin::Miter => LineJoin::Miter,
         riced::LineJoin::Round => LineJoin::Round,
         riced::LineJoin::Bevel => LineJoin::Bevel,
+    }
+}
+
+fn line_dash_from_iced(
+    line_dash_iced: riced::LineDash,
+    scaling: f64,
+) -> LineDashPattern {
+    LineDashPattern {
+        array: line_dash_iced
+            .segments
+            .iter()
+            .map(|seg| *seg as f64 * scaling)
+            .collect(),
+        phase: line_dash_iced.offset as f64 * scaling,
     }
 }

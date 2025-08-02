@@ -34,8 +34,11 @@ pub(super) fn draw_clade_labels(
 ) {
     g.push(tst.cache_clade_labels().draw(rndr, sz, |f| {
         let labeled_clades = tst.labeled_clades();
-        for (node_id, clade_label) in labeled_clades {
-            draw_clade_highlight(*node_id, clade_label.color, st, tst, f);
+        for node_id in tst.node_ids_srtd_asc() {
+            if labeled_clades.contains_key(&node_id) {
+                let clade_label = labeled_clades.get(&node_id).unwrap();
+                draw_clade_highlight(node_id, clade_label.color, st, tst, f);
+            }
         }
     }));
 }
@@ -406,17 +409,16 @@ fn draw_clade_highlight(
 ) {
     f.push_transform();
     f.translate(st.translation);
-    let path = match st.tre_sty {
-        TreSty::PhyGrm => {
-            path_clade_highlight_phygrm(node_id, tst, st.tre_vs.w, st.tre_vs.h)
-        }
-        TreSty::Fan => {
-            f.rotate(st.rotation);
-            path_clade_highlight_fan(
-                node_id, tst, st.tre_vs.radius_min, st.root_len, st.opn_angle,
-            )
-        }
-    };
+
+    if st.tre_sty == TreSty::Fan {
+        f.rotate(st.rotation);
+    }
+
+    let path = path_clade_highlight(
+        node_id, tst, st.tre_vs.w, st.tre_vs.h, st.tre_vs.radius_min,
+        st.root_len, st.opn_angle, st.tre_sty,
+    );
+
     f.fill(
         &path,
         CnvFill { style: GeomStyle::Solid(color), rule: FillRule::EvenOdd },

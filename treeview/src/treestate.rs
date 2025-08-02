@@ -364,6 +364,38 @@ impl TreeState {
     }
 
     // Sorting -----------------------------------------------------------------
+
+    pub(super) fn node_ids_srtd_asc(&self) -> Vec<NodeId> {
+        if let Some(t) = &self.t_srtd_asc { t.node_ids_all() } else { vec![] }
+    }
+
+    #[allow(dead_code)]
+    pub(super) fn node_ids_srtd_desc(&self) -> Vec<NodeId> {
+        if let Some(t) = &self.t_srtd_desc { t.node_ids_all() } else { vec![] }
+    }
+
+    #[allow(dead_code)]
+    pub(super) fn edges_srtd_asc(&self) -> Option<&Vec<Edge>> {
+        if let Some(t) = &self.t_srtd_asc { t.edges() } else { None }
+    }
+
+    #[allow(dead_code)]
+    pub(super) fn edges_srtd_desc(&self) -> Option<&Vec<Edge>> {
+        if let Some(t) = &self.t_srtd_desc { t.edges() } else { None }
+    }
+
+    pub(super) fn sort_asc(&mut self) {
+        if self.t_srtd_asc.is_none() {
+            self.t_srtd_asc = Some(Tree::sorted(&self.t_orig, false));
+        }
+    }
+
+    pub(super) fn sort_desc(&mut self) {
+        if self.t_srtd_desc.is_none() {
+            self.t_srtd_desc = Some(Tree::sorted(&self.t_orig, true));
+        }
+    }
+
     pub(super) fn sort(&mut self, node_ord_opt: NodeOrd) {
         let current_found_node_id;
         if let Some(node_id) = self.tmp_found_node_id {
@@ -373,18 +405,11 @@ impl TreeState {
         }
         self.tmp_found_node_id = None;
         self.node_ord_opt = node_ord_opt;
+
         match node_ord_opt {
             NodeOrd::Unordered => {}
-            NodeOrd::Ascending => {
-                if self.t_srtd_asc.is_none() {
-                    self.t_srtd_asc = Some(Tree::sorted(&self.t_orig, false));
-                }
-            }
-            NodeOrd::Descending => {
-                if self.t_srtd_desc.is_none() {
-                    self.t_srtd_desc = Some(Tree::sorted(&self.t_orig, true));
-                }
-            }
+            NodeOrd::Ascending => self.sort_asc(),
+            NodeOrd::Descending => self.sort_desc(),
         };
 
         (self.edges_tip, self.edges_tip_idx) = self.edges_tip_prep();
@@ -645,6 +670,7 @@ impl TreeState {
         self.cache_tre_height = Some(self.tre_height());
 
         self.clear_caches_all();
+        self.sort_asc();
         self.sort(self.node_ord_opt);
     }
 }

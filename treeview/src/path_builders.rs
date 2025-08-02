@@ -54,6 +54,26 @@ pub fn path_root_edge_fan(
     PathBuilder::new().move_to(ORIGIN).line_to(nd.points.p0).build()
 }
 
+pub fn path_clade_highlight(
+    node_id: NodeId,
+    tree_state: &TreeState,
+    w: Float,
+    h: Float,
+    radius: Float,
+    root_len: Float,
+    opn_angle: Float,
+    tre_sty: TreSty,
+) -> IcedPath {
+    match tre_sty {
+        TreSty::PhyGrm => {
+            path_clade_highlight_phygrm(node_id, tree_state, w, h)
+        }
+        TreSty::Fan => path_clade_highlight_fan(
+            node_id, tree_state, radius, root_len, opn_angle,
+        ),
+    }
+}
+
 pub fn path_clade_highlight_phygrm(
     node_id: NodeId,
     tree_state: &TreeState,
@@ -89,7 +109,8 @@ pub fn path_clade_highlight_phygrm(
     let y_bottom = edges_bottom.last().unwrap().y as Float * h;
     let bottom_right = Point { x: w, y: y_bottom };
     pb = pb.line_to(bottom_right);
-    pb.line_to(top_right).build()
+    pb = pb.close();
+    pb.build()
 }
 
 pub fn path_clade_highlight_fan(
