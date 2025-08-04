@@ -22,19 +22,19 @@ get_opts() {
     while [[ $# -gt 0 ]]; do
         key="$1"
         case $key in
-        -s | --sign)
-            shift
-            SIGN="SIGN"
+            -s | --sign)
+                shift
+                SIGN="SIGN"
             ;;
-        -n | --notarize)
-            shift
-            NOTARIZE="NOTARIZE"
+            -n | --notarize)
+                shift
+                NOTARIZE="NOTARIZE"
             ;;
-        -h | --help)
-            usage
+            -h | --help)
+                usage
             ;;
-        *)
-            usage
+            *)
+                usage
             ;;
         esac
     done
@@ -110,11 +110,11 @@ if [[ -n "${SIGN}" ]]; then
             zip -r "${ZIP_PATH}" "${APP_PATH}"
             if [[ -n "${NOTARYTOOL_KEYCHAIN_PROFILE}" ]]; then
                 xcrun notarytool submit \
-                    --keychain-profile "${NOTARYTOOL_KEYCHAIN_PROFILE}" \
-                    --verbose "${ZIP_PATH}" \
-                    --wait \
-                    --timeout 2h \
-                    --output-format plist >"${NOTARIZATION_RESPONSE_APP_PATH}"
+                --keychain-profile "${NOTARYTOOL_KEYCHAIN_PROFILE}" \
+                --verbose "${ZIP_PATH}" \
+                --wait \
+                --timeout 2h \
+                --output-format plist >"${NOTARIZATION_RESPONSE_APP_PATH}"
 
                 return_code=$?
 
@@ -124,25 +124,25 @@ if [[ -n "${SIGN}" ]]; then
 
                     # ---------------------------------------------------------
                     pkgbuild --component "${APP_PATH}" \
-                             --identifier "${IDENTIFIER}" \
-                             --version "${VERSION}" \
-                             --ownership preserve \
-                             --install-location "/Applications" \
-                             --sign "${SIGNING_IDENTITY_INSTALLER}" \
-                             "${PKG_PATH}"
+                    --identifier "${IDENTIFIER}" \
+                    --version "${VERSION}" \
+                    --ownership preserve \
+                    --install-location "/Applications" \
+                    --sign "${SIGNING_IDENTITY_INSTALLER}" \
+                    "${PKG_PATH}"
 
                     xcrun notarytool submit \
-                        --keychain-profile "${NOTARYTOOL_KEYCHAIN_PROFILE}" \
-                        --verbose "${PKG_PATH}" \
-                        --wait \
-                        --timeout 2h \
-                        --output-format plist >"${NOTARIZATION_RESPONSE_PKG_PATH}"
+                    --keychain-profile "${NOTARYTOOL_KEYCHAIN_PROFILE}" \
+                    --verbose "${PKG_PATH}" \
+                    --wait \
+                    --timeout 2h \
+                    --output-format plist >"${NOTARIZATION_RESPONSE_PKG_PATH}"
 
                     return_code=$?
 
                     if [ $return_code -eq 0 ]; then
-                    xcrun stapler staple "${PKG_PATH}"
-                    xcrun stapler validate "${PKG_PATH}"
+                        xcrun stapler staple "${PKG_PATH}"
+                        xcrun stapler validate "${PKG_PATH}"
                     fi
                     # ---------------------------------------------------------
                     rm -rf "${ZIP_PATH}"
@@ -177,5 +177,5 @@ fi
 # -------------------------------------------
 
 mkdir -p release
-cp target/release/treehouse release/treehouse_macos
-cp target/release/bundle/osx/TreeHouse*.pkg release/
+cp target/release/treehouse release/treehouse_macos 2>/dev/null
+cp target/release/bundle/osx/TreeHouse*.pkg release/ 2>/dev/null

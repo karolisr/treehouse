@@ -127,14 +127,14 @@ pub fn tree_to_pdf(
                 );
 
                 let color = color_from_iced_color(clade_label.color);
-                let opacity = opacity_from_iced_color(clade_label.color);
+                let alpha = alpha_from_iced_color(clade_label.color);
 
                 _ = pg.graphics().save_state();
                 _ = apply_iced_path_to_gc(iced_path.clone(), pg.graphics());
                 _ = pg
                     .graphics()
                     .set_fill_color(color)
-                    .set_fill_opacity(opacity);
+                    .set_alpha_fill(alpha)?;
                 _ = pg.graphics().fill();
                 _ = pg.graphics().restore_state();
             }
@@ -335,15 +335,21 @@ fn write_text(
         lab_offset_x += text_w;
         lab_offset_y = -lab_offset_y;
     } // ===========================================================
+
     _ = pg
-        .text()
-        .set_text_angle(-angle)
-        .set_font(font, lab_size)
-        .at(
+        .graphics()
+        .save_state()
+        .translate(
             x + (cos * lab_offset_x - sin * lab_offset_y),
             y - (sin * lab_offset_x + cos * lab_offset_y),
         )
-        .write(text);
+        .rotate(-angle)
+        .set_font(font, lab_size)
+        .begin_text()
+        .show_text(text)
+        .unwrap()
+        .end_text()
+        .restore_state();
 }
 
 fn draw_root(
@@ -517,7 +523,7 @@ fn color_from_iced_color(color_iced: riced::Color) -> Color {
     Color::Rgb(c[0] as f64, c[1] as f64, c[2] as f64)
 }
 
-fn opacity_from_iced_color(color_iced: riced::Color) -> f64 {
+fn alpha_from_iced_color(color_iced: riced::Color) -> f64 {
     let c: [f32; 4] = color_iced.into_linear();
     c[3] as f64
 }
