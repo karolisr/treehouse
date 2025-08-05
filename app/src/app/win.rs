@@ -9,7 +9,7 @@ use super::consts::APP_ID;
 pub fn window_settings() -> WindowSettings {
     WindowSettings {
         size: Size { width: 800.0, height: 670.0 },
-        min_size: Some(Size { width: 800.0, height: 670.0 }),
+        min_size: Some(Size { width: 500.0, height: 670.0 }),
         position: WindowPosition::Centered,
         resizable: true,
         level: WindowLevel::Normal,

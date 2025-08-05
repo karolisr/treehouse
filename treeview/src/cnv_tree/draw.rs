@@ -551,7 +551,11 @@ pub(super) fn node_labs(
                     aligned_from: Some(nd.points.p1),
                 })
             } else if branch && edge.parent_node_id.is_some() {
-                let name = format!("{:.3}", edge.brlen);
+                let name = format!(
+                    "{:.3} {}",
+                    edge.brlen,
+                    edge.branch_props.first().unwrap_or(&"NONE".to_string())
+                );
                 let width = text_w.width(&name);
                 let text = lab_text(
                     name.to_string(),
