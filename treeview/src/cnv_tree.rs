@@ -89,11 +89,11 @@ impl TreeCnv {
             drawing_enabled: false,
             draw_root: true,
             draw_labs_allowed: false,
-            draw_labs_tip: true,
-            draw_clade_labs: true,
-            draw_labs_int: true,
-            draw_labs_brnch: true,
-            draw_legend: true,
+            draw_labs_tip: false,
+            draw_clade_labs: false,
+            draw_labs_int: false,
+            draw_labs_brnch: false,
+            draw_legend: false,
             draw_cursor_line: false,
             // -----------------------------------------------------------------
             tip_labs_vis_max: 1000,
@@ -138,7 +138,7 @@ impl TreeCnv {
             // -----------------------------------------------------------------
             tree_state: None,
             // -----------------------------------------------------------------
-            align_tip_labs: true,
+            align_tip_labs: false,
             trim_tip_labs: false,
             trim_tip_labs_to_nchar: 20,
             // -----------------------------------------------------------------

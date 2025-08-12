@@ -1,6 +1,7 @@
 {
     "folders": [
         {
+            "name": "treehouse",
             "path": "."
         },
     ],
@@ -14,7 +15,7 @@
         },
         "editor.wordWrap": "off",
         "editor.formatOnPaste": false,
-        "editor.minimap.autohide": false,
+        "editor.minimap.autohide": "none",
         "rust-analyzer.completion.hideDeprecated": true,
         "rust-analyzer.cargo.autoreload": true,
     },

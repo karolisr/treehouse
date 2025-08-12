@@ -31,7 +31,8 @@
         objc2="0.6.1"
         objc2-app-kit="0.3.1"
         objc2-foundation="0.3.1"
-        oxidize-pdf="1.1.6"
+        # oxidize-pdf="1.1.8"
+        oxidize-pdf={git="https://github.com/karolisr/oxidizePdf", branch="custom"}
         rayon="1.10.0"
         riced={path="riced", features=["crisp"]}
         treeview={path="treeview"}

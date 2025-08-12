@@ -468,16 +468,17 @@ pub(crate) fn sty_toggler(
     };
 
     let foreground = match status {
-        TogglerStatus::Active { is_toggled } => {
-            if is_toggled {
-                palette.primary.strong.text
-            } else {
-                palette.background.base.color
-            }
+        TogglerStatus::Active { is_toggled: _ } => {
+            palette.background.base.color
+            // if is_toggled {
+            //     palette.background.base.color
+            // } else {
+            //     palette.background.base.color
+            // }
         }
         TogglerStatus::Hovered { is_toggled } => {
             if is_toggled {
-                Color { a: 0.75, ..palette.primary.strong.text }
+                Color { a: 0.75, ..palette.background.base.color }
             } else {
                 palette.background.weak.color
             }

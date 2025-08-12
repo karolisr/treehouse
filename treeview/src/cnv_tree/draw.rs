@@ -537,13 +537,13 @@ pub(super) fn node_labs(
                     name_trimmed = ellipsize_unicode(name_trimmed, nchar);
                 }
 
-                let width = text_w.width(&name_trimmed);
-                let text = lab_text(
-                    name_trimmed.to_string(),
-                    lab_pt,
-                    size,
-                    txt_lab_tmpl,
-                );
+                let name_lab =
+                    format!("{} {}", name_trimmed, edge.node_props.join("|"));
+
+                let width = text_w.width(&name_lab);
+
+                let text =
+                    lab_text(name_lab.to_string(), lab_pt, size, txt_lab_tmpl);
                 Some(Label {
                     text,
                     width,
@@ -554,7 +554,7 @@ pub(super) fn node_labs(
                 let name = format!(
                     "{:.3} {}",
                     edge.brlen,
-                    edge.branch_props.first().unwrap_or(&"NONE".to_string())
+                    edge.branch_props.join("|")
                 );
                 let width = text_w.width(&name);
                 let text = lab_text(
