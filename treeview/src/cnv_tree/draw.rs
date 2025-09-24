@@ -537,8 +537,16 @@ pub(super) fn node_labs(
                     name_trimmed = ellipsize_unicode(name_trimmed, nchar);
                 }
 
-                let name_lab =
-                    format!("{} {}", name_trimmed, edge.node_props.join("|"));
+                // let props_vec: Vec<String> = edge
+                //     .node_props
+                //     .iter()
+                //     .map(|(k, v)| format!("{k}={v}"))
+                //     .collect();
+
+                // let name_lab =
+                //     format!("{} {}", name_trimmed, props_vec.join(";"));
+
+                let name_lab = name_trimmed;
 
                 let width = text_w.width(&name_lab);
 
@@ -551,18 +559,28 @@ pub(super) fn node_labs(
                     aligned_from: Some(nd.points.p1),
                 })
             } else if branch && edge.parent_node_id.is_some() {
-                let name = format!(
-                    "{:.3} {}",
-                    edge.brlen,
-                    edge.branch_props.join("|")
-                );
+                let txt_tmpl = TEMPLATE_TXT_LAB_BRANCH;
+                // let props_vec: Vec<String> = edge
+                //     .branch_props
+                //     .iter()
+                //     .map(|(k, v)| format!("{k}={v}"))
+                //     .collect();
+                // let mut color = Clr::BLK;
+                // if edge.branch_props.contains_key("color") {
+                //     let color_prop = edge.branch_props.get("color").unwrap();
+                //     color = match color_prop.as_str() {
+                //         "red" => Clr::RED,
+                //         "green" => Clr::GRN,
+                //         "orange" => Clr::YEL,
+                //         _ => Clr::BLK,
+                //     }
+                // }
+                // txt_tmpl.color = color;
+                // let name = format!("{:.3} {}", edge.brlen, props_vec.join(";"));
+                let name = format!("{:.3}", edge.brlen);
                 let width = text_w.width(&name);
-                let text = lab_text(
-                    name.to_string(),
-                    nd.points.p_mid,
-                    size,
-                    TEMPLATE_TXT_LAB_BRANCH,
-                );
+                let text =
+                    lab_text(name.to_string(), nd.points.p_mid, size, txt_tmpl);
                 Some(Label { text, width, angle: nd.angle, aligned_from: None })
             } else {
                 None
