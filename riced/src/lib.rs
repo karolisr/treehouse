@@ -59,8 +59,8 @@ pub use i::theme::{Theme, palette::Pair as PalettePair};
 pub use i::window::{
     Event as WindowEvent, Id as WindowId, Level as WindowLevel,
     Position as WindowPosition, Settings as WindowSettings,
-    close as close_window, events as window_events, get_raw_id,
-    open as open_window,
+    close as close_window, events as window_events, open as open_window,
+    raw_id,
     raw_window_handle::{HasWindowHandle, RawWindowHandle},
     run_with_handle,
     settings::PlatformSpecific as PlatformSpecificWindowSettings,
@@ -90,8 +90,8 @@ pub use w::checkbox::{
 pub use w::column as iced_col;
 pub use w::container;
 pub use w::container::{Container, Style as ContainerStyle};
-pub use w::horizontal_space;
 pub use w::mouse_area;
+pub use w::operation::{focus, scroll_to};
 pub use w::overlay::menu::{Menu, State as MenuState, Style as MenuStyle};
 pub use w::pane_grid::{
     Axis as PgAxis, Content as PgContent, Highlight as PgHighlight,
@@ -102,15 +102,21 @@ pub use w::pick_list::{
 };
 pub use w::responsive;
 pub use w::row as iced_row;
-pub use w::rule::{FillMode as RuleFillMode, Style as RuleStyle};
+pub use w::rule::{
+    FillMode as RuleFillMode, Style as RuleStyle,
+    horizontal as horizontal_rule, vertical as vertical_rule,
+};
 pub use w::scrollable::{
     AbsoluteOffset, Direction as ScrollableDirection, Rail as ScrollBarRail,
     Scrollbar, Scroller, Status as ScrollableStatus, Style as ScrollableStyle,
-    Viewport, scroll_to,
+    Viewport,
 };
 pub use w::slider::{
     Handle as SliderHandle, HandleShape as SliderHandleShape,
     Rail as SliderRail, Status as SliderStatus, Style as SliderStyle,
+};
+pub use w::space::{
+    horizontal as horizontal_space, vertical as vertical_space,
 };
 pub use w::svg::{
     Handle as SvgHandle, Status as SvgStatus, Style as SvgStyle, Svg,
@@ -118,10 +124,8 @@ pub use w::svg::{
 pub use w::text::{Alignment as TextAlignment, LineHeight, Shaping};
 pub use w::text_input::{
     Status as TextInputStatus, Style as TextInputStyle, TextInput,
-    focus as focus_text_input,
 };
 pub use w::toggler::{Status as TogglerStatus, Style as TogglerStyle, Toggler};
-pub use w::vertical_space;
 pub use w::{
     Button, Column, PaneGrid, PickList, Row, Rule, Scrollable, Slider, Space,
     Text,

@@ -8,7 +8,7 @@ const PADDING: f32 = 3e1 * SF;
 const MIN_WIN_DIM: f32 = BTN_H1 * 2e0 + PADDING * 5e0;
 const MIN_WIN_SIZE: Size = Size { width: MIN_WIN_DIM, height: MIN_WIN_DIM };
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct App {
     theme: Theme,
     title: String,
@@ -44,11 +44,16 @@ impl App {
     }
 
     fn boot() -> Self {
-        Self { ..Default::default() }
+        Self {
+            theme: Theme::Light,
+            title: "".to_string(),
+            counter: 0,
+            explain: false,
+        }
     }
 
-    fn scale_factor(&self) -> f64 {
-        1e0 / SF as f64
+    fn scale_factor(&self) -> f32 {
+        1e0 / SF
     }
 
     fn theme(&self) -> Theme {

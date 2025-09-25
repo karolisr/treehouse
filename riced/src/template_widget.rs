@@ -38,7 +38,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         _tree: &mut Tree,
         _renderer: &Renderer,
         limits: &Limits,
@@ -81,7 +81,7 @@ where
     }
 
     fn operate(
-        &self,
+        &mut self,
         _tree: &mut Tree,
         _layout: Layout<'_>,
         _renderer: &Renderer,

@@ -55,12 +55,12 @@ fn rule_common(rule: Rule<Theme>) -> Rule<Theme> {
 }
 
 pub fn rule_h<'a>(height: impl Into<Pixels>) -> Rule<'a, Theme> {
-    let r: Rule<'_, Theme> = Rule::horizontal(height);
+    let r: Rule<'_, Theme> = horizontal_rule(height);
     rule_common(r)
 }
 
 pub fn rule_v<'a>(width: impl Into<Pixels>) -> Rule<'a, Theme> {
-    let r: Rule<'a, Theme> = Rule::vertical(width);
+    let r: Rule<'a, Theme> = vertical_rule(width);
     rule_common(r)
 }
 

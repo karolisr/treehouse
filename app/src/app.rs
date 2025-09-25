@@ -667,12 +667,12 @@ impl App {
         }
     }
 
-    pub fn scale_factor(&self, _: WindowId) -> f64 {
+    pub fn scale_factor(&self, _: WindowId) -> f32 {
         APP_SCALE_FACTOR
     }
 
     pub fn theme(&self, _: WindowId) -> Theme {
-        Theme::default()
+        Theme::Light
     }
 
     pub fn settings() -> IcedAppSettings {

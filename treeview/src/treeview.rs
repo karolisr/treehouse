@@ -787,7 +787,7 @@ impl TreeView {
                 if self.show_search_bar {
                     task = Some(
                         Task::done(TvMsg::Search(self.search_string.clone()))
-                            .chain(focus_text_input(self.search_text_input_id)),
+                            .chain(focus(self.search_text_input_id)),
                     );
                 } else {
                     self.with_exclusive_sel_tre_mut(&mut |tre| {
