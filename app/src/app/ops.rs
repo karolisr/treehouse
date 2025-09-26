@@ -5,7 +5,7 @@ use super::AppMsg;
 pub async fn choose_file_to_open() -> AppMsg {
     let chosen = rfd::AsyncFileDialog::new()
         .add_filter("newick", &["newick", "tre"])
-        .add_filter("nexus", &["tree", "trees", "nex", "nexus"])
+        .add_filter("nexus", &["tree", "trees", "nex", "nexus", "t"])
         .pick_file()
         .await;
     AppMsg::PathToOpen(chosen.map(|file_handle| file_handle.path().into()))
@@ -14,7 +14,7 @@ pub async fn choose_file_to_open() -> AppMsg {
 pub fn choose_file_to_open_sync() -> AppMsg {
     let chosen = rfd::FileDialog::new()
         .add_filter("newick", &["newick", "tre"])
-        .add_filter("nexus", &["tree", "trees", "nex", "nexus"])
+        .add_filter("nexus", &["tree", "trees", "nex", "nexus", "t"])
         .pick_file();
     AppMsg::PathToOpen(chosen.map(|path_buf| path_buf.as_path().into()))
 }

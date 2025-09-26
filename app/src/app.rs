@@ -341,7 +341,7 @@ impl App {
                         Some(ext_os_str) => match ext_os_str.to_str() {
                             Some(ext) => match ext {
                                 "newick" | "tre" => FileType::Newick,
-                                "tree" | "trees" | "nexus" | "nex" => {
+                                "tree" | "trees" | "nexus" | "nex" | "t" => {
                                     FileType::Nexus
                                 }
                                 ext => FileType::Other(ext.to_string()),
