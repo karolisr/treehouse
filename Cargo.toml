@@ -23,7 +23,7 @@
         readme="README.md"
         repository="https://github.com/karolisr/treehouse"
         rust-version="1.88"
-        version="0.10.0"
+        version="0.11.0"
 
     [workspace.dependencies] # -------------------------------------------------
         num-traits="0.2.19"
@@ -31,8 +31,6 @@
         objc2="0.6.2"
         objc2-app-kit="0.3.1"
         objc2-foundation="0.3.1"
-        # oxidize-pdf="1.1.7"
-        oxidize-pdf={git="https://github.com/karolisr/oxidizePdf", branch="custom"}
         rayon="1.11.0"
         riced={path="riced", features=["crisp"]}
         treeview={path="treeview"}
@@ -58,6 +56,13 @@
             default-features=false
             features=[]
             version="0.15.4"
+
+        [workspace.dependencies.oxidize-pdf]
+            branch="custom"
+            default-features=false
+            features=["compression", "performance", "rayon"]
+            git="https://github.com/karolisr/oxidizePdf"
+            # version="1.2.4"
 
         [workspace.dependencies.tokio]
             default-features=false
