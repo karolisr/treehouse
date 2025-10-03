@@ -304,14 +304,14 @@ pub(crate) fn sty_menu(theme: &Theme) -> MenuStyle {
     let palette = theme.extended_palette();
 
     MenuStyle {
-        text_color: palette.background.weak.text,
+        text_color: palette.primary.weak.text,
         background: palette.background.weak.color.into(),
         border: Border {
             radius: WIDGET_RADIUS.into(),
             width: BORDER_W,
             color: palette.background.strong.color,
         },
-        selected_text_color: palette.primary.strong.text,
+        selected_text_color: palette.primary.base.text,
         selected_background: palette.primary.strong.color.into(),
     }
 }
