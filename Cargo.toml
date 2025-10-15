@@ -23,7 +23,7 @@
         readme="README.md"
         repository="https://github.com/karolisr/treehouse"
         rust-version="1.88"
-        version="0.12.4"
+        version="0.13.0"
 
     [workspace.dependencies] # -------------------------------------------------
         num-traits="0.2.19"
@@ -60,7 +60,7 @@
         [workspace.dependencies.oxidize-pdf]
             default-features=false
             features=["compression", "performance", "rayon"]
-            version="1.5.0"
+            version="1.6.0"
             # branch="custom"
             # git="https://github.com/karolisr/oxidizePdf"
 
@@ -81,7 +81,7 @@
                 "test-util",       # testing based infrastructure for the Tokio runtime.
                 "time",            # tokio::time types and allows the schedulers to enable the built in timer.
             ]
-            version="1.47.1"
+            version="1.48.0"
 
     [workspace.lints.rust] # ---------------------------------------------------
         missing_debug_implementations="deny"
