@@ -19,12 +19,14 @@ trap 'echo Error at line: $LINENO' ERR
 # -------------------------------------------
 cargo fmt
 # -------------------------------------------
-cargo check --profile dev
-cargo clippy --profile dev
+cargo check --all-targets --profile dev
+cargo clippy --all-targets --profile dev
+# cargo build --all-targets --profile dev
 cargo build --profile dev --bin treehouse
 # -------------------------------------------
-cargo check --profile release
-cargo clippy --profile release
+# cargo check --all-targets --profile release
+# cargo clippy --all-targets --profile release
+# cargo build --all-targets --profile release
 cargo build --profile release --bin treehouse
 # -------------------------------------------
 

@@ -49,12 +49,14 @@ fi
 # -------------------------------------------
 cargo fmt
 # -------------------------------------------
-cargo check --profile dev
-cargo clippy --profile dev
+cargo check --all-targets --profile dev
+cargo clippy --all-targets --profile dev
+# cargo build --all-targets --profile dev
 cargo build --profile dev --bin treehouse
 # -------------------------------------------
-cargo check --profile release
-cargo clippy --profile release
+# cargo check --all-targets --profile release
+# cargo clippy --all-targets --profile release
+# cargo build --all-targets --profile release
 cargo build --profile release --bin treehouse
 # -------------------------------------------
 
@@ -167,6 +169,7 @@ if [[ -n "${SIGN}" ]]; then
                     # fi
                     # ---------------------------------------------------------
                     rm -rf "${APP_PATH}"
+                    cp "${PKG_PATH}" release/ 2>/dev/null
                 fi
             fi
         fi
@@ -178,4 +181,4 @@ fi
 
 mkdir -p release
 cp target/release/treehouse release/treehouse_macos 2>/dev/null
-cp target/release/bundle/osx/TreeHouse*.pkg release/ 2>/dev/null
+
