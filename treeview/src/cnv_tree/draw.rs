@@ -514,7 +514,7 @@ pub(super) fn node_labs(
         .iter()
         .filter_map(|nd| {
             let edge: &Edge = &edges[nd.edge_idx];
-            if let Some(name) = &edge.name
+            if let Some(name) = &edge.label
                 && !branch
                 && ((tips && edge.is_tip) || (!tips && !edge.is_tip))
             {
@@ -561,14 +561,14 @@ pub(super) fn node_labs(
             } else if branch && edge.parent_node_id.is_some() {
                 let txt_tmpl = TEMPLATE_TXT_LAB_BRANCH;
                 // let props_vec: Vec<String> = edge
-                //     .branch_props
+                //     .branch_attributes
                 //     .iter()
                 //     .map(|(k, v)| format!("{k}={v}"))
                 //     .collect();
                 // let mut color = Clr::BLK;
-                // if edge.branch_props.contains_key("color") {
-                //     let color_prop = edge.branch_props.get("color").unwrap();
-                //     color = match color_prop.as_str() {
+                // if edge.branch_attributes.contains_key("color") {
+                //     let color_prop = edge.branch_attributes.get("color").unwrap();
+                //     color = match color_prop.to_string().as_str() {
                 //         "red" => Clr::RED,
                 //         "green" => Clr::GRN,
                 //         "orange" => Clr::YEL,
@@ -576,8 +576,8 @@ pub(super) fn node_labs(
                 //     }
                 // }
                 // txt_tmpl.color = color;
-                // let name = format!("{:.3} {}", edge.brlen, props_vec.join(";"));
-                let name = format!("{:.3}", edge.brlen);
+                // let name = format!("{:.3} {}", edge.branch_length, props_vec.join(";"));
+                let name = format!("{:.3}", edge.branch_length);
                 let width = text_w.width(&name);
                 let text =
                     lab_text(name.to_string(), nd.points.p_mid, size, txt_tmpl);

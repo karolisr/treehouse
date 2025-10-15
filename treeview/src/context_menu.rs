@@ -39,7 +39,8 @@ impl TvContextMenuListing {
         if let Some(tree_state) = tree_state {
             Values { enabled, label } = match tv_msg {
                 TvMsg::Root(node_id) => Values {
-                    enabled: tree_state.can_root(node_id),
+                    enabled: tree_state
+                        .is_valid_potential_outgroup_node(node_id),
                     label: "Root here",
                 },
 

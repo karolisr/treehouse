@@ -197,7 +197,7 @@ pub fn tree_to_pdf(
         }
 
         if edge.parent_node_id.is_some() && draw_labs_brnch {
-            let text = format!("{:.3}", edge.brlen);
+            let text = format!("{:.3}", edge.branch_length);
             let text_w = measure_text(&text, font.font.clone(), lab_size_brnch);
             write_text(
                 &text,
@@ -216,7 +216,7 @@ pub fn tree_to_pdf(
             );
         }
 
-        if let Some(text) = &edge.name {
+        if let Some(text) = &edge.label {
             let lab_size;
             let lab_offset_x;
             let lab_offset_y;

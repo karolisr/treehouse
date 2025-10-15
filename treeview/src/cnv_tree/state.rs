@@ -278,7 +278,7 @@ impl St {
             let point =
                 node_point_pol(angle, self.tre_vs.radius_min, self.root_len, e);
             if self.vis_rect.contains(point + self.translation) {
-                self.vis_node_idxs.push(e.edge_idx);
+                self.vis_node_idxs.push(e.edge_index);
             }
         }
     }

@@ -201,7 +201,7 @@ pub fn node_data_cart(w: Float, h: Float, edge: &Edge) -> NodeDataCart {
     if let Some(y) = edge.y_parent {
         y_parent = Some(y as Float * h);
     }
-    NodeDataCart { edge_idx: edge.edge_idx, points, y_parent }
+    NodeDataCart { edge_idx: edge.edge_index, points, y_parent }
 }
 
 pub fn node_data_rad(
@@ -217,7 +217,7 @@ pub fn node_data_rad(
         angle_parent = Some(opn_angle * y as Float);
     }
     let points = edge_points_pol(angle, radius, offset, edge);
-    NodeDataPol { edge_idx: edge.edge_idx, points, angle, angle_parent }
+    NodeDataPol { edge_idx: edge.edge_index, points, angle, angle_parent }
 }
 
 pub fn prepare_nodes(

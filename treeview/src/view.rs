@@ -590,7 +590,7 @@ pub(crate) fn btn_root<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
     btn_txt("Root", {
         if sel_tre.sel_node_ids().len() == 1 {
             let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
-            match sel_tre.can_root(node_id) {
+            match sel_tre.is_valid_potential_outgroup_node(node_id) {
                 true => Some(TvMsg::Root(node_id)),
                 false => None,
             }

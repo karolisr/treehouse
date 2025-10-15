@@ -287,7 +287,7 @@ fn calc_tip_lab_extra_w(
     let mut max_w: Float = ZRO;
     let mut max_offset: Float = ZRO;
     for edge in edges_tip_tallest {
-        if let Some(name) = &edge.name {
+        if let Some(name) = &edge.label {
             let offset = edge.x1 as Float * tre_vs_w;
             if offset >= max_offset {
                 max_offset = offset;

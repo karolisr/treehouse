@@ -225,12 +225,12 @@ impl TreeState {
             let mut found_edge_idxs: Vec<usize> = Vec::new();
 
             for e in edges_to_search {
-                if let Some(n) = &e.name
+                if let Some(n) = &e.label
                     && let Some(_) =
                         n.to_lowercase().find(&query.to_lowercase())
                 {
                     _ = found_node_ids.insert(e.node_id);
-                    found_edge_idxs.push(e.edge_idx);
+                    found_edge_idxs.push(e.edge_index);
                 }
             }
 
@@ -297,7 +297,7 @@ impl TreeState {
         if let Some(cached) = self.cache_has_int_labs {
             cached
         } else {
-            self.tree().has_int_labels()
+            self.tree().has_internal_node_labels()
         }
     }
 
@@ -327,8 +327,11 @@ impl TreeState {
     }
 
     // Rooting -----------------------------------------------------------------
-    pub(super) fn can_root(&self, node_id: NodeId) -> bool {
-        self.tree().can_root(&node_id)
+    pub(super) fn is_valid_potential_outgroup_node(
+        &self,
+        node_id: NodeId,
+    ) -> bool {
+        self.tree().is_valid_potential_outgroup_node(&node_id)
     }
 
     pub(super) fn root(&mut self, node_id: NodeId) -> Option<NodeId> {
@@ -447,7 +450,7 @@ impl TreeState {
             for e in edges {
                 if found_node_ids_old.contains(&e.node_id) {
                     _ = found_node_ids.insert(e.node_id);
-                    found_edge_idxs.push(e.edge_idx);
+                    found_edge_idxs.push(e.edge_index);
                     if e.node_id == current_found_node_id {
                         vec_idx_to_found_edge_idxs = idx;
                     }
@@ -467,7 +470,7 @@ impl TreeState {
             for edge in edges {
                 if edge.is_tip {
                     rv_tip.push(edge.clone());
-                    rv_tip_idx.push(edge.edge_idx);
+                    rv_tip_idx.push(edge.edge_index);
                 }
             }
         }
@@ -481,10 +484,10 @@ impl TreeState {
         tmp.sort_by(|a, b| a.x1.total_cmp(&b.x1));
         let mut rv = tmp[tmp_len_min..tmp.len()].to_vec();
         tmp.sort_by(|a, b| {
-            a.name
+            a.label
                 .clone()
                 .map(|name| name.len())
-                .cmp(&b.name.clone().map(|name| name.len()))
+                .cmp(&b.label.clone().map(|name| name.len()))
         });
         rv.append(&mut tmp[tmp_len_min..tmp.len()].to_vec());
         rv
@@ -523,7 +526,7 @@ impl TreeState {
                 .par_iter()
                 .filter_map(|edge| {
                     if sel_node_ids.contains(&edge.node_id) {
-                        Some(edge.edge_idx)
+                        Some(edge.edge_index)
                     } else {
                         None
                     }
