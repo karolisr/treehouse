@@ -1,0 +1,14 @@
+/tests/data linguist-generated=true
+/benchmark_results linguist-generated=true
+*.branch linguist-detectable=false
+*.csv linguist-detectable=false
+*.log linguist-detectable=false
+*.newick linguist-detectable=false
+*.nex linguist-detectable=false
+*.nexus linguist-detectable=false
+*.p linguist-detectable=false
+*.stat linguist-detectable=false
+*.t linguist-detectable=false
+*.tre linguist-detectable=false
+*.tree linguist-detectable=false
+*.tsv linguist-detectable=false
