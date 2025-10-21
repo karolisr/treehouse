@@ -1,5 +1,5 @@
 use riced::{
-    PlatformSpecificWindowSettings, Size, WindowLevel, WindowPosition,
+    PlatformSpecificWindowSettings, SF, Size, WindowLevel, WindowPosition,
     WindowSettings,
 };
 
@@ -8,8 +8,8 @@ use super::consts::APP_ID;
 
 pub fn window_settings() -> WindowSettings {
     WindowSettings {
-        size: Size { width: 700.0, height: 670.0 },
-        min_size: Some(Size { width: 700.0, height: 670.0 }),
+        size: Size { width: 600.0 * SF, height: 600.0 * SF },
+        min_size: Some(Size { width: 600.0, height: 600.0 }),
         position: WindowPosition::Centered,
         resizable: true,
         level: WindowLevel::Normal,
