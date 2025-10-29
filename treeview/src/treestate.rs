@@ -121,14 +121,14 @@ impl TreeState {
         &self,
         node_id: NodeId,
     ) -> Option<(&Edge, &Edge)> {
-        self.tree().bounding_tip_edges_for_clade(&node_id)
+        self.tree().bounding_tip_edges_for_clade(node_id)
     }
 
     pub(super) fn bounding_edges_for_clade(
         &self,
         node_id: NodeId,
     ) -> Option<(Vec<Edge>, Vec<Edge>)> {
-        self.tree().bounding_edges_for_clade(&node_id)
+        self.tree().bounding_edges_for_clade(node_id)
     }
 
     // Search & Filter ---------------------------------------------------------
@@ -331,7 +331,7 @@ impl TreeState {
         &self,
         node_id: NodeId,
     ) -> bool {
-        self.tree().is_valid_potential_outgroup_node(&node_id)
+        self.tree().is_valid_potential_outgroup_node(node_id)
     }
 
     pub(super) fn root(&mut self, node_id: NodeId) -> Option<NodeId> {
@@ -355,9 +355,9 @@ impl TreeState {
         let mut tre = self.t_orig.clone();
         if let Some(yanked_node) = tre.unroot() {
             if let Some(yanked_node_id) = yanked_node.node_id()
-                && self.sel_node_ids.contains(yanked_node_id)
+                && self.sel_node_ids.contains(&yanked_node_id)
             {
-                self.deselect_node(*yanked_node_id);
+                self.deselect_node(yanked_node_id);
             }
             self.init(tre);
             Some(yanked_node)

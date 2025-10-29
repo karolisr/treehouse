@@ -106,6 +106,7 @@ fn pane_content<'a>(
             let cnv = Cnv::new(&tv.ltt_cnv).width(cnv_w).height(h);
             scrollable_cnv_ltt(tv.ltt_scr_id, cnv, w, h)
         }
+        TvPane::DataTable => scrollable_data_table(tv.data_table_scr_id, w, h),
     };
     scrollable.into()
 }
@@ -150,6 +151,16 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
                         Some(TvMsg::LttVisChanged(true))
                     ),
                 },
+                // match tv.show_data_table {
+                //     true => btn_svg(
+                //         Icon::DataTable,
+                //         Some(TvMsg::DataTableVisChanged(false))
+                //     ),
+                //     false => btn_svg(
+                //         Icon::DataTable,
+                //         Some(TvMsg::DataTableVisChanged(true))
+                //     ),
+                // },
                 match tv.sidebar_pos {
                     SidebarPosition::Left => btn_svg(
                         Icon::SidebarRight,
@@ -666,6 +677,21 @@ pub(crate) fn scrollable_cnv_tre<'a>(
     h: impl Into<Length>,
 ) -> Scrollable<'a, TvMsg> {
     let mut s: Scrollable<TvMsg> = Scrollable::new(cnv);
+    s = s.direction(ScrollableDirection::Both {
+        horizontal: scroll_bar(),
+        vertical: scroll_bar(),
+    });
+    s = s.id(id);
+    s = s.on_scroll(TvMsg::TreCnvScrolledOrResized);
+    scrollable_common(s, w, h)
+}
+
+pub(crate) fn scrollable_data_table<'a>(
+    id: &'static str,
+    w: impl Into<Length>,
+    h: impl Into<Length>,
+) -> Scrollable<'a, TvMsg> {
+    let mut s: Scrollable<TvMsg> = Scrollable::new(txt("DataTable"));
     s = s.direction(ScrollableDirection::Both {
         horizontal: scroll_bar(),
         vertical: scroll_bar(),

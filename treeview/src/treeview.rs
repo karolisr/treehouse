@@ -11,10 +11,12 @@ pub struct TreeView {
     pub(super) pane_grid: Option<PgState<TvPane>>,
     pub(super) tre_pane_id: Option<Pane>,
     pub(super) ltt_pane_id: Option<Pane>,
+    pub(super) data_table_pane_id: Option<Pane>,
     // -------------------------------------------------------------------
     pub(super) tre_cnv: TreeCnv,
     pub(super) ltt_cnv: PlotCnv,
     pub(super) show_ltt: bool,
+    pub(super) show_data_table: bool,
     // -------------------------------------------------------------------
     pub(super) show_tool_bar: bool,
     pub(super) show_side_bar: bool,
@@ -50,6 +52,7 @@ pub struct TreeView {
     // -------------------------------------------------------------------
     pub(super) ltt_scr_id: &'static str,
     pub(super) tre_scr_id: &'static str,
+    pub(super) data_table_scr_id: &'static str,
     pub(super) search_text_input_id: &'static str,
     // -------------------------------------------------------------------
     keep_scroll_position_requested: bool,
@@ -116,6 +119,7 @@ pub enum TvMsg {
     RootVisChanged(bool),
     RootLenSelChanged(u16),
     LttVisChanged(bool),
+    DataTableVisChanged(bool),
     // -------------------------------------------
     AddCladeLabel((NodeId, Color)),
     RemoveCladeLabel(NodeId),
@@ -146,6 +150,7 @@ impl TreeView {
             sidebar_pos: sidebar_position,
             // -----------------------------------------------------------
             show_ltt: false,
+            show_data_table: false,
             show_tool_bar: true,
             show_side_bar: true,
             show_search_bar: false,
@@ -178,6 +183,7 @@ impl TreeView {
             // -----------------------------------------------------------
             tre_scr_id: "tre",
             ltt_scr_id: "ltt",
+            data_table_scr_id: "datatable",
             search_text_input_id: "srch",
             // -----------------------------------------------------------
             is_new: true,
@@ -188,6 +194,7 @@ impl TreeView {
             pane_grid: None,
             tre_pane_id: None,
             ltt_pane_id: None,
+            data_table_pane_id: None,
             ltt_cnv: PlotCnv::default(),
             tre_cnv: TreeCnv::new(),
             keep_scroll_position_requested: false,
@@ -403,6 +410,11 @@ impl TreeView {
                 ));
             }
 
+            TvMsg::DataTableVisChanged(show_data_table) => {
+                self.show_data_table = show_data_table;
+                self.show_hide_data_table();
+            }
+
             TvMsg::PrevTre => {
                 _ = self.prev_tre();
                 self.sort();
@@ -502,6 +514,7 @@ impl TreeView {
                     self.tre_cnv.root_len_frac = self.calc_root_len_frac();
 
                     self.show_hide_ltt();
+                    self.show_hide_data_table();
                     self.ltt_cnv.draw_cursor_line =
                         self.tre_cnv.draw_cursor_line;
                     self.update_tree_rect_padding();
@@ -1248,6 +1261,27 @@ impl TreeView {
         }
     }
 
+    fn show_hide_data_table(&mut self) {
+        if let Some(pane_grid) = &mut self.pane_grid {
+            if let Some(data_table_pane_id) = self.data_table_pane_id {
+                if !self.show_data_table {
+                    _ = pane_grid.close(data_table_pane_id);
+                    self.data_table_pane_id = None;
+                }
+            } else if self.show_data_table
+                && let Some(tre_pane_id) = self.tre_pane_id
+                && let Some((data_table_pane_id, split)) = pane_grid.split(
+                    PgAxis::Horizontal,
+                    tre_pane_id,
+                    TvPane::DataTable,
+                )
+            {
+                pane_grid.resize(split, ONE);
+                self.data_table_pane_id = Some(data_table_pane_id);
+            }
+        }
+    }
+
     fn update_draw_labs_allowed(&mut self) {
         self.tre_cnv.draw_labs_allowed = match self.tre_cnv.tre_sty {
             TreSty::PhyGrm => {
@@ -1341,6 +1375,7 @@ impl Display for TreSty {
 pub(crate) enum TvPane {
     Tree,
     LttPlot,
+    DataTable,
 }
 
 impl Display for TvPane {
@@ -1360,6 +1395,7 @@ impl From<&TvPane> for String {
         match value {
             TvPane::Tree => String::from("Tree"),
             TvPane::LttPlot => String::from("LttPlot"),
+            TvPane::DataTable => String::from("DataTable"),
         }
     }
 }

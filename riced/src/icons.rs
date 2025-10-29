@@ -13,6 +13,7 @@ pub enum Icon {
     RemoveFromSelection,
     ShowSearch,
     HideSearch,
+    DataTable,
 }
 
 impl From<Icon> for SvgHandle {
@@ -31,6 +32,7 @@ impl From<Icon> for SvgHandle {
             Icon::RemoveFromSelection => i(&PLAYLIST_REMOVE),
             Icon::ShowSearch => i(&SEARCH),
             Icon::HideSearch => i(&SEARCH_OFF),
+            Icon::DataTable => i(&TABLE_ROWS_NARROW),
         }
     }
 }

@@ -8,3 +8,5 @@ submodules/*
 icons-unused
 *.pdf
 /release
+/other
+/docs/**/*.html

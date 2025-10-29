@@ -5,7 +5,7 @@ mod platform;
 mod win;
 
 use consts::*;
-use dendros::{parse_newick, parse_nexus};
+use dendros::parse_trees;
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 use menu::ContextMenu;
 use menu::{AppMenu, AppMenuItemId};
@@ -355,12 +355,10 @@ impl App {
                         FileType::Other(s) => ParsedData::Other(s),
                         FileType::Exception => ParsedData::Exception,
                         file_type => match file_type {
-                            FileType::Newick => {
-                                ParsedData::Trees(parse_newick(
-                                    ops::read_text_file(path_buf.clone()),
-                                ))
-                            }
-                            FileType::Nexus => ParsedData::Trees(parse_nexus(
+                            FileType::Newick => ParsedData::Trees(parse_trees(
+                                ops::read_text_file(path_buf.clone()),
+                            )),
+                            FileType::Nexus => ParsedData::Trees(parse_trees(
                                 ops::read_text_file(path_buf.clone()),
                             )),
                             _ => ParsedData::Exception,
