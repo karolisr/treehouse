@@ -150,7 +150,7 @@ impl TreeView {
             sidebar_pos: sidebar_position,
             // -----------------------------------------------------------
             show_ltt: false,
-            show_data_table: false,
+            show_data_table: true,
             show_tool_bar: true,
             show_side_bar: true,
             show_search_bar: false,
