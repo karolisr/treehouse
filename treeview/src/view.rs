@@ -37,15 +37,18 @@ impl TreeView {
         tool_bar_and_content_col = tool_bar_and_content_col.push(content(self));
 
         if self.show_side_bar {
-            let sb = side_bar(self, ts);
+            let side_bar_main = side_bar_main(self, ts.clone());
+            let side_bar_annotations = side_bar_annotations(self, ts);
             match self.sidebar_pos {
                 SidebarPosition::Left => {
-                    main_row = main_row.push(sb);
+                    main_row = main_row.push(side_bar_main);
+                    main_row = main_row.push(side_bar_annotations);
                     main_row = main_row.push(tool_bar_and_content_col);
                 }
                 SidebarPosition::Right => {
                     main_row = main_row.push(tool_bar_and_content_col);
-                    main_row = main_row.push(sb);
+                    main_row = main_row.push(side_bar_annotations);
+                    main_row = main_row.push(side_bar_main);
                 }
             }
         } else {
@@ -346,7 +349,10 @@ fn stats(ts: Rc<TreeState>) -> Row<'static, TvMsg> {
     stats_row
 }
 
-fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
+fn side_bar_main<'a>(
+    tv: &'a TreeView,
+    ts: Rc<TreeState>,
+) -> Element<'a, TvMsg> {
     let mut sb_col: Column<TvMsg> = Column::new();
 
     sb_col = sb_col.spacing(PADDING + SF * TWO);
@@ -433,6 +439,43 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
         sb_col =
             sb_col.push(toggler_root(ts.is_rooted(), tv.tre_cnv.draw_root));
     }
+
+    sb_col = sb_col.push(iced_col![toggler_legend(
+        ts.has_brlen(),
+        tv.tre_cnv.draw_legend
+    )]);
+    sb_col = sb_col.push(iced_col![toggler_cursor_line(
+        true, tv.tre_cnv.draw_cursor_line, tv.tre_cnv.tre_sty
+    )]);
+    sb_col = sb_col.push(rule_h(SF));
+
+    sb_col =
+        sb_col.push(toggler_selection_lock(true, tv.tre_cnv.selection_lock));
+
+    if tv.show_ltt {
+        sb_col =
+            sb_col.push(pick_list_ltt_y_axis_scale_type(&tv.ltt_cnv.scale_y));
+    }
+
+    container(sb_col.clip(true))
+        .style(match tv.sidebar_pos {
+            SidebarPosition::Left => sty_cont_bottom_left,
+            SidebarPosition::Right => sty_cont_bottom_right,
+        })
+        .padding(PADDING)
+        .width(SIDE_BAR_W)
+        .into()
+}
+
+fn side_bar_annotations<'a>(
+    tv: &'a TreeView,
+    ts: Rc<TreeState>,
+) -> Element<'a, TvMsg> {
+    let mut sb_col: Column<TvMsg> = Column::new();
+
+    sb_col = sb_col.spacing(PADDING + SF * TWO);
+    sb_col = sb_col.width(Length::Fill);
+    sb_col = sb_col.height(Length::Fill);
 
     if ts.has_tip_labs()
         && tv.tre_cnv.draw_labs_tip
@@ -529,28 +572,8 @@ fn side_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Element<'a, TvMsg> {
         ));
     }
 
-    sb_col = sb_col.push(iced_col![toggler_legend(
-        ts.has_brlen(),
-        tv.tre_cnv.draw_legend
-    )]);
-    sb_col = sb_col.push(iced_col![toggler_cursor_line(
-        true, tv.tre_cnv.draw_cursor_line, tv.tre_cnv.tre_sty
-    )]);
-    sb_col = sb_col.push(rule_h(SF));
-
-    sb_col =
-        sb_col.push(toggler_selection_lock(true, tv.tre_cnv.selection_lock));
-
-    if tv.show_ltt {
-        sb_col =
-            sb_col.push(pick_list_ltt_y_axis_scale_type(&tv.ltt_cnv.scale_y));
-    }
-
     container(sb_col.clip(true))
-        .style(match tv.sidebar_pos {
-            SidebarPosition::Left => sty_cont_bottom_left,
-            SidebarPosition::Right => sty_cont_bottom_right,
-        })
+        .style(sty_cont)
         .padding(PADDING)
         .width(SIDE_BAR_W)
         .into()

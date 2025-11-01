@@ -549,7 +549,7 @@ impl App {
                     task_to_return = task_to_return.chain({
                         let path_buf =
                             // PathBuf::from("tests/data/tree02.newick");
-                            PathBuf::from("tests/data/Czech_Huerta-Cepas_Stamatakis_2017/Czech_Huerta-Cepas_Stamatakis_2017_unrooted.newick");
+                            PathBuf::from("tests/data/Czech_Huerta-Cepas_Stamatakis_2017/Czech_Huerta-Cepas_Stamatakis_2017_unrooted__node_and_branch_attributes.newick");
                         let path: &std::path::Path =
                             &path_buf.clone().into_boxed_path();
                         if path.exists() {
