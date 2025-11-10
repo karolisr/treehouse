@@ -4,7 +4,7 @@ pub(crate) fn sty_checkbox(
     theme: &Theme,
     status: CheckboxStatus,
 ) -> CheckboxStyle {
-    let palette = theme.extended_palette();
+    let ep = theme.extended_palette();
 
     fn styled(
         icon_color: Color,
@@ -31,16 +31,16 @@ pub(crate) fn sty_checkbox(
 
     match status {
         CheckboxStatus::Active { is_checked } => styled(
-            palette.primary.strong.text, palette.background.strongest.color,
-            palette.background.base, palette.primary.base, is_checked,
+            ep.primary.base.text, ep.background.strongest.color,
+            ep.background.base, ep.primary.base, is_checked,
         ),
         CheckboxStatus::Hovered { is_checked } => styled(
-            palette.primary.strong.text, palette.background.strongest.color,
-            palette.background.weak, palette.primary.strong, is_checked,
+            ep.primary.base.text, ep.background.strongest.color,
+            ep.background.weak, ep.primary.strong, is_checked,
         ),
         CheckboxStatus::Disabled { is_checked } => styled(
-            palette.primary.strong.text, palette.background.weak.color,
-            palette.background.weak, palette.background.strong, is_checked,
+            ep.primary.base.text, ep.background.weak.color, ep.background.weak,
+            ep.background.strong, is_checked,
         ),
     }
 }
@@ -352,18 +352,18 @@ pub(crate) fn sty_pick_lst(
     theme: &Theme,
     status: PickListStatus,
 ) -> PickListStyle {
-    let palette = theme.extended_palette();
+    let ep = theme.extended_palette();
 
     let active = PickListStyle {
-        text_color: palette.background.weak.text,
-        background: palette.background.weak.color.into(),
+        text_color: ep.background.weak.text,
+        background: ep.background.weak.color.into(),
         border: Border {
             radius: WIDGET_RADIUS.into(),
             width: BORDER_W,
-            color: palette.background.strong.color,
+            color: ep.background.strong.color,
         },
-        placeholder_color: palette.background.strong.color,
-        handle_color: palette.background.weak.text,
+        placeholder_color: ep.background.strong.color,
+        handle_color: ep.background.weak.text,
     };
 
     match status {
@@ -371,7 +371,7 @@ pub(crate) fn sty_pick_lst(
         PickListStatus::Hovered | PickListStatus::Opened { .. } => {
             PickListStyle {
                 border: Border {
-                    color: palette.primary.strong.color,
+                    color: ep.primary.strong.color,
                     ..active.border
                 },
                 ..active
@@ -410,17 +410,17 @@ pub(crate) fn sty_scrlbl(
     theme: &Theme,
     status: ScrollableStatus,
 ) -> ScrollableStyle {
-    let palette = theme.extended_palette();
+    let ep = theme.extended_palette();
 
     let scrollbar = ScrollBarRail {
-        background: Some(palette.background.weak.color.into()),
+        background: Some(ep.background.weak.color.into()),
         border: Border {
             radius: WIDGET_RADIUS.into(),
             width: ZERO,
             color: Clr::TRN,
         },
         scroller: Scroller {
-            color: palette.background.strong.color,
+            color: ep.background.strong.color,
             border: Border {
                 radius: WIDGET_RADIUS.into(),
                 width: ZERO,
@@ -444,7 +444,7 @@ pub(crate) fn sty_scrlbl(
         } => {
             let hovered_scrollbar = ScrollBarRail {
                 scroller: Scroller {
-                    color: palette.primary.strong.color,
+                    color: ep.primary.strong.color,
                     ..scrollbar.scroller
                 },
                 ..scrollbar
@@ -473,7 +473,7 @@ pub(crate) fn sty_scrlbl(
         } => {
             let dragged_scrollbar = ScrollBarRail {
                 scroller: Scroller {
-                    color: palette.primary.base.color,
+                    color: ep.primary.base.color,
                     ..scrollbar.scroller
                 },
                 ..scrollbar
@@ -498,17 +498,17 @@ pub(crate) fn sty_scrlbl(
 }
 
 pub(crate) fn sty_slider(theme: &Theme, status: SliderStatus) -> SliderStyle {
-    let palette = theme.extended_palette();
+    let ep = theme.extended_palette();
 
     let color = match status {
-        SliderStatus::Active => palette.primary.base.color,
-        SliderStatus::Hovered => palette.primary.strong.color,
-        SliderStatus::Dragged => palette.primary.weak.color,
+        SliderStatus::Active => ep.primary.base.color,
+        SliderStatus::Hovered => ep.primary.strong.color,
+        SliderStatus::Dragged => ep.primary.weak.color,
     };
 
     SliderStyle {
         rail: SliderRail {
-            backgrounds: (color.into(), palette.background.strong.color.into()),
+            backgrounds: (color.into(), ep.background.strong.color.into()),
             width: SLIDER_H / THREE,
             border: Border {
                 radius: WIDGET_RADIUS.into(),
@@ -533,37 +533,30 @@ pub(crate) fn sty_toggler(
     theme: &Theme,
     status: TogglerStatus,
 ) -> TogglerStyle {
-    let palette = theme.extended_palette();
+    let ep = theme.extended_palette();
 
     let background = match status {
         TogglerStatus::Active { is_toggled }
         | TogglerStatus::Hovered { is_toggled } => {
             if is_toggled {
-                palette.primary.strong.color
+                ep.primary.strong.color
             } else {
-                palette.background.strong.color
+                ep.background.strong.color
             }
         }
-        TogglerStatus::Disabled => palette.background.weak.color,
+        TogglerStatus::Disabled => ep.background.weak.color,
     };
 
     let foreground = match status {
-        TogglerStatus::Active { is_toggled: _ } => {
-            palette.background.base.color
-            // if is_toggled {
-            //     palette.background.base.color
-            // } else {
-            //     palette.background.base.color
-            // }
-        }
+        TogglerStatus::Active { is_toggled: _ } => ep.background.base.color,
         TogglerStatus::Hovered { is_toggled } => {
             if is_toggled {
-                Color { a: 0.75, ..palette.background.base.color }
+                Color { a: 0.75, ..ep.background.base.color }
             } else {
-                palette.background.weak.color
+                ep.background.weak.color
             }
         }
-        TogglerStatus::Disabled => palette.background.base.color,
+        TogglerStatus::Disabled => ep.background.base.color,
     };
 
     TogglerStyle {

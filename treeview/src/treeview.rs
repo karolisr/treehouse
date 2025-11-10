@@ -4,52 +4,52 @@ use crate::*;
 
 #[allow(missing_debug_implementations)]
 pub struct TreeView {
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     pub(super) tre_states: Vec<Rc<TreeState>>,
     tre_state_idx: Option<usize>,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     pub(super) pane_grid: Option<PgState<TvPane>>,
     pub(super) tre_pane_id: Option<Pane>,
     pub(super) ltt_pane_id: Option<Pane>,
     pub(super) data_table_pane_id: Option<Pane>,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     pub(super) tre_cnv: TreeCnv,
     pub(super) ltt_cnv: PlotCnv,
     pub(super) show_ltt: bool,
     pub(super) show_data_table: bool,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     pub(super) show_tool_bar: bool,
     pub(super) show_side_bar: bool,
     pub(super) show_search_bar: bool,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     pub(super) sidebar_pos: SidebarPosition,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     pub(super) root_len_idx_min: u16,
     pub(super) root_len_idx: u16,
     pub(super) root_len_idx_max: u16,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     pub(super) tre_cnv_size_idx_min: u16,
     pub(super) tre_cnv_w_idx: u16,
     pub(super) tre_cnv_h_idx: u16,
     pub(super) tre_cnv_z_idx: u16,
     pub(super) tre_cnv_size_idx_max: u16,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     pub(super) lab_size_idx_min: u16,
     pub(super) lab_size_idx_tip: u16,
     pub(super) lab_size_idx_int: u16,
     pub(super) lab_size_idx_brnch: u16,
     pub(super) lab_size_idx_max: u16,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     pub(super) opn_angle_idx_min: u16,
     pub(super) opn_angle_idx: u16,
     pub(super) opn_angle_idx_max: u16,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     pub(super) rot_angle_idx_min: u16,
     pub(super) rot_angle_idx: u16,
     pub(super) rot_angle_idx_max: u16,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     pub(super) node_ord_opt: NodeOrd,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     pub(super) ltt_scr_id: &'static str,
     pub(super) tre_scr_id: &'static str,
     pub(super) data_table_scr_id: &'static str,
@@ -62,32 +62,32 @@ pub struct TreeView {
     pub(super) data_table_viewport_height: Float,
     // -------------------------------------------------------------------------
     keep_scroll_position_requested: bool,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     ltt_cnv_needs_to_be_scrolled: bool,
     ltt_cnv_scrolled: bool,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     pub(super) tre_scr_h: Float,
     pub(super) tre_scr_w: Float,
     tre_cnv_scrolled: bool,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     is_new: bool,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     pub(super) search_string: String,
     pub(super) tip_only_search: bool,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     text_w_tip: Option<TextWidth<'static>>,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     pending_context_menu_listing: TvContextMenuListing,
 }
 
 #[derive(Debug, Clone)]
 pub enum TvMsg {
-    // -------------------------------------------
+    // -------------------------------------------------------------------------
     ContextMenuInteractionBegin(TvContextMenuListing),
     ContextMenuChosenIdx(usize),
-    // -------------------------------------------
+    // -------------------------------------------------------------------------
     ExportPdf(std::path::PathBuf),
-    // -------------------------------------------
+    // -------------------------------------------------------------------------
     TreeRectNoLongerStale,
     CursorLineVisChanged(bool),
     CnvWidthSelChanged(u16),
@@ -128,17 +128,18 @@ pub enum TvMsg {
     DataTableVisChanged(bool),
     DataTableSortColumnChanged(DataTableSortColumn),
     DataTableScrolledOrResized(Viewport),
+    // -------------------------------------------------------------------------
     AddCladeLabel((NodeId, Color)),
     RemoveCladeLabel(NodeId),
     AddRemoveCladeLabel((NodeId, Color)),
     AddRemoveCladeLabelForSelectedNode,
-    // -------------------------------------------
+    // -------------------------------------------------------------------------
     TreCnvScrolledOrResized(Viewport),
     LttCnvScrolledOrResized(Viewport),
-    // -------------------------------------------
+    // -------------------------------------------------------------------------
     CursorOnTreCnv { x: Option<Float> },
     CursorOnLttCnv { x: Option<Float> },
-    // -------------------------------------------
+    // -------------------------------------------------------------------------
     ToggleSearchBar,
     Search(String),
     NextResult,
@@ -146,7 +147,7 @@ pub enum TvMsg {
     AddFoundToSelection,
     RemFoundFromSelection,
     TipOnlySearchSelChanged(bool),
-    // -------------------------------------------
+    // -------------------------------------------------------------------------
     TipLabWidthSetByUser(Option<Float>),
     SelectionLockChanged(bool),
 }
@@ -155,39 +156,39 @@ impl TreeView {
     pub fn new(sidebar_position: SidebarPosition) -> Self {
         Self {
             sidebar_pos: sidebar_position,
-            // -----------------------------------------------------------
+            // -----------------------------------------------------------------
             show_ltt: false,
             show_data_table: true,
             show_tool_bar: true,
             show_side_bar: true,
             show_search_bar: false,
-            // -----------------------------------------------------------
+            // -----------------------------------------------------------------
             node_ord_opt: NodeOrd::Ascending,
-            // -----------------------------------------------------------
+            // -----------------------------------------------------------------
             opn_angle_idx_min: 45,
             opn_angle_idx: 345,
             opn_angle_idx_max: 359,
-            // -----------------------------------------------------------
+            // -----------------------------------------------------------------
             rot_angle_idx_min: 360 - 180,
             rot_angle_idx: 360,
             rot_angle_idx_max: 360 + 180,
-            // -----------------------------------------------------------
+            // -----------------------------------------------------------------
             lab_size_idx_min: 8,
             lab_size_idx_tip: TIP_LAB_SIZE_IDX,
             lab_size_idx_int: INTERNAL_LAB_SIZE_IDX,
             lab_size_idx_brnch: BRANCH_LAB_SIZE_IDX,
             lab_size_idx_max: 22,
-            // -----------------------------------------------------------
+            // -----------------------------------------------------------------
             root_len_idx_min: 5,
             root_len_idx: 25,
             root_len_idx_max: 100,
-            // -----------------------------------------------------------
+            // -----------------------------------------------------------------
             tre_cnv_size_idx_min: 1,
             tre_cnv_w_idx: 1,
             tre_cnv_h_idx: 1,
             tre_cnv_z_idx: 1,
             tre_cnv_size_idx_max: 22,
-            // -----------------------------------------------------------
+            // -----------------------------------------------------------------
             tre_scr_id: "tre",
             ltt_scr_id: "ltt",
             data_table_scr_id: "datatable",
@@ -200,7 +201,7 @@ impl TreeView {
             data_table_viewport_height: ZRO,
             // -----------------------------------------------------------------
             is_new: true,
-            // -----------------------------------------------------------
+            // -----------------------------------------------------------------
             tip_only_search: true,
             tre_states: vec![],
             tre_state_idx: None,
@@ -217,12 +218,12 @@ impl TreeView {
             tre_scr_w: ZRO,
             tre_cnv_scrolled: false,
             search_string: String::new(),
-            // -----------------------------------------------------------
+            // -----------------------------------------------------------------
             text_w_tip: Some(text_width(
                 SF * TIP_LAB_SIZE_IDX as Float,
                 FNT_NAME_LAB,
             )),
-            // -----------------------------------------------------------
+            // -----------------------------------------------------------------
             pending_context_menu_listing: TvContextMenuListing::default(),
         }
     }
@@ -351,13 +352,13 @@ impl TreeView {
             }
 
             TvMsg::TreCnvScrolledOrResized(vp) => {
-                // tree canvas scrollable was resized ----------------------------------------------
+                // tree canvas scrollable was resized --------------------------
                 if vp.bounds().width != self.tre_scr_w
                     || vp.bounds().height != self.tre_scr_h
                 {
                     self.tre_scr_w = vp.bounds().width;
                     self.tre_scr_h = vp.bounds().height;
-                } // -------------------------------------------------------------------------------
+                } // -----------------------------------------------------------
 
                 if self.keep_scroll_position_requested {
                     task = self.scroll_tre_cnv(
