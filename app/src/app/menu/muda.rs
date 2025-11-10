@@ -5,11 +5,17 @@ pub use events::menu_events;
 #[cfg(target_os = "windows")]
 use muda::accelerator::Modifiers;
 use muda::{
-    CheckMenuItem, MenuItem, MenuItemKind, Submenu,
+    // CheckMenuItem,
+    MenuItem,
+    MenuItemKind,
+    Submenu,
     accelerator::{Accelerator, CMD_OR_CTRL, Code},
 };
 use std::collections::HashMap;
-use treeview::{SidebarPosition, TvContextMenuListing};
+use treeview::{
+    // SidebarPosition,
+    TvContextMenuListing,
+};
 
 impl From<muda::MenuItem> for AppMenuItemId {
     fn from(value: muda::MenuItem) -> Self {
@@ -147,20 +153,22 @@ impl AppMenu {
         };
     }
 
-    pub fn new(sidebar_pos: SidebarPosition) -> Option<Self> {
+    // pub fn new(sidebar_pos: SidebarPosition) -> Option<Self>
+    pub fn new() -> Option<Self> {
         let menu: muda::Menu;
         let muda_menu: Option<muda::Menu>;
         let items: HashMap<AppMenuItemId, MenuItemKind>;
-        (menu, items) = Self::prepare_app_menu(sidebar_pos);
+        // (menu, items) = Self::prepare_app_menu(sidebar_pos);
+        (menu, items) = Self::prepare_app_menu();
         #[cfg(target_os = "macos")]
         menu.init_for_nsapp();
         muda_menu = Some(menu);
         Some(Self { _muda_menu: muda_menu, items })
     }
 
-    fn prepare_app_menu(
-        sidebar_pos: SidebarPosition,
-    ) -> (muda::Menu, HashMap<AppMenuItemId, MenuItemKind>) {
+    // fn prepare_app_menu(sidebar_pos: SidebarPosition) -> (muda::Menu, HashMap<AppMenuItemId, MenuItemKind>)
+    fn prepare_app_menu() -> (muda::Menu, HashMap<AppMenuItemId, MenuItemKind>)
+    {
         let menu = muda::Menu::default();
         let mut items: HashMap<AppMenuItemId, MenuItemKind> = HashMap::new();
 
@@ -235,21 +243,21 @@ impl AppMenu {
             None,
         );
 
-        let menu_item_sidebar_pos_left = CheckMenuItem::with_id(
-            AppMenuItemId::SetSideBarPositionLeft,
-            "Left",
-            sidebar_pos != SidebarPosition::Left,
-            sidebar_pos == SidebarPosition::Left,
-            Some(Accelerator::new(Some(modifier), Code::BracketLeft)),
-        );
+        // let menu_item_sidebar_pos_left = CheckMenuItem::with_id(
+        //     AppMenuItemId::SetSideBarPositionLeft,
+        //     "Left",
+        //     sidebar_pos != SidebarPosition::Left,
+        //     sidebar_pos == SidebarPosition::Left,
+        //     Some(Accelerator::new(Some(modifier), Code::BracketLeft)),
+        // );
 
-        let menu_item_sidebar_pos_right = CheckMenuItem::with_id(
-            AppMenuItemId::SetSideBarPositionRight,
-            "Right",
-            sidebar_pos != SidebarPosition::Right,
-            sidebar_pos == SidebarPosition::Right,
-            Some(Accelerator::new(Some(modifier), Code::BracketRight)),
-        );
+        // let menu_item_sidebar_pos_right = CheckMenuItem::with_id(
+        //     AppMenuItemId::SetSideBarPositionRight,
+        //     "Right",
+        //     sidebar_pos != SidebarPosition::Right,
+        //     sidebar_pos == SidebarPosition::Right,
+        //     Some(Accelerator::new(Some(modifier), Code::BracketRight)),
+        // );
 
         let menu_item_toggle_search_bar = MenuItem::with_id(
             AppMenuItemId::ToggleSearchBar,
@@ -286,9 +294,9 @@ impl AppMenu {
             _ = submenu_file.append(&menu_item_close_win).ok();
         }
 
-        _ = submenu_sidebar_pos.append(&menu_item_sidebar_pos_left).ok();
-        _ = submenu_sidebar_pos.append(&menu_item_sidebar_pos_right).ok();
-        _ = submenu_view.append(&submenu_sidebar_pos).ok();
+        // _ = submenu_sidebar_pos.append(&menu_item_sidebar_pos_left).ok();
+        // _ = submenu_sidebar_pos.append(&menu_item_sidebar_pos_right).ok();
+        // _ = submenu_view.append(&submenu_sidebar_pos).ok();
         _ = submenu_view.append(&menu_item_toggle_search_bar).ok();
 
         #[cfg(target_os = "macos")]
@@ -335,14 +343,14 @@ impl AppMenu {
                 );
             }
         }
-        _ = items.insert(
-            menu_item_sidebar_pos_left.clone().into(),
-            MenuItemKind::Check(menu_item_sidebar_pos_left),
-        );
-        _ = items.insert(
-            menu_item_sidebar_pos_right.clone().into(),
-            MenuItemKind::Check(menu_item_sidebar_pos_right),
-        );
+        // _ = items.insert(
+        //     menu_item_sidebar_pos_left.clone().into(),
+        //     MenuItemKind::Check(menu_item_sidebar_pos_left),
+        // );
+        // _ = items.insert(
+        //     menu_item_sidebar_pos_right.clone().into(),
+        //     MenuItemKind::Check(menu_item_sidebar_pos_right),
+        // );
         _ = items.insert(
             menu_item_toggle_search_bar.clone().into(),
             MenuItemKind::MenuItem(menu_item_toggle_search_bar),

@@ -1,6 +1,9 @@
 use crate::app::AppMsg;
 use std::fmt::Display;
-use treeview::{SidebarPosition, TvMsg};
+use treeview::{
+    // SidebarPosition,
+    TvMsg,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum AppMenuItemId {
@@ -66,12 +69,12 @@ impl From<&AppMenuItemId> for AppMsg {
             AppMenuItemId::SaveAs => AppMsg::SaveAs,
             AppMenuItemId::Quit => AppMsg::Quit,
             AppMenuItemId::CloseWindow => AppMsg::WinCloseRequested,
-            AppMenuItemId::SetSideBarPositionLeft => {
-                AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPosition::Left))
-            }
-            AppMenuItemId::SetSideBarPositionRight => {
-                AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPosition::Right))
-            }
+            // AppMenuItemId::SetSideBarPositionLeft => {
+            //     AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPosition::Left))
+            // }
+            // AppMenuItemId::SetSideBarPositionRight => {
+            //     AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPosition::Right))
+            // }
             AppMenuItemId::ToggleSearchBar => {
                 AppMsg::TvMsg(TvMsg::ToggleSearchBar)
             }

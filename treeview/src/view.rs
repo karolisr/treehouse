@@ -41,18 +41,21 @@ impl TreeView {
         if self.show_side_bar {
             let side_bar_main = side_bar_main(self, ts.clone());
             let side_bar_annotations = side_bar_annotations(self, ts);
-            match self.sidebar_pos {
-                SidebarPosition::Left => {
-                    main_row = main_row.push(side_bar_main);
-                    main_row = main_row.push(tool_bar_and_content_col);
-                    main_row = main_row.push(side_bar_annotations);
-                }
-                SidebarPosition::Right => {
-                    main_row = main_row.push(side_bar_annotations);
-                    main_row = main_row.push(tool_bar_and_content_col);
-                    main_row = main_row.push(side_bar_main);
-                }
-            }
+            // match self.sidebar_pos {
+            //     SidebarPosition::Left => {
+            //         main_row = main_row.push(side_bar_main);
+            //         main_row = main_row.push(tool_bar_and_content_col);
+            //         main_row = main_row.push(side_bar_annotations);
+            //     }
+            //     SidebarPosition::Right => {
+            //         main_row = main_row.push(side_bar_annotations);
+            //         main_row = main_row.push(tool_bar_and_content_col);
+            //         main_row = main_row.push(side_bar_main);
+            //     }
+            // }
+            main_row = main_row.push(side_bar_main);
+            main_row = main_row.push(tool_bar_and_content_col);
+            main_row = main_row.push(side_bar_annotations);
         } else {
             main_row = main_row.push(tool_bar_and_content_col);
         }
@@ -159,16 +162,16 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
                     Some(TvMsg::ToggleDataTable),
                     tv.show_data_table,
                 ),
-                match tv.sidebar_pos {
-                    SidebarPosition::Left => btn_svg(
-                        Icon::SidebarRight,
-                        Some(TvMsg::SetSidebarPos(SidebarPosition::Right))
-                    ),
-                    SidebarPosition::Right => btn_svg(
-                        Icon::SidebarLeft,
-                        Some(TvMsg::SetSidebarPos(SidebarPosition::Left))
-                    ),
-                }
+                // match tv.sidebar_pos {
+                //     SidebarPosition::Left => btn_svg(
+                //         Icon::SidebarRight,
+                //         Some(TvMsg::SetSidebarPos(SidebarPosition::Right))
+                //     ),
+                //     SidebarPosition::Right => btn_svg(
+                //         Icon::SidebarLeft,
+                //         Some(TvMsg::SetSidebarPos(SidebarPosition::Left))
+                //     ),
+                // }
             ]
             .spacing(SF),
         )
@@ -348,22 +351,22 @@ fn side_bar_main<'a>(
     tv: &'a TreeView,
     ts: Rc<TreeState>,
 ) -> Element<'a, TvMsg> {
-    let mut sb_col: Column<TvMsg> = Column::new();
+    let mut sb: Column<TvMsg> = Column::new();
 
-    sb_col = sb_col.spacing(PADDING + SF * TWO);
-    sb_col = sb_col.width(Length::Fill);
-    sb_col = sb_col.height(Length::Fill);
+    sb = sb.spacing(PADDING + SF * TWO);
+    sb = sb.width(Length::Fill);
+    sb = sb.height(Length::Fill);
 
-    sb_col = sb_col.push(stats(ts.clone()));
-    sb_col = sb_col.push(rule_h(SF));
-    sb_col = sb_col.push(pick_list_tre_sty(tv.tre_cnv.tre_sty));
-    sb_col = sb_col.push(pick_list_node_ordering(tv.node_ord_opt));
-    sb_col = sb_col.push(rule_h(SF));
+    sb = sb.push(stats(ts.clone()));
+    sb = sb.push(rule_h(SF));
+    sb = sb.push(pick_list_tre_sty(tv.tre_cnv.tre_sty));
+    sb = sb.push(pick_list_node_ordering(tv.node_ord_opt));
+    sb = sb.push(rule_h(SF));
 
     match tv.tre_cnv.tre_sty {
         TreSty::PhyGrm => {
             if tv.tre_cnv_size_idx_min != tv.tre_cnv_size_idx_max {
-                sb_col = sb_col.push(slider(
+                sb = sb.push(slider(
                     Some("Edge Spacing"),
                     tv.tre_cnv_size_idx_min,
                     tv.tre_cnv_size_idx_max,
@@ -373,7 +376,7 @@ fn side_bar_main<'a>(
                     TvMsg::CnvHeightSelChanged,
                 ));
             }
-            sb_col = sb_col.push(slider(
+            sb = sb.push(slider(
                 Some("Width"),
                 tv.tre_cnv_size_idx_min,
                 tv.tre_cnv_size_idx_max,
@@ -384,7 +387,7 @@ fn side_bar_main<'a>(
             ));
         }
         TreSty::Fan => {
-            sb_col = sb_col.push(slider(
+            sb = sb.push(slider(
                 Some("Zoom"),
                 tv.tre_cnv_size_idx_min,
                 tv.tre_cnv_size_idx_max,
@@ -393,7 +396,7 @@ fn side_bar_main<'a>(
                 2,
                 TvMsg::CnvZoomSelChanged,
             ));
-            sb_col = sb_col.push(slider(
+            sb = sb.push(slider(
                 Some("Opening Angle"),
                 tv.opn_angle_idx_min,
                 tv.opn_angle_idx_max,
@@ -402,7 +405,7 @@ fn side_bar_main<'a>(
                 15,
                 TvMsg::OpnAngleChanged,
             ));
-            sb_col = sb_col.push(slider(
+            sb = sb.push(slider(
                 Some("Rotation Angle"),
                 tv.rot_angle_idx_min,
                 tv.rot_angle_idx_max,
@@ -414,10 +417,10 @@ fn side_bar_main<'a>(
         }
     }
 
-    sb_col = sb_col.push(rule_h(SF));
+    sb = sb.push(rule_h(SF));
 
     if ts.is_rooted() && tv.tre_cnv.draw_root {
-        sb_col = sb_col.push(iced_col![
+        sb = sb.push(iced_col![
             toggler_root(true, tv.tre_cnv.draw_root),
             space_v(ONE, PADDING / TWO),
             slider(
@@ -431,32 +434,30 @@ fn side_bar_main<'a>(
             )
         ]);
     } else {
-        sb_col =
-            sb_col.push(toggler_root(ts.is_rooted(), tv.tre_cnv.draw_root));
+        sb = sb.push(toggler_root(ts.is_rooted(), tv.tre_cnv.draw_root));
     }
 
-    sb_col = sb_col.push(iced_col![toggler_legend(
+    sb = sb.push(iced_col![toggler_legend(
         ts.has_brlen(),
         tv.tre_cnv.draw_legend
     )]);
-    sb_col = sb_col.push(iced_col![toggler_cursor_line(
+    sb = sb.push(iced_col![toggler_cursor_line(
         true, tv.tre_cnv.draw_cursor_line, tv.tre_cnv.tre_sty
     )]);
-    sb_col = sb_col.push(rule_h(SF));
+    sb = sb.push(rule_h(SF));
 
-    sb_col =
-        sb_col.push(toggler_selection_lock(true, tv.tre_cnv.selection_lock));
+    sb = sb.push(toggler_selection_lock(true, tv.tre_cnv.selection_lock));
 
     if tv.show_ltt_plot {
-        sb_col =
-            sb_col.push(pick_list_ltt_y_axis_scale_type(&tv.ltt_cnv.scale_y));
+        sb = sb.push(pick_list_ltt_y_axis_scale_type(&tv.ltt_cnv.scale_y));
     }
 
-    container(sb_col.clip(true))
-        .style(match tv.sidebar_pos {
-            SidebarPosition::Left => sty_cont_bottom_left,
-            SidebarPosition::Right => sty_cont_bottom_right,
-        })
+    container(sb.clip(true))
+        // .style(match tv.sidebar_pos {
+        //     SidebarPosition::Left => sty_cont_bottom_left,
+        //     SidebarPosition::Right => sty_cont_bottom_right,
+        // })
+        .style(sty_cont_bottom_left)
         .padding(PADDING)
         .width(SIDE_BAR_W)
         .into()
@@ -466,17 +467,17 @@ fn side_bar_annotations<'a>(
     tv: &'a TreeView,
     ts: Rc<TreeState>,
 ) -> Element<'a, TvMsg> {
-    let mut sb_col: Column<TvMsg> = Column::new();
+    let mut sb: Column<TvMsg> = Column::new();
 
-    sb_col = sb_col.spacing(PADDING + SF * TWO);
-    sb_col = sb_col.width(Length::Fill);
-    sb_col = sb_col.height(Length::Fill);
+    sb = sb.spacing(PADDING + SF * TWO);
+    sb = sb.width(Length::Fill);
+    sb = sb.height(Length::Fill);
 
     if ts.has_tip_labs()
         && tv.tre_cnv.draw_labs_tip
         && tv.tre_cnv.draw_labs_allowed
     {
-        sb_col = sb_col.push(iced_col![
+        sb = sb.push(iced_col![
             toggler_label_tip(true, tv.tre_cnv.draw_labs_tip,),
             space_v(ONE, PADDING / TWO),
             slider(
@@ -513,7 +514,7 @@ fn side_bar_annotations<'a>(
             },
         ]);
     } else {
-        sb_col = sb_col.push(toggler_label_tip(
+        sb = sb.push(toggler_label_tip(
             ts.has_tip_labs() && tv.tre_cnv.draw_labs_allowed,
             tv.tre_cnv.draw_labs_tip,
         ));
@@ -523,7 +524,7 @@ fn side_bar_annotations<'a>(
         && tv.tre_cnv.draw_labs_int
         && tv.tre_cnv.draw_labs_allowed
     {
-        sb_col = sb_col.push(iced_col![
+        sb = sb.push(iced_col![
             toggler_label_int(true, tv.tre_cnv.draw_labs_int),
             space_v(ONE, PADDING / TWO),
             slider(
@@ -537,7 +538,7 @@ fn side_bar_annotations<'a>(
             )
         ]);
     } else {
-        sb_col = sb_col.push(toggler_label_int(
+        sb = sb.push(toggler_label_int(
             ts.has_int_labs() && tv.tre_cnv.draw_labs_allowed,
             tv.tre_cnv.draw_labs_int,
         ));
@@ -547,7 +548,7 @@ fn side_bar_annotations<'a>(
         && tv.tre_cnv.draw_labs_brnch
         && tv.tre_cnv.draw_labs_allowed
     {
-        sb_col = sb_col.push(iced_col![
+        sb = sb.push(iced_col![
             toggler_label_branch(true, tv.tre_cnv.draw_labs_brnch),
             space_v(ONE, PADDING / TWO),
             slider(
@@ -561,17 +562,18 @@ fn side_bar_annotations<'a>(
             )
         ]);
     } else {
-        sb_col = sb_col.push(toggler_label_branch(
+        sb = sb.push(toggler_label_branch(
             ts.has_brlen() && tv.tre_cnv.draw_labs_allowed,
             tv.tre_cnv.draw_labs_brnch,
         ));
     }
 
-    container(sb_col.clip(true))
-        .style(match tv.sidebar_pos {
-            SidebarPosition::Left => sty_cont_bottom_right,
-            SidebarPosition::Right => sty_cont_bottom_left,
-        })
+    container(sb.clip(true))
+        // .style(match tv.sidebar_pos {
+        //     SidebarPosition::Left => sty_cont_bottom_right,
+        //     SidebarPosition::Right => sty_cont_bottom_left,
+        // })
+        .style(sty_cont_bottom_right)
         .padding(PADDING)
         .width(SIDE_BAR_W)
         .into()

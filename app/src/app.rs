@@ -17,7 +17,12 @@ use riced::{
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 use riced::{HasWindowHandle, RawWindowHandle, run_with_handle};
 use std::path::PathBuf;
-use treeview::{SidebarPosition, TreeView, TvContextMenuListing, TvMsg};
+use treeview::{
+    // SidebarPosition,
+    TreeView,
+    TvContextMenuListing,
+    TvMsg,
+};
 use win::window_settings;
 
 pub struct App {
@@ -304,18 +309,18 @@ impl App {
                                 tree_view_context_menu_listing,
                             )));
                         }
-                        TvMsg::SetSidebarPos(sidebar_position) => {
-                            if let Some(menu) = &mut self.menu {
-                                match sidebar_position {
-                                    SidebarPosition::Left => {
-                                        menu.update(&AppMenuItemId::SetSideBarPositionLeft);
-                                    }
-                                    SidebarPosition::Right => {
-                                        menu.update(&AppMenuItemId::SetSideBarPositionRight);
-                                    }
-                                }
-                            }
-                        }
+                        // TvMsg::SetSidebarPos(sidebar_position) => {
+                        //     if let Some(menu) = &mut self.menu {
+                        //         match sidebar_position {
+                        //             SidebarPosition::Left => {
+                        //                 menu.update(&AppMenuItemId::SetSideBarPositionLeft);
+                        //             }
+                        //             SidebarPosition::Right => {
+                        //                 menu.update(&AppMenuItemId::SetSideBarPositionRight);
+                        //             }
+                        //         }
+                        //     }
+                        // }
                         _ => {}
                     }
                 }
@@ -468,7 +473,9 @@ impl App {
                 }
             }
             AppMsg::AppInitialized => {
-                self.menu = AppMenu::new(consts::SIDEBAR_POSITION);
+                self.menu = AppMenu::new(
+                    // consts::SIDEBAR_POSITION
+                );
                 if let Some(menu) = &mut self.menu {
                     menu.disable(&AppMenuItemId::SaveAs);
                     menu.disable(&AppMenuItemId::ExportPdf);
@@ -495,8 +502,9 @@ impl App {
                     let (window_id, open_window_task) =
                         open_window(window_settings());
                     self.winid = Some(window_id);
-                    self.treeview =
-                        Some(TreeView::new(consts::SIDEBAR_POSITION));
+                    self.treeview = Some(TreeView::new(
+                            // consts::SIDEBAR_POSITION
+                        ));
                     task = Some(open_window_task.discard());
                 } else {
                     eprintln!("AppMsg::OpenWindow -> Window is already open.");

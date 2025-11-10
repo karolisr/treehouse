@@ -30,7 +30,11 @@ pub type Float = f32;
 
 pub use context_menu::{TvContextMenuItem, TvContextMenuListing};
 pub use riced::{SF, TXT_SIZE};
-pub use treeview::{SidebarPosition, TreeView, TvMsg};
+pub use treeview::{
+    // SidebarPosition,
+    TreeView,
+    TvMsg,
+};
 
 use std::f32 as float;
 use std::fmt::{Debug, Display, Formatter, Result};
