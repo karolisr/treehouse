@@ -44,12 +44,12 @@ impl TreeView {
             match self.sidebar_pos {
                 SidebarPosition::Left => {
                     main_row = main_row.push(side_bar_main);
-                    main_row = main_row.push(side_bar_annotations);
                     main_row = main_row.push(tool_bar_and_content_col);
+                    main_row = main_row.push(side_bar_annotations);
                 }
                 SidebarPosition::Right => {
-                    main_row = main_row.push(tool_bar_and_content_col);
                     main_row = main_row.push(side_bar_annotations);
+                    main_row = main_row.push(tool_bar_and_content_col);
                     main_row = main_row.push(side_bar_main);
                 }
             }
@@ -63,19 +63,20 @@ impl TreeView {
 
 fn content<'a>(tv: &'a TreeView) -> Element<'a, TvMsg> {
     let ele: Element<'a, TvMsg> = if let Some(pane_grid) = &tv.pane_grid {
-        PaneGrid::new(pane_grid, |pane_idx, tv_pane, _is_maximized| {
+        PaneGrid::new(pane_grid, |_pane_idx, tv_pane, _is_maximized| {
             PgContent::new(
                 center(responsive(move |size| pane_content(tv, tv_pane, size)))
                     .padding(PADDING),
             )
             .style(
-                match &pane_idx == pane_grid.panes.last_key_value().unwrap().0 {
-                    true => match tv.sidebar_pos {
-                        SidebarPosition::Left => sty_pane_body_bottom_right,
-                        SidebarPosition::Right => sty_pane_body_bottom_left,
-                    },
-                    false => sty_pane_body,
-                },
+                // match &_pane_idx == pane_grid.panes.last_key_value().unwrap().0 {
+                //     true => match tv.sidebar_pos {
+                //         SidebarPosition::Left => sty_pane_body_bottom_right,
+                //         SidebarPosition::Right => sty_pane_body_bottom_left,
+                //     },
+                //     false => sty_pane_body,
+                // },
+                sty_pane_body,
             )
         })
         .style(sty_pane_grid)
@@ -575,7 +576,10 @@ fn side_bar_annotations<'a>(
     }
 
     container(sb_col.clip(true))
-        .style(sty_cont)
+        .style(match tv.sidebar_pos {
+            SidebarPosition::Left => sty_cont_bottom_right,
+            SidebarPosition::Right => sty_cont_bottom_left,
+        })
         .padding(PADDING)
         .width(SIDE_BAR_W)
         .into()
