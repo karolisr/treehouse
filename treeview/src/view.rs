@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::*;
 
 impl TreeView {
@@ -96,10 +98,10 @@ fn pane_content<'a>(
     let h = size.height;
     let cnv_w = tv.calc_tre_cnv_w(w);
     let cnv_h = tv.calc_tre_cnv_h(h);
-    let scrollable = match tv_pane {
+    let content: Element<'a, TvMsg> = match tv_pane {
         TvPane::Tree => {
             let cnv = Cnv::new(&tv.tre_cnv).width(cnv_w).height(cnv_h);
-            scrollable_cnv_tre(tv.tre_scr_id, cnv, w, h)
+            scrollable_cnv_tre(tv.tre_scr_id, cnv, w, h).into()
         }
         TvPane::LttPlot => {
             let mut cnv_w = cnv_w;
@@ -107,11 +109,11 @@ fn pane_content<'a>(
                 cnv_w = w;
             }
             let cnv = Cnv::new(&tv.ltt_cnv).width(cnv_w).height(h);
-            scrollable_cnv_ltt(tv.ltt_scr_id, cnv, w, h)
+            scrollable_cnv_ltt(tv.ltt_scr_id, cnv, w, h).into()
         }
-        TvPane::DataTable => scrollable_data_table(tv.data_table_scr_id, w, h),
+        TvPane::DataTable => data_table_element(tv, tv.data_table_scr_id, w, h),
     };
-    scrollable.into()
+    content
 }
 
 fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
@@ -709,19 +711,226 @@ pub(crate) fn scrollable_cnv_tre<'a>(
     scrollable_common(s, w, h)
 }
 
-pub(crate) fn scrollable_data_table<'a>(
+pub(crate) fn data_table_element<'a>(
+    tv: &'a TreeView,
     id: &'static str,
-    w: impl Into<Length>,
-    h: impl Into<Length>,
-) -> Scrollable<'a, TvMsg> {
-    let mut s: Scrollable<TvMsg> = Scrollable::new(txt("DataTable"));
-    s = s.direction(ScrollableDirection::Both {
+    w: Float,
+    h: Float,
+) -> Element<'a, TvMsg> {
+    if let Some(ts) = tv.sel_tre() {
+        if let Some(cached_edges) = ts.data_table_edges_cached_ro(
+            tv.data_table_sort_col, tv.data_table_sort_dir,
+        ) {
+            let sel_node_ids = ts.sel_node_ids().clone();
+            data_table(tv, id, w, h, sel_node_ids, cached_edges)
+        } else {
+            txt("No edges available").into()
+        }
+    } else {
+        txt("No tree loaded").into()
+    }
+}
+
+fn data_table_header_cell<'a>(
+    tv: &'a TreeView,
+    header_text: &str,
+    column: DataTableSortColumn,
+    width: Float,
+    height: Float,
+    style: impl Fn(&Theme) -> ContainerStyle + 'a,
+) -> Element<'a, TvMsg> {
+    let sort_indicator = if tv.data_table_sort_col == column {
+        match tv.data_table_sort_dir {
+            DataTableSortDirection::Ascending => "▲",
+            DataTableSortDirection::Descending => "▼",
+        }
+    } else {
+        ""
+    };
+
+    let header_content = container(iced_row!(
+        txt(header_text),
+        space_h(Length::Fixed(PADDING / TWO), Length::Fill),
+        space_h(Length::Fill, Length::Fill),
+        txt(sort_indicator),
+    ))
+    .padding(PADDING / TWO)
+    .width(Length::Fixed(width))
+    .center_y(Length::Fixed(height))
+    .style(style);
+
+    mouse_area(header_content)
+        .on_press(TvMsg::DataTableSortColumnChanged(column))
+        .into()
+}
+
+fn data_table_cell<'a>(
+    content: Element<'a, TvMsg>,
+    node_id: NodeId,
+    is_selected: bool,
+    width: Float,
+    height: Float,
+) -> Element<'a, TvMsg> {
+    let cell_container = container(content)
+        .padding(PADDING / TWO)
+        .width(Length::Fixed(width))
+        .height(Length::Fixed(height));
+
+    let styled_cell = if is_selected {
+        cell_container.style(sty_table_cell_selected)
+    } else {
+        cell_container.style(sty_table_cell)
+    };
+
+    mouse_area(styled_cell).on_press(TvMsg::SelectDeselectNode(node_id)).into()
+}
+
+fn data_table<'a>(
+    tv: &'a TreeView,
+    id: &'static str,
+    w: Float,
+    h: Float,
+    sel_node_ids: HashSet<NodeId>,
+    cached_edges: &[Edge],
+) -> Element<'a, TvMsg> {
+    let row_height = TXT_SIZE + PADDING;
+    let scrollable_h = (h - row_height).max(ZRO);
+    let table_h = row_height * (cached_edges.len() + 1) as f32;
+
+    let column_frac = ONE / TEN;
+    let separator_width = BORDER_W;
+
+    let available_w = if table_h + row_height <= h {
+        w - separator_width * 2.0
+    } else {
+        w - separator_width * 2.0 - SCROLLBAR_W - PADDING
+    };
+
+    let col_node_id_w = (available_w * column_frac).max(7e1 * SF);
+    let col_selected_w = (available_w * column_frac).max(7e1 * SF);
+    let col_label_w = available_w - col_selected_w - col_node_id_w;
+
+    let header_row = container(
+        iced_row![
+            data_table_header_cell(
+                tv,
+                "Selected",
+                DataTableSortColumn::Selected,
+                col_selected_w,
+                row_height,
+                sty_table_cell_header_left
+            ),
+            data_table_header_cell(
+                tv,
+                "Node ID",
+                DataTableSortColumn::NodeId,
+                col_node_id_w,
+                row_height,
+                sty_table_cell_header
+            ),
+            data_table_header_cell(
+                tv,
+                "Node Label",
+                DataTableSortColumn::NodeLabel,
+                col_label_w,
+                row_height,
+                sty_table_cell_header_right
+            ),
+        ]
+        .padding(ZRO)
+        .spacing(separator_width),
+    )
+    .style(sty_table_row_header);
+
+    let columns = vec![
+        table_col(
+            space_h(Length::Shrink, Length::Shrink),
+            |edge: Edge| -> Element<'a, TvMsg> {
+                let is_selected = sel_node_ids.contains(&edge.node_id);
+                data_table_cell(
+                    txt_bool(is_selected).into(),
+                    edge.node_id,
+                    is_selected,
+                    col_selected_w,
+                    row_height,
+                )
+            },
+        )
+        .width(Length::Fixed(col_selected_w)),
+        table_col(
+            space_h(Length::Shrink, Length::Shrink),
+            |edge: Edge| -> Element<'a, TvMsg> {
+                let is_selected = sel_node_ids.contains(&edge.node_id);
+                data_table_cell(
+                    txt(edge.node_id).into(),
+                    edge.node_id,
+                    is_selected,
+                    col_node_id_w,
+                    row_height,
+                )
+            },
+        )
+        .width(Length::Fixed(col_node_id_w)),
+        table_col(
+            space_h(Length::Shrink, Length::Shrink),
+            |edge: Edge| -> Element<'a, TvMsg> {
+                let is_selected = sel_node_ids.contains(&edge.node_id);
+                data_table_cell(
+                    txt(edge.label.as_deref().unwrap_or("-")).into(),
+                    edge.node_id,
+                    is_selected,
+                    col_label_w,
+                    row_height,
+                )
+            },
+        )
+        .width(Length::Fixed(col_label_w)),
+    ];
+
+    let max_visible_rows = (scrollable_h / row_height) as usize;
+
+    let scroll_y = tv.data_table_scroll_y;
+    let first_visible_row = (scroll_y / row_height) as usize;
+    let last_visible_row = first_visible_row + max_visible_rows;
+
+    let start_idx = first_visible_row;
+    let end_idx = last_visible_row.min(cached_edges.len());
+
+    let visible_edges: Vec<Edge> = if start_idx < end_idx {
+        cached_edges[start_idx..end_idx].to_vec()
+    } else {
+        cached_edges.iter().take(max_visible_rows).cloned().collect()
+    };
+
+    let table_body =
+        table(columns, visible_edges).padding(ZRO).separator(separator_width);
+
+    let mut scrollable_body = Scrollable::new(
+        container(table_body)
+            .padding(Padding {
+                top: scroll_y,
+                bottom: ZRO,
+                left: ZRO,
+                right: ZRO,
+            })
+            .height(table_h),
+    );
+    scrollable_body = scrollable_body.direction(ScrollableDirection::Both {
         horizontal: scroll_bar(),
         vertical: scroll_bar(),
     });
-    s = s.id(id);
-    s = s.on_scroll(TvMsg::TreCnvScrolledOrResized);
-    scrollable_common(s, w, h)
+    scrollable_body = scrollable_body.id(id);
+    scrollable_body =
+        scrollable_body.on_scroll(TvMsg::DataTableScrolledOrResized);
+    scrollable_body = scrollable_common(scrollable_body, w, scrollable_h);
+
+    let mut table_column = Column::new();
+    table_column = table_column.push(header_row);
+    table_column = table_column.push(scrollable_body);
+    table_column = table_column.padding(ZRO);
+    table_column = table_column.width(w);
+    table_column = table_column.height(h);
+    table_column.into()
 }
 
 pub(crate) fn toggler_cursor_line<'a>(

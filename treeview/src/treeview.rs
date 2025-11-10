@@ -54,7 +54,13 @@ pub struct TreeView {
     pub(super) tre_scr_id: &'static str,
     pub(super) data_table_scr_id: &'static str,
     pub(super) search_text_input_id: &'static str,
-    // -------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    pub(super) data_table_sort_col: DataTableSortColumn,
+    pub(super) data_table_sort_dir: DataTableSortDirection,
+    // -------------------------------------------------------------------------
+    pub(super) data_table_scroll_y: Float,
+    pub(super) data_table_viewport_height: Float,
+    // -------------------------------------------------------------------------
     keep_scroll_position_requested: bool,
     // -------------------------------------------------------------------
     ltt_cnv_needs_to_be_scrolled: bool,
@@ -120,7 +126,8 @@ pub enum TvMsg {
     RootLenSelChanged(u16),
     LttVisChanged(bool),
     DataTableVisChanged(bool),
-    // -------------------------------------------
+    DataTableSortColumnChanged(DataTableSortColumn),
+    DataTableScrolledOrResized(Viewport),
     AddCladeLabel((NodeId, Color)),
     RemoveCladeLabel(NodeId),
     AddRemoveCladeLabel((NodeId, Color)),
@@ -150,7 +157,7 @@ impl TreeView {
             sidebar_pos: sidebar_position,
             // -----------------------------------------------------------
             show_ltt: false,
-            show_data_table: false,
+            show_data_table: true,
             show_tool_bar: true,
             show_side_bar: true,
             show_search_bar: false,
@@ -185,7 +192,13 @@ impl TreeView {
             ltt_scr_id: "ltt",
             data_table_scr_id: "datatable",
             search_text_input_id: "srch",
-            // -----------------------------------------------------------
+            // -----------------------------------------------------------------
+            data_table_sort_col: DataTableSortColumn::NodeId,
+            data_table_sort_dir: DataTableSortDirection::Ascending,
+            // -----------------------------------------------------------------
+            data_table_scroll_y: ZRO,
+            data_table_viewport_height: ZRO,
+            // -----------------------------------------------------------------
             is_new: true,
             // -----------------------------------------------------------
             tip_only_search: true,
@@ -399,6 +412,11 @@ impl TreeView {
                 }
             }
 
+            TvMsg::DataTableScrolledOrResized(vp) => {
+                self.data_table_scroll_y = vp.absolute_offset().y;
+                self.data_table_viewport_height = vp.bounds().height;
+            }
+
             TvMsg::LttVisChanged(show_ltt) => {
                 self.show_ltt = show_ltt;
                 self.show_hide_ltt();
@@ -408,6 +426,25 @@ impl TreeView {
                     self.ltt_scr_id,
                     AbsoluteOffset { x, y: self.ltt_cnv.vis_y0 },
                 ));
+            }
+
+            TvMsg::DataTableSortColumnChanged(sort_col) => {
+                if self.data_table_sort_col == sort_col {
+                    self.data_table_sort_dir = match self.data_table_sort_dir {
+                        DataTableSortDirection::Ascending => {
+                            DataTableSortDirection::Descending
+                        }
+                        DataTableSortDirection::Descending => {
+                            DataTableSortDirection::Ascending
+                        }
+                    };
+                } else {
+                    self.data_table_sort_col = sort_col;
+                    self.data_table_sort_dir =
+                        DataTableSortDirection::Ascending;
+                }
+
+                self.data_table_edges_cached();
             }
 
             TvMsg::DataTableVisChanged(show_data_table) => {
@@ -437,6 +474,7 @@ impl TreeView {
                     self.sort();
                     task = self.scroll_to_current_found_edge();
                     self.tre_cnv.stale_tre_rect = true;
+                    self.data_table_edges_cached();
                 }
             }
 
@@ -450,6 +488,7 @@ impl TreeView {
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.clear_cache_legend();
                 self.tre_cnv.stale_tre_rect = true;
+                self.data_table_edges_cached();
             }
 
             TvMsg::Root(node_id) => {
@@ -462,6 +501,7 @@ impl TreeView {
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.clear_cache_legend();
                 self.tre_cnv.stale_tre_rect = true;
+                self.data_table_edges_cached();
             }
 
             TvMsg::TreesLoaded(trees) => {
@@ -490,6 +530,7 @@ impl TreeView {
                 }
                 self.sort();
                 self.set_ltt_plot_data();
+                self.data_table_edges_cached();
 
                 if self.is_new {
                     self.tre_cnv.opn_angle = angle_from_idx(self.opn_angle_idx);
@@ -722,12 +763,14 @@ impl TreeView {
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
                     tre.select_deselect_node(node_id);
                 });
+                self.data_table_edges_cached();
             }
 
             TvMsg::SelectDeselectNodeExclusive(node_id) => {
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
                     tre.select_deselect_node_exclusive(node_id);
                 });
+                self.data_table_edges_cached();
             }
 
             TvMsg::OpnAngleChanged(idx) => {
@@ -852,6 +895,14 @@ impl TreeView {
             Some(task) => task,
             None => Task::none(),
         }
+    }
+
+    fn data_table_edges_cached(&mut self) {
+        let sort_col = self.data_table_sort_col;
+        let sort_dir = self.data_table_sort_dir;
+        self.with_exclusive_sel_tre_mut(&mut |tre| {
+            _ = tre.data_table_edges_cached(sort_col, sort_dir);
+        });
     }
 
     fn set_ltt_plot_data(&mut self) {
@@ -1240,7 +1291,20 @@ impl TreeView {
         self.clear_cache_all_tre();
     }
 
+    fn pane_id_to_split(&self) -> Option<Pane> {
+        if self.ltt_pane_id.is_some() {
+            self.ltt_pane_id
+        } else if self.data_table_pane_id.is_some() {
+            self.data_table_pane_id
+        } else if self.tre_pane_id.is_some() {
+            self.tre_pane_id
+        } else {
+            None
+        }
+    }
+
     fn show_hide_ltt(&mut self) {
+        let pane_id_to_split_opt = self.pane_id_to_split();
         if let Some(pane_grid) = &mut self.pane_grid {
             if let Some(ltt_pane_id) = self.ltt_pane_id {
                 if !self.show_ltt {
@@ -1248,10 +1312,10 @@ impl TreeView {
                     self.ltt_pane_id = None;
                 }
             } else if self.show_ltt
-                && let Some(tre_pane_id) = self.tre_pane_id
+                && let Some(pane_id_to_split) = pane_id_to_split_opt
                 && let Some((ltt_pane_id, split)) = pane_grid.split(
                     PgAxis::Horizontal,
-                    tre_pane_id,
+                    pane_id_to_split,
                     TvPane::LttPlot,
                 )
             {
@@ -1262,6 +1326,7 @@ impl TreeView {
     }
 
     fn show_hide_data_table(&mut self) {
+        let pane_id_to_split_opt = self.pane_id_to_split();
         if let Some(pane_grid) = &mut self.pane_grid {
             if let Some(data_table_pane_id) = self.data_table_pane_id {
                 if !self.show_data_table {
@@ -1269,10 +1334,10 @@ impl TreeView {
                     self.data_table_pane_id = None;
                 }
             } else if self.show_data_table
-                && let Some(tre_pane_id) = self.tre_pane_id
+                && let Some(pane_id_to_split) = pane_id_to_split_opt
                 && let Some((data_table_pane_id, split)) = pane_grid.split(
                     PgAxis::Horizontal,
-                    tre_pane_id,
+                    pane_id_to_split,
                     TvPane::DataTable,
                 )
             {
@@ -1369,6 +1434,19 @@ impl Display for TreSty {
             TreSty::Fan => "Fan",
         })
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DataTableSortColumn {
+    NodeId,
+    NodeLabel,
+    Selected,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DataTableSortDirection {
+    Ascending,
+    Descending,
 }
 
 #[derive(Debug)]

@@ -45,7 +45,10 @@ use dendros::{Edge, LttPoint, Node, NodeId, Tree, ltt, write_newick};
 use rayon::prelude::*;
 use riced::*;
 use treestate::TreeState;
-use treeview::{NODE_ORD_OPTS, NodeOrd, TRE_STY_OPTS, TreSty, TvPane};
+use treeview::{
+    DataTableSortColumn, DataTableSortDirection, NODE_ORD_OPTS, NodeOrd,
+    TRE_STY_OPTS, TreSty, TvPane,
+};
 
 pub type IndexRange = RangeInclusive<usize>;
 
