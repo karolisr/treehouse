@@ -50,16 +50,16 @@ pub struct TreeView {
     // -------------------------------------------------------------------------
     pub(super) node_ord_opt: NodeOrd,
     // -------------------------------------------------------------------------
-    pub(super) ltt_scr_id: &'static str,
-    pub(super) tre_scr_id: &'static str,
-    pub(super) data_table_scr_id: &'static str,
+    pub(super) ltt_scrollable_id: &'static str,
+    pub(super) tre_scrollable_id: &'static str,
+    pub(super) node_data_table_scrollable_id: &'static str,
     pub(super) search_text_input_id: &'static str,
     // -------------------------------------------------------------------------
-    pub(super) data_table_sort_col: DataTableSortColumn,
-    pub(super) data_table_sort_dir: DataTableSortDirection,
+    pub(super) node_data_table_sort_col: NodeDataTableSortColumn,
+    pub(super) node_data_table_sort_dir: DataTableSortDirection,
     // -------------------------------------------------------------------------
-    pub(super) data_table_scroll_y: Float,
-    pub(super) data_table_viewport_height: Float,
+    pub(super) node_data_table_scroll_y: Float,
+    pub(super) node_data_table_viewport_height: Float,
     // -------------------------------------------------------------------------
     keep_scroll_position_requested: bool,
     // -------------------------------------------------------------------------
@@ -126,8 +126,8 @@ pub enum TvMsg {
     RootLenSelChanged(u16),
     ToggleLttPlot,
     ToggleDataTable,
-    DataTableSortColumnChanged(DataTableSortColumn),
-    DataTableScrolledOrResized(Viewport),
+    NodeDataTableSortColumnChanged(NodeDataTableSortColumn),
+    NodeDataTableScrolledOrResized(Viewport),
     // -------------------------------------------------------------------------
     AddCladeLabel((NodeId, Color)),
     RemoveCladeLabel(NodeId),
@@ -159,7 +159,7 @@ impl Default for TreeView {
             show_side_bar: true,
             show_search_bar: false,
             show_ltt_plot: false,
-            show_data_table: false,
+            show_data_table: true,
             // -----------------------------------------------------------------
             node_ord_opt: NodeOrd::Ascending,
             // -----------------------------------------------------------------
@@ -187,16 +187,15 @@ impl Default for TreeView {
             tre_cnv_z_idx: 1,
             tre_cnv_size_idx_max: 22,
             // -----------------------------------------------------------------
-            tre_scr_id: "tre",
-            ltt_scr_id: "ltt",
-            data_table_scr_id: "datatable",
+            tre_scrollable_id: "tre",
+            ltt_scrollable_id: "ltt",
+            node_data_table_scrollable_id: "node_data_table",
             search_text_input_id: "srch",
             // -----------------------------------------------------------------
-            data_table_sort_col: DataTableSortColumn::NodeId,
-            data_table_sort_dir: DataTableSortDirection::Ascending,
-            // -----------------------------------------------------------------
-            data_table_scroll_y: ZRO,
-            data_table_viewport_height: ZRO,
+            node_data_table_sort_col: NodeDataTableSortColumn::NodeId,
+            node_data_table_sort_dir: DataTableSortDirection::Ascending,
+            node_data_table_scroll_y: ZRO,
+            node_data_table_viewport_height: ZRO,
             // -----------------------------------------------------------------
             is_new: true,
             // -----------------------------------------------------------------
@@ -390,7 +389,7 @@ impl TreeView {
                     {
                         self.ltt_cnv_scrolled = false;
                         task = self.scroll_cnv_to_x(
-                            self.ltt_scr_id, self.tre_cnv.vis_x0,
+                            self.ltt_scrollable_id, self.tre_cnv.vis_x0,
                         );
                     } else {
                         self.tre_cnv_scrolled = true;
@@ -412,7 +411,7 @@ impl TreeView {
                         {
                             self.tre_cnv_scrolled = false;
                             task = self.scroll_cnv_to_x(
-                                self.tre_scr_id, self.ltt_cnv.vis_x0,
+                                self.tre_scrollable_id, self.ltt_cnv.vis_x0,
                             );
                         } else {
                             self.ltt_cnv_scrolled = true;
@@ -421,9 +420,9 @@ impl TreeView {
                 }
             }
 
-            TvMsg::DataTableScrolledOrResized(vp) => {
-                self.data_table_scroll_y = vp.absolute_offset().y;
-                self.data_table_viewport_height = vp.bounds().height;
+            TvMsg::NodeDataTableScrolledOrResized(vp) => {
+                self.node_data_table_scroll_y = vp.absolute_offset().y;
+                self.node_data_table_viewport_height = vp.bounds().height;
             }
 
             TvMsg::ToggleLttPlot => {
@@ -432,24 +431,25 @@ impl TreeView {
                 let x =
                     (self.tre_cnv.vis_x_mid - self.tre_scr_w / TWO).max(ZRO);
                 task = Some(scroll_to(
-                    self.ltt_scr_id,
+                    self.ltt_scrollable_id,
                     AbsoluteOffset { x, y: self.ltt_cnv.vis_y0 },
                 ));
             }
 
-            TvMsg::DataTableSortColumnChanged(sort_col) => {
-                if self.data_table_sort_col == sort_col {
-                    self.data_table_sort_dir = match self.data_table_sort_dir {
-                        DataTableSortDirection::Ascending => {
-                            DataTableSortDirection::Descending
-                        }
-                        DataTableSortDirection::Descending => {
-                            DataTableSortDirection::Ascending
-                        }
-                    };
+            TvMsg::NodeDataTableSortColumnChanged(sort_col) => {
+                if self.node_data_table_sort_col == sort_col {
+                    self.node_data_table_sort_dir =
+                        match self.node_data_table_sort_dir {
+                            DataTableSortDirection::Ascending => {
+                                DataTableSortDirection::Descending
+                            }
+                            DataTableSortDirection::Descending => {
+                                DataTableSortDirection::Ascending
+                            }
+                        };
                 } else {
-                    self.data_table_sort_col = sort_col;
-                    self.data_table_sort_dir =
+                    self.node_data_table_sort_col = sort_col;
+                    self.node_data_table_sort_dir =
                         DataTableSortDirection::Ascending;
                 }
 
@@ -908,8 +908,8 @@ impl TreeView {
     }
 
     fn data_table_edges_cached(&mut self) {
-        let sort_col = self.data_table_sort_col;
-        let sort_dir = self.data_table_sort_dir;
+        let sort_col = self.node_data_table_sort_col;
+        let sort_dir = self.node_data_table_sort_dir;
         self.with_exclusive_sel_tre_mut(&mut |tre| {
             _ = tre.data_table_edges_cached(sort_col, sort_dir);
         });
@@ -1162,12 +1162,12 @@ impl TreeView {
     fn scroll_tre_cnv(&self, x: Float, y: Float) -> Option<Task<TvMsg>> {
         let x = (x - self.tre_scr_w / TWO).max(ZRO);
         let y = (y - self.tre_scr_h / TWO).max(ZRO);
-        let task1 = scroll_to(self.tre_scr_id, AbsoluteOffset { x, y });
+        let task1 = scroll_to(self.tre_scrollable_id, AbsoluteOffset { x, y });
         if !self.ltt_cnv_needs_to_be_scrolled {
             Some(task1)
         } else {
             let task2 = scroll_to(
-                self.ltt_scr_id,
+                self.ltt_scrollable_id,
                 AbsoluteOffset { x, y: self.ltt_cnv.vis_y0 },
             );
             Some(Task::batch([task1, task2]))
@@ -1180,8 +1180,8 @@ impl TreeView {
         x: Float,
     ) -> Option<Task<TvMsg>> {
         let y = match receiver_id {
-            id if id == self.ltt_scr_id => self.ltt_cnv.vis_y0,
-            id if id == self.tre_scr_id => self.tre_cnv.vis_y0,
+            id if id == self.ltt_scrollable_id => self.ltt_cnv.vis_y0,
+            id if id == self.tre_scrollable_id => self.tre_cnv.vis_y0,
             _ => ZRO,
         };
         Some(scroll_to(receiver_id, AbsoluteOffset { x, y }))
@@ -1444,19 +1444,6 @@ impl Display for TreSty {
             TreSty::Fan => "Fan",
         })
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DataTableSortColumn {
-    NodeId,
-    NodeLabel,
-    Selected,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DataTableSortDirection {
-    Ascending,
-    Descending,
 }
 
 #[derive(Debug)]

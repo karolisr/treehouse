@@ -1,7 +1,7 @@
 use crate::CladeLabel;
 use crate::CladeLabelType;
 use crate::NodeOrd;
-use crate::treeview::{DataTableSortColumn, DataTableSortDirection};
+use crate::{DataTableSortDirection, NodeDataTableSortColumn};
 
 use riced::CnvCache;
 use riced::Color;
@@ -411,33 +411,33 @@ impl TreeState {
     // Get cached sorted edges for data table
     pub(super) fn data_table_edges_cached(
         &mut self,
-        sort_column: DataTableSortColumn,
+        sort_column: NodeDataTableSortColumn,
         sort_direction: DataTableSortDirection,
     ) -> Option<&Vec<Edge>> {
         // Check if cache needs to be populated
         let needs_population = match (sort_column, sort_direction) {
             (
-                DataTableSortColumn::NodeId,
+                NodeDataTableSortColumn::NodeId,
                 DataTableSortDirection::Ascending,
             ) => self.data_table_edges_node_id_asc.is_none(),
             (
-                DataTableSortColumn::NodeId,
+                NodeDataTableSortColumn::NodeId,
                 DataTableSortDirection::Descending,
             ) => self.data_table_edges_node_id_desc.is_none(),
             (
-                DataTableSortColumn::NodeLabel,
+                NodeDataTableSortColumn::NodeLabel,
                 DataTableSortDirection::Ascending,
             ) => self.data_table_edges_node_label_asc.is_none(),
             (
-                DataTableSortColumn::NodeLabel,
+                NodeDataTableSortColumn::NodeLabel,
                 DataTableSortDirection::Descending,
             ) => self.data_table_edges_node_label_desc.is_none(),
             (
-                DataTableSortColumn::Selected,
+                NodeDataTableSortColumn::Selected,
                 DataTableSortDirection::Ascending,
             ) => self.data_table_edges_selected_asc.is_none(),
             (
-                DataTableSortColumn::Selected,
+                NodeDataTableSortColumn::Selected,
                 DataTableSortDirection::Descending,
             ) => self.data_table_edges_selected_desc.is_none(),
         };
@@ -450,7 +450,7 @@ impl TreeState {
 
                 // Sort based on the requested column and direction
                 match sort_column {
-                    DataTableSortColumn::NodeId => {
+                    NodeDataTableSortColumn::NodeId => {
                         sorted_edges.sort_by(|a, b| {
                             let ord = a.node_id.cmp(&b.node_id);
                             match sort_direction {
@@ -461,7 +461,7 @@ impl TreeState {
                             }
                         });
                     }
-                    DataTableSortColumn::NodeLabel => {
+                    NodeDataTableSortColumn::NodeLabel => {
                         sorted_edges.sort_by(|a, b| {
                             let label_a = a.label.as_deref().unwrap_or("");
                             let label_b = b.label.as_deref().unwrap_or("");
@@ -474,7 +474,7 @@ impl TreeState {
                             }
                         });
                     }
-                    DataTableSortColumn::Selected => {
+                    NodeDataTableSortColumn::Selected => {
                         sorted_edges.sort_by(|a, b| {
                             let sel_a = sel_node_ids.contains(&a.node_id);
                             let sel_b = sel_node_ids.contains(&b.node_id);
@@ -492,39 +492,39 @@ impl TreeState {
                 // Store in appropriate cache field
                 match (sort_column, sort_direction) {
                     (
-                        DataTableSortColumn::NodeId,
+                        NodeDataTableSortColumn::NodeId,
                         DataTableSortDirection::Ascending,
                     ) => {
                         self.data_table_edges_node_id_asc = Some(sorted_edges);
                     }
                     (
-                        DataTableSortColumn::NodeId,
+                        NodeDataTableSortColumn::NodeId,
                         DataTableSortDirection::Descending,
                     ) => {
                         self.data_table_edges_node_id_desc = Some(sorted_edges);
                     }
                     (
-                        DataTableSortColumn::NodeLabel,
+                        NodeDataTableSortColumn::NodeLabel,
                         DataTableSortDirection::Ascending,
                     ) => {
                         self.data_table_edges_node_label_asc =
                             Some(sorted_edges);
                     }
                     (
-                        DataTableSortColumn::NodeLabel,
+                        NodeDataTableSortColumn::NodeLabel,
                         DataTableSortDirection::Descending,
                     ) => {
                         self.data_table_edges_node_label_desc =
                             Some(sorted_edges);
                     }
                     (
-                        DataTableSortColumn::Selected,
+                        NodeDataTableSortColumn::Selected,
                         DataTableSortDirection::Ascending,
                     ) => {
                         self.data_table_edges_selected_asc = Some(sorted_edges);
                     }
                     (
-                        DataTableSortColumn::Selected,
+                        NodeDataTableSortColumn::Selected,
                         DataTableSortDirection::Descending,
                     ) => {
                         self.data_table_edges_selected_desc =
@@ -537,27 +537,27 @@ impl TreeState {
         // Return reference to cached data
         match (sort_column, sort_direction) {
             (
-                DataTableSortColumn::NodeId,
+                NodeDataTableSortColumn::NodeId,
                 DataTableSortDirection::Ascending,
             ) => self.data_table_edges_node_id_asc.as_ref(),
             (
-                DataTableSortColumn::NodeId,
+                NodeDataTableSortColumn::NodeId,
                 DataTableSortDirection::Descending,
             ) => self.data_table_edges_node_id_desc.as_ref(),
             (
-                DataTableSortColumn::NodeLabel,
+                NodeDataTableSortColumn::NodeLabel,
                 DataTableSortDirection::Ascending,
             ) => self.data_table_edges_node_label_asc.as_ref(),
             (
-                DataTableSortColumn::NodeLabel,
+                NodeDataTableSortColumn::NodeLabel,
                 DataTableSortDirection::Descending,
             ) => self.data_table_edges_node_label_desc.as_ref(),
             (
-                DataTableSortColumn::Selected,
+                NodeDataTableSortColumn::Selected,
                 DataTableSortDirection::Ascending,
             ) => self.data_table_edges_selected_asc.as_ref(),
             (
-                DataTableSortColumn::Selected,
+                NodeDataTableSortColumn::Selected,
                 DataTableSortDirection::Descending,
             ) => self.data_table_edges_selected_desc.as_ref(),
         }
@@ -566,32 +566,32 @@ impl TreeState {
     // Get cached sorted edges for data table (read-only version)
     pub(super) fn data_table_edges_cached_ro(
         &self,
-        sort_column: DataTableSortColumn,
+        sort_column: NodeDataTableSortColumn,
         sort_direction: DataTableSortDirection,
     ) -> Option<&Vec<Edge>> {
         match (sort_column, sort_direction) {
             (
-                DataTableSortColumn::NodeId,
+                NodeDataTableSortColumn::NodeId,
                 DataTableSortDirection::Ascending,
             ) => self.data_table_edges_node_id_asc.as_ref(),
             (
-                DataTableSortColumn::NodeId,
+                NodeDataTableSortColumn::NodeId,
                 DataTableSortDirection::Descending,
             ) => self.data_table_edges_node_id_desc.as_ref(),
             (
-                DataTableSortColumn::NodeLabel,
+                NodeDataTableSortColumn::NodeLabel,
                 DataTableSortDirection::Ascending,
             ) => self.data_table_edges_node_label_asc.as_ref(),
             (
-                DataTableSortColumn::NodeLabel,
+                NodeDataTableSortColumn::NodeLabel,
                 DataTableSortDirection::Descending,
             ) => self.data_table_edges_node_label_desc.as_ref(),
             (
-                DataTableSortColumn::Selected,
+                NodeDataTableSortColumn::Selected,
                 DataTableSortDirection::Ascending,
             ) => self.data_table_edges_selected_asc.as_ref(),
             (
-                DataTableSortColumn::Selected,
+                NodeDataTableSortColumn::Selected,
                 DataTableSortDirection::Descending,
             ) => self.data_table_edges_selected_desc.as_ref(),
         }
