@@ -39,6 +39,7 @@ impl TextWidth<'_> {
             text,
             &self.attrs,
             Shaping::Basic,
+            None,
         );
         if let Some(line_layouts) =
             self.buffer.line_layout(&mut self.font_system, 0)

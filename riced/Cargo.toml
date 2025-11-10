@@ -21,30 +21,36 @@
         branch="custom"
         default-features=false
         features=[
-            "advanced", # advanced module
-            "canvas",   # "canvas" widget
-            "crisp",    # pixel snapping for crisp edges by default (can cause jitter!)
-            "lazy",     # lazy widgets
-            "sipper",   # support for the "sipper" library
-            "svg",      # "svg" widget
-            "tokio",    # "tokio" as the "executor::Default" on native platforms
-            "wgpu",     # "wgpu" GPU-accelerated renderer backend
-            # "debug",    # a debug view in native platforms (press F12)
+            "advanced",              # advanced module
+            "basic-shaping",         # basic text shaping by default
+            "canvas",                # "canvas" widget
+            "crisp",                 # pixel snapping for crisp edges by default (can cause jitter!)
+            "lazy",                  # lazy widgets
+            "linux-theme-detection", # Linux system theme detection
+            "sipper",                # support for the "sipper" library
+            "svg",                   # "svg" widget
+            "tokio",                 # "tokio" as the "executor::Default" on native platforms
+            "wgpu",                  # "wgpu" GPU-accelerated renderer backend
+            # "debug",               # debug view in native platforms (press F12)
             # ----------------------------------------------------------------------------------------------
-            # "auto-detect-theme",       # auto-detects light/dark mode for the built-in theme
+            # "advanced-shaping",        # advanced text shaping by default
             # "fira-sans",               # embeds Fira Sans into the final application; useful for testing and Wasm builds
             # "highlighter",             # syntax highligthing
-            # "image-without-codecs",    # "image" widget, without any built-in codecs of the "image" crate
+            # "hot",                     # experimental: hot reloading
             # "image",                   # "image" widget
+            # "image-without-codecs",    # "image" widget, without any built-in codecs of the "image" crate
             # "markdown",                # "markdown" widget
             # "qr_code",                 # "qr_code" widget
+            # "selector",                # the "widget::selector" module
             # "smol",                    # "smol" as the "executor::Default" on native platforms
             # "strict-assertions",       # strict assertions for debugging purposes at the expense of performance
-            # "system",                  # enables querying system information
+            # "sysinfo",                 # query system information
+            # "tester",                  # the tester developer tool for recording and playing tests (press F12)
             # "thread-pool",             # "thread-pool" futures executor as the "executor::Default" on native platforms
+            # "time-travel",             # experimental: time-travel debugging
             # "tiny-skia",               # "tiny-skia" software renderer backend
             # "unconditional-rendering", # redraws on every runtime event, and not only when a widget requests it
-            # "web-colors",              # enables broken "sRGB linear" blending to reproduce color management of the Web
+            # "web-colors",              # broken "sRGB linear" blending to reproduce color management of the Web
             # "webgl",                   # WebGL backend
         ]
         git="https://github.com/karolisr/iced.git"

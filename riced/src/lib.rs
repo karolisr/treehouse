@@ -66,12 +66,12 @@ pub use i::window::{
     settings::PlatformSpecific as PlatformSpecificWindowSettings,
 };
 pub use i::{
-    Alignment, Background, Color, Element, Event, Font, Gradient, Length,
-    Padding, Pixels, Point, Rectangle, Renderer, Result as IcedResult,
+    Alignment, Background, Color, ContentFit, Element, Event, Font, Gradient,
+    Length, Padding, Pixels, Point, Rectangle, Renderer, Result as IcedResult,
     Settings as IcedAppSettings, Shadow, Size, Subscription, Task, Vector,
     daemon, exit,
 };
-pub use w::button::{Status as ButtonStatus, Style as ButtonStyle};
+pub use w::button::{Button, Status as ButtonStatus, Style as ButtonStyle};
 pub use w::canvas::{
     Action, Cache as CnvCache, Canvas as Cnv, Frame, Geometry, Program,
     Style as GeomStyle, Text as CnvText,
@@ -95,28 +95,30 @@ pub use w::operation::{focus, scroll_to};
 pub use w::overlay::menu::{Menu, State as MenuState, Style as MenuStyle};
 pub use w::pane_grid::{
     Axis as PgAxis, Content as PgContent, Highlight as PgHighlight,
-    Line as PgLine, Pane, ResizeEvent, State as PgState, Style as PgStyle,
+    Line as PgLine, Pane, PaneGrid, ResizeEvent, State as PgState,
+    Style as PgStyle,
 };
 pub use w::pick_list::{
-    Handle as PickListHandle, Status as PickListStatus, Style as PickListStyle,
+    Handle as PickListHandle, PickList, Status as PickListStatus,
+    Style as PickListStyle,
 };
 pub use w::responsive;
 pub use w::row as iced_row;
 pub use w::rule::{
-    FillMode as RuleFillMode, Style as RuleStyle,
+    FillMode as RuleFillMode, Rule, Style as RuleStyle,
     horizontal as horizontal_rule, vertical as vertical_rule,
 };
 pub use w::scrollable::{
     AbsoluteOffset, Direction as ScrollableDirection, Rail as ScrollBarRail,
-    Scrollbar, Scroller, Status as ScrollableStatus, Style as ScrollableStyle,
-    Viewport,
+    Scrollable, Scrollbar, Scroller, Status as ScrollableStatus,
+    Style as ScrollableStyle, Viewport,
 };
 pub use w::slider::{
     Handle as SliderHandle, HandleShape as SliderHandleShape,
-    Rail as SliderRail, Status as SliderStatus, Style as SliderStyle,
+    Rail as SliderRail, Slider, Status as SliderStatus, Style as SliderStyle,
 };
 pub use w::space::{
-    horizontal as horizontal_space, vertical as vertical_space,
+    Space, horizontal as horizontal_space, vertical as vertical_space,
 };
 pub use w::svg::{
     Handle as SvgHandle, Status as SvgStatus, Style as SvgStyle, Svg,
@@ -125,11 +127,9 @@ pub use w::table::{
     Column as TableColumn, Style as TableStyle, Table, column as table_col,
     table,
 };
+pub use w::text::{Alignment as TextAlignment, LineHeight, Shaping, Text};
 pub use w::text_input::{
     Status as TextInputStatus, Style as TextInputStyle, TextInput,
 };
 pub use w::toggler::{Status as TogglerStatus, Style as TogglerStyle, Toggler};
-pub use w::{
-    Button, Column, PaneGrid, PickList, Row, Rule, Scrollable, Slider, Space,
-    Text,
-};
+pub use w::{Column, Row};
