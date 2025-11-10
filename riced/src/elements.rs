@@ -22,6 +22,26 @@ pub fn btn_svg<'a, Msg>(
     btn
 }
 
+pub fn btn_svg_stateful<'a, Msg>(
+    handle_off: impl Into<SvgHandle>,
+    handle_on: impl Into<SvgHandle>,
+    msg: Option<Msg>,
+    is_on: bool,
+) -> Button<'a, Msg> {
+    let mut svg = match is_on {
+        false => Svg::new(handle_off),
+        true => Svg::new(handle_on),
+    };
+    svg = svg.style(sty_svg_plain);
+    let mut btn = Button::new(svg);
+    btn = btn_common(btn, msg);
+    btn = match is_on {
+        false => btn.style(sty_btn_stateful_off),
+        true => btn.style(sty_btn_stateful_on),
+    };
+    btn
+}
+
 pub fn btn_txt<Msg>(lab: &'_ str, msg: Option<Msg>) -> Button<'_, Msg> {
     let mut txt = Text::new(lab);
     txt = txt.align_x(Horizontal::Center);

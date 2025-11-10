@@ -141,32 +141,24 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     tb_row = tb_row.push(
         center(
             iced_row![
-                match tv.show_search_bar {
-                    true =>
-                        btn_svg(Icon::HideSearch, Some(TvMsg::ToggleSearchBar)),
-                    false =>
-                        btn_svg(Icon::ShowSearch, Some(TvMsg::ToggleSearchBar)),
-                },
-                match tv.show_ltt {
-                    true => btn_svg(
-                        Icon::HidePlot,
-                        Some(TvMsg::LttVisChanged(false))
-                    ),
-                    false => btn_svg(
-                        Icon::ShowPlot,
-                        Some(TvMsg::LttVisChanged(true))
-                    ),
-                },
-                match tv.show_data_table {
-                    true => btn_svg(
-                        Icon::DataTable,
-                        Some(TvMsg::DataTableVisChanged(false))
-                    ),
-                    false => btn_svg(
-                        Icon::DataTable,
-                        Some(TvMsg::DataTableVisChanged(true))
-                    ),
-                },
+                btn_svg_stateful(
+                    Icon::Search,
+                    Icon::Search,
+                    Some(TvMsg::ToggleSearchBar),
+                    tv.show_search_bar,
+                ),
+                btn_svg_stateful(
+                    Icon::Plot,
+                    Icon::Plot,
+                    Some(TvMsg::ToggleLttPlot),
+                    tv.show_ltt_plot,
+                ),
+                btn_svg_stateful(
+                    Icon::DataTable,
+                    Icon::DataTable,
+                    Some(TvMsg::ToggleDataTable),
+                    tv.show_data_table,
+                ),
                 match tv.sidebar_pos {
                     SidebarPosition::Left => btn_svg(
                         Icon::SidebarRight,
@@ -455,7 +447,7 @@ fn side_bar_main<'a>(
     sb_col =
         sb_col.push(toggler_selection_lock(true, tv.tre_cnv.selection_lock));
 
-    if tv.show_ltt {
+    if tv.show_ltt_plot {
         sb_col =
             sb_col.push(pick_list_ltt_y_axis_scale_type(&tv.ltt_cnv.scale_y));
     }

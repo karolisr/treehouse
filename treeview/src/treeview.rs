@@ -15,7 +15,7 @@ pub struct TreeView {
     // -------------------------------------------------------------------------
     pub(super) tre_cnv: TreeCnv,
     pub(super) ltt_cnv: PlotCnv,
-    pub(super) show_ltt: bool,
+    pub(super) show_ltt_plot: bool,
     pub(super) show_data_table: bool,
     // -------------------------------------------------------------------------
     pub(super) show_tool_bar: bool,
@@ -124,8 +124,8 @@ pub enum TvMsg {
     TreStyOptChanged(TreSty),
     RootVisChanged(bool),
     RootLenSelChanged(u16),
-    LttVisChanged(bool),
-    DataTableVisChanged(bool),
+    ToggleLttPlot,
+    ToggleDataTable,
     DataTableSortColumnChanged(DataTableSortColumn),
     DataTableScrolledOrResized(Viewport),
     // -------------------------------------------------------------------------
@@ -157,11 +157,11 @@ impl TreeView {
         Self {
             sidebar_pos: sidebar_position,
             // -----------------------------------------------------------------
-            show_ltt: false,
-            show_data_table: true,
             show_tool_bar: true,
             show_side_bar: true,
             show_search_bar: false,
+            show_ltt_plot: false,
+            show_data_table: false,
             // -----------------------------------------------------------------
             node_ord_opt: NodeOrd::Ascending,
             // -----------------------------------------------------------------
@@ -418,8 +418,8 @@ impl TreeView {
                 self.data_table_viewport_height = vp.bounds().height;
             }
 
-            TvMsg::LttVisChanged(show_ltt) => {
-                self.show_ltt = show_ltt;
+            TvMsg::ToggleLttPlot => {
+                self.show_ltt_plot = !self.show_ltt_plot;
                 self.show_hide_ltt();
                 let x =
                     (self.tre_cnv.vis_x_mid - self.tre_scr_w / TWO).max(ZRO);
@@ -448,8 +448,8 @@ impl TreeView {
                 self.data_table_edges_cached();
             }
 
-            TvMsg::DataTableVisChanged(show_data_table) => {
-                self.show_data_table = show_data_table;
+            TvMsg::ToggleDataTable => {
+                self.show_data_table = !self.show_data_table;
                 self.show_hide_data_table();
             }
 
@@ -1308,11 +1308,11 @@ impl TreeView {
         let pane_id_to_split_opt = self.pane_id_to_split();
         if let Some(pane_grid) = &mut self.pane_grid {
             if let Some(ltt_pane_id) = self.ltt_pane_id {
-                if !self.show_ltt {
+                if !self.show_ltt_plot {
                     _ = pane_grid.close(ltt_pane_id);
                     self.ltt_pane_id = None;
                 }
-            } else if self.show_ltt
+            } else if self.show_ltt_plot
                 && let Some(pane_id_to_split) = pane_id_to_split_opt
                 && let Some((ltt_pane_id, split)) = pane_grid.split(
                     PgAxis::Horizontal,

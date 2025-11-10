@@ -310,10 +310,10 @@ pub fn sty_table_cell_selected(theme: &Theme) -> ContainerStyle {
 }
 
 pub(crate) fn sty_svg_plain(theme: &Theme, status: SvgStatus) -> SvgStyle {
-    let pe = theme.extended_palette();
+    let ep = theme.extended_palette();
     let color = match status {
-        SvgStatus::Idle => pe.background.base.color,
-        SvgStatus::Hovered => pe.background.base.color,
+        SvgStatus::Idle => ep.primary.base.text,
+        SvgStatus::Hovered => ep.primary.base.text,
     };
     SvgStyle { color: Some(color) }
 }
@@ -346,6 +346,36 @@ pub(crate) fn sty_btn(theme: &Theme, status: ButtonStatus) -> ButtonStyle {
             ..base
         },
     }
+}
+
+pub(crate) fn sty_btn_stateful_off(
+    theme: &Theme,
+    status: ButtonStatus,
+) -> ButtonStyle {
+    let ep = theme.extended_palette();
+    let base = sty_btn(theme, status);
+
+    let background = match status {
+        ButtonStatus::Disabled => Some(ep.background.weak.color.into()),
+        ButtonStatus::Active => Some(ep.background.strongest.color.into()),
+        ButtonStatus::Hovered => Some(ep.background.strong.color.into()),
+        ButtonStatus::Pressed => Some(ep.background.strongest.color.into()),
+    };
+
+    ButtonStyle {
+        background,
+        text_color: base.text_color,
+        border: base.border,
+        shadow: base.shadow,
+        snap: base.snap,
+    }
+}
+
+pub(crate) fn sty_btn_stateful_on(
+    theme: &Theme,
+    status: ButtonStatus,
+) -> ButtonStyle {
+    sty_btn(theme, status)
 }
 
 pub(crate) fn sty_pick_lst(
