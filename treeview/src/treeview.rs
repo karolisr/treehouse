@@ -467,6 +467,7 @@ impl TreeView {
                 self.set_ltt_plot_data();
                 self.update_draw_labs_allowed();
                 self.tre_cnv.stale_tre_rect = true;
+                self.data_table_edges_cached();
             }
 
             TvMsg::NextTre => {
@@ -475,6 +476,7 @@ impl TreeView {
                 self.set_ltt_plot_data();
                 self.update_draw_labs_allowed();
                 self.tre_cnv.stale_tre_rect = true;
+                self.data_table_edges_cached();
             }
 
             TvMsg::NodeOrdOptChanged(node_ord_opt) => {
