@@ -1,6 +1,7 @@
 use crate::CladeLabel;
 use crate::CladeLabelType;
 use crate::NodeOrd;
+use crate::treeview::{DataTableSortColumn, DataTableSortDirection};
 
 use riced::CnvCache;
 use riced::Color;
@@ -41,6 +42,14 @@ pub(super) struct TreeState {
     cache_sel_nodes: CnvCache,
     cache_filtered_nodes: CnvCache,
     cache_clade_labels: CnvCache,
+
+    // Data table sorting caches ----------------------------------------------
+    data_table_edges_node_id_asc: Option<Vec<Edge>>,
+    data_table_edges_node_id_desc: Option<Vec<Edge>>,
+    data_table_edges_node_label_asc: Option<Vec<Edge>>,
+    data_table_edges_node_label_desc: Option<Vec<Edge>>,
+    data_table_edges_selected_asc: Option<Vec<Edge>>,
+    data_table_edges_selected_desc: Option<Vec<Edge>>,
 
     // Memoized Values ---------------------------------------------------------
     cache_tip_count: Option<usize>,
@@ -399,6 +408,195 @@ impl TreeState {
         }
     }
 
+    // Get cached sorted edges for data table
+    pub(super) fn data_table_edges_cached(
+        &mut self,
+        sort_column: DataTableSortColumn,
+        sort_direction: DataTableSortDirection,
+    ) -> Option<&Vec<Edge>> {
+        // Check if cache needs to be populated
+        let needs_population = match (sort_column, sort_direction) {
+            (
+                DataTableSortColumn::NodeId,
+                DataTableSortDirection::Ascending,
+            ) => self.data_table_edges_node_id_asc.is_none(),
+            (
+                DataTableSortColumn::NodeId,
+                DataTableSortDirection::Descending,
+            ) => self.data_table_edges_node_id_desc.is_none(),
+            (
+                DataTableSortColumn::NodeLabel,
+                DataTableSortDirection::Ascending,
+            ) => self.data_table_edges_node_label_asc.is_none(),
+            (
+                DataTableSortColumn::NodeLabel,
+                DataTableSortDirection::Descending,
+            ) => self.data_table_edges_node_label_desc.is_none(),
+            (
+                DataTableSortColumn::Selected,
+                DataTableSortDirection::Ascending,
+            ) => self.data_table_edges_selected_asc.is_none(),
+            (
+                DataTableSortColumn::Selected,
+                DataTableSortDirection::Descending,
+            ) => self.data_table_edges_selected_desc.is_none(),
+        };
+
+        // Populate cache if needed
+        if needs_population {
+            if let Some(edges) = self.edges_srtd_y() {
+                let mut sorted_edges = edges.clone();
+                let sel_node_ids = &self.sel_node_ids; // Capture reference for closure
+
+                // Sort based on the requested column and direction
+                match sort_column {
+                    DataTableSortColumn::NodeId => {
+                        sorted_edges.sort_by(|a, b| {
+                            let ord = a.node_id.cmp(&b.node_id);
+                            match sort_direction {
+                                DataTableSortDirection::Ascending => ord,
+                                DataTableSortDirection::Descending => {
+                                    ord.reverse()
+                                }
+                            }
+                        });
+                    }
+                    DataTableSortColumn::NodeLabel => {
+                        sorted_edges.sort_by(|a, b| {
+                            let label_a = a.label.as_deref().unwrap_or("");
+                            let label_b = b.label.as_deref().unwrap_or("");
+                            let ord = label_a.cmp(label_b);
+                            match sort_direction {
+                                DataTableSortDirection::Ascending => ord,
+                                DataTableSortDirection::Descending => {
+                                    ord.reverse()
+                                }
+                            }
+                        });
+                    }
+                    DataTableSortColumn::Selected => {
+                        sorted_edges.sort_by(|a, b| {
+                            let sel_a = sel_node_ids.contains(&a.node_id);
+                            let sel_b = sel_node_ids.contains(&b.node_id);
+                            let ord = sel_a.cmp(&sel_b);
+                            match sort_direction {
+                                DataTableSortDirection::Ascending => ord,
+                                DataTableSortDirection::Descending => {
+                                    ord.reverse()
+                                }
+                            }
+                        });
+                    }
+                }
+
+                // Store in appropriate cache field
+                match (sort_column, sort_direction) {
+                    (
+                        DataTableSortColumn::NodeId,
+                        DataTableSortDirection::Ascending,
+                    ) => {
+                        self.data_table_edges_node_id_asc = Some(sorted_edges);
+                    }
+                    (
+                        DataTableSortColumn::NodeId,
+                        DataTableSortDirection::Descending,
+                    ) => {
+                        self.data_table_edges_node_id_desc = Some(sorted_edges);
+                    }
+                    (
+                        DataTableSortColumn::NodeLabel,
+                        DataTableSortDirection::Ascending,
+                    ) => {
+                        self.data_table_edges_node_label_asc =
+                            Some(sorted_edges);
+                    }
+                    (
+                        DataTableSortColumn::NodeLabel,
+                        DataTableSortDirection::Descending,
+                    ) => {
+                        self.data_table_edges_node_label_desc =
+                            Some(sorted_edges);
+                    }
+                    (
+                        DataTableSortColumn::Selected,
+                        DataTableSortDirection::Ascending,
+                    ) => {
+                        self.data_table_edges_selected_asc = Some(sorted_edges);
+                    }
+                    (
+                        DataTableSortColumn::Selected,
+                        DataTableSortDirection::Descending,
+                    ) => {
+                        self.data_table_edges_selected_desc =
+                            Some(sorted_edges);
+                    }
+                }
+            }
+        }
+
+        // Return reference to cached data
+        match (sort_column, sort_direction) {
+            (
+                DataTableSortColumn::NodeId,
+                DataTableSortDirection::Ascending,
+            ) => self.data_table_edges_node_id_asc.as_ref(),
+            (
+                DataTableSortColumn::NodeId,
+                DataTableSortDirection::Descending,
+            ) => self.data_table_edges_node_id_desc.as_ref(),
+            (
+                DataTableSortColumn::NodeLabel,
+                DataTableSortDirection::Ascending,
+            ) => self.data_table_edges_node_label_asc.as_ref(),
+            (
+                DataTableSortColumn::NodeLabel,
+                DataTableSortDirection::Descending,
+            ) => self.data_table_edges_node_label_desc.as_ref(),
+            (
+                DataTableSortColumn::Selected,
+                DataTableSortDirection::Ascending,
+            ) => self.data_table_edges_selected_asc.as_ref(),
+            (
+                DataTableSortColumn::Selected,
+                DataTableSortDirection::Descending,
+            ) => self.data_table_edges_selected_desc.as_ref(),
+        }
+    }
+
+    // Get cached sorted edges for data table (read-only version)
+    pub(super) fn data_table_edges_cached_ro(
+        &self,
+        sort_column: DataTableSortColumn,
+        sort_direction: DataTableSortDirection,
+    ) -> Option<&Vec<Edge>> {
+        match (sort_column, sort_direction) {
+            (
+                DataTableSortColumn::NodeId,
+                DataTableSortDirection::Ascending,
+            ) => self.data_table_edges_node_id_asc.as_ref(),
+            (
+                DataTableSortColumn::NodeId,
+                DataTableSortDirection::Descending,
+            ) => self.data_table_edges_node_id_desc.as_ref(),
+            (
+                DataTableSortColumn::NodeLabel,
+                DataTableSortDirection::Ascending,
+            ) => self.data_table_edges_node_label_asc.as_ref(),
+            (
+                DataTableSortColumn::NodeLabel,
+                DataTableSortDirection::Descending,
+            ) => self.data_table_edges_node_label_desc.as_ref(),
+            (
+                DataTableSortColumn::Selected,
+                DataTableSortDirection::Ascending,
+            ) => self.data_table_edges_selected_asc.as_ref(),
+            (
+                DataTableSortColumn::Selected,
+                DataTableSortDirection::Descending,
+            ) => self.data_table_edges_selected_desc.as_ref(),
+        }
+    }
+
     pub(super) fn sort(&mut self, node_ord_opt: NodeOrd) {
         let current_found_node_id;
         if let Some(node_id) = self.tmp_found_node_id {
@@ -432,6 +630,7 @@ impl TreeState {
             self.remove_clade_label(node_id);
         }
         // ---------------------------------------------------------------------
+        self.clear_data_table_caches();
         self.clear_caches_all();
     }
 
@@ -548,12 +747,18 @@ impl TreeState {
         _ = self.sel_node_ids.insert(node_id);
         self.sel_edge_idxs = self.sel_edge_idxs_prep();
         self.clear_cache_sel_nodes();
+        // Clear data table caches since selection affects Selected column sorting
+        self.data_table_edges_selected_asc = None;
+        self.data_table_edges_selected_desc = None;
     }
 
     pub(super) fn deselect_node(&mut self, node_id: NodeId) {
         _ = self.sel_node_ids.remove(&node_id);
         self.sel_edge_idxs = self.sel_edge_idxs_prep();
         self.clear_cache_sel_nodes();
+        // Clear data table caches since selection affects Selected column sorting
+        self.data_table_edges_selected_asc = None;
+        self.data_table_edges_selected_desc = None;
     }
 
     pub(super) fn select_deselect_node_exclusive(&mut self, node_id: NodeId) {
@@ -627,6 +832,16 @@ impl TreeState {
         self.cache_clade_labels.clear();
     }
 
+    // Clear data table caches - requires mutable self since these are Option fields
+    fn clear_data_table_caches(&mut self) {
+        self.data_table_edges_node_id_asc = None;
+        self.data_table_edges_node_id_desc = None;
+        self.data_table_edges_node_label_asc = None;
+        self.data_table_edges_node_label_desc = None;
+        self.data_table_edges_selected_asc = None;
+        self.data_table_edges_selected_desc = None;
+    }
+
     pub(super) fn clear_caches_all(&self) {
         self.clear_cache_edge();
         self.clear_cache_lab_tip();
@@ -662,6 +877,14 @@ impl TreeState {
         self.cache_node_count = None;
         self.cache_tip_count = None;
         self.cache_tre_height = None;
+
+        // Invalidate data table caches
+        self.data_table_edges_node_id_asc = None;
+        self.data_table_edges_node_id_desc = None;
+        self.data_table_edges_node_label_asc = None;
+        self.data_table_edges_node_label_desc = None;
+        self.data_table_edges_selected_asc = None;
+        self.data_table_edges_selected_desc = None;
 
         self.cache_has_brlen = Some(self.has_brlen());
         self.cache_has_int_labs = Some(self.has_int_labs());

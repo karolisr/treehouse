@@ -121,8 +121,10 @@ pub use w::space::{
 pub use w::svg::{
     Handle as SvgHandle, Status as SvgStatus, Style as SvgStyle, Svg,
 };
-pub use w::table::{Column as TableColumn, Style as TableStyle, Table, table};
-pub use w::text::{Alignment as TextAlignment, LineHeight, Shaping};
+pub use w::table::{
+    Column as TableColumn, Style as TableStyle, Table, column as table_col,
+    table,
+};
 pub use w::text_input::{
     Status as TextInputStatus, Style as TextInputStyle, TextInput,
 };
