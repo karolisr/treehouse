@@ -4,24 +4,32 @@ use crate::*;
 fn btn_common<Msg>(btn: Button<'_, Msg>, msg: Option<Msg>) -> Button<'_, Msg> {
     let mut btn = btn;
     btn = btn.on_press_maybe(msg);
+    btn = btn.clip(true);
     btn = btn.width(BTN_H1);
     btn = btn.height(BTN_H1);
-    btn.style(sty_btn)
+    btn.padding(ZERO)
 }
 
 pub fn btn_svg<'a, Msg>(
     handle: impl Into<SvgHandle>,
     msg: Option<Msg>,
 ) -> Button<'a, Msg> {
-    let svg = Svg::new(handle).style(sty_svg);
-    btn_common(Button::new(svg), msg).padding(PADDING / THREE)
+    let mut svg = Svg::new(handle);
+    svg = svg.style(sty_svg_plain);
+    let mut btn = Button::new(svg);
+    btn = btn_common(btn, msg);
+    btn = btn.style(sty_btn);
+    btn
 }
 
 pub fn btn_txt<Msg>(lab: &'_ str, msg: Option<Msg>) -> Button<'_, Msg> {
     let mut txt = Text::new(lab);
     txt = txt.align_x(Horizontal::Center);
     txt = txt.align_y(Vertical::Center);
-    btn_common(Button::new(txt), msg).padding(ZERO)
+    let mut btn = Button::new(txt);
+    btn = btn_common(btn, msg);
+    btn = btn.style(sty_btn);
+    btn
 }
 
 pub fn checkbox<'a, Msg>(

@@ -157,16 +157,16 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
                         Some(TvMsg::LttVisChanged(true))
                     ),
                 },
-                // match tv.show_data_table {
-                //     true => btn_svg(
-                //         Icon::DataTable,
-                //         Some(TvMsg::DataTableVisChanged(false))
-                //     ),
-                //     false => btn_svg(
-                //         Icon::DataTable,
-                //         Some(TvMsg::DataTableVisChanged(true))
-                //     ),
-                // },
+                match tv.show_data_table {
+                    true => btn_svg(
+                        Icon::DataTable,
+                        Some(TvMsg::DataTableVisChanged(false))
+                    ),
+                    false => btn_svg(
+                        Icon::DataTable,
+                        Some(TvMsg::DataTableVisChanged(true))
+                    ),
+                },
                 match tv.sidebar_pos {
                     SidebarPosition::Left => btn_svg(
                         Icon::SidebarRight,

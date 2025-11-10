@@ -82,15 +82,6 @@ pub(crate) fn sty_text_input(
     }
 }
 
-pub(crate) fn sty_svg(theme: &Theme, status: SvgStatus) -> SvgStyle {
-    let pe = theme.extended_palette();
-    let color = match status {
-        SvgStatus::Idle => pe.background.base.color,
-        SvgStatus::Hovered => pe.background.base.color,
-    };
-    SvgStyle { color: Some(color) }
-}
-
 pub fn sty_cont(theme: &Theme) -> ContainerStyle {
     let pb = theme.palette();
     let pe = theme.extended_palette();
@@ -317,6 +308,16 @@ pub fn sty_table_cell_selected(theme: &Theme) -> ContainerStyle {
         ..base
     }
 }
+
+pub(crate) fn sty_svg_plain(theme: &Theme, status: SvgStatus) -> SvgStyle {
+    let pe = theme.extended_palette();
+    let color = match status {
+        SvgStatus::Idle => pe.background.base.color,
+        SvgStatus::Hovered => pe.background.base.color,
+    };
+    SvgStyle { color: Some(color) }
+}
+
 pub(crate) fn sty_btn(theme: &Theme, status: ButtonStatus) -> ButtonStyle {
     let ep = theme.extended_palette();
 
