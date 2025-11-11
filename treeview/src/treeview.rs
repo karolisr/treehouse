@@ -8,15 +8,15 @@ pub struct TreeView {
     pub(super) tre_states: Vec<Rc<TreeState>>,
     tre_state_idx: Option<usize>,
     // -------------------------------------------------------------------------
-    pub(super) pane_grid: Option<PgState<TvPane>>,
+    pub(super) pane_grid: Option<PgState<TreeViewPane>>,
     pub(super) tre_pane_id: Option<Pane>,
     pub(super) ltt_pane_id: Option<Pane>,
-    pub(super) data_table_pane_id: Option<Pane>,
+    pub(super) nodes_table_pane_id: Option<Pane>,
     // -------------------------------------------------------------------------
     pub(super) tre_cnv: TreeCnv,
     pub(super) ltt_cnv: PlotCnv,
     pub(super) show_ltt_plot: bool,
-    pub(super) show_data_table: bool,
+    pub(super) show_nodes_table: bool,
     // -------------------------------------------------------------------------
     pub(super) show_tool_bar: bool,
     pub(super) show_side_bar: bool,
@@ -48,18 +48,17 @@ pub struct TreeView {
     pub(super) rot_angle_idx: u16,
     pub(super) rot_angle_idx_max: u16,
     // -------------------------------------------------------------------------
-    pub(super) node_ord_opt: NodeOrd,
+    pub(super) node_ord_opt: TreNodeOrd,
     // -------------------------------------------------------------------------
     pub(super) ltt_scrollable_id: &'static str,
     pub(super) tre_scrollable_id: &'static str,
-    pub(super) node_data_table_scrollable_id: &'static str,
+    pub(super) nodes_table_scrollable_id: &'static str,
     pub(super) search_text_input_id: &'static str,
     // -------------------------------------------------------------------------
-    pub(super) node_data_table_sort_col: NodeDataTableSortColumn,
-    pub(super) node_data_table_sort_dir: DataTableSortDirection,
-    // -------------------------------------------------------------------------
-    pub(super) node_data_table_scroll_y: Float,
-    pub(super) node_data_table_viewport_height: Float,
+    pub(super) nodes_table_sort_col: EdgeSortField,
+    pub(super) nodes_table_sort_ord: SortOrd,
+    pub(super) nodes_table_scroll_y: Float,
+    pub(super) nodes_table_viewport_height: Float,
     // -------------------------------------------------------------------------
     keep_scroll_position_requested: bool,
     // -------------------------------------------------------------------------
@@ -109,7 +108,7 @@ pub enum TvMsg {
     TipLabTrimValChanged(u16),
     PrevTre,
     NextTre,
-    NodeOrdOptChanged(NodeOrd),
+    TreNodeOrdOptChanged(TreNodeOrd),
     LttXAxisScaleTypeChanged(AxisScaleType),
     LttYAxisScaleTypeChanged(AxisScaleType),
     OpnAngleChanged(u16),
@@ -125,9 +124,9 @@ pub enum TvMsg {
     RootVisChanged(bool),
     RootLenSelChanged(u16),
     ToggleLttPlot,
-    ToggleDataTable,
-    NodeDataTableSortColumnChanged(NodeDataTableSortColumn),
-    NodeDataTableScrolledOrResized(Viewport),
+    ToggleNodesTable,
+    NodesTableSortColumnChanged(EdgeSortField),
+    NodesTableScrolledOrResized(Viewport),
     // -------------------------------------------------------------------------
     AddCladeLabel((NodeId, Color)),
     RemoveCladeLabel(NodeId),
@@ -159,9 +158,9 @@ impl Default for TreeView {
             show_side_bar: true,
             show_search_bar: false,
             show_ltt_plot: false,
-            show_data_table: true,
+            show_nodes_table: true,
             // -----------------------------------------------------------------
-            node_ord_opt: NodeOrd::Ascending,
+            node_ord_opt: TreNodeOrd::Ascending,
             // -----------------------------------------------------------------
             opn_angle_idx_min: 45,
             opn_angle_idx: 345,
@@ -187,15 +186,15 @@ impl Default for TreeView {
             tre_cnv_z_idx: 1,
             tre_cnv_size_idx_max: 22,
             // -----------------------------------------------------------------
-            tre_scrollable_id: "tre",
-            ltt_scrollable_id: "ltt",
-            node_data_table_scrollable_id: "node_data_table",
-            search_text_input_id: "srch",
+            tre_scrollable_id: "tre_scrollable",
+            ltt_scrollable_id: "ltt_scrollable",
+            nodes_table_scrollable_id: "nodes_table",
+            search_text_input_id: "search_text_input",
             // -----------------------------------------------------------------
-            node_data_table_sort_col: NodeDataTableSortColumn::NodeId,
-            node_data_table_sort_dir: DataTableSortDirection::Ascending,
-            node_data_table_scroll_y: ZRO,
-            node_data_table_viewport_height: ZRO,
+            nodes_table_sort_col: EdgeSortField::NodeId,
+            nodes_table_sort_ord: SortOrd::Ascending,
+            nodes_table_scroll_y: ZRO,
+            nodes_table_viewport_height: ZRO,
             // -----------------------------------------------------------------
             is_new: true,
             // -----------------------------------------------------------------
@@ -205,7 +204,7 @@ impl Default for TreeView {
             pane_grid: None,
             tre_pane_id: None,
             ltt_pane_id: None,
-            data_table_pane_id: None,
+            nodes_table_pane_id: None,
             ltt_cnv: PlotCnv::default(),
             tre_cnv: TreeCnv::new(),
             keep_scroll_position_requested: false,
@@ -288,7 +287,7 @@ impl TreeView {
             TvMsg::TipLabWidthSetByUser(opt_w) => {
                 self.tre_cnv.tip_w_set_by_user = opt_w;
                 self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
+                self.clear_caches_cnv_all();
             }
 
             TvMsg::ContextMenuInteractionBegin(
@@ -314,7 +313,7 @@ impl TreeView {
                     );
                 });
                 self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
+                self.clear_caches_cnv_all();
             }
 
             TvMsg::RemoveCladeLabel(node_id) => {
@@ -322,7 +321,7 @@ impl TreeView {
                     tre.remove_clade_label(node_id);
                 });
                 self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
+                self.clear_caches_cnv_all();
             }
 
             TvMsg::AddRemoveCladeLabel((node_id, color)) => {
@@ -335,7 +334,7 @@ impl TreeView {
                     );
                 });
                 self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
+                self.clear_caches_cnv_all();
             }
 
             TvMsg::AddRemoveCladeLabelForSelectedNode => {
@@ -397,8 +396,8 @@ impl TreeView {
                 }
 
                 self.update_draw_labs_allowed();
-                self.clear_cache_sel_nodes();
-                self.clear_cache_filtered_nodes();
+                self.clear_cache_cnv_sel_nodes();
+                self.clear_cache_cnv_filtered_nodes();
             }
 
             TvMsg::LttCnvScrolledOrResized(vp) => {
@@ -420,9 +419,9 @@ impl TreeView {
                 }
             }
 
-            TvMsg::NodeDataTableScrolledOrResized(vp) => {
-                self.node_data_table_scroll_y = vp.absolute_offset().y;
-                self.node_data_table_viewport_height = vp.bounds().height;
+            TvMsg::NodesTableScrolledOrResized(vp) => {
+                self.nodes_table_scroll_y = vp.absolute_offset().y;
+                self.nodes_table_viewport_height = vp.bounds().height;
             }
 
             TvMsg::ToggleLttPlot => {
@@ -436,28 +435,23 @@ impl TreeView {
                 ));
             }
 
-            TvMsg::NodeDataTableSortColumnChanged(sort_col) => {
-                if self.node_data_table_sort_col == sort_col {
-                    self.node_data_table_sort_dir =
-                        match self.node_data_table_sort_dir {
-                            DataTableSortDirection::Ascending => {
-                                DataTableSortDirection::Descending
-                            }
-                            DataTableSortDirection::Descending => {
-                                DataTableSortDirection::Ascending
-                            }
-                        };
+            TvMsg::NodesTableSortColumnChanged(sort_col) => {
+                if self.nodes_table_sort_col == sort_col {
+                    self.nodes_table_sort_ord = match self.nodes_table_sort_ord
+                    {
+                        SortOrd::Ascending => SortOrd::Descending,
+                        SortOrd::Descending => SortOrd::Ascending,
+                    };
                 } else {
-                    self.node_data_table_sort_col = sort_col;
-                    self.node_data_table_sort_dir =
-                        DataTableSortDirection::Ascending;
+                    self.nodes_table_sort_col = sort_col;
+                    self.nodes_table_sort_ord = SortOrd::Ascending;
                 }
 
-                self.data_table_edges_cached();
+                self.populate_cache_edges();
             }
 
-            TvMsg::ToggleDataTable => {
-                self.show_data_table = !self.show_data_table;
+            TvMsg::ToggleNodesTable => {
+                self.show_nodes_table = !self.show_nodes_table;
                 self.show_hide_data_table();
             }
 
@@ -467,7 +461,7 @@ impl TreeView {
                 self.set_ltt_plot_data();
                 self.update_draw_labs_allowed();
                 self.tre_cnv.stale_tre_rect = true;
-                self.data_table_edges_cached();
+                self.populate_cache_edges();
             }
 
             TvMsg::NextTre => {
@@ -476,16 +470,16 @@ impl TreeView {
                 self.set_ltt_plot_data();
                 self.update_draw_labs_allowed();
                 self.tre_cnv.stale_tre_rect = true;
-                self.data_table_edges_cached();
+                self.populate_cache_edges();
             }
 
-            TvMsg::NodeOrdOptChanged(node_ord_opt) => {
+            TvMsg::TreNodeOrdOptChanged(node_ord_opt) => {
                 if node_ord_opt != self.node_ord_opt {
                     self.node_ord_opt = node_ord_opt;
                     self.sort();
                     task = self.scroll_to_current_found_edge();
                     self.tre_cnv.stale_tre_rect = true;
-                    self.data_table_edges_cached();
+                    self.populate_cache_edges();
                 }
             }
 
@@ -497,9 +491,9 @@ impl TreeView {
                 self.set_ltt_plot_data();
                 self.update_draw_labs_allowed();
                 task = self.scroll_to_current_found_edge();
-                self.tre_cnv.clear_cache_legend();
+                self.tre_cnv.clear_cache_cnv_legend();
                 self.tre_cnv.stale_tre_rect = true;
-                self.data_table_edges_cached();
+                self.populate_cache_edges();
             }
 
             TvMsg::Root(node_id) => {
@@ -510,9 +504,9 @@ impl TreeView {
                 self.set_ltt_plot_data();
                 self.update_draw_labs_allowed();
                 task = self.scroll_to_current_found_edge();
-                self.tre_cnv.clear_cache_legend();
+                self.tre_cnv.clear_cache_cnv_legend();
                 self.tre_cnv.stale_tre_rect = true;
-                self.data_table_edges_cached();
+                self.populate_cache_edges();
             }
 
             TvMsg::TreesLoaded(trees) => {
@@ -535,13 +529,14 @@ impl TreeView {
 
                 if let Some(_tre_pane_id) = &self.tre_pane_id {
                 } else {
-                    let (pane_grid, tre_pane_id) = PgState::new(TvPane::Tree);
+                    let (pane_grid, tre_pane_id) =
+                        PgState::new(TreeViewPane::Tree);
                     self.pane_grid = Some(pane_grid);
                     self.tre_pane_id = Some(tre_pane_id);
                 }
                 self.sort();
                 self.set_ltt_plot_data();
-                self.data_table_edges_cached();
+                self.populate_cache_edges();
 
                 if self.is_new {
                     self.tre_cnv.opn_angle = angle_from_idx(self.opn_angle_idx);
@@ -577,19 +572,19 @@ impl TreeView {
                 }
 
                 self.update_draw_labs_allowed();
-                self.clear_caches_all();
+                self.clear_caches_cnv_all();
                 self.tre_cnv.drawing_enabled = true;
                 self.tre_cnv.stale_tre_rect = true;
             }
 
             TvMsg::LttXAxisScaleTypeChanged(axis_scale_type) => {
                 self.ltt_cnv.scale_x = axis_scale_type;
-                self.ltt_cnv.clear_caches_all();
+                self.ltt_cnv.clear_caches_cnv_all();
             }
 
             TvMsg::LttYAxisScaleTypeChanged(axis_scale_type) => {
                 self.ltt_cnv.scale_y = axis_scale_type;
-                self.ltt_cnv.clear_caches_all();
+                self.ltt_cnv.clear_caches_cnv_all();
             }
 
             TvMsg::CnvWidthSelChanged(idx) => {
@@ -605,7 +600,7 @@ impl TreeView {
                         task = self.keep_scroll_pos_w();
                     }
                     self.tre_cnv.stale_tre_rect = true;
-                    self.clear_cache_edge();
+                    self.clear_cache_cnv_edge();
                 }
             }
 
@@ -621,7 +616,7 @@ impl TreeView {
                         task = self.keep_scroll_pos_h();
                     }
                     self.tre_cnv.stale_tre_rect = true;
-                    self.clear_cache_edge();
+                    self.clear_cache_cnv_edge();
                 }
             }
 
@@ -664,7 +659,7 @@ impl TreeView {
                         task = self.keep_scroll_pos_z();
                     }
                     self.tre_cnv.stale_tre_rect = true;
-                    self.clear_cache_edge();
+                    self.clear_cache_cnv_edge();
                 }
             }
 
@@ -692,7 +687,7 @@ impl TreeView {
                     self.update_draw_labs_allowed();
                     task = self.scroll_to_current_found_edge();
                     self.tre_cnv.stale_tre_rect = true;
-                    self.clear_caches_all();
+                    self.clear_caches_cnv_all();
                 }
             }
 
@@ -700,7 +695,7 @@ impl TreeView {
                 self.tre_cnv.draw_labs_tip = state;
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
+                self.clear_caches_cnv_all();
             }
 
             TvMsg::TipLabSizeChanged(idx) => {
@@ -716,46 +711,46 @@ impl TreeView {
                 // -------------------------------------------------------------
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
+                self.clear_caches_cnv_all();
             }
 
             TvMsg::TipLabAlignOptChanged(state) => {
                 self.tre_cnv.align_tip_labs = state;
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
+                self.clear_caches_cnv_all();
             }
 
             TvMsg::TipLabTrimOptChanged(state) => {
                 self.tre_cnv.trim_tip_labs = state;
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
+                self.clear_caches_cnv_all();
             }
 
             TvMsg::TipLabTrimValChanged(value) => {
                 self.tre_cnv.trim_tip_labs_to_nchar = value;
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
+                self.clear_caches_cnv_all();
             }
 
             TvMsg::IntLabVisChanged(state) => {
                 self.tre_cnv.draw_labs_int = state;
-                self.clear_cache_lab_int();
+                self.clear_cache_cnv_lab_int();
             }
 
             TvMsg::IntLabSizeChanged(idx) => {
                 self.lab_size_idx_int = idx;
                 self.tre_cnv.lab_size_int =
                     self.tre_cnv.lab_size_min * idx as Float;
-                self.clear_cache_lab_int();
+                self.clear_cache_cnv_lab_int();
             }
 
             TvMsg::BrnchLabVisChanged(state) => {
                 self.tre_cnv.draw_labs_brnch = state;
                 self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
+                self.clear_caches_cnv_all();
             }
 
             TvMsg::BrnchLabSizeChanged(idx) => {
@@ -763,7 +758,7 @@ impl TreeView {
                 self.tre_cnv.lab_size_brnch =
                     self.tre_cnv.lab_size_min * idx as Float;
                 self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
+                self.clear_caches_cnv_all();
             }
 
             TvMsg::LegendVisChanged(state) => {
@@ -774,14 +769,14 @@ impl TreeView {
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
                     tre.select_deselect_node(node_id);
                 });
-                self.data_table_edges_cached();
+                self.populate_cache_edges();
             }
 
             TvMsg::SelectDeselectNodeExclusive(node_id) => {
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
                     tre.select_deselect_node_exclusive(node_id);
                 });
-                self.data_table_edges_cached();
+                self.populate_cache_edges();
             }
 
             TvMsg::OpnAngleChanged(idx) => {
@@ -789,14 +784,14 @@ impl TreeView {
                 self.tre_cnv.opn_angle = angle_from_idx(idx);
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
+                self.clear_caches_cnv_all();
             }
 
             TvMsg::RotAngleChanged(idx) => {
                 self.rot_angle_idx = idx;
                 self.tre_cnv.rot_angle = angle_from_idx(idx);
                 task = self.scroll_to_current_found_edge();
-                self.clear_caches_all();
+                self.clear_caches_cnv_all();
             }
 
             TvMsg::RootVisChanged(state) => {
@@ -804,7 +799,7 @@ impl TreeView {
                 self.tre_cnv.root_len_frac = self.calc_root_len_frac();
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
+                self.clear_caches_cnv_all();
             }
 
             TvMsg::RootLenSelChanged(idx) => {
@@ -812,7 +807,7 @@ impl TreeView {
                 self.tre_cnv.root_len_frac = self.calc_root_len_frac();
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
-                self.clear_caches_all();
+                self.clear_caches_cnv_all();
             }
 
             TvMsg::PaneResized(ResizeEvent { split, ratio }) => {
@@ -820,8 +815,8 @@ impl TreeView {
                     pane_grid.resize(split, ratio);
                     self.update_vis_y();
                     self.update_draw_labs_allowed();
-                    self.clear_cache_sel_nodes();
-                    self.clear_cache_filtered_nodes();
+                    self.clear_cache_cnv_sel_nodes();
+                    self.clear_cache_cnv_filtered_nodes();
                 }
             }
 
@@ -834,8 +829,8 @@ impl TreeView {
                 self.ltt_cnv.crsr_x_rel = None;
                 self.tre_cnv.draw_cursor_line = state;
                 self.ltt_cnv.draw_cursor_line = state;
-                self.tre_cnv.clear_cache_cursor_line();
-                self.ltt_cnv.clear_cache_cursor_line();
+                self.tre_cnv.clear_cache_cnv_cursor_line();
+                self.ltt_cnv.clear_cache_cnv_cursor_line();
             }
 
             TvMsg::CursorOnTreCnv { x } => {
@@ -907,11 +902,11 @@ impl TreeView {
         }
     }
 
-    fn data_table_edges_cached(&mut self) {
-        let sort_col = self.node_data_table_sort_col;
-        let sort_dir = self.node_data_table_sort_dir;
+    fn populate_cache_edges(&mut self) {
+        let sort_col = self.nodes_table_sort_col;
+        let sort_dir = self.nodes_table_sort_ord;
         self.with_exclusive_sel_tre_mut(&mut |tre| {
-            _ = tre.data_table_edges_cached(sort_col, sort_dir);
+            tre.populate_cache_edges(sort_col, sort_dir);
         });
     }
 
@@ -1265,47 +1260,47 @@ impl TreeView {
         self.scroll_to_point(pt)
     }
 
-    pub(super) fn clear_cache_sel_nodes(&self) {
+    pub(super) fn clear_cache_cnv_sel_nodes(&self) {
         if let Some(ts) = self.sel_tre() {
-            ts.clear_cache_sel_nodes();
+            ts.clear_cache_cnv_sel_nodes();
         }
     }
 
-    pub(super) fn clear_cache_filtered_nodes(&self) {
+    pub(super) fn clear_cache_cnv_filtered_nodes(&self) {
         if let Some(ts) = self.sel_tre() {
-            ts.clear_cache_filtered_nodes();
+            ts.clear_cache_cnv_filtered_nodes();
         }
     }
 
-    pub(super) fn clear_cache_edge(&self) {
+    pub(super) fn clear_cache_cnv_edge(&self) {
         if let Some(ts) = self.sel_tre() {
-            ts.clear_cache_edge();
+            ts.clear_cache_cnv_edge();
         }
     }
 
-    pub(super) fn clear_cache_lab_int(&self) {
+    pub(super) fn clear_cache_cnv_lab_int(&self) {
         if let Some(ts) = self.sel_tre() {
-            ts.clear_cache_lab_int();
+            ts.clear_cache_cnv_lab_int();
         }
     }
 
-    pub(super) fn clear_cache_all_tre(&self) {
+    pub(super) fn clear_caches_cnv_all_tre(&self) {
         if let Some(ts) = self.sel_tre() {
-            ts.clear_caches_all();
+            ts.clear_caches_cnv();
         }
     }
 
-    pub(super) fn clear_caches_all(&self) {
-        self.tre_cnv.clear_caches_all();
-        self.ltt_cnv.clear_caches_all();
-        self.clear_cache_all_tre();
+    pub(super) fn clear_caches_cnv_all(&self) {
+        self.tre_cnv.clear_caches_cnv_all();
+        self.ltt_cnv.clear_caches_cnv_all();
+        self.clear_caches_cnv_all_tre();
     }
 
     fn pane_id_to_split(&self) -> Option<Pane> {
         if self.ltt_pane_id.is_some() {
             self.ltt_pane_id
-        } else if self.data_table_pane_id.is_some() {
-            self.data_table_pane_id
+        } else if self.nodes_table_pane_id.is_some() {
+            self.nodes_table_pane_id
         } else if self.tre_pane_id.is_some() {
             self.tre_pane_id
         } else {
@@ -1326,7 +1321,7 @@ impl TreeView {
                 && let Some((ltt_pane_id, split)) = pane_grid.split(
                     PgAxis::Horizontal,
                     pane_id_to_split,
-                    TvPane::LttPlot,
+                    TreeViewPane::LttPlot,
                 )
             {
                 pane_grid.resize(split, ONE);
@@ -1338,21 +1333,21 @@ impl TreeView {
     fn show_hide_data_table(&mut self) {
         let pane_id_to_split_opt = self.pane_id_to_split();
         if let Some(pane_grid) = &mut self.pane_grid {
-            if let Some(data_table_pane_id) = self.data_table_pane_id {
-                if !self.show_data_table {
+            if let Some(data_table_pane_id) = self.nodes_table_pane_id {
+                if !self.show_nodes_table {
                     _ = pane_grid.close(data_table_pane_id);
-                    self.data_table_pane_id = None;
+                    self.nodes_table_pane_id = None;
                 }
-            } else if self.show_data_table
+            } else if self.show_nodes_table
                 && let Some(pane_id_to_split) = pane_id_to_split_opt
                 && let Some((data_table_pane_id, split)) = pane_grid.split(
                     PgAxis::Horizontal,
                     pane_id_to_split,
-                    TvPane::DataTable,
+                    TreeViewPane::NodesTable,
                 )
             {
                 pane_grid.resize(split, ONE);
-                self.data_table_pane_id = Some(data_table_pane_id);
+                self.nodes_table_pane_id = Some(data_table_pane_id);
             }
         }
     }
@@ -1416,23 +1411,23 @@ pub enum TreSty {
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum NodeOrd {
+pub enum TreNodeOrd {
     #[default]
     Unordered,
     Ascending,
     Descending,
 }
 
-pub(super) const NODE_ORD_OPTS: [NodeOrd; 3] =
-    [NodeOrd::Unordered, NodeOrd::Ascending, NodeOrd::Descending];
+pub(super) const TRE_NODE_ORD_OPTS: [TreNodeOrd; 3] =
+    [TreNodeOrd::Unordered, TreNodeOrd::Ascending, TreNodeOrd::Descending];
 pub(super) const TRE_STY_OPTS: [TreSty; 2] = [TreSty::PhyGrm, TreSty::Fan];
 
-impl Display for NodeOrd {
+impl Display for TreNodeOrd {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         f.write_str(match self {
-            NodeOrd::Unordered => "Unordered",
-            NodeOrd::Ascending => "Ascending",
-            NodeOrd::Descending => "Descending",
+            TreNodeOrd::Unordered => "Unordered",
+            TreNodeOrd::Ascending => "Ascending",
+            TreNodeOrd::Descending => "Descending",
         })
     }
 }
@@ -1447,30 +1442,30 @@ impl Display for TreSty {
 }
 
 #[derive(Debug)]
-pub(crate) enum TvPane {
+pub(crate) enum TreeViewPane {
     Tree,
     LttPlot,
-    DataTable,
+    NodesTable,
 }
 
-impl Display for TvPane {
+impl Display for TreeViewPane {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{self:?}")
     }
 }
 
-impl From<TvPane> for String {
-    fn from(value: TvPane) -> Self {
+impl From<TreeViewPane> for String {
+    fn from(value: TreeViewPane) -> Self {
         (&value).into()
     }
 }
 
-impl From<&TvPane> for String {
-    fn from(value: &TvPane) -> Self {
+impl From<&TreeViewPane> for String {
+    fn from(value: &TreeViewPane) -> Self {
         match value {
-            TvPane::Tree => String::from("Tree"),
-            TvPane::LttPlot => String::from("LttPlot"),
-            TvPane::DataTable => String::from("DataTable"),
+            TreeViewPane::Tree => String::from("Tree"),
+            TreeViewPane::LttPlot => String::from("LttPlot"),
+            TreeViewPane::NodesTable => String::from("NodesTable"),
         }
     }
 }

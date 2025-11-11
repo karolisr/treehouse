@@ -11,7 +11,7 @@ pub(super) fn draw_bounds(
     bnds: Rectangle,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(tc.cache_bnds.draw(rndr, bnds.size(), |f| {
+    g.push(tc.cache_cnv_bnds.draw(rndr, bnds.size(), |f| {
         stroke_rect(st.cnv_rect, STRK_5_BLU_50, f);
         stroke_rect(st.tre_rect, STRK_3_GRN_50, f);
         if let Some(tip_lab_w_rect) = st.tip_lab_w_rect {
@@ -32,7 +32,7 @@ pub(super) fn draw_clade_labels(
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(tst.cache_clade_labels().draw(rndr, sz, |f| {
+    g.push(tst.cache_cnv_clade_labels().draw(rndr, sz, |f| {
         let labeled_clades = tst.labeled_clades();
         for node_id in tst.node_ids_srtd_asc() {
             if labeled_clades.contains_key(&node_id) {
@@ -51,7 +51,7 @@ pub(super) fn draw_edges(
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(tst.cache_edge().draw(rndr, sz, |f| match tc.tre_sty {
+    g.push(tst.cache_cnv_edge().draw(rndr, sz, |f| match tc.tre_sty {
         TreSty::PhyGrm => stroke_edges_phygrm(
             tst.edges_srtd_y().unwrap(),
             &st.tre_vs,
@@ -80,7 +80,7 @@ pub(super) fn draw_tip_lab_w_resize_area(
     bnds: Rectangle,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(tc.cache_tip_lab_w_resize_area.draw(rndr, bnds.size(), |f| {
+    g.push(tc.cache_cnv_tip_lab_w_resize_area.draw(rndr, bnds.size(), |f| {
         match tc.tre_sty {
             TreSty::PhyGrm => {
                 if let Some(tip_lab_w_rect) = st.tip_lab_w_rect {
@@ -110,7 +110,7 @@ pub(super) fn draw_legend(
     g: &mut Vec<Geometry>,
 ) {
     if tst.has_brlen() && tc.draw_legend {
-        g.push(tc.cache_legend.draw(rndr, sz, |f| {
+        g.push(tc.cache_cnv_legend.draw(rndr, sz, |f| {
             draw_scale_bar(
                 tc.tre_sty,
                 &st.tre_vs,
@@ -132,7 +132,7 @@ pub(super) fn draw_cursor_line(
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(tc.cache_cursor_line.draw(rndr, sz, |f| {
+    g.push(tc.cache_cnv_cursor_line.draw(rndr, sz, |f| {
         if let Some(p) = st.cursor_tracking_point
             && tc.draw_cursor_line
         {
@@ -166,7 +166,7 @@ pub(super) fn draw_labs_tip(
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(tst.cache_lab_tip().draw(rndr, sz, |f| {
+    g.push(tst.cache_cnv_lab_tip().draw(rndr, sz, |f| {
         draw_labels(
             &st.labs_tip,
             Vector { x: tc.lab_offset_tip, y: ZRO },
@@ -185,7 +185,7 @@ pub(super) fn draw_labs_int(
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(tst.cache_lab_int().draw(rndr, sz, |f| {
+    g.push(tst.cache_cnv_lab_int().draw(rndr, sz, |f| {
         draw_labels(
             &st.labs_int,
             Vector { x: tc.lab_offset_int, y: ZRO },
@@ -204,7 +204,7 @@ pub(super) fn draw_labs_brnch(
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(tst.cache_lab_brnch().draw(rndr, sz, |f| {
+    g.push(tst.cache_cnv_lab_brnch().draw(rndr, sz, |f| {
         draw_labels(
             &st.labs_brnch,
             Vector { x: ZRO, y: tc.lab_offset_brnch },
@@ -223,7 +223,7 @@ pub(super) fn draw_hovered_node(
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(tc.cache_hovered_node.draw(rndr, sz, |f| {
+    g.push(tc.cache_cnv_hovered_node.draw(rndr, sz, |f| {
         if let Some((node_id, hovered_node)) = &st.hovered_node {
             draw_clade_highlight(
                 *node_id,
@@ -252,7 +252,7 @@ pub(super) fn draw_selected_nodes(
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(tst.cache_sel_nodes().draw(rndr, sz, |f| {
+    g.push(tst.cache_cnv_sel_nodes().draw(rndr, sz, |f| {
         let points: Vec<Point> =
             st.selected_nodes.par_iter().map(|nd| nd.points.p1).collect();
         draw_nodes(
@@ -275,7 +275,7 @@ pub(super) fn draw_filtered_nodes(
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(tst.cache_filtered_nodes().draw(rndr, sz, |f| {
+    g.push(tst.cache_cnv_filtered_nodes().draw(rndr, sz, |f| {
         let points: Vec<Point> =
             st.filtered_nodes.par_iter().map(|nd| nd.points.p1).collect();
         draw_nodes(
@@ -617,7 +617,7 @@ pub(super) fn draw_palette(
     let color_warning_base = palette_ex.warning.base.color;
     let color_danger_base = palette_ex.danger.base.color;
 
-    g.push(tv.cache_palette.draw(rndr, sz, |f| {
+    g.push(tv.cache_cnv_palette.draw(rndr, sz, |f| {
         let colors_bg = [
             color_bg_base, color_bg_weakest, color_bg_weak, color_bg_strong,
             color_bg_strongest,

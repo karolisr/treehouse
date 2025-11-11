@@ -9,7 +9,7 @@ pub(super) fn draw_plot(
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(plt.cache_plot.draw(rndr, sz, |f| {
+    g.push(plt.cache_cnv_plot.draw(rndr, sz, |f| {
         let pb_plot = path_builder_plot(
             &plt.plot_data, &plt.scale_x, &plt.scale_y, st.plt_vs.w,
             st.plt_vs.h,
@@ -185,7 +185,7 @@ pub(super) fn draw_bounds(
     bnds: Rectangle,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(plt.cache_bnds.draw(rndr, bnds.size(), |f| {
+    g.push(plt.cache_cnv_bnds.draw(rndr, bnds.size(), |f| {
         stroke_rect(st.plt_rect, STRK_3_GRN_50, f);
     }));
 }
@@ -197,7 +197,7 @@ pub(super) fn draw_cursor_line(
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(plt.cache_cursor_line.draw(rndr, sz, |f| {
+    g.push(plt.cache_cnv_cursor_line.draw(rndr, sz, |f| {
         if let Some(p) = st.cursor_tracking_point
             && plt.draw_cursor_line
         {

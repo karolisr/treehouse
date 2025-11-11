@@ -1,31 +1,17 @@
 use crate::*;
-use std::collections::HashSet;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum NodeDataTableSortColumn {
-    NodeId,
-    NodeLabel,
-    Selected,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DataTableSortDirection {
-    Ascending,
-    Descending,
-}
 
 fn data_table_header_cell<'a>(
     tv: &'a TreeView,
     header_text: &str,
-    column: NodeDataTableSortColumn,
+    column: EdgeSortField,
     width: Float,
     height: Float,
     style: impl Fn(&Theme) -> ContainerStyle + 'a,
 ) -> Element<'a, TvMsg> {
-    let sort_indicator = if tv.node_data_table_sort_col == column {
-        match tv.node_data_table_sort_dir {
-            DataTableSortDirection::Ascending => "▲",
-            DataTableSortDirection::Descending => "▼",
+    let sort_indicator = if tv.nodes_table_sort_col == column {
+        match tv.nodes_table_sort_ord {
+            SortOrd::Ascending => "▲",
+            SortOrd::Descending => "▼",
         }
     } else {
         ""
@@ -43,7 +29,7 @@ fn data_table_header_cell<'a>(
     .style(style);
 
     mouse_area(header_content)
-        .on_press(TvMsg::NodeDataTableSortColumnChanged(column))
+        .on_press(TvMsg::NodesTableSortColumnChanged(column))
         .into()
 }
 
@@ -68,7 +54,7 @@ fn node_data_table_cell<'a>(
     mouse_area(styled_cell).on_press(TvMsg::SelectDeselectNode(node_id)).into()
 }
 
-pub(crate) fn node_data_table<'a>(
+pub(crate) fn nodes_table<'a>(
     tv: &'a TreeView,
     id: &'static str,
     w: Float,
@@ -114,7 +100,7 @@ pub(crate) fn node_data_table<'a>(
             data_table_header_cell(
                 tv,
                 "Selected",
-                NodeDataTableSortColumn::Selected,
+                EdgeSortField::Selected,
                 node_selected_column_width,
                 row_height,
                 sty_table_cell_header_left
@@ -122,7 +108,7 @@ pub(crate) fn node_data_table<'a>(
             data_table_header_cell(
                 tv,
                 "Node ID",
-                NodeDataTableSortColumn::NodeId,
+                EdgeSortField::NodeId,
                 node_id_column_width,
                 row_height,
                 sty_table_cell_header
@@ -130,7 +116,7 @@ pub(crate) fn node_data_table<'a>(
             data_table_header_cell(
                 tv,
                 "Node Label",
-                NodeDataTableSortColumn::NodeLabel,
+                EdgeSortField::NodeLabel,
                 node_label_column_width,
                 row_height,
                 sty_table_cell_header_right
@@ -188,7 +174,7 @@ pub(crate) fn node_data_table<'a>(
     ];
 
     let max_visible_rows = (scrollable_height / row_height) as usize;
-    let scroll_y = tv.node_data_table_scroll_y;
+    let scroll_y = tv.nodes_table_scroll_y;
     let first_visible_row = (scroll_y / row_height) as usize;
     let last_visible_row = first_visible_row + max_visible_rows;
     let start_idx = first_visible_row;
@@ -219,7 +205,7 @@ pub(crate) fn node_data_table<'a>(
     });
     scrollable_body = scrollable_body.id(id);
     scrollable_body =
-        scrollable_body.on_scroll(TvMsg::NodeDataTableScrolledOrResized);
+        scrollable_body.on_scroll(TvMsg::NodesTableScrolledOrResized);
     scrollable_body = scrollable_common(scrollable_body, w, scrollable_height);
 
     let mut final_table = Column::new();

@@ -14,9 +14,9 @@ pub(super) struct PlotCnv {
     pub(super) draw_debug: bool,
     pub(super) draw_cursor_line: bool,
     pub(super) crsr_x_rel: Option<Float>,
-    pub(super) cache_bnds: CnvCache,
-    pub(super) cache_cursor_line: CnvCache,
-    pub(super) cache_plot: CnvCache,
+    pub(super) cache_cnv_bnds: CnvCache,
+    pub(super) cache_cnv_cursor_line: CnvCache,
+    pub(super) cache_cnv_plot: CnvCache,
     pub(super) padd_l: Float,
     pub(super) padd_r: Float,
     pub(super) padd_t: Float,
@@ -123,26 +123,26 @@ impl From<&Vec<LttPoint>> for PlotData {
 }
 
 impl PlotCnv {
-    pub(super) fn clear_cache_bnds(&self) {
-        self.cache_bnds.clear();
+    pub(super) fn clear_cache_cnv_bnds(&self) {
+        self.cache_cnv_bnds.clear();
     }
 
-    pub(super) fn clear_cache_cursor_line(&self) {
-        self.cache_cursor_line.clear();
+    pub(super) fn clear_cache_cnv_cursor_line(&self) {
+        self.cache_cnv_cursor_line.clear();
     }
 
-    pub(super) fn clear_cache_plot(&self) {
-        self.cache_plot.clear();
+    pub(super) fn clear_cache_cnv_plot(&self) {
+        self.cache_cnv_plot.clear();
     }
 
-    pub(super) fn clear_caches_all(&self) {
-        self.clear_cache_bnds();
-        self.clear_cache_cursor_line();
-        self.clear_cache_plot();
+    pub(super) fn clear_caches_cnv_all(&self) {
+        self.clear_cache_cnv_bnds();
+        self.clear_cache_cnv_cursor_line();
+        self.clear_cache_cnv_plot();
     }
 
     pub(super) fn set_plot_data(&mut self, data: impl Into<PlotData>) {
-        self.clear_cache_plot();
+        self.clear_cache_cnv_plot();
         self.plot_data = data.into();
     }
 }
@@ -175,8 +175,8 @@ impl Program<TvMsg> for PlotCnv {
             || st.plt_padd_t != self.padd_t
             || st.plt_padd_b != self.padd_b
         {
-            self.clear_cache_bnds();
-            self.clear_cache_plot();
+            self.clear_cache_cnv_bnds();
+            self.clear_cache_cnv_plot();
             st.bnds = bnds;
             st.text_size = SF * 10.0;
             let extra_padding = SF * TEN;
@@ -198,15 +198,15 @@ impl Program<TvMsg> for PlotCnv {
         if let Event::Mouse(mouse_ev) = ev {
             match mouse_ev {
                 MouseEvent::CursorEntered => {
-                    self.clear_cache_cursor_line();
+                    self.clear_cache_cnv_cursor_line();
                     st.cursor_tracking_point = None;
                 }
                 MouseEvent::CursorMoved { position: _ } => {
-                    self.clear_cache_cursor_line();
+                    self.clear_cache_cnv_cursor_line();
                     action = st.cursor_tracking_point(crsr);
                 }
                 MouseEvent::CursorLeft => {
-                    self.clear_cache_cursor_line();
+                    self.clear_cache_cnv_cursor_line();
                     st.cursor_tracking_point = None;
                 }
                 _ => {}

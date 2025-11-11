@@ -80,10 +80,10 @@ impl Program<TvMsg> for TreeCnv {
 
             st.bnds = bnds;
             // -----------------------------------------------------------------
-            self.clear_cache_bnds();
-            tst.clear_cache_lab_tip();
-            tst.clear_cache_lab_int();
-            tst.clear_cache_lab_brnch();
+            self.clear_cache_cnv_bnds();
+            tst.clear_cache_cnv_lab_tip();
+            tst.clear_cache_cnv_lab_int();
+            tst.clear_cache_cnv_lab_brnch();
         }
         // ---------------------------------------------------------------------
         let align_tips_at: Float;
@@ -168,8 +168,8 @@ impl Program<TvMsg> for TreeCnv {
         } // -------------------------------------------------------------------
         match ev {
             Event::Mouse(mouse_ev) => {
-                self.clear_cache_hovered_node();
-                self.clear_cache_cursor_line();
+                self.clear_cache_cnv_hovered_node();
+                self.clear_cache_cnv_cursor_line();
                 match mouse_ev {
                     MouseEvent::CursorEntered => {
                         st.mouse_angle = None;

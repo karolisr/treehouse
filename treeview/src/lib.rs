@@ -19,10 +19,10 @@ mod cnv_tree;
 mod cnv_utils;
 mod consts;
 mod context_menu;
-mod data_table;
 mod edge_utils;
 mod path_builders;
 mod pdf;
+mod tables;
 mod treestate;
 mod treeview;
 mod view;
@@ -37,6 +37,7 @@ pub use treeview::{
     TvMsg,
 };
 
+use std::collections::HashSet;
 use std::f32 as float;
 use std::fmt::{Debug, Display, Formatter, Result};
 use std::ops::RangeInclusive;
@@ -46,16 +47,22 @@ use cnv_plot::AXIS_SCALE_TYPE_OPTS;
 use cnv_plot::{AxisScaleType, PlotCnv, PlotDataType};
 use cnv_tree::TreeCnv;
 use consts::*;
-use data_table::{
-    DataTableSortDirection, NodeDataTableSortColumn, node_data_table,
-};
 use dendros::{Edge, LttPoint, Node, NodeId, Tree, ltt, write_newick};
 use rayon::prelude::*;
 use riced::*;
-use treestate::TreeState;
-use treeview::{NODE_ORD_OPTS, NodeOrd, TRE_STY_OPTS, TreSty, TvPane};
+use tables::nodes_table;
+use treestate::{EdgeSortField, TreeState};
+use treeview::{
+    TRE_NODE_ORD_OPTS, TRE_STY_OPTS, TreNodeOrd, TreSty, TreeViewPane,
+};
 
 pub type IndexRange = RangeInclusive<usize>;
+
+#[derive(Debug, Clone, Copy)]
+pub enum SortOrd {
+    Ascending,
+    Descending,
+}
 
 #[derive(Debug)]
 pub(crate) enum Zone {

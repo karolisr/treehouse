@@ -9,12 +9,12 @@ use state::St;
 pub(super) struct TreeCnv {
     pub(super) tre_sty: TreSty,
     // -------------------------------------------------------------------------
-    cache_bnds: CnvCache,
-    cache_tip_lab_w_resize_area: CnvCache,
-    cache_legend: CnvCache,
-    cache_hovered_node: CnvCache,
-    cache_cursor_line: CnvCache,
-    cache_palette: CnvCache,
+    cache_cnv_bnds: CnvCache,
+    cache_cnv_tip_lab_w_resize_area: CnvCache,
+    cache_cnv_legend: CnvCache,
+    cache_cnv_hovered_node: CnvCache,
+    cache_cnv_cursor_line: CnvCache,
+    cache_cnv_palette: CnvCache,
     // -------------------------------------------------------------------------
     pub(super) padd_l: Float,
     pub(super) padd_r: Float,
@@ -114,12 +114,12 @@ impl TreeCnv {
             // -----------------------------------------------------------------
             clade_labs_w: ZRO,
             // -----------------------------------------------------------------
-            cache_bnds: Default::default(),
-            cache_tip_lab_w_resize_area: Default::default(),
-            cache_legend: Default::default(),
-            cache_hovered_node: Default::default(),
-            cache_cursor_line: Default::default(),
-            cache_palette: Default::default(),
+            cache_cnv_bnds: Default::default(),
+            cache_cnv_tip_lab_w_resize_area: Default::default(),
+            cache_cnv_legend: Default::default(),
+            cache_cnv_hovered_node: Default::default(),
+            cache_cnv_cursor_line: Default::default(),
+            cache_cnv_palette: Default::default(),
             // -----------------------------------------------------------------
             crsr_x_rel: None,
             // -----------------------------------------------------------------
@@ -147,37 +147,37 @@ impl TreeCnv {
         }
     }
 
-    pub(super) fn clear_cache_bnds(&self) {
-        self.cache_bnds.clear();
+    pub(super) fn clear_cache_cnv_bnds(&self) {
+        self.cache_cnv_bnds.clear();
     }
 
-    pub(super) fn clear_cache_tip_lab_w_resize_area(&self) {
-        self.cache_tip_lab_w_resize_area.clear();
+    pub(super) fn clear_cache_cnv_tip_lab_w_resize_area(&self) {
+        self.cache_cnv_tip_lab_w_resize_area.clear();
     }
 
-    pub(super) fn clear_cache_cache_palette(&self) {
-        self.cache_palette.clear();
+    pub(super) fn clear_cache_cnv_palette(&self) {
+        self.cache_cnv_palette.clear();
     }
 
-    pub(super) fn clear_cache_cursor_line(&self) {
-        self.cache_cursor_line.clear();
+    pub(super) fn clear_cache_cnv_cursor_line(&self) {
+        self.cache_cnv_cursor_line.clear();
     }
 
-    pub(super) fn clear_cache_hovered_node(&self) {
-        self.cache_hovered_node.clear();
+    pub(super) fn clear_cache_cnv_hovered_node(&self) {
+        self.cache_cnv_hovered_node.clear();
     }
 
-    pub(super) fn clear_cache_legend(&self) {
-        self.cache_legend.clear();
+    pub(super) fn clear_cache_cnv_legend(&self) {
+        self.cache_cnv_legend.clear();
     }
 
-    pub(super) fn clear_caches_all(&self) {
-        self.clear_cache_bnds();
-        self.clear_cache_tip_lab_w_resize_area();
-        self.clear_cache_cache_palette();
-        self.clear_cache_cursor_line();
-        self.clear_cache_hovered_node();
-        self.clear_cache_legend();
+    pub(super) fn clear_caches_cnv_all(&self) {
+        self.clear_cache_cnv_bnds();
+        self.clear_cache_cnv_tip_lab_w_resize_area();
+        self.clear_cache_cnv_palette();
+        self.clear_cache_cnv_cursor_line();
+        self.clear_cache_cnv_hovered_node();
+        self.clear_cache_cnv_legend();
     }
 
     pub(super) fn calc_tre_vs(

@@ -93,7 +93,7 @@ fn content<'a>(tv: &'a TreeView) -> Element<'a, TvMsg> {
 
 fn pane_content<'a>(
     tv: &'a TreeView,
-    tv_pane: &TvPane,
+    tv_pane: &TreeViewPane,
     size: Size,
 ) -> Element<'a, TvMsg> {
     let w = size.width;
@@ -101,11 +101,11 @@ fn pane_content<'a>(
     let cnv_w = tv.calc_tre_cnv_w(w);
     let cnv_h = tv.calc_tre_cnv_h(h);
     let content: Element<'a, TvMsg> = match tv_pane {
-        TvPane::Tree => {
+        TreeViewPane::Tree => {
             let cnv = Cnv::new(&tv.tre_cnv).width(cnv_w).height(cnv_h);
             scrollable_cnv_tre(tv.tre_scrollable_id, cnv, w, h).into()
         }
-        TvPane::LttPlot => {
+        TreeViewPane::LttPlot => {
             let mut cnv_w = cnv_w;
             if tv.tre_cnv.tre_sty == TreSty::Fan {
                 cnv_w = w;
@@ -113,8 +113,8 @@ fn pane_content<'a>(
             let cnv = Cnv::new(&tv.ltt_cnv).width(cnv_w).height(h);
             scrollable_cnv_ltt(tv.ltt_scrollable_id, cnv, w, h).into()
         }
-        TvPane::DataTable => {
-            data_table_element(tv, tv.node_data_table_scrollable_id, w, h)
+        TreeViewPane::NodesTable => {
+            data_table_element(tv, tv.nodes_table_scrollable_id, w, h)
         }
     };
     content
@@ -159,8 +159,8 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
                 btn_svg_stateful(
                     Icon::DataTable,
                     Icon::DataTable,
-                    Some(TvMsg::ToggleDataTable),
-                    tv.show_data_table,
+                    Some(TvMsg::ToggleNodesTable),
+                    tv.show_nodes_table,
                 ),
                 // match tv.sidebar_pos {
                 //     SidebarPosition::Left => btn_svg(
@@ -664,9 +664,15 @@ pub(crate) fn pick_list_ltt_y_axis_scale_type<'a>(
         .align_y(Vertical::Center)
 }
 
-pub(crate) fn pick_list_node_ordering<'a>(node_ord: NodeOrd) -> Row<'a, TvMsg> {
-    let mut pl: PickList<NodeOrd, &[NodeOrd], NodeOrd, TvMsg> =
-        PickList::new(&NODE_ORD_OPTS, Some(node_ord), TvMsg::NodeOrdOptChanged);
+pub(crate) fn pick_list_node_ordering<'a>(
+    node_ord: TreNodeOrd,
+) -> Row<'a, TvMsg> {
+    let mut pl: PickList<TreNodeOrd, &[TreNodeOrd], TreNodeOrd, TvMsg> =
+        PickList::new(
+            &TRE_NODE_ORD_OPTS,
+            Some(node_ord),
+            TvMsg::TreNodeOrdOptChanged,
+        );
     pl = pick_list_common(pl);
     iced_row![txt("Node Order").width(Length::FillPortion(9)), pl]
         .align_y(Vertical::Center)
@@ -716,11 +722,11 @@ pub(crate) fn data_table_element<'a>(
     h: Float,
 ) -> Element<'a, TvMsg> {
     if let Some(ts) = tv.sel_tre() {
-        if let Some(cached_edges) = ts.data_table_edges_cached_ro(
-            tv.node_data_table_sort_col, tv.node_data_table_sort_dir,
-        ) {
+        if let Some(cached_edges) =
+            ts.cache_edges(tv.nodes_table_sort_col, tv.nodes_table_sort_ord)
+        {
             let sel_node_ids = ts.sel_node_ids().clone();
-            node_data_table(tv, scrollable_id, w, h, sel_node_ids, cached_edges)
+            nodes_table(tv, scrollable_id, w, h, sel_node_ids, cached_edges)
         } else {
             txt("No edges available").into()
         }
