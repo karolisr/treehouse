@@ -126,9 +126,6 @@ impl App {
                 .into();
             } else {
                 v = treeview.view().map(AppMsg::TvMsg);
-                if let Some(error) = &self.error {
-                    v = modal(v, error_container(error, AppMsg::ErrorClear));
-                }
             }
         } else {
             v = riced::container(riced::txt("App::view"))
@@ -137,7 +134,13 @@ impl App {
                 .center(riced::Length::Fill)
                 .into();
         }
-        if self.explain { v.explain(Clr::RED) } else { v }
+        if self.explain {
+            v = v.explain(Clr::RED);
+        };
+        if let Some(error) = &self.error {
+            v = modal(v, error_container(error, AppMsg::ErrorClear));
+        }
+        v
     }
 
     pub fn update(&mut self, app_msg: AppMsg) -> Task<AppMsg> {
