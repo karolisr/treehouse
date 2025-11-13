@@ -8,13 +8,13 @@ use super::consts::APP_ID;
 
 pub fn window_settings() -> WindowSettings {
     WindowSettings {
-        maximized: true,
-        fullscreen: false,
-        resizable: true,
-        position: WindowPosition::Centered,
         size: Size { width: 900.0 * SF, height: 600.0 * SF },
         min_size: Some(Size { width: 900.0, height: 600.0 }),
         max_size: None,
+        maximized: false,
+        fullscreen: false,
+        resizable: true,
+        position: WindowPosition::Centered,
         icon: None,
         decorations: true,
         exit_on_close_request: false,

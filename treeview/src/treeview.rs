@@ -158,7 +158,7 @@ impl Default for TreeView {
             show_side_bar: true,
             show_search_bar: false,
             show_ltt_plot: false,
-            show_nodes_table: true,
+            show_nodes_table: false,
             // -----------------------------------------------------------------
             node_ord_opt: TreNodeOrd::Ascending,
             // -----------------------------------------------------------------

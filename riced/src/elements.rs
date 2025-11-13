@@ -1,6 +1,46 @@
 use crate::style::*;
 use crate::*;
 
+pub fn modal<'a, Msg: 'a>(
+    base: impl Into<Element<'a, Msg>>,
+    content: impl Into<Element<'a, Msg>>,
+) -> Element<'a, Msg> {
+    stack![
+        base.into(),
+        opaque(center(opaque(content)).style(|_theme| {
+            ContainerStyle {
+                background: Some(Clr::BLK_75.into()),
+                ..ContainerStyle::default()
+            }
+        }))
+    ]
+    .into()
+}
+
+pub fn error_container<'a, Msg: Clone + 'a>(
+    error_message: impl Into<String>,
+    on_blur: Msg,
+) -> Element<'a, Msg> {
+    let error_message = error_message.into();
+    let mut c = center(
+        iced_col![
+            center(txt(format!("Error: {error_message}"))).height(Length::Fill),
+            space_v(Length::Shrink, BTN_H1),
+            iced_row![
+                space_h(Length::Fill, Length::Shrink),
+                btn_txt("OK", Some(on_blur)).width(BTN_H1 * 3e0)
+            ],
+        ]
+        .width(Length::Fill)
+        .height(Length::Fill),
+    );
+    c = c.width(3e2 * SF);
+    c = c.height(1.75e2 * SF);
+    c = c.padding(PADDING * 3e0);
+    c = c.style(sty_cont_message);
+    c.into()
+}
+
 fn btn_common<Msg>(btn: Button<'_, Msg>, msg: Option<Msg>) -> Button<'_, Msg> {
     let mut btn = btn;
     btn = btn.on_press_maybe(msg);

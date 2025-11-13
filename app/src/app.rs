@@ -2,7 +2,7 @@ mod consts;
 mod menu;
 mod ops;
 mod platform;
-mod win;
+mod window;
 
 use consts::*;
 use dendros::parse_trees;
@@ -11,8 +11,8 @@ use menu::ContextMenu;
 use menu::{AppMenu, AppMenuItemId};
 use riced::{
     Clr, Element, Font, IcedAppSettings, Key, Modifiers, Pixels, Subscription,
-    Task, Theme, WindowEvent, WindowId, close_window, exit, on_key_press,
-    open_window, window_events,
+    Task, Theme, WindowEvent, WindowId, close_window, error_container, exit,
+    modal, on_key_press, open_window, window_events,
 };
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 use riced::{HasWindowHandle, RawWindowHandle, run_with_handle};
@@ -23,13 +23,14 @@ use treeview::{
     TvContextMenuListing,
     TvMsg,
 };
-use win::window_settings;
+use window::window_settings;
 
 pub struct App {
     winid: Option<WindowId>,
     treeview: Option<TreeView>,
     menu: Option<AppMenu>,
     title: Option<String>,
+    error: Option<String>,
     explain: bool,
 }
 
@@ -37,30 +38,33 @@ pub struct App {
 pub enum AppMsg {
     Other(Option<String>),
     MenuEvent(AppMenuItemId),
-    // --------------------------------
+    // -------------------------------------------------------------------------
+    ErrorSet(String),
+    ErrorClear,
+    // -------------------------------------------------------------------------
     ShowContextMenu(TvContextMenuListing),
-    // --------------------------------
+    // -------------------------------------------------------------------------
     TvMsg(TvMsg),
-    // --------------------------------
+    // -------------------------------------------------------------------------
     OpenFile,
     SaveAs,
     ExportPdf,
     PathToOpen(Option<PathBuf>),
     PathToSave(Option<PathBuf>),
-    // --------------------------------
+    // -------------------------------------------------------------------------
     AppInitialized,
-    // --------------------------------
+    // -------------------------------------------------------------------------
     WinEvent(WindowEvent),
-    // --------------------------------
+    // -------------------------------------------------------------------------
     WinOpen,
     WinOpened,
     WinCloseRequested,
     WinClose,
     WinClosed,
     Quit,
-    // --------------------------------
+    // -------------------------------------------------------------------------
     KeysPressed(Key, Modifiers),
-    // --------------------------------
+    // -------------------------------------------------------------------------
     #[cfg(target_os = "windows")]
     AddMenuForHwnd(u64),
     #[cfg(target_os = "windows")]
@@ -73,14 +77,7 @@ pub enum FileType {
     Newick,
     Nexus,
     Pdf,
-    Other(String),
-    Exception,
-}
-
-pub enum ParsedData {
-    Trees(Option<Vec<dendros::Tree>>),
-    Other(String),
-    Exception,
+    Other,
 }
 
 impl App {
@@ -108,6 +105,7 @@ impl App {
                 treeview: None,
                 menu: None,
                 title: None,
+                error: None,
                 explain: false,
             },
             Task::done(AppMsg::AppInitialized),
@@ -115,33 +113,45 @@ impl App {
     }
 
     pub fn view(&'_ self, _: WindowId) -> Element<'_, AppMsg> {
+        let mut v: Element<'_, AppMsg>;
         if let Some(treeview) = &self.treeview {
             if !treeview.are_any_trees_loaded() {
-                riced::container(
+                v = riced::container(
                     riced::btn_txt("Open a Tree File", Some(AppMsg::OpenFile))
                         .width(riced::BTN_H1 * 5e0),
                 )
                 .width(riced::Length::Fill)
                 .height(riced::Length::Fill)
                 .center(riced::Length::Fill)
-                .into()
-            } else if self.explain {
-                treeview.view().explain(Clr::RED).map(AppMsg::TvMsg)
+                .into();
             } else {
-                treeview.view().map(AppMsg::TvMsg)
+                v = treeview.view().map(AppMsg::TvMsg);
+                if let Some(error) = &self.error {
+                    v = modal(v, error_container(error, AppMsg::ErrorClear));
+                }
             }
         } else {
-            riced::container(riced::txt("App::view"))
+            v = riced::container(riced::txt("App::view"))
                 .width(riced::Length::Fill)
                 .height(riced::Length::Fill)
                 .center(riced::Length::Fill)
-                .into()
+                .into();
         }
+        if self.explain { v.explain(Clr::RED) } else { v }
     }
 
     pub fn update(&mut self, app_msg: AppMsg) -> Task<AppMsg> {
         let mut task: Option<Task<AppMsg>> = None;
         match app_msg {
+            AppMsg::ErrorSet(s) => {
+                self.error = Some(s);
+            }
+            AppMsg::ErrorClear => {
+                if let Some(menu) = &mut self.menu {
+                    menu.enable(&AppMenuItemId::OpenFile);
+                }
+                self.error = None;
+            }
             AppMsg::KeysPressed(key, modifiers) => {
                 if let Key::Character(k) = key {
                     let k: &str = k.as_str();
@@ -342,78 +352,54 @@ impl App {
                 }
 
                 if let Some(path_buf) = path_buf_opt {
-                    let file_type: FileType = match path_buf.extension() {
-                        Some(ext_os_str) => match ext_os_str.to_str() {
-                            Some(ext) => match ext {
-                                "newick" | "tre" => FileType::Newick,
-                                "tree" | "trees" | "nexus" | "nex" | "t" => {
-                                    FileType::Nexus
-                                }
-                                ext => FileType::Other(ext.to_string()),
-                            },
-                            None => FileType::Exception,
-                        },
-                        None => FileType::Exception,
-                    };
-
-                    let parsed_data: ParsedData = match file_type {
-                        FileType::Other(s) => ParsedData::Other(s),
-                        FileType::Exception => ParsedData::Exception,
-                        file_type => match file_type {
-                            FileType::Newick => ParsedData::Trees(parse_trees(
-                                ops::read_text_file(path_buf.clone()),
-                            )),
-                            FileType::Nexus => ParsedData::Trees(parse_trees(
-                                ops::read_text_file(path_buf.clone()),
-                            )),
-                            _ => ParsedData::Exception,
-                        },
-                    };
-
+                    let parsed_data = ops::read_text_file(path_buf.clone());
                     match parsed_data {
-                        ParsedData::Trees(trees) => match trees {
-                            Some(trees) => {
-                                self.title = Some(
-                                    path_buf
-                                        .file_name()
-                                        .unwrap_or_default()
-                                        .to_string_lossy()
-                                        .to_string(),
-                                );
-                                if let Some(menu) = &mut self.menu {
-                                    menu.enable(&AppMenuItemId::SaveAs);
-                                    menu.enable(&AppMenuItemId::ExportPdf);
-                                    menu.enable(
-                                        &AppMenuItemId::SideBarPosition,
+                        Ok(trees_string) => {
+                            let trees_result = parse_trees(trees_string);
+                            match trees_result {
+                                Ok(trees) => {
+                                    self.title = Some(
+                                        path_buf
+                                            .file_name()
+                                            .unwrap_or_default()
+                                            .to_string_lossy()
+                                            .to_string(),
                                     );
-                                    menu.enable(
-                                        &AppMenuItemId::ToggleSearchBar,
-                                    );
-                                };
-                                task = Some(Task::done(AppMsg::TvMsg(
-                                    TvMsg::TreesLoaded(trees),
-                                )));
+                                    if let Some(menu) = &mut self.menu {
+                                        menu.enable(&AppMenuItemId::SaveAs);
+                                        menu.enable(&AppMenuItemId::ExportPdf);
+                                        menu.enable(
+                                            &AppMenuItemId::SideBarPosition,
+                                        );
+                                        menu.enable(
+                                            &AppMenuItemId::ToggleSearchBar,
+                                        );
+                                    };
+                                    task = Some(Task::done(AppMsg::TvMsg(
+                                        TvMsg::TreesLoaded(trees),
+                                    )));
+                                }
+                                Err(error) => {
+                                    if let Some(menu) = &mut self.menu {
+                                        menu.disable(&AppMenuItemId::OpenFile);
+                                        menu.disable(&AppMenuItemId::SaveAs);
+                                        menu.disable(&AppMenuItemId::ExportPdf);
+                                    };
+                                    task = Some(Task::done(AppMsg::ErrorSet(
+                                        error.to_string(),
+                                    )));
+                                }
                             }
-                            None => {
-                                println!("ParsedData::Trees(None)");
-                                if let Some(menu) = &mut self.menu {
-                                    menu.disable(&AppMenuItemId::SaveAs);
-                                    menu.disable(&AppMenuItemId::ExportPdf);
-                                };
-                            }
-                        },
-                        ParsedData::Other(s) => {
-                            println!("ParsedData::Other({s})");
-                            if let Some(menu) = &mut self.menu {
-                                menu.disable(&AppMenuItemId::SaveAs);
-                                menu.disable(&AppMenuItemId::ExportPdf);
-                            };
                         }
-                        ParsedData::Exception => {
+                        Err(file_read_error) => {
                             if let Some(menu) = &mut self.menu {
+                                menu.disable(&AppMenuItemId::OpenFile);
                                 menu.disable(&AppMenuItemId::SaveAs);
                                 menu.disable(&AppMenuItemId::ExportPdf);
                             };
+                            task = Some(Task::done(AppMsg::ErrorSet(
+                                file_read_error.to_string(),
+                            )));
                         }
                     }
                 }
@@ -435,41 +421,36 @@ impl App {
                                     FileType::Nexus
                                 }
                                 "pdf" => FileType::Pdf,
-                                ext => FileType::Other(ext.to_string()),
+                                _ => FileType::Other,
                             },
-                            None => FileType::Exception,
+                            None => FileType::Other,
                         },
-                        None => FileType::Exception,
+                        None => FileType::Other,
                     };
 
                     match file_type {
-                        FileType::Other(_) => {}
-                        FileType::Exception => {}
-                        file_type => match file_type {
-                            FileType::Newick => {
-                                if let Some(tv) = &self.treeview {
-                                    let newick_string = &tv.newick_string();
-                                    ops::write_text_file(
-                                        &path_buf, newick_string,
-                                    );
-                                    self.title = Some(
-                                        path_buf
-                                            .file_name()
-                                            .unwrap_or_default()
-                                            .to_string_lossy()
-                                            .to_string(),
-                                    );
-                                }
+                        FileType::Newick => {
+                            if let Some(tv) = &self.treeview {
+                                let newick_string = &tv.newick_string();
+                                ops::write_text_file(&path_buf, newick_string);
+                                self.title = Some(
+                                    path_buf
+                                        .file_name()
+                                        .unwrap_or_default()
+                                        .to_string_lossy()
+                                        .to_string(),
+                                );
                             }
-                            FileType::Nexus => {} // Save Nexus file
-                            FileType::Pdf => {
-                                task = Some(Task::done(AppMsg::TvMsg(
-                                    TvMsg::ExportPdf(path_buf),
-                                )));
-                            }
-                            _ => {}
-                        },
+                        }
+                        FileType::Nexus => {} // Save Nexus file
+                        FileType::Pdf => {
+                            task = Some(Task::done(AppMsg::TvMsg(
+                                TvMsg::ExportPdf(path_buf),
+                            )));
+                        }
+                        FileType::Other => {}
                     }
+                    // }
                 }
             }
             AppMsg::AppInitialized => {

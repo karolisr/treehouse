@@ -132,4 +132,4 @@ pub use w::text_input::{
     Status as TextInputStatus, Style as TextInputStyle, TextInput,
 };
 pub use w::toggler::{Status as TogglerStatus, Style as TogglerStyle, Toggler};
-pub use w::{Column, Row};
+pub use w::{Column, Row, opaque, stack};

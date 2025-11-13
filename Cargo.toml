@@ -23,7 +23,7 @@
         readme="README.md"
         repository="https://github.com/karolisr/treehouse"
         rust-version="1.88"
-        version="0.17.0"
+        version="0.18.0"
 
     [workspace.dependencies] # -------------------------------------------------
         num-traits="0.2.19"
@@ -33,6 +33,7 @@
         objc2-foundation="0.3.2"
         rayon="1.11.0"
         riced={path="riced", features=["crisp"]}
+        thiserror="2.0.17"
         treeview={path="treeview"}
         windows="0.62.2"
         winreg="0.55.0"

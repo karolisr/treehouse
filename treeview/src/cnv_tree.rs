@@ -89,7 +89,7 @@ impl TreeCnv {
             drawing_enabled: false,
             draw_root: true,
             draw_labs_allowed: false,
-            draw_labs_tip: false,
+            draw_labs_tip: true,
             draw_clade_labs: true,
             draw_labs_int: false,
             draw_labs_brnch: false,

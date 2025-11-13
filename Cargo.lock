@@ -844,9 +844,9 @@ dependencies = [
 
 [[package]]
 name = "crypto-common"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bfb12502f3fc46cca1bb51ac28df9d618d813cdc3d2f25b9fe775a34af26bb3"
+checksum = "78c8292055d1c1df0cce5d180393dc8cce0abec0a7102adb6c7b1eef6016d60a"
 dependencies = [
  "generic-array",
  "typenum",
@@ -872,8 +872,8 @@ checksum = "be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376"
 
 [[package]]
 name = "dendros"
-version = "0.15.0"
-source = "git+https://github.com/karolisr/dendros.git?branch=main#6fee26018a4e1c808fd5b24bb647c63234004809"
+version = "0.16.0"
+source = "git+https://github.com/karolisr/dendros.git?branch=main#e4ff5a05232a07f1002a6cc914f2e98a0f8d222b"
 dependencies = [
  "rayon",
  "slotmap",
@@ -1105,9 +1105,9 @@ dependencies = [
 
 [[package]]
 name = "exr"
-version = "1.73.0"
+version = "1.74.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f83197f59927b46c04a183a619b7c29df34e63e63c7869320862268c0ef687e0"
+checksum = "4300e043a56aa2cb633c01af81ca8f699a321879a7854d3896a0ba89056363be"
 dependencies = [
  "bit_field",
  "half",
@@ -1400,9 +1400,9 @@ dependencies = [
 
 [[package]]
 name = "generic-array"
-version = "0.14.9"
+version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bb6743198531e02858aeaea5398fcc883e71851fcbcb5a2f773e2fb6cb1edf2"
+checksum = "85649ca51fd72272d7821adaf274ad91c288277713d9c18820d8499a7ff69e9a"
 dependencies = [
  "typenum",
  "version_check",
@@ -3409,9 +3409,9 @@ dependencies = [
 
 [[package]]
 name = "read-fonts"
-version = "0.35.1"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ad4bbcc6571cb756b6c2572f0e7b387d579a60c3bb30212b91d79141a11ede8"
+checksum = "6717cf23b488adf64b9d711329542ba34de147df262370221940dfabc2c91358"
 dependencies = [
  "bytemuck",
  "core_maths",
@@ -3522,7 +3522,7 @@ dependencies = [
 
 [[package]]
 name = "riced"
-version = "0.17.0"
+version = "0.18.0"
 dependencies = [
  "convert_case",
  "iced",
@@ -4254,7 +4254,7 @@ dependencies = [
 
 [[package]]
 name = "treehouse"
-version = "0.17.0"
+version = "0.18.0"
 dependencies = [
  "dendros",
  "ico",
@@ -4265,6 +4265,7 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "rfd",
  "riced",
+ "thiserror 2.0.17",
  "treeview",
  "windows 0.62.2",
  "winreg",
@@ -4273,7 +4274,7 @@ dependencies = [
 
 [[package]]
 name = "treeview"
-version = "0.17.0"
+version = "0.18.0"
 dependencies = [
  "dendros",
  "oxidize-pdf",
@@ -4697,9 +4698,9 @@ dependencies = [
 
 [[package]]
 name = "weezl"
-version = "0.1.11"
+version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "009936b22a61d342859b5f0ea64681cbb35a358ab548e2a44a8cf0dac2d980b8"
+checksum = "a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88"
 
 [[package]]
 name = "wgpu"

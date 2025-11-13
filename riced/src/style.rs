@@ -104,6 +104,16 @@ pub fn sty_cont(theme: &Theme) -> ContainerStyle {
     }
 }
 
+pub fn sty_cont_message(theme: &Theme) -> ContainerStyle {
+    let base = sty_cont(theme);
+    let pe = theme.extended_palette();
+    ContainerStyle {
+        background: Some(Background::Color(pe.background.base.color)),
+        border: Border { color: pe.background.strongest.color, ..base.border },
+        ..base
+    }
+}
+
 pub fn sty_cont_bottom(theme: &Theme) -> ContainerStyle {
     let base = sty_cont(theme);
     ContainerStyle {
