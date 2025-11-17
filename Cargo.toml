@@ -23,7 +23,7 @@
         readme="README.md"
         repository="https://github.com/karolisr/treehouse"
         rust-version="1.88"
-        version="0.18.1"
+        version="0.19.0"
 
     [workspace.dependencies] # -------------------------------------------------
         num-traits="0.2.19"
@@ -65,24 +65,24 @@
             # branch="custom"
             # git="https://github.com/karolisr/oxidizePdf"
 
-        [workspace.dependencies.tokio]
-            default-features=false
-            features=[
-                "fs",              # tokio::fs types.
-                "io-std",          # Stdout, Stdin and Stderr types.
-                "io-util",         # the IO based Ext traits.
-                "macros",          # #[tokio::main] and #[tokio::test] macros.
-                "net",             # tokio::net types such as TcpStream, UnixStream and UdpSocket, as well as (on Unix-like systems) AsyncFd and (on FreeBSD) PollAio.
-                "parking_lot",     # as a potential optimization, use the _parking_lot_ crate’s synchronization primitives internally. Also, this dependency is necessary to construct some of our primitives in a const context. MSRV may increase according to the _parking_lot_ release in use.
-                "process",         # tokio::process types.
-                "rt",              # tokio::spawn, the current-thread scheduler, and non-scheduler utilities.
-                "rt-multi-thread", # the heavier, multi-threaded, work-stealing scheduler.
-                "signal",          # all tokio::signal types.
-                "sync",            # all tokio::sync types.
-                "test-util",       # testing based infrastructure for the Tokio runtime.
-                "time",            # tokio::time types and allows the schedulers to enable the built in timer.
-            ]
-            version="1.48.0"
+        # [workspace.dependencies.tokio]
+        #     default-features=false
+        #     features=[
+        #         "fs",              # tokio::fs types.
+        #         "io-std",          # Stdout, Stdin and Stderr types.
+        #         "io-util",         # the IO based Ext traits.
+        #         "macros",          # #[tokio::main] and #[tokio::test] macros.
+        #         "net",             # tokio::net types such as TcpStream, UnixStream and UdpSocket, as well as (on Unix-like systems) AsyncFd and (on FreeBSD) PollAio.
+        #         "parking_lot",     # as a potential optimization, use the _parking_lot_ crate’s synchronization primitives internally. Also, this dependency is necessary to construct some of our primitives in a const context. MSRV may increase according to the _parking_lot_ release in use.
+        #         "process",         # tokio::process types.
+        #         "rt",              # tokio::spawn, the current-thread scheduler, and non-scheduler utilities.
+        #         "rt-multi-thread", # the heavier, multi-threaded, work-stealing scheduler.
+        #         "signal",          # all tokio::signal types.
+        #         "sync",            # all tokio::sync types.
+        #         "test-util",       # testing based infrastructure for the Tokio runtime.
+        #         "time",            # tokio::time types and allows the schedulers to enable the built in timer.
+        #     ]
+        #     version="1.48.0"
 
     [workspace.lints.rust] # ---------------------------------------------------
         missing_debug_implementations="deny"

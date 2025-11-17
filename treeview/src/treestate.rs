@@ -370,7 +370,7 @@ impl TreeState {
     pub(super) fn unroot(&mut self) -> Option<Node> {
         self.tmp_found_node_id = self.current_found_node_id();
         let mut tre = self.t_orig.clone();
-        if let Some(yanked_node) = tre.unroot() {
+        if let Ok(yanked_node) = tre.unroot() {
             if let Some(yanked_node_id) = yanked_node.node_id()
                 && self.sel_node_ids.contains(&yanked_node_id)
             {
@@ -405,13 +405,13 @@ impl TreeState {
 
     pub(super) fn sort_asc(&mut self) {
         if self.t_srtd_asc.is_none() {
-            self.t_srtd_asc = Some(Tree::sorted(&self.t_orig, false));
+            self.t_srtd_asc = Some(Tree::sorted_clone(&self.t_orig, false));
         }
     }
 
     pub(super) fn sort_desc(&mut self) {
         if self.t_srtd_desc.is_none() {
-            self.t_srtd_desc = Some(Tree::sorted(&self.t_orig, true));
+            self.t_srtd_desc = Some(Tree::sorted_clone(&self.t_orig, true));
         }
     }
 
