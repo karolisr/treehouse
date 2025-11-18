@@ -19,7 +19,7 @@ impl Program<TvMsg> for TreeCnv {
             return None;
         }
         let tst: &TreeState = tree_state_opt?;
-        let edges = tst.edges_srtd_y()?;
+        let edges = tst.edges()?;
         let tip_edge_idxs = tst.edges_tip_idx();
         st.tre_sty = self.tre_sty;
         st.opn_angle = self.opn_angle;

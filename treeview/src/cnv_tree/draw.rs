@@ -53,7 +53,7 @@ pub(super) fn draw_edges(
 ) {
     g.push(tst.cache_cnv_edge().draw(rndr, sz, |f| match tc.tre_sty {
         TreSty::PhyGrm => stroke_edges_phygrm(
-            tst.edges_srtd_y().unwrap(),
+            tst.edges().unwrap(),
             &st.tre_vs,
             st.root_len,
             tst.edge_root(),
@@ -61,7 +61,7 @@ pub(super) fn draw_edges(
             f,
         ),
         TreSty::Fan => stroke_edges_fan(
-            tst.edges_srtd_y().unwrap(),
+            tst.edges().unwrap(),
             &st.tre_vs,
             tc.rot_angle,
             tc.opn_angle,

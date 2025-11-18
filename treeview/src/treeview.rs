@@ -906,13 +906,13 @@ impl TreeView {
         let sort_col = self.nodes_table_sort_col;
         let sort_dir = self.nodes_table_sort_ord;
         self.with_exclusive_sel_tre_mut(&mut |tre| {
-            tre.populate_cache_edges(sort_col, sort_dir);
+            tre.populate_cache_of_edges_sorted_by_field(sort_col, sort_dir);
         });
     }
 
     fn set_ltt_plot_data(&mut self) {
         if let Some(ts) = self.sel_tre()
-            && let Some(edges) = ts.edges_srtd_y()
+            && let Some(edges) = ts.edges()
         {
             let plot_data = &ltt(ts.tre_height(), edges, 503);
             self.ltt_cnv.set_plot_data(plot_data);

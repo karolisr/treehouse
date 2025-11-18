@@ -722,9 +722,9 @@ pub(crate) fn data_table_element<'a>(
     h: Float,
 ) -> Element<'a, TvMsg> {
     if let Some(ts) = tv.sel_tre() {
-        if let Some(cached_edges) =
-            ts.cache_edges(tv.nodes_table_sort_col, tv.nodes_table_sort_ord)
-        {
+        if let Some(cached_edges) = ts.edges_sorted_by_field(
+            tv.nodes_table_sort_col, tv.nodes_table_sort_ord,
+        ) {
             let sel_node_ids = ts.sel_node_ids().clone();
             nodes_table(tv, scrollable_id, w, h, sel_node_ids, cached_edges)
         } else {

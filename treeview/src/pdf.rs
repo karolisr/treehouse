@@ -172,7 +172,7 @@ pub fn tree_to_pdf(
     ); // ----------------------------------------------------------------------
 
     // Text labels -------------------------------------------------------------
-    let edges: &Vec<Edge> = tree_state.edges_srtd_y().unwrap();
+    let edges: &Vec<Edge> = tree_state.edges().unwrap();
     let node_data: Vec<NodeData> = edges
         .par_iter()
         .map(|edge| match tree_style {
@@ -396,7 +396,7 @@ fn draw_edges(
     scaling: f64,
     gc: &mut GraphicsContext,
 ) {
-    if let Some(edges) = tree_state.edges_srtd_y() {
+    if let Some(edges) = tree_state.edges() {
         _ = apply_iced_path_to_gc(
             match tree_style {
                 TreSty::PhyGrm => path_edges_phygrm(edges, w, h),
