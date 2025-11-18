@@ -10,6 +10,7 @@ use dendros::Edge;
 use dendros::Node;
 use dendros::NodeId;
 use dendros::Tree;
+use dendros::TreeError;
 use dendros::TreeFloat;
 
 use rayon::iter::IntoParallelRefIterator;
@@ -244,6 +245,44 @@ impl TreeState {
 
     pub(super) fn node_ids_srtd_asc(&self) -> Vec<NodeId> {
         if let Some(t) = &self.t_srtd_asc { t.node_ids_all() } else { vec![] }
+    }
+
+    // -------------------------------------------------------------------------
+
+    // =========================================================================
+
+    // --- Subtree View --------------------------------------------------------
+
+    pub(super) fn is_subtree_view_active(&self) -> bool {
+        false
+    }
+
+    pub(super) fn is_valid_potential_subtree_view_node(
+        &self,
+        _node_id: NodeId,
+    ) -> bool {
+        true
+    }
+
+    pub(super) fn set_subtree_view(
+        &mut self,
+        _node_id: NodeId,
+    ) -> Result<(), TreeError> {
+        Ok(())
+    }
+
+    pub(super) fn clear_subtree_view(&mut self) {}
+
+    pub(super) fn tip_count_subtree_view(&self) -> usize {
+        0
+    }
+
+    pub(super) fn node_count_subtree_view(&self) -> usize {
+        0
+    }
+
+    pub(super) fn tre_height_subtree_view(&self) -> TreeFloat {
+        0.0
     }
 
     // -------------------------------------------------------------------------

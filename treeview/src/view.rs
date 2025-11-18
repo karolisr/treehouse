@@ -131,6 +131,18 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         .height(Length::Shrink),
     );
 
+    tb_row = tb_row.push(
+        center(
+            iced_row![
+                btn_set_subtree_view(ts.clone()),
+                btn_clear_subtree_view(ts.clone())
+            ]
+            .spacing(SF),
+        )
+        .width(Length::Shrink)
+        .height(Length::Shrink),
+    );
+
     tb_row = tb_row.push(btn_clade_label(ts.clone()));
 
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
@@ -640,6 +652,36 @@ pub(crate) fn btn_unroot<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
         "Unroot",
         match sel_tre.is_rooted() {
             true => Some(TvMsg::Unroot),
+            false => None,
+        },
+    )
+    .width(BTN_H1 * TWO)
+}
+
+pub(crate) fn btn_set_subtree_view<'a>(
+    sel_tre: Rc<TreeState>,
+) -> Button<'a, TvMsg> {
+    btn_txt("Subtree", {
+        if sel_tre.sel_node_ids().len() == 1 {
+            let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
+            match sel_tre.is_valid_potential_subtree_view_node(node_id) {
+                true => Some(TvMsg::SetSubtreeView(node_id)),
+                false => None,
+            }
+        } else {
+            None
+        }
+    })
+    .width(BTN_H1 * TWO)
+}
+
+pub(crate) fn btn_clear_subtree_view<'a>(
+    sel_tre: Rc<TreeState>,
+) -> Button<'a, TvMsg> {
+    btn_txt(
+        "Clear Subtree",
+        match sel_tre.is_subtree_view_active() {
+            true => Some(TvMsg::ClearSubtreeView),
             false => None,
         },
     )

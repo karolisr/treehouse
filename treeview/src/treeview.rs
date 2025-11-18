@@ -115,6 +115,8 @@ pub enum TvMsg {
     PaneResized(ResizeEvent),
     Root(NodeId),
     Unroot,
+    SetSubtreeView(NodeId),
+    ClearSubtreeView,
     RotAngleChanged(u16),
     SelectDeselectNode(NodeId),
     SelectDeselectNodeExclusive(NodeId),
@@ -245,6 +247,24 @@ impl TreeView {
     pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
         let mut task: Option<Task<TvMsg>> = None;
         match tv_msg {
+            TvMsg::SetSubtreeView(node_id) => {
+                self.with_exclusive_sel_tre_mut(&mut |tre| {
+                    _ = tre.set_subtree_view(node_id);
+                });
+                self.update_draw_labs_allowed();
+                self.clear_caches_cnv_all();
+                self.tre_cnv.stale_tre_rect = true;
+            }
+
+            TvMsg::ClearSubtreeView => {
+                self.with_exclusive_sel_tre_mut(&mut |tre| {
+                    tre.clear_subtree_view();
+                });
+                self.update_draw_labs_allowed();
+                self.clear_caches_cnv_all();
+                self.tre_cnv.stale_tre_rect = true;
+            }
+
             TvMsg::ExportPdf(path_buf) => {
                 if let Some(tree_state) = self.sel_tre() {
                     let root_len = self.update_tre_vs();
