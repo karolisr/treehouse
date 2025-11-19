@@ -249,7 +249,7 @@ impl TreeView {
         match tv_msg {
             TvMsg::SetSubtreeView(node_id) => {
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
-                    _ = tre.set_subtree_view(node_id);
+                    tre.set_subtree_view(node_id);
                 });
                 self.update_draw_labs_allowed();
                 self.clear_caches_cnv_all();

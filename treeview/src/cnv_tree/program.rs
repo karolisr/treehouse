@@ -19,8 +19,32 @@ impl Program<TvMsg> for TreeCnv {
             return None;
         }
         let tst: &TreeState = tree_state_opt?;
-        let edges = tst.edges()?;
-        let tip_edge_idxs = tst.edges_tip_idx();
+
+        let edges;
+        let tip_edge_idxs;
+        let tip_count;
+        let sel_edge_idxs;
+        let found_edge_idxs;
+        let is_rooted;
+        match tst.is_subtree_view_active() {
+            true => {
+                edges = tst.edges_for_subtree_view()?;
+                tip_edge_idxs = tst.tip_edge_idxs_for_subtree_view();
+                tip_count = tst.tip_count_subtree_view()?;
+                sel_edge_idxs = tst.sel_edge_idxs_for_subtree_view();
+                found_edge_idxs = tst.found_edge_idxs_for_subtree_view();
+                is_rooted = false;
+            }
+            false => {
+                edges = tst.edges()?;
+                tip_edge_idxs = tst.tip_edge_idxs();
+                tip_count = tst.tip_count();
+                sel_edge_idxs = tst.sel_edge_idxs();
+                found_edge_idxs = tst.found_edge_idxs();
+                is_rooted = tst.is_rooted();
+            }
+        }
+
         st.tre_sty = self.tre_sty;
         st.opn_angle = self.opn_angle;
         // ---------------------------------------------------------------------
@@ -57,7 +81,7 @@ impl Program<TvMsg> for TreeCnv {
             (st.tre_vs, st.root_len) = self.calc_tre_vs(
                 &st.cnv_vs,
                 tst.edges_tip_tallest(),
-                tst.is_rooted(),
+                is_rooted,
                 tst.has_clade_labels(),
                 st.text_w_tip.as_mut()?,
             );
@@ -104,18 +128,18 @@ impl Program<TvMsg> for TreeCnv {
         if st.stale_vis_rect || st.is_new || self.stale_tre_rect {
             match st.tre_sty {
                 TreSty::PhyGrm => {
-                    let node_size = st.tre_vs.h / tst.tip_count() as Float;
-                    st.update_vis_node_idxs_phygrm(node_size, tip_edge_idxs);
+                    let node_size = st.tre_vs.h / tip_count as Float;
+                    st.update_vis_edge_idxs_phygrm(node_size, tip_edge_idxs);
                 }
                 TreSty::Fan => {
-                    st.update_vis_node_idxs_fan(edges);
+                    st.update_vis_edge_idxs_fan(edges);
                 }
             }
         }
         // ---------------------------------------------------------------------
         st.update_vis_nodes(edges);
-        st.update_filtered_nodes(edges, tst.found_edge_idxs());
-        st.update_selected_nodes(edges, tst.sel_edge_idxs());
+        st.update_filtered_nodes(edges, found_edge_idxs);
+        st.update_selected_nodes(edges, sel_edge_idxs);
         // ---------------------------------------------------------------------
         st.labs_tip.clear();
         st.labs_int.clear();
@@ -450,17 +474,43 @@ impl Program<TvMsg> for TreeCnv {
     ) -> Vec<Geometry> {
         let tree_state_opt = self.tree_state.as_deref();
         let mut geoms: Vec<Geometry> = Vec::new();
-        if let Some(tree_state_opt) = tree_state_opt
+        if let Some(tst) = tree_state_opt
             && self.drawing_enabled
         {
             // -----------------------------------------------------------------
             let size = bnds.size();
-            let tst: &TreeState = tree_state_opt;
+            // let tst: &TreeState = tree_state_opt;
+
+            let edges;
+            // let tip_edge_idxs;
+            // let tip_count;
+            // let sel_edge_idxs;
+            // let found_edge_idxs;
+            let edge_root;
+            match tst.is_subtree_view_active() {
+                true => {
+                    edges = tst.edges_for_subtree_view().unwrap();
+                    // tip_edge_idxs = tst.tip_edge_idxs_for_subtree_view();
+                    // tip_count = tst.tip_count_subtree_view().unwrap();
+                    // sel_edge_idxs = tst.sel_edge_idxs_for_subtree_view();
+                    // found_edge_idxs = tst.found_edge_idxs_for_subtree_view();
+                    edge_root = None;
+                }
+                false => {
+                    edges = tst.edges().unwrap();
+                    // tip_edge_idxs = tst.tip_edge_idxs();
+                    // tip_count = tst.tip_count();
+                    // sel_edge_idxs = tst.sel_edge_idxs();
+                    // found_edge_idxs = tst.found_edge_idxs();
+                    edge_root = tst.edge_root();
+                }
+            }
+
             if self.draw_debug {
                 draw_bounds(self, st, rndr, bnds, &mut geoms);
             }
             draw_clade_labels(st, tst, rndr, size, &mut geoms);
-            draw_edges(self, st, tst, rndr, size, &mut geoms);
+            draw_edges(self, st, tst, edges, edge_root, rndr, size, &mut geoms);
             if st.mouse_is_over_tip_w_resize_area
                 || st.tip_lab_w_is_being_resized
             {

@@ -47,28 +47,19 @@ pub(super) fn draw_edges(
     tc: &TreeCnv,
     st: &St,
     tst: &TreeState,
+    edges: &[Edge],
+    edge_root: Option<Edge>,
     rndr: &Renderer,
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_cnv_edge().draw(rndr, sz, |f| match tc.tre_sty {
         TreSty::PhyGrm => stroke_edges_phygrm(
-            tst.edges().unwrap(),
-            &st.tre_vs,
-            st.root_len,
-            tst.edge_root(),
-            STRK_EDGE,
-            f,
+            edges, &st.tre_vs, st.root_len, edge_root, STRK_EDGE, f,
         ),
         TreSty::Fan => stroke_edges_fan(
-            tst.edges().unwrap(),
-            &st.tre_vs,
-            tc.rot_angle,
-            tc.opn_angle,
-            st.root_len,
-            tst.edge_root(),
-            STRK_EDGE,
-            f,
+            edges, &st.tre_vs, tc.rot_angle, tc.opn_angle, st.root_len,
+            edge_root, STRK_EDGE, f,
         ),
     }));
 }

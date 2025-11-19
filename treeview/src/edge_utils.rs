@@ -17,8 +17,8 @@ impl From<NodeDataPol> for NodeData {
         Self {
             edge_idx: nd.edge_idx,
             points: nd.points,
-            angle: Some(nd.angle),
             y_parent: None,
+            angle: Some(nd.angle),
             angle_parent: nd.angle_parent,
         }
     }
@@ -63,11 +63,11 @@ pub fn edge_path_arc_pol(nd: &NodeDataPol, pb: PathBuilder) -> PathBuilder {
     }
 }
 
-pub fn tip_idx_range_between_y_vals(
+pub fn tip_edge_idx_range_between_y_vals(
     y0: Float,
     y1: Float,
     node_size: Float,
-    tips: &[usize],
+    tip_edge_idxs: &[usize],
 ) -> Option<IndexRange> {
     if node_size <= ZRO {
         return None;
@@ -77,29 +77,30 @@ pub fn tip_idx_range_between_y_vals(
     if i1.abs() < i0.abs() {
         return None;
     }
-    let mut tip_idx_0: usize = i0.max(0) as usize;
-    let mut tip_idx_1: usize = i1.abs().min(tips.len() as i64 - 1) as usize;
-    if tip_idx_0 == tip_idx_1 {
-        if tip_idx_0 > 0 {
-            tip_idx_0 -= 1;
-        } else if tip_idx_1 < tips.len().max(1) - 1 {
-            tip_idx_1 += 1;
+    let mut tip_edge_idx_1: usize = i0.max(0) as usize;
+    let mut tip_edge_idx_2: usize =
+        i1.abs().min(tip_edge_idxs.len() as i64 - 1) as usize;
+    if tip_edge_idx_1 == tip_edge_idx_2 {
+        if tip_edge_idx_1 > 0 {
+            tip_edge_idx_1 -= 1;
+        } else if tip_edge_idx_2 < tip_edge_idxs.len().max(1) - 1 {
+            tip_edge_idx_2 += 1;
         }
     }
-    if tip_idx_0 < tip_idx_1 {
-        Some(IndexRange::new(tip_idx_0, tip_idx_1))
+    if tip_edge_idx_1 < tip_edge_idx_2 {
+        Some(IndexRange::new(tip_edge_idx_1, tip_edge_idx_2))
     } else {
         None
     }
 }
 
-pub fn node_idx_range_for_tip_idx_range(
+pub fn edge_idx_range_for_tip_edge_idx_range(
     tip_idx_range: &IndexRange,
-    tips: &[usize],
+    tip_edge_idxs: &[usize],
 ) -> IndexRange {
-    let idx_node_0 = tips[*tip_idx_range.start()];
-    let idx_node_1 = tips[*tip_idx_range.end()];
-    IndexRange::new(idx_node_0, idx_node_1)
+    let tip_edge_idx_1 = tip_edge_idxs[*tip_idx_range.start()];
+    let tip_edge_idx_2 = tip_edge_idxs[*tip_idx_range.end()];
+    IndexRange::new(tip_edge_idx_1, tip_edge_idx_2)
 }
 
 pub fn point_cart(
