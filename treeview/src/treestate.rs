@@ -384,6 +384,7 @@ impl TreeState {
         }
 
         self.update_filter_results(current_found_node_id);
+        self.sel_edge_idxs = self.sel_edge_idxs_prep_tree();
     }
 
     pub(super) fn set_subtree_view(&mut self, node_id: NodeId) {
@@ -811,28 +812,34 @@ impl TreeState {
 
     pub(super) fn select_node(&mut self, node_id: NodeId) {
         _ = self.sel_node_ids.insert(node_id);
-        self.sel_edge_idxs = self.sel_edge_idxs_prep_tree();
+
+        match self.is_subtree_view_active() {
+            true => {
+                self.subtree_view_sel_edge_idxs =
+                    self.sel_edge_idxs_prep_for_subtree_view();
+            }
+            false => self.sel_edge_idxs = self.sel_edge_idxs_prep_tree(),
+        };
+
         self.clear_cache_cnv_sel_nodes();
         self.cache_edges_selected_asc = None;
         self.cache_edges_selected_desc = None;
-
-        if self.is_subtree_view_active() {
-            self.subtree_view_sel_edge_idxs =
-                self.sel_edge_idxs_prep_for_subtree_view();
-        }
     }
 
     pub(super) fn deselect_node(&mut self, node_id: NodeId) {
         _ = self.sel_node_ids.remove(&node_id);
-        self.sel_edge_idxs = self.sel_edge_idxs_prep_tree();
+
+        match self.is_subtree_view_active() {
+            true => {
+                self.subtree_view_sel_edge_idxs =
+                    self.sel_edge_idxs_prep_for_subtree_view();
+            }
+            false => self.sel_edge_idxs = self.sel_edge_idxs_prep_tree(),
+        };
+
         self.clear_cache_cnv_sel_nodes();
         self.cache_edges_selected_asc = None;
         self.cache_edges_selected_desc = None;
-
-        if self.is_subtree_view_active() {
-            self.subtree_view_sel_edge_idxs =
-                self.sel_edge_idxs_prep_for_subtree_view();
-        }
     }
 
     pub(super) fn select_deselect_node_exclusive(&mut self, node_id: NodeId) {
@@ -924,7 +931,15 @@ impl TreeState {
             _ = sel_node_ids.insert(*id);
         });
         self.sel_node_ids = sel_node_ids;
-        self.sel_edge_idxs = self.sel_edge_idxs_prep_tree();
+
+        match self.is_subtree_view_active() {
+            true => {
+                self.subtree_view_sel_edge_idxs =
+                    self.sel_edge_idxs_prep_for_subtree_view();
+            }
+            false => self.sel_edge_idxs = self.sel_edge_idxs_prep_tree(),
+        };
+
         self.clear_cache_cnv_sel_nodes();
     }
 
@@ -935,7 +950,15 @@ impl TreeState {
             _ = sel_node_ids.insert(*id);
         });
         self.sel_node_ids = sel_node_ids;
-        self.sel_edge_idxs = self.sel_edge_idxs_prep_tree();
+
+        match self.is_subtree_view_active() {
+            true => {
+                self.subtree_view_sel_edge_idxs =
+                    self.sel_edge_idxs_prep_for_subtree_view();
+            }
+            false => self.sel_edge_idxs = self.sel_edge_idxs_prep_tree(),
+        };
+
         self.clear_cache_cnv_sel_nodes();
     }
 
