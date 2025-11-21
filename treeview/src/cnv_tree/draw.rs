@@ -52,14 +52,16 @@ pub(super) fn draw_edges(
     g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_cnv_edge().draw(rndr, sz, |f| match tc.tre_sty {
-        TreSty::PhyGrm => stroke_edges_phygrm(
-            tst.edges().unwrap(),
-            &st.tre_vs,
-            st.root_len,
-            tst.edge_root(),
-            STRK_EDGE,
-            f,
-        ),
+        TreSty::PhyGrm => {
+            stroke_edges_phygrm(
+                tst.edges().unwrap(),
+                &st.tre_vs,
+                st.root_len,
+                tst.edge_root(),
+                STRK_EDGE,
+                f,
+            );
+        }
         TreSty::Fan => stroke_edges_fan(
             tst.edges().unwrap(),
             &st.tre_vs,
@@ -118,6 +120,12 @@ pub(super) fn draw_legend(
                 SF * 12e0,
                 SF * 6e0,
                 st.root_len,
+                match tst.is_subtree_view_active() {
+                    true => {
+                        tst.subtree_view_node_branch_length().unwrap_or(0.0)
+                    }
+                    false => 0.0,
+                },
                 tst.max_first_node_to_tip_distance() as Float,
                 f,
             );
@@ -276,17 +284,36 @@ pub(super) fn draw_filtered_nodes(
     g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_cnv_filtered_nodes().draw(rndr, sz, |f| {
-        let points: Vec<Point> =
-            st.filtered_nodes.par_iter().map(|nd| nd.points.p1).collect();
-        draw_nodes(
-            &points,
-            st.node_radius + SF * TWO,
-            STRK_NODE_FILTERED,
-            FILL_NODE_FILTERED,
-            Some(st.translation),
-            st.rotation,
-            f,
-        );
+        // let points: Vec<Point> =
+        //     st.filtered_nodes.par_iter().map(|nd| nd.points.p1).collect();
+        // draw_nodes(
+        //     &points,
+        //     st.node_radius + SF * TWO,
+        //     STRK_NODE_FILTERED,
+        //     FILL_NODE_FILTERED,
+        //     Some(st.translation),
+        //     st.rotation,
+        //     f,
+        // );
+
+        let edges = tst.edges().unwrap();
+        let found_edges: Vec<Edge> = tst
+            .found_edge_idxs()
+            .iter()
+            .map(|&idx| edges[idx].clone())
+            .collect();
+
+        match tc.tre_sty {
+            TreSty::PhyGrm => {
+                stroke_edges_phygrm(
+                    &found_edges, &st.tre_vs, st.root_len, None, STRK_2_RED, f,
+                );
+            }
+            TreSty::Fan => stroke_edges_fan(
+                &found_edges, &st.tre_vs, tc.rot_angle, tc.opn_angle,
+                st.root_len, None, STRK_2_RED, f,
+            ),
+        }
 
         if let Some(edge) = tst.current_found_edge() {
             let pt = match tc.tre_sty {
@@ -313,6 +340,31 @@ pub(super) fn draw_filtered_nodes(
     }));
 }
 
+fn normalize_scale_bar_length(value: Float) -> Float {
+    if value <= 0.0 {
+        return value;
+    }
+
+    let magnitude = value.log10().floor();
+    let normalized = value / (10.0_f32.powf(magnitude));
+
+    let nice_normalized = if normalized <= 1.0 {
+        1.0
+    } else if normalized <= 2.0 {
+        2.0
+    } else if normalized <= 2.5 {
+        2.5
+    } else if normalized <= 5.0 {
+        5.0
+    } else if normalized <= 7.5 {
+        7.5
+    } else {
+        10.0
+    };
+
+    nice_normalized * (10.0_f32.powf(magnitude))
+}
+
 fn draw_scale_bar(
     tre_sty: TreSty,
     tre_vs: &RectVals<Float>,
@@ -320,6 +372,7 @@ fn draw_scale_bar(
     lab_size: Float,
     lab_y_offset: Float,
     root_len: Float,
+    subtree_node_len: Float,
     tre_height: Float,
     f: &mut Frame,
 ) {
@@ -329,19 +382,12 @@ fn draw_scale_bar(
         TreSty::Fan => tre_vs.radius_min - root_len,
     };
 
-    let a = tre_height / 3.25;
-    let b = a.fract();
-    let c = a - b;
-    let sb_len =
-        if c > ZRO { (c / TEN).floor() * TEN } else { (a * TEN).floor() / TEN };
+    let tre_height = tre_height + subtree_node_len;
+    let sb_len = normalize_scale_bar_length(tre_height / 4.0);
     let sb_frac = sb_len / tre_height;
     let sb_len_on_screen = sb_frac * w;
 
-    let x = match tre_sty {
-        TreSty::PhyGrm => tre_vs.x0 + PADDING,
-        TreSty::Fan => tre_vs.x0 + PADDING,
-    };
-
+    let x = tre_vs.x0;
     let y = cnv_vs.y1 - stroke.width / TWO - lab_size - lab_y_offset - PADDING;
     let p0 = Point { x, y };
     let p1 = Point { x: x + sb_len_on_screen, y };
@@ -349,10 +395,17 @@ fn draw_scale_bar(
 
     f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), stroke);
     let text = lab_text(
-        format!("{sb_len}"),
+        if sb_len < 0.01 {
+            format!("{sb_len:.2E}")
+        } else if sb_len <= 1.0 {
+            format!("{sb_len:0.3}")
+        } else {
+            format!("{sb_len:0.0}")
+        },
         p_lab,
         lab_size,
         TEMPLATE_TXT_LAB_SCALEBAR,
+        false,
     );
     let lab = Label {
         text,
@@ -377,10 +430,13 @@ fn draw_nodes(
         f.translate(trans);
     }
     f.rotate(rot);
+    let mut pb = PathBuilder::new();
     for &pt in points {
-        fill_circle(pt, fill, radius, f);
-        stroke_circle(pt, stroke, radius, f);
+        pb = pb.circle(pt, radius);
     }
+    let path = pb.build();
+    f.fill(&path, fill);
+    f.stroke(&path, stroke);
     f.pop_transform();
 }
 
@@ -500,6 +556,7 @@ fn stroke_root_fan(
 }
 
 pub(super) fn node_labs(
+    highlighted_node_ids_opt: Option<&HashSet<NodeId>>,
     nodes: &[NodeData],
     edges: &[Edge],
     size: Float,
@@ -514,14 +571,25 @@ pub(super) fn node_labs(
         .iter()
         .filter_map(|nd| {
             let edge: &Edge = &edges[nd.edge_idx];
+
+            let dimmed = if let Some(highlighted_node_ids) =
+                highlighted_node_ids_opt
+                && !highlighted_node_ids.contains(&edge.node_id)
+            {
+                true
+            } else {
+                false
+            };
+
             if let Some(name) = &edge.label
                 && !branch
                 && ((tips && edge.is_tip) || (!tips && !edge.is_tip))
             {
-                let mut txt_lab_tmpl: CnvText = TEMPLATE_TXT_LAB_TIP;
-                if !tips {
-                    txt_lab_tmpl = TEMPLATE_TXT_LAB_INTERNAL;
-                }
+                let txt_lab_tmpl = if tips {
+                    TEMPLATE_TXT_LAB_TIP
+                } else {
+                    TEMPLATE_TXT_LAB_INTERNAL
+                };
 
                 let mut lab_pt: Point = nd.points.p1;
                 if let Some(align_at) = align_at {
@@ -540,8 +608,13 @@ pub(super) fn node_labs(
                 let name_lab = name_trimmed;
                 let width = text_w.width(&name_lab);
 
-                let text =
-                    lab_text(name_lab.to_string(), lab_pt, size, txt_lab_tmpl);
+                let text = lab_text(
+                    name_lab.to_string(),
+                    lab_pt,
+                    size,
+                    txt_lab_tmpl,
+                    dimmed,
+                );
 
                 Some(Label {
                     text,
@@ -553,8 +626,13 @@ pub(super) fn node_labs(
                 let txt_tmpl = TEMPLATE_TXT_LAB_BRANCH;
                 let name = format!("{:.3}", edge.branch_length);
                 let width = text_w.width(&name);
-                let text =
-                    lab_text(name.to_string(), nd.points.p_mid, size, txt_tmpl);
+                let text = lab_text(
+                    name.to_string(),
+                    nd.points.p_mid,
+                    size,
+                    txt_tmpl,
+                    dimmed,
+                );
                 Some(Label { text, width, angle: nd.angle, aligned_from: None })
             } else {
                 None

@@ -24,8 +24,6 @@ impl Program<TvMsg> for TreeCnv {
         let tst: &TreeState = tree_state_opt?;
 
         let edges = tst.edges()?;
-        let sel_edge_idxs = tst.sel_edge_idxs();
-        let found_edge_idxs = tst.found_edge_idxs();
         let is_rooted = tst.is_rooted();
 
         st.tre_sty = self.tre_sty;
@@ -113,16 +111,36 @@ impl Program<TvMsg> for TreeCnv {
         }
         // ---------------------------------------------------------------------
         st.update_vis_nodes(edges);
-        st.update_filtered_nodes(edges, found_edge_idxs);
-        st.update_selected_nodes(edges, sel_edge_idxs);
+        let sel_edge_idxs = tst.sel_edge_idxs();
+        if st.vis_edge_idxs.len() < 1000 || sel_edge_idxs.len() < 1000 {
+            let sel_edge_idxs_hs: HashSet<&usize> =
+                HashSet::from_iter(sel_edge_idxs);
+            let vis_edge_idxs_hs: HashSet<&usize> =
+                HashSet::from_iter(&st.vis_edge_idxs);
+            let vis_sel_edge_idxs_hs: Vec<usize> = vis_edge_idxs_hs
+                .intersection(&sel_edge_idxs_hs)
+                .copied()
+                .copied()
+                .collect();
+            st.update_selected_nodes(edges, &vis_sel_edge_idxs_hs);
+        } else {
+            st.selected_nodes.clear();
+        }
         // ---------------------------------------------------------------------
         st.labs_tip.clear();
         st.labs_int.clear();
         st.labs_brnch.clear();
         // ---------------------------------------------------------------------
+
+        let highlighted_node_ids = match tst.is_search_active() {
+            true => Some(tst.found_node_ids()),
+            false => None,
+        };
+
         if tst.has_tip_labels() && self.draw_labs_tip && self.draw_labs_allowed
         {
             node_labs(
+                highlighted_node_ids,
                 &st.vis_nodes,
                 edges,
                 self.lab_size_tip,
@@ -142,6 +160,7 @@ impl Program<TvMsg> for TreeCnv {
         } // -------------------------------------------------------------------
         if tst.has_int_labs() && self.draw_labs_int && self.draw_labs_allowed {
             node_labs(
+                highlighted_node_ids,
                 &st.vis_nodes,
                 edges,
                 self.lab_size_int,
@@ -155,6 +174,7 @@ impl Program<TvMsg> for TreeCnv {
         } // -------------------------------------------------------------------
         if tst.has_brlen() && self.draw_labs_brnch && self.draw_labs_allowed {
             node_labs(
+                highlighted_node_ids,
                 &st.vis_nodes,
                 edges,
                 self.lab_size_brnch,

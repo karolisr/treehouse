@@ -14,11 +14,15 @@ pub(crate) fn lab_text(
     pt: Point,
     size: Float,
     template: CnvText,
+    dimmed: bool,
 ) -> CnvText {
     let mut text = template.clone();
     text.content = txt;
     text.position = pt;
     text.size = size.into();
+    if dimmed {
+        text.color = Clr::BLK_50;
+    }
     text
 }
 

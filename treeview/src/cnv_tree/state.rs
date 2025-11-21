@@ -17,7 +17,7 @@ pub struct St {
     pub(crate) stale_vis_rect: bool,
     pub(crate) vis_edge_idxs: Vec<usize>,
     pub(crate) vis_nodes: Vec<NodeData>,
-    pub(crate) filtered_nodes: Vec<NodeData>,
+    // pub(crate) filtered_nodes: Vec<NodeData>,
     pub(crate) selected_nodes: Vec<NodeData>,
     pub(crate) node_radius: Float,
     pub(crate) root_len: Float,
@@ -57,7 +57,7 @@ impl Default for St {
             stale_vis_rect: false,
             vis_edge_idxs: Vec::new(),
             vis_nodes: Vec::new(),
-            filtered_nodes: Vec::new(),
+            // filtered_nodes: Vec::new(),
             selected_nodes: Vec::new(),
             node_radius: SF * 3e0,
             root_len: ZRO,
@@ -99,16 +99,16 @@ impl St {
         );
     }
 
-    pub(super) fn update_filtered_nodes(
-        &mut self,
-        edges: &[Edge],
-        found_edge_idxs: &[usize],
-    ) {
-        prepare_nodes(
-            &self.tre_vs, self.root_len, self.tre_sty, self.opn_angle, edges,
-            found_edge_idxs, &mut self.filtered_nodes,
-        );
-    }
+    // pub(super) fn update_filtered_nodes(
+    //     &mut self,
+    //     edges: &[Edge],
+    //     found_edge_idxs: &[usize],
+    // ) {
+    //     prepare_nodes(
+    //         &self.tre_vs, self.root_len, self.tre_sty, self.opn_angle, edges,
+    //         found_edge_idxs, &mut self.filtered_nodes,
+    //     );
+    // }
 
     pub(super) fn update_selected_nodes(
         &mut self,
@@ -237,6 +237,7 @@ impl St {
 
     pub(super) fn update_vis_edge_idxs(&mut self, edges: &[Edge]) {
         self.vis_edge_idxs.clear();
+        let vis_rect_expanded = self.vis_rect.expand(SF * 500.0);
         for e in edges {
             let point = match self.tre_sty {
                 TreSty::PhyGrm => {
@@ -250,7 +251,7 @@ impl St {
                 ),
             };
 
-            if self.vis_rect.contains(point + self.translation) {
+            if vis_rect_expanded.contains(point + self.translation) {
                 self.vis_edge_idxs.push(e.edge_index);
             }
         }

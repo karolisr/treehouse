@@ -3,6 +3,7 @@ use crate::*;
 impl From<NodeDataCart> for NodeData {
     fn from(nd: NodeDataCart) -> Self {
         Self {
+            node_id: nd.node_id,
             edge_idx: nd.edge_idx,
             points: nd.points,
             y_parent: nd.y_parent,
@@ -15,6 +16,7 @@ impl From<NodeDataCart> for NodeData {
 impl From<NodeDataPol> for NodeData {
     fn from(nd: NodeDataPol) -> Self {
         Self {
+            node_id: nd.node_id,
             edge_idx: nd.edge_idx,
             points: nd.points,
             y_parent: None,
@@ -162,7 +164,12 @@ pub fn node_data_cart(w: Float, h: Float, edge: &Edge) -> NodeDataCart {
     if let Some(y) = edge.y_parent {
         y_parent = Some(y as Float * h);
     }
-    NodeDataCart { edge_idx: edge.edge_index, points, y_parent }
+    NodeDataCart {
+        node_id: edge.node_id,
+        edge_idx: edge.edge_index,
+        points,
+        y_parent,
+    }
 }
 
 pub fn node_data_rad(
@@ -178,7 +185,13 @@ pub fn node_data_rad(
         angle_parent = Some(opn_angle * y as Float);
     }
     let points = edge_points_pol(angle, radius, offset, edge);
-    NodeDataPol { edge_idx: edge.edge_index, points, angle, angle_parent }
+    NodeDataPol {
+        node_id: edge.node_id,
+        edge_idx: edge.edge_index,
+        points,
+        angle,
+        angle_parent,
+    }
 }
 
 pub fn prepare_nodes(

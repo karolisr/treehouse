@@ -100,6 +100,7 @@ pub(super) struct TreeState {
 
     // --- Subtree View --------------------------------------------------------
     subtree_view_node_id: Option<NodeId>,
+    subtree_view_node_branch_length: Option<TreeFloat>,
     subtree_view_tip_edge_idx_range: Option<IndexRange>,
     subtree_view_edges: Option<Vec<Edge>>,
     subtree_view_cache_tip_count: Option<usize>,
@@ -367,6 +368,7 @@ impl TreeState {
     pub(super) fn close_subtree_view(&mut self) {
         let current_found_node_id = self.current_found_node_id();
         self.subtree_view_node_id = None;
+        self.subtree_view_node_branch_length = None;
         self.subtree_view_tip_edge_idx_range = None;
         self.subtree_view_edges = None;
         self.subtree_view_cache_tip_count = None;
@@ -463,6 +465,9 @@ impl TreeState {
 
             self.subtree_view_node_id = Some(node_id);
 
+            self.subtree_view_node_branch_length =
+                self.tree().branch_length(node_id);
+
             self.subtree_view_edges_tip =
                 self.edges_tip_prep_for_subtree_view();
 
@@ -551,6 +556,10 @@ impl TreeState {
 
     fn subtree_view_node_id(&self) -> Option<NodeId> {
         self.subtree_view_node_id
+    }
+
+    pub(super) fn subtree_view_node_branch_length(&self) -> Option<TreeFloat> {
+        self.subtree_view_node_branch_length
     }
 
     pub(super) fn tip_count_for_subtree_view(&self) -> Option<usize> {
@@ -880,6 +889,10 @@ impl TreeState {
 
     // --- Search & Filter -----------------------------------------------------
 
+    pub(super) fn is_search_active(&self) -> bool {
+        self.search_query.is_some()
+    }
+
     pub(super) fn found_edge_idxs(&self) -> &Vec<usize> {
         &self.found_edge_idxs
     }
@@ -910,14 +923,12 @@ impl TreeState {
     }
 
     pub(super) fn prev_result(&mut self) {
-        self.clear_cache_cnv_filtered_nodes();
         if self.vec_idx_to_found_edge_idxs > 0 {
             self.vec_idx_to_found_edge_idxs -= 1;
         }
     }
 
     pub(super) fn next_result(&mut self) {
-        self.clear_cache_cnv_filtered_nodes();
         if self.vec_idx_to_found_edge_idxs < self.found_edge_idxs.len() - 1 {
             self.vec_idx_to_found_edge_idxs += 1;
         }

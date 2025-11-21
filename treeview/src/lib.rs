@@ -106,6 +106,7 @@ struct EdgePoints {
 
 #[derive(Debug, Clone, Default, PartialEq)]
 struct NodeData {
+    node_id: NodeId,
     edge_idx: usize,
     points: EdgePoints,
     angle: Option<Float>,
@@ -115,6 +116,7 @@ struct NodeData {
 
 #[derive(Debug, Clone, Default, PartialEq)]
 struct NodeDataCart {
+    node_id: NodeId,
     edge_idx: usize,
     points: EdgePoints,
     y_parent: Option<Float>,
@@ -122,6 +124,7 @@ struct NodeDataCart {
 
 #[derive(Debug, Clone, Default, PartialEq)]
 struct NodeDataPol {
+    node_id: NodeId,
     edge_idx: usize,
     points: EdgePoints,
     angle: Float,

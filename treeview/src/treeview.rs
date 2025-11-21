@@ -895,16 +895,22 @@ impl TreeView {
                     tre.filter_nodes(&s, tips_only);
                 });
                 task = self.scroll_to_current_found_edge();
+                self.clear_cache_cnv_labs();
+                self.clear_cache_cnv_filtered_nodes();
             }
 
             TvMsg::PrevResult => {
                 self.with_exclusive_sel_tre_mut(&mut TreeState::prev_result);
                 task = self.scroll_to_current_found_edge();
+                self.clear_cache_cnv_filtered_nodes();
+                self.clear_cache_cnv_sel_nodes();
             }
 
             TvMsg::NextResult => {
                 self.with_exclusive_sel_tre_mut(&mut TreeState::next_result);
                 task = self.scroll_to_current_found_edge();
+                self.clear_cache_cnv_filtered_nodes();
+                self.clear_cache_cnv_sel_nodes();
             }
 
             TvMsg::AddFoundToSelection => {
@@ -1311,10 +1317,28 @@ impl TreeView {
         }
     }
 
+    pub(super) fn clear_cache_cnv_lab_tip(&self) {
+        if let Some(ts) = self.sel_tre() {
+            ts.clear_cache_cnv_lab_tip();
+        }
+    }
+
     pub(super) fn clear_cache_cnv_lab_int(&self) {
         if let Some(ts) = self.sel_tre() {
             ts.clear_cache_cnv_lab_int();
         }
+    }
+
+    pub(super) fn clear_cache_cnv_lab_brnch(&self) {
+        if let Some(ts) = self.sel_tre() {
+            ts.clear_cache_cnv_lab_brnch();
+        }
+    }
+
+    pub(super) fn clear_cache_cnv_labs(&self) {
+        self.clear_cache_cnv_lab_tip();
+        self.clear_cache_cnv_lab_int();
+        self.clear_cache_cnv_lab_brnch();
     }
 
     pub(super) fn clear_caches_cnv_all_tre(&self) {
