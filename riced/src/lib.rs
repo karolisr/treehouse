@@ -55,14 +55,14 @@ pub use i::mouse::{
     Interaction as MouseInteraction,
 };
 pub use i::task::{Never, Sipper, sipper};
-pub use i::theme::{Theme, palette::Pair as PalettePair};
+pub use i::theme::{Style as ThemeStyle, Theme, palette::Pair as PalettePair};
 pub use i::window::{
     Event as WindowEvent, Id as WindowId, Level as WindowLevel,
     Position as WindowPosition, Settings as WindowSettings,
     close as close_window, events as window_events, open as open_window,
     raw_id,
     raw_window_handle::{HasWindowHandle, RawWindowHandle},
-    run_with_handle,
+    run,
     settings::PlatformSpecific as PlatformSpecificWindowSettings,
 };
 pub use i::{

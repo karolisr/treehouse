@@ -607,5 +607,6 @@ pub(crate) fn sty_toggler(
         foreground_border_color: Clr::TRN,
         background_border_color: Clr::TRN,
         border_radius: WIDGET_RADIUS,
+        text_color: None,
     }
 }
