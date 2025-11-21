@@ -84,7 +84,7 @@ pub(super) struct TreeState {
     // --- Caches of Values for Memoized Accessor Functions --------------------
     cache_tip_count: Option<usize>,
     cache_node_count: Option<usize>,
-    cache_tre_height: Option<TreeFloat>,
+    cache_max_first_node_to_tip_distance: Option<TreeFloat>,
     cache_has_tip_labs: Option<bool>,
     cache_has_int_labs: Option<bool>,
     cache_has_brlen: Option<bool>,
@@ -96,6 +96,8 @@ pub(super) struct TreeState {
     found_edge_idxs: Vec<usize>,
     found_node_ids: HashSet<NodeId>,
     tmp_found_node_id: Option<NodeId>,
+    search_query: Option<String>,
+    tip_only_search: Option<bool>,
 
     // --- Subtree View --------------------------------------------------------
     subtree_view_node_id: Option<NodeId>,
@@ -103,11 +105,11 @@ pub(super) struct TreeState {
     subtree_view_edges: Option<Vec<Edge>>,
     subtree_view_cache_tip_count: Option<usize>,
     subtree_view_cache_node_count: Option<usize>,
-    subtree_view_cache_tre_height: Option<TreeFloat>,
+    subtree_view_cache_max_first_node_to_tip_distance: Option<TreeFloat>,
     subtree_view_edges_tip: Vec<Edge>,
+    subtree_view_edges_tip_tallest: Vec<Edge>,
     subtree_view_edges_tip_idx: Vec<usize>,
     subtree_view_sel_edge_idxs: Vec<usize>,
-    subtree_view_found_edge_idxs: Vec<usize>,
 }
 
 impl TreeState {
@@ -132,18 +134,20 @@ impl TreeState {
         self.cache_is_ultrametric = None;
         self.cache_node_count = None;
         self.cache_tip_count = None;
-        self.cache_tre_height = None;
+        self.cache_max_first_node_to_tip_distance = None;
 
         self.cache_has_brlen = Some(self.has_brlen());
         self.cache_has_int_labs = Some(self.has_int_labs());
-        self.cache_has_tip_labs = Some(self.has_tip_labs());
+        self.cache_has_tip_labs = Some(self.has_tip_labels());
         self.cache_is_rooted = Some(self.is_rooted());
         self.cache_is_ultrametric = Some(self.is_ultrametric());
         self.cache_node_count = Some(self.node_count());
         self.cache_tip_count = Some(self.tip_count());
-        self.cache_tre_height = Some(self.tre_height());
+        self.cache_max_first_node_to_tip_distance =
+            Some(self.max_first_node_to_tip_distance());
 
-        self.clear_caches_edges_sorted_by_field();
+        self.close_subtree_view();
+        self.clear_caches_of_edges_sorted_by_field();
         self.clear_caches_cnv();
 
         self.sort_asc();
@@ -175,24 +179,68 @@ impl TreeState {
     }
 
     pub(super) fn edges_tip(&self) -> &Vec<Edge> {
+        if self.is_subtree_view_active() {
+            self.edges_tip_for_subtree_view()
+        } else {
+            self.edges_tip_tree()
+        }
+    }
+
+    pub(super) fn edges_tip_tree(&self) -> &Vec<Edge> {
         &self.edges_tip
     }
 
+    pub(super) fn edges_tip_for_subtree_view(&self) -> &Vec<Edge> {
+        &self.subtree_view_edges_tip
+    }
+
     pub(super) fn edges_tip_tallest(&self) -> &Vec<Edge> {
+        if self.is_subtree_view_active() {
+            self.edges_tip_tallest_for_subtree_view()
+        } else {
+            self.edges_tip_tallest_tree()
+        }
+    }
+
+    pub(super) fn edges_tip_tallest_tree(&self) -> &Vec<Edge> {
         &self.edges_tip_tallest
     }
 
+    pub(super) fn edges_tip_tallest_for_subtree_view(&self) -> &Vec<Edge> {
+        &self.subtree_view_edges_tip_tallest
+    }
+
     pub(super) fn tip_edge_idxs(&self) -> &Vec<usize> {
+        if self.is_subtree_view_active() {
+            self.tip_edge_idxs_for_subtree_view()
+        } else {
+            self.tip_edge_idxs_tree()
+        }
+    }
+
+    pub(super) fn tip_edge_idxs_tree(&self) -> &Vec<usize> {
         &self.edges_tip_idx
     }
 
     pub(super) fn edge_root(&self) -> Option<Edge> {
+        if self.is_subtree_view_active() { None } else { self.edge_root_tree() }
+    }
+
+    fn edge_root_tree(&self) -> Option<Edge> {
         self.edge_root.clone()
     }
 
     // --- Memoized Accessors --------------------------------------------------
 
     pub(super) fn tip_count(&self) -> usize {
+        if self.is_subtree_view_active() {
+            self.tip_count_for_subtree_view().unwrap()
+        } else {
+            self.tip_count_tree()
+        }
+    }
+
+    pub(super) fn tip_count_tree(&self) -> usize {
         if let Some(cached) = self.cache_tip_count {
             cached
         } else {
@@ -201,6 +249,14 @@ impl TreeState {
     }
 
     pub(super) fn node_count(&self) -> usize {
+        if self.is_subtree_view_active() {
+            self.node_count_for_subtree_view().unwrap()
+        } else {
+            self.node_count_tree()
+        }
+    }
+
+    pub(super) fn node_count_tree(&self) -> usize {
         if let Some(cached) = self.cache_node_count {
             cached
         } else {
@@ -208,15 +264,23 @@ impl TreeState {
         }
     }
 
-    pub(super) fn tre_height(&self) -> TreeFloat {
-        if let Some(cached) = self.cache_tre_height {
-            cached
+    pub(super) fn max_first_node_to_tip_distance(&self) -> TreeFloat {
+        if self.is_subtree_view_active() {
+            self.max_first_node_to_tip_distance_for_subtree_view().unwrap()
         } else {
-            self.tree().height()
+            self.max_first_node_to_tip_distance_tree()
         }
     }
 
-    pub(super) fn has_tip_labs(&self) -> bool {
+    pub(super) fn max_first_node_to_tip_distance_tree(&self) -> TreeFloat {
+        if let Some(cached) = self.cache_max_first_node_to_tip_distance {
+            cached
+        } else {
+            self.tree().max_first_node_to_tip_distance()
+        }
+    }
+
+    pub(super) fn has_tip_labels(&self) -> bool {
         if let Some(cached) = self.cache_has_tip_labs {
             cached
         } else {
@@ -244,12 +308,16 @@ impl TreeState {
         if let Some(cached) = self.cache_is_ultrametric {
             cached
         } else {
-            let epsilon = self.tree().height() / 1e2;
+            let epsilon = self.tree().max_first_node_to_tip_distance() / 1e2;
             self.tree().is_ultrametric(epsilon)
         }
     }
 
     pub(super) fn is_rooted(&self) -> bool {
+        if self.is_subtree_view_active() { true } else { self.is_rooted_tree() }
+    }
+
+    pub(super) fn is_rooted_tree(&self) -> bool {
         if let Some(cached) = self.cache_is_rooted {
             cached
         } else {
@@ -264,10 +332,33 @@ impl TreeState {
     // --- Utilities -----------------------------------------------------------
 
     pub(super) fn edges(&self) -> Option<&Vec<Edge>> {
+        if self.is_subtree_view_active() {
+            self.edges_for_subtree_view()
+        } else {
+            self.edges_for_tree()
+        }
+    }
+
+    fn edges_for_subtree_view(&self) -> Option<&Vec<Edge>> {
+        self.subtree_view_edges.as_ref()
+    }
+
+    fn edges_for_tree(&self) -> Option<&Vec<Edge>> {
         self.tree().edges()
     }
 
     pub(super) fn bounding_edges_for_clade(
+        &self,
+        node_id: NodeId,
+    ) -> Option<(Vec<Edge>, Vec<Edge>)> {
+        if self.is_subtree_view_active() {
+            self.bounding_edges_for_clade_for_subtree_view(node_id)
+        } else {
+            self.bounding_edges_for_clade_tree(node_id)
+        }
+    }
+
+    fn bounding_edges_for_clade_tree(
         &self,
         node_id: NodeId,
     ) -> Option<(Vec<Edge>, Vec<Edge>)> {
@@ -288,10 +379,34 @@ impl TreeState {
 
     // --- Subtree View --------------------------------------------------------
 
-    pub(super) fn set_subtree_view(&mut self, node_id: NodeId) {
-        if !self.is_valid_potential_subtree_view_node(node_id) {
-            return;
+    pub(super) fn close_subtree_view(&mut self) {
+        let current_found_node_id = self.current_found_node_id();
+        self.subtree_view_node_id = None;
+        self.subtree_view_tip_edge_idx_range = None;
+        self.subtree_view_edges = None;
+        self.subtree_view_cache_tip_count = None;
+        self.subtree_view_cache_node_count = None;
+        self.subtree_view_cache_max_first_node_to_tip_distance = None;
+        self.subtree_view_edges_tip = Vec::new();
+        self.subtree_view_edges_tip_tallest = Vec::new();
+        self.subtree_view_edges_tip_idx = Vec::new();
+        self.subtree_view_sel_edge_idxs = Vec::new();
+        self.clear_caches_of_edges_sorted_by_field();
+
+        if let Some(search_query) = &self.search_query.clone()
+            && let Some(tip_only_search) = self.tip_only_search
+        {
+            self.filter_nodes(search_query, tip_only_search);
         }
+
+        self.update_filter_results(current_found_node_id);
+    }
+
+    pub(super) fn set_subtree_view(&mut self, node_id: NodeId) {
+        let current_found_node_id = self.current_found_node_id();
+        self.close_subtree_view();
+        self.clear_caches_of_edges_sorted_by_field();
+        self.clear_caches_cnv();
 
         let idx_range_opt =
             self.tree().bounding_tip_edge_index_range_for_clade(node_id);
@@ -319,7 +434,6 @@ impl TreeState {
 
             let min_x = subtree_edges
                 .par_iter()
-                // .map(|edge| edge.x_mid + edge.branch_length_normalized / 4.0)
                 .map(|edge| edge.x0)
                 .reduce(|| 1.0, TreeFloat::min);
 
@@ -359,20 +473,25 @@ impl TreeState {
             self.subtree_view_cache_node_count =
                 Some(self.tree().child_node_count_recursive(node_id));
 
-            self.subtree_view_cache_tre_height =
-                Some(self.tree().height_at_node(node_id));
+            self.subtree_view_cache_max_first_node_to_tip_distance =
+                Some(self.tree().max_node_to_tip_distance(node_id));
 
             self.subtree_view_node_id = Some(node_id);
 
             (self.subtree_view_edges_tip, self.subtree_view_edges_tip_idx) =
-                self.subtree_view_edges_tip_prep();
+                self.edges_tip_prep_for_subtree_view();
+
+            self.subtree_view_edges_tip_tallest =
+                self.edges_tip_tallest_prep_for_subtree_view();
 
             self.subtree_view_sel_edge_idxs =
-                self.subtree_view_sel_edge_idxs_prep();
+                self.sel_edge_idxs_prep_for_subtree_view();
+
+            self.update_filter_results(current_found_node_id);
         }
     }
 
-    fn subtree_view_edges_tip_prep(&mut self) -> (Vec<Edge>, Vec<usize>) {
+    fn edges_tip_prep_for_subtree_view(&mut self) -> (Vec<Edge>, Vec<usize>) {
         let mut rv_tip = Vec::new();
         let mut rv_tip_idx = Vec::new();
         if let Some(edges) = self.edges_for_subtree_view() {
@@ -386,7 +505,7 @@ impl TreeState {
         (rv_tip, rv_tip_idx)
     }
 
-    fn subtree_view_sel_edge_idxs_prep(&self) -> Vec<usize> {
+    fn sel_edge_idxs_prep_for_subtree_view(&self) -> Vec<usize> {
         let sel_node_ids = &self.sel_node_ids;
         let mut rv_edge_idx: Vec<usize> = Vec::new();
         if let Some(edges) = self.edges_for_subtree_view() {
@@ -404,25 +523,33 @@ impl TreeState {
         rv_edge_idx
     }
 
-    pub(super) fn tip_edge_idxs_for_subtree_view(&self) -> &Vec<usize> {
+    fn edges_tip_tallest_prep_for_subtree_view(&self) -> Vec<Edge> {
+        let n: i32 = 10;
+        let mut rv: Vec<Edge> = Vec::new();
+        let mut edges_tip = self.edges_tip_for_subtree_view().clone();
+        let idx2 = edges_tip.len();
+        let idx1: usize = 0.max(idx2 as i32 - n) as usize;
+        // ---------------------------------------------------------------------
+        edges_tip.sort_by(|a, b| a.x1.total_cmp(&b.x1));
+        rv.append(&mut edges_tip[idx1..idx2].to_vec());
+        // ---------------------------------------------------------------------
+        edges_tip.sort_by(|a, b| {
+            a.label
+                .clone()
+                .map(|name| name.len())
+                .cmp(&b.label.clone().map(|name| name.len()))
+        });
+        rv.append(&mut edges_tip[idx1..idx2].to_vec());
+        // ---------------------------------------------------------------------
+        rv
+    }
+
+    fn tip_edge_idxs_for_subtree_view(&self) -> &Vec<usize> {
         &self.subtree_view_edges_tip_idx
     }
 
-    pub(super) fn sel_edge_idxs_for_subtree_view(&self) -> &Vec<usize> {
+    fn sel_edge_idxs_for_subtree_view(&self) -> &Vec<usize> {
         &self.subtree_view_sel_edge_idxs
-    }
-
-    pub(super) fn found_edge_idxs_for_subtree_view(&self) -> &Vec<usize> {
-        &self.subtree_view_found_edge_idxs
-    }
-
-    pub(super) fn clear_subtree_view(&mut self) {
-        self.subtree_view_node_id = None;
-        self.subtree_view_tip_edge_idx_range = None;
-        self.subtree_view_edges = None;
-        self.subtree_view_cache_tip_count = None;
-        self.subtree_view_cache_node_count = None;
-        self.subtree_view_cache_tre_height = None;
     }
 
     pub(super) fn is_subtree_view_active(&self) -> bool {
@@ -443,27 +570,25 @@ impl TreeState {
         }
     }
 
-    pub fn subtree_view_node_id(&self) -> Option<NodeId> {
+    fn subtree_view_node_id(&self) -> Option<NodeId> {
         self.subtree_view_node_id
     }
 
-    pub(super) fn edges_for_subtree_view(&self) -> Option<&Vec<Edge>> {
-        self.subtree_view_edges.as_ref()
-    }
-
-    pub(super) fn tip_count_subtree_view(&self) -> Option<usize> {
+    fn tip_count_for_subtree_view(&self) -> Option<usize> {
         self.subtree_view_cache_tip_count
     }
 
-    pub(super) fn node_count_subtree_view(&self) -> Option<usize> {
+    fn node_count_for_subtree_view(&self) -> Option<usize> {
         self.subtree_view_cache_node_count
     }
 
-    pub(super) fn tre_height_subtree_view(&self) -> Option<TreeFloat> {
-        self.subtree_view_cache_tre_height
+    fn max_first_node_to_tip_distance_for_subtree_view(
+        &self,
+    ) -> Option<TreeFloat> {
+        self.subtree_view_cache_max_first_node_to_tip_distance
     }
 
-    pub(super) fn bounding_edges_for_clade_subtree_view(
+    fn bounding_edges_for_clade_for_subtree_view(
         &self,
         node_id: NodeId,
     ) -> Option<(Vec<Edge>, Vec<Edge>)> {
@@ -561,11 +686,11 @@ impl TreeState {
             TreNodeOrd::Descending => self.sort_desc(),
         };
 
-        (self.edges_tip, self.edges_tip_idx) = self.edges_tip_prep();
-        self.edges_tip_tallest = self.edges_tip_tallest_prep();
+        (self.edges_tip, self.edges_tip_idx) = self.edges_tip_prep_tree();
+        self.edges_tip_tallest = self.edges_tip_tallest_prep_tree();
         self.edge_root = self.edge_root_prep();
         self.update_filter_results(current_found_node_id);
-        self.sel_edge_idxs = self.sel_edge_idxs_prep();
+        self.sel_edge_idxs = self.sel_edge_idxs_prep_tree();
         // ---------------------------------------------------------------------
         // Drop clade label for nodes that may not exist anymore.
         let mut node_ids_to_drop: Vec<NodeId> = Vec::new();
@@ -578,8 +703,13 @@ impl TreeState {
             self.remove_clade_label(node_id);
         }
         // ---------------------------------------------------------------------
-        self.clear_caches_edges_sorted_by_field();
+        self.clear_caches_of_edges_sorted_by_field();
         self.clear_caches_cnv();
+
+        if let Some(subtree_view_node_id) = self.subtree_view_node_id() {
+            self.set_subtree_view(subtree_view_node_id);
+            self.update_filter_results(current_found_node_id);
+        }
     }
 
     fn sort_asc(&mut self) {
@@ -622,10 +752,10 @@ impl TreeState {
         }
     }
 
-    fn edges_tip_prep(&mut self) -> (Vec<Edge>, Vec<usize>) {
+    fn edges_tip_prep_tree(&mut self) -> (Vec<Edge>, Vec<usize>) {
         let mut rv_tip = Vec::new();
         let mut rv_tip_idx = Vec::new();
-        if let Some(edges) = self.edges() {
+        if let Some(edges) = self.edges_for_tree() {
             for edge in edges {
                 if edge.is_tip {
                     rv_tip.push(edge.clone());
@@ -636,10 +766,10 @@ impl TreeState {
         (rv_tip, rv_tip_idx)
     }
 
-    fn edges_tip_tallest_prep(&self) -> Vec<Edge> {
+    fn edges_tip_tallest_prep_tree(&self) -> Vec<Edge> {
         let n: i32 = 10;
         let mut rv: Vec<Edge> = Vec::new();
-        let mut edges_tip = self.edges_tip().clone();
+        let mut edges_tip = self.edges_tip_tree().clone();
         let idx2 = edges_tip.len();
         let idx1: usize = 0.max(idx2 as i32 - n) as usize;
         // ---------------------------------------------------------------------
@@ -659,7 +789,7 @@ impl TreeState {
 
     fn edge_root_prep(&mut self) -> Option<Edge> {
         if self.is_rooted()
-            && let Some(edges) = self.edges()
+            && let Some(edges) = self.edges_for_tree()
         {
             Some(
                 edges
@@ -684,6 +814,14 @@ impl TreeState {
     }
 
     pub(super) fn sel_edge_idxs(&self) -> &Vec<usize> {
+        if self.is_subtree_view_active() {
+            self.sel_edge_idxs_for_subtree_view()
+        } else {
+            self.sel_edge_idxs_tree()
+        }
+    }
+
+    fn sel_edge_idxs_tree(&self) -> &Vec<usize> {
         &self.sel_edge_idxs
     }
 
@@ -697,27 +835,27 @@ impl TreeState {
 
     pub(super) fn select_node(&mut self, node_id: NodeId) {
         _ = self.sel_node_ids.insert(node_id);
-        self.sel_edge_idxs = self.sel_edge_idxs_prep();
+        self.sel_edge_idxs = self.sel_edge_idxs_prep_tree();
         self.clear_cache_cnv_sel_nodes();
         self.cache_edges_selected_asc = None;
         self.cache_edges_selected_desc = None;
 
         if self.is_subtree_view_active() {
             self.subtree_view_sel_edge_idxs =
-                self.subtree_view_sel_edge_idxs_prep();
+                self.sel_edge_idxs_prep_for_subtree_view();
         }
     }
 
     pub(super) fn deselect_node(&mut self, node_id: NodeId) {
         _ = self.sel_node_ids.remove(&node_id);
-        self.sel_edge_idxs = self.sel_edge_idxs_prep();
+        self.sel_edge_idxs = self.sel_edge_idxs_prep_tree();
         self.clear_cache_cnv_sel_nodes();
         self.cache_edges_selected_asc = None;
         self.cache_edges_selected_desc = None;
 
         if self.is_subtree_view_active() {
             self.subtree_view_sel_edge_idxs =
-                self.subtree_view_sel_edge_idxs_prep();
+                self.sel_edge_idxs_prep_for_subtree_view();
         }
     }
 
@@ -735,10 +873,10 @@ impl TreeState {
         }
     }
 
-    fn sel_edge_idxs_prep(&self) -> Vec<usize> {
+    fn sel_edge_idxs_prep_tree(&self) -> Vec<usize> {
         let sel_node_ids = &self.sel_node_ids;
         let mut rv_edge_idx: Vec<usize> = Vec::new();
-        if let Some(edges) = self.edges() {
+        if let Some(edges) = self.edges_for_tree() {
             rv_edge_idx = edges
                 .par_iter()
                 .filter_map(|edge| {
@@ -810,7 +948,7 @@ impl TreeState {
             _ = sel_node_ids.insert(*id);
         });
         self.sel_node_ids = sel_node_ids;
-        self.sel_edge_idxs = self.sel_edge_idxs_prep();
+        self.sel_edge_idxs = self.sel_edge_idxs_prep_tree();
         self.clear_cache_cnv_sel_nodes();
     }
 
@@ -821,7 +959,7 @@ impl TreeState {
             _ = sel_node_ids.insert(*id);
         });
         self.sel_node_ids = sel_node_ids;
-        self.sel_edge_idxs = self.sel_edge_idxs_prep();
+        self.sel_edge_idxs = self.sel_edge_idxs_prep_tree();
         self.clear_cache_cnv_sel_nodes();
     }
 
@@ -833,37 +971,42 @@ impl TreeState {
     }
 
     pub(super) fn filter_nodes(&mut self, query: &str, tips_only: bool) {
-        self.found_node_ids.clear();
-        self.found_edge_idxs.clear();
-        self.clear_cache_cnv_filtered_nodes();
-        self.vec_idx_to_found_edge_idxs = 0;
+        self.clear_filter_results();
 
         if query.is_empty() {
+            self.search_query = None;
+            self.tip_only_search = None;
             return;
         };
 
-        if let Some(edges) = self.edges() {
-            let edges_to_search = match tips_only {
-                true => &self.edges_tip,
-                false => edges,
-            };
+        self.search_query = Some(query.to_string());
+        self.tip_only_search = Some(tips_only);
 
-            let mut found_node_ids: HashSet<NodeId> = HashSet::new();
-            let mut found_edge_idxs: Vec<usize> = Vec::new();
-
-            for e in edges_to_search {
-                if let Some(n) = &e.label
-                    && let Some(_) =
-                        n.to_lowercase().find(&query.to_lowercase())
-                {
-                    _ = found_node_ids.insert(e.node_id);
-                    found_edge_idxs.push(e.edge_index);
+        let edges_to_search = match tips_only {
+            true => self.edges_tip(),
+            false => {
+                if let Some(edges) = self.edges() {
+                    edges
+                } else {
+                    return;
                 }
             }
+        };
 
-            self.found_node_ids = found_node_ids;
-            self.found_edge_idxs = found_edge_idxs;
+        let mut found_node_ids: HashSet<NodeId> = HashSet::new();
+        let mut found_edge_idxs: Vec<usize> = Vec::new();
+
+        for e in edges_to_search {
+            if let Some(n) = &e.label
+                && let Some(_) = n.to_lowercase().find(&query.to_lowercase())
+            {
+                _ = found_node_ids.insert(e.node_id);
+                found_edge_idxs.push(e.edge_index);
+            }
         }
+
+        self.found_node_ids = found_node_ids;
+        self.found_edge_idxs = found_edge_idxs;
     }
 
     // -------------------------------------------------------------------------
@@ -1038,7 +1181,7 @@ impl TreeState {
         }
     }
 
-    fn clear_caches_edges_sorted_by_field(&mut self) {
+    fn clear_caches_of_edges_sorted_by_field(&mut self) {
         self.cache_edges_node_id_asc = None;
         self.cache_edges_node_id_desc = None;
         self.cache_edges_node_label_asc = None;

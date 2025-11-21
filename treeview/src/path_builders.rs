@@ -82,10 +82,7 @@ pub fn path_clade_highlight_phygrm(
 ) -> IcedPath {
     let mut pb: PathBuilder = PathBuilder::new();
 
-    let bounding_edges_opt = match tree_state.is_subtree_view_active() {
-        true => tree_state.bounding_edges_for_clade_subtree_view(node_id),
-        false => tree_state.bounding_edges_for_clade(node_id),
-    };
+    let bounding_edges_opt = tree_state.bounding_edges_for_clade(node_id);
 
     if let Some((edges_top, edges_bottom)) = bounding_edges_opt
         && !edges_top.is_empty()
@@ -135,10 +132,7 @@ pub fn path_clade_highlight_fan(
 ) -> IcedPath {
     let mut pb: PathBuilder = PathBuilder::new();
 
-    let bounding_edges_opt = match tree_state.is_subtree_view_active() {
-        true => tree_state.bounding_edges_for_clade_subtree_view(node_id),
-        false => tree_state.bounding_edges_for_clade(node_id),
-    };
+    let bounding_edges_opt = tree_state.bounding_edges_for_clade(node_id);
 
     if let Some((edges_top, edges_bottom)) = bounding_edges_opt
         && !edges_top.is_empty()

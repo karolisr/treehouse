@@ -14,36 +14,21 @@ impl Program<TvMsg> for TreeCnv {
         // ---------------------------------------------------------------------
         let mut action: Option<Action<TvMsg>> = None;
         // ---------------------------------------------------------------------
+
         let tree_state_opt = self.tree_state.as_deref();
+
         if !self.drawing_enabled || tree_state_opt.is_none() {
             return None;
         }
+
         let tst: &TreeState = tree_state_opt?;
 
-        let edges;
-        let tip_edge_idxs;
-        let tip_count;
-        let sel_edge_idxs;
-        let found_edge_idxs;
-        let is_rooted;
-        match tst.is_subtree_view_active() {
-            true => {
-                edges = tst.edges_for_subtree_view()?;
-                tip_edge_idxs = tst.tip_edge_idxs_for_subtree_view();
-                tip_count = tst.tip_count_subtree_view()?;
-                sel_edge_idxs = tst.sel_edge_idxs_for_subtree_view();
-                found_edge_idxs = tst.found_edge_idxs_for_subtree_view();
-                is_rooted = false;
-            }
-            false => {
-                edges = tst.edges()?;
-                tip_edge_idxs = tst.tip_edge_idxs();
-                tip_count = tst.tip_count();
-                sel_edge_idxs = tst.sel_edge_idxs();
-                found_edge_idxs = tst.found_edge_idxs();
-                is_rooted = tst.is_rooted();
-            }
-        }
+        let edges = tst.edges()?;
+        let tip_edge_idxs = tst.tip_edge_idxs();
+        let tip_count = tst.tip_count();
+        let sel_edge_idxs = tst.sel_edge_idxs();
+        let found_edge_idxs = tst.found_edge_idxs();
+        let is_rooted = tst.is_rooted();
 
         st.tre_sty = self.tre_sty;
         st.opn_angle = self.opn_angle;
@@ -145,7 +130,8 @@ impl Program<TvMsg> for TreeCnv {
         st.labs_int.clear();
         st.labs_brnch.clear();
         // ---------------------------------------------------------------------
-        if tst.has_tip_labs() && self.draw_labs_tip && self.draw_labs_allowed {
+        if tst.has_tip_labels() && self.draw_labs_tip && self.draw_labs_allowed
+        {
             node_labs(
                 &st.vis_nodes,
                 edges,
@@ -472,45 +458,16 @@ impl Program<TvMsg> for TreeCnv {
         bnds: Rectangle,
         _crsr: Cursor,
     ) -> Vec<Geometry> {
-        let tree_state_opt = self.tree_state.as_deref();
         let mut geoms: Vec<Geometry> = Vec::new();
-        if let Some(tst) = tree_state_opt
+        if let Some(tst) = self.tree_state.as_deref()
             && self.drawing_enabled
         {
-            // -----------------------------------------------------------------
             let size = bnds.size();
-            // let tst: &TreeState = tree_state_opt;
-
-            let edges;
-            // let tip_edge_idxs;
-            // let tip_count;
-            // let sel_edge_idxs;
-            // let found_edge_idxs;
-            let edge_root;
-            match tst.is_subtree_view_active() {
-                true => {
-                    edges = tst.edges_for_subtree_view().unwrap();
-                    // tip_edge_idxs = tst.tip_edge_idxs_for_subtree_view();
-                    // tip_count = tst.tip_count_subtree_view().unwrap();
-                    // sel_edge_idxs = tst.sel_edge_idxs_for_subtree_view();
-                    // found_edge_idxs = tst.found_edge_idxs_for_subtree_view();
-                    edge_root = None;
-                }
-                false => {
-                    edges = tst.edges().unwrap();
-                    // tip_edge_idxs = tst.tip_edge_idxs();
-                    // tip_count = tst.tip_count();
-                    // sel_edge_idxs = tst.sel_edge_idxs();
-                    // found_edge_idxs = tst.found_edge_idxs();
-                    edge_root = tst.edge_root();
-                }
-            }
-
             if self.draw_debug {
                 draw_bounds(self, st, rndr, bnds, &mut geoms);
             }
             draw_clade_labels(st, tst, rndr, size, &mut geoms);
-            draw_edges(self, st, tst, edges, edge_root, rndr, size, &mut geoms);
+            draw_edges(self, st, tst, rndr, size, &mut geoms);
             if st.mouse_is_over_tip_w_resize_area
                 || st.tip_lab_w_is_being_resized
             {
@@ -527,7 +484,6 @@ impl Program<TvMsg> for TreeCnv {
             if self.draw_debug {
                 draw_palette(self, st, thm, rndr, size, &mut geoms);
             }
-            // -----------------------------------------------------------------
         }
         geoms
     }
