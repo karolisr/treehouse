@@ -61,7 +61,6 @@ pub(super) struct TreeState {
 
     edge_root: Option<Edge>,
     edges_tip: Vec<Edge>,
-    edges_tip_idx: Vec<usize>,
     edges_tip_tallest: Vec<Edge>,
 
     // --- Canvas Geometry Caches ----------------------------------------------
@@ -108,7 +107,6 @@ pub(super) struct TreeState {
     subtree_view_cache_max_first_node_to_tip_distance: Option<TreeFloat>,
     subtree_view_edges_tip: Vec<Edge>,
     subtree_view_edges_tip_tallest: Vec<Edge>,
-    subtree_view_edges_tip_idx: Vec<usize>,
     subtree_view_sel_edge_idxs: Vec<usize>,
 }
 
@@ -124,7 +122,6 @@ impl TreeState {
         self.t_srtd_asc = None;
         self.t_srtd_desc = None;
 
-        self.edges_tip_idx = vec![];
         self.edges_tip = vec![];
 
         self.cache_has_brlen = None;
@@ -208,18 +205,6 @@ impl TreeState {
 
     pub(super) fn edges_tip_tallest_for_subtree_view(&self) -> &Vec<Edge> {
         &self.subtree_view_edges_tip_tallest
-    }
-
-    pub(super) fn tip_edge_idxs(&self) -> &Vec<usize> {
-        if self.is_subtree_view_active() {
-            self.tip_edge_idxs_for_subtree_view()
-        } else {
-            self.tip_edge_idxs_tree()
-        }
-    }
-
-    pub(super) fn tip_edge_idxs_tree(&self) -> &Vec<usize> {
-        &self.edges_tip_idx
     }
 
     pub(super) fn edge_root(&self) -> Option<Edge> {
@@ -389,7 +374,6 @@ impl TreeState {
         self.subtree_view_cache_max_first_node_to_tip_distance = None;
         self.subtree_view_edges_tip = Vec::new();
         self.subtree_view_edges_tip_tallest = Vec::new();
-        self.subtree_view_edges_tip_idx = Vec::new();
         self.subtree_view_sel_edge_idxs = Vec::new();
         self.clear_caches_of_edges_sorted_by_field();
 
@@ -478,7 +462,7 @@ impl TreeState {
 
             self.subtree_view_node_id = Some(node_id);
 
-            (self.subtree_view_edges_tip, self.subtree_view_edges_tip_idx) =
+            self.subtree_view_edges_tip =
                 self.edges_tip_prep_for_subtree_view();
 
             self.subtree_view_edges_tip_tallest =
@@ -491,18 +475,16 @@ impl TreeState {
         }
     }
 
-    fn edges_tip_prep_for_subtree_view(&mut self) -> (Vec<Edge>, Vec<usize>) {
+    fn edges_tip_prep_for_subtree_view(&mut self) -> Vec<Edge> {
         let mut rv_tip = Vec::new();
-        let mut rv_tip_idx = Vec::new();
         if let Some(edges) = self.edges_for_subtree_view() {
             for edge in edges {
                 if edge.is_tip {
                     rv_tip.push(edge.clone());
-                    rv_tip_idx.push(edge.edge_index);
                 }
             }
         }
-        (rv_tip, rv_tip_idx)
+        rv_tip
     }
 
     fn sel_edge_idxs_prep_for_subtree_view(&self) -> Vec<usize> {
@@ -542,10 +524,6 @@ impl TreeState {
         rv.append(&mut edges_tip[idx1..idx2].to_vec());
         // ---------------------------------------------------------------------
         rv
-    }
-
-    fn tip_edge_idxs_for_subtree_view(&self) -> &Vec<usize> {
-        &self.subtree_view_edges_tip_idx
     }
 
     fn sel_edge_idxs_for_subtree_view(&self) -> &Vec<usize> {
@@ -686,7 +664,7 @@ impl TreeState {
             TreNodeOrd::Descending => self.sort_desc(),
         };
 
-        (self.edges_tip, self.edges_tip_idx) = self.edges_tip_prep_tree();
+        self.edges_tip = self.edges_tip_prep_tree();
         self.edges_tip_tallest = self.edges_tip_tallest_prep_tree();
         self.edge_root = self.edge_root_prep();
         self.update_filter_results(current_found_node_id);
@@ -752,18 +730,16 @@ impl TreeState {
         }
     }
 
-    fn edges_tip_prep_tree(&mut self) -> (Vec<Edge>, Vec<usize>) {
+    fn edges_tip_prep_tree(&mut self) -> Vec<Edge> {
         let mut rv_tip = Vec::new();
-        let mut rv_tip_idx = Vec::new();
         if let Some(edges) = self.edges_for_tree() {
             for edge in edges {
                 if edge.is_tip {
                     rv_tip.push(edge.clone());
-                    rv_tip_idx.push(edge.edge_index);
                 }
             }
         }
-        (rv_tip, rv_tip_idx)
+        rv_tip
     }
 
     fn edges_tip_tallest_prep_tree(&self) -> Vec<Edge> {

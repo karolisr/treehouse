@@ -235,48 +235,21 @@ impl St {
         }
     }
 
-    pub(super) fn update_vis_edge_idxs_phygrm(
-        &mut self,
-        node_size: Float,
-        tip_edge_idxs: &[usize],
-    ) {
-        self.vis_edge_idxs.clear();
-        if let Some(tip_idx_range) = self.vis_tip_edge_idx_range_phygrm(
-            self.vis_vs.y0 - self.tre_vs.y0,
-            self.vis_vs.y1 - self.tre_vs.y0,
-            node_size,
-            tip_edge_idxs,
-        ) {
-            let edge_idx_range =
-                self.vis_edge_idx_range_phygrm(&tip_idx_range, tip_edge_idxs);
-            self.vis_edge_idxs = edge_idx_range.collect();
-        }
-    }
-
-    fn vis_tip_edge_idx_range_phygrm(
-        &self,
-        y0: Float,
-        y1: Float,
-        node_size: Float,
-        tip_edge_idxs: &[usize],
-    ) -> Option<IndexRange> {
-        tip_edge_idx_range_between_y_vals(y0, y1, node_size, tip_edge_idxs)
-    }
-
-    fn vis_edge_idx_range_phygrm(
-        &self,
-        tip_idx_range: &IndexRange,
-        tip_edge_idxs: &[usize],
-    ) -> IndexRange {
-        edge_idx_range_for_tip_edge_idx_range(tip_idx_range, tip_edge_idxs)
-    }
-
-    pub(super) fn update_vis_edge_idxs_fan(&mut self, edges: &[Edge]) {
+    pub(super) fn update_vis_edge_idxs(&mut self, edges: &[Edge]) {
         self.vis_edge_idxs.clear();
         for e in edges {
-            let angle = edge_angle(self.opn_angle, e) + self.rotation;
-            let point =
-                node_point_pol(angle, self.tre_vs.radius_min, self.root_len, e);
+            let point = match self.tre_sty {
+                TreSty::PhyGrm => {
+                    node_point_cart(self.tre_vs.w, self.tre_vs.h, e)
+                }
+                TreSty::Fan => node_point_pol(
+                    edge_angle(self.opn_angle, e) + self.rotation,
+                    self.tre_vs.radius_min,
+                    self.root_len,
+                    e,
+                ),
+            };
+
             if self.vis_rect.contains(point + self.translation) {
                 self.vis_edge_idxs.push(e.edge_index);
             }

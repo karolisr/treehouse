@@ -24,8 +24,6 @@ impl Program<TvMsg> for TreeCnv {
         let tst: &TreeState = tree_state_opt?;
 
         let edges = tst.edges()?;
-        let tip_edge_idxs = tst.tip_edge_idxs();
-        let tip_count = tst.tip_count();
         let sel_edge_idxs = tst.sel_edge_idxs();
         let found_edge_idxs = tst.found_edge_idxs();
         let is_rooted = tst.is_rooted();
@@ -111,15 +109,7 @@ impl Program<TvMsg> for TreeCnv {
         }
         // ---------------------------------------------------------------------
         if st.stale_vis_rect || st.is_new || self.stale_tre_rect {
-            match st.tre_sty {
-                TreSty::PhyGrm => {
-                    let node_size = st.tre_vs.h / tip_count as Float;
-                    st.update_vis_edge_idxs_phygrm(node_size, tip_edge_idxs);
-                }
-                TreSty::Fan => {
-                    st.update_vis_edge_idxs_fan(edges);
-                }
-            }
+            st.update_vis_edge_idxs(edges);
         }
         // ---------------------------------------------------------------------
         st.update_vis_nodes(edges);
