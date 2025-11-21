@@ -343,18 +343,73 @@ fn stats(ts: Rc<TreeState>) -> Row<'static, TvMsg> {
 
     stats_row = stats_row.push(lc);
 
-    let rc: Column<TvMsg> = iced_col![
-        txt_usize(ts.tip_count()),
-        txt_usize(ts.node_count()),
-        match ts.has_brlen() {
-            true => txt_float(ts.max_first_node_to_tip_distance() as Float),
-            false => txt_usize(ts.max_first_node_to_tip_distance() as usize),
-        },
-        txt_bool(ts.is_rooted()),
-        txt_bool(ts.has_brlen()),
-        txt_bool_option(ts.is_ultrametric()),
-    ]
-    .align_x(Horizontal::Right);
+    let rc: Column<TvMsg> =
+        iced_col![
+            iced_row![
+                match ts.is_subtree_view_active() {
+                    true => {
+                        iced_row![
+                            txt_usize(ts.tip_count_for_subtree_view().unwrap()),
+                            txt("/")
+                        ]
+                    }
+                    false => {
+                        iced_row![]
+                    }
+                },
+                txt_usize(ts.tip_count_tree())
+            ],
+            iced_row![
+                match ts.is_subtree_view_active() {
+                    true => {
+                        iced_row![
+                            txt_usize(
+                                ts.node_count_for_subtree_view().unwrap()
+                            ),
+                            txt("/")
+                        ]
+                    }
+                    false => {
+                        iced_row![]
+                    }
+                },
+                txt_usize(ts.node_count_tree())
+            ],
+            iced_row![
+                match ts.is_subtree_view_active() {
+                    true => {
+                        iced_row![
+                    match ts.has_brlen() {
+                        true => txt_float(
+                            ts.max_first_node_to_tip_distance_for_subtree_view()
+                                .unwrap() as Float
+                        ),
+                        false => txt_usize(
+                            ts.max_first_node_to_tip_distance_for_subtree_view()
+                                .unwrap() as usize
+                        ),
+                    },
+                    txt("/")
+                ]
+                    }
+                    false => {
+                        iced_row![]
+                    }
+                },
+                match ts.has_brlen() {
+                    true => txt_float(
+                        ts.max_first_node_to_tip_distance_tree() as Float
+                    ),
+                    false => txt_usize(
+                        ts.max_first_node_to_tip_distance_tree() as usize
+                    ),
+                }
+            ],
+            txt_bool(ts.is_rooted_tree()),
+            txt_bool(ts.has_brlen()),
+            txt_bool_option(ts.is_ultrametric()),
+        ]
+        .align_x(Horizontal::Right);
     stats_row = stats_row.push(rc);
     stats_row
 }

@@ -553,15 +553,15 @@ impl TreeState {
         self.subtree_view_node_id
     }
 
-    fn tip_count_for_subtree_view(&self) -> Option<usize> {
+    pub(super) fn tip_count_for_subtree_view(&self) -> Option<usize> {
         self.subtree_view_cache_tip_count
     }
 
-    fn node_count_for_subtree_view(&self) -> Option<usize> {
+    pub(super) fn node_count_for_subtree_view(&self) -> Option<usize> {
         self.subtree_view_cache_node_count
     }
 
-    fn max_first_node_to_tip_distance_for_subtree_view(
+    pub(super) fn max_first_node_to_tip_distance_for_subtree_view(
         &self,
     ) -> Option<TreeFloat> {
         self.subtree_view_cache_max_first_node_to_tip_distance
