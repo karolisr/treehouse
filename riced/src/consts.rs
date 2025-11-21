@@ -13,12 +13,12 @@ pub(crate) const FOUR: Float = 4e0;
 pub(crate) const FIVE: Float = 5e0;
 
 pub const SF: Float = ONE;
-pub const TXT_SIZE: Float = SF * 12.0;
+pub const TXT_SIZE: Float = SF * 11.0;
 
 pub const LINE_H: Float = TXT_SIZE + SF * THREE;
 pub const LINE_H_PIX: Pixels = Pixels(LINE_H);
 pub const BORDER_W: Float = SF;
-pub const WIDGET_H_UNIT: Float = (((LINE_H / FIVE) as i32 as Float) * TWO) - SF;
+pub const WIDGET_H_UNIT: Float = ((LINE_H / FIVE) * TWO) - SF;
 pub const WIDGET_RADIUS: Float = WIDGET_H_UNIT - SF;
 pub const PADDING: Float = WIDGET_H_UNIT + SF;
 pub const BTN_H1: Float = WIDGET_H_UNIT * FIVE + SF * TWO;

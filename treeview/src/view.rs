@@ -131,6 +131,18 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         .height(Length::Shrink),
     );
 
+    tb_row = tb_row.push(
+        center(
+            iced_row![
+                btn_set_subtree_view(ts.clone()),
+                btn_clear_subtree_view(ts.clone())
+            ]
+            .spacing(SF),
+        )
+        .width(Length::Shrink)
+        .height(Length::Shrink),
+    );
+
     tb_row = tb_row.push(btn_clade_label(ts.clone()));
 
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
@@ -331,18 +343,73 @@ fn stats(ts: Rc<TreeState>) -> Row<'static, TvMsg> {
 
     stats_row = stats_row.push(lc);
 
-    let rc: Column<TvMsg> = iced_col![
-        txt_usize(ts.tip_count()),
-        txt_usize(ts.node_count()),
-        match ts.has_brlen() {
-            true => txt_float(ts.tre_height() as Float),
-            false => txt_usize(ts.tre_height() as usize),
-        },
-        txt_bool(ts.is_rooted()),
-        txt_bool(ts.has_brlen()),
-        txt_bool_option(ts.is_ultrametric()),
-    ]
-    .align_x(Horizontal::Right);
+    let rc: Column<TvMsg> =
+        iced_col![
+            iced_row![
+                match ts.is_subtree_view_active() {
+                    true => {
+                        iced_row![
+                            txt_usize(ts.tip_count_for_subtree_view().unwrap()),
+                            txt("/")
+                        ]
+                    }
+                    false => {
+                        iced_row![]
+                    }
+                },
+                txt_usize(ts.tip_count_tree())
+            ],
+            iced_row![
+                match ts.is_subtree_view_active() {
+                    true => {
+                        iced_row![
+                            txt_usize(
+                                ts.node_count_for_subtree_view().unwrap()
+                            ),
+                            txt("/")
+                        ]
+                    }
+                    false => {
+                        iced_row![]
+                    }
+                },
+                txt_usize(ts.node_count_tree())
+            ],
+            iced_row![
+                match ts.is_subtree_view_active() {
+                    true => {
+                        iced_row![
+                    match ts.has_brlen() {
+                        true => txt_float(
+                            ts.max_first_node_to_tip_distance_for_subtree_view()
+                                .unwrap() as Float
+                        ),
+                        false => txt_usize(
+                            ts.max_first_node_to_tip_distance_for_subtree_view()
+                                .unwrap() as usize
+                        ),
+                    },
+                    txt("/")
+                ]
+                    }
+                    false => {
+                        iced_row![]
+                    }
+                },
+                match ts.has_brlen() {
+                    true => txt_float(
+                        ts.max_first_node_to_tip_distance_tree() as Float
+                    ),
+                    false => txt_usize(
+                        ts.max_first_node_to_tip_distance_tree() as usize
+                    ),
+                }
+            ],
+            txt_bool(ts.is_rooted_tree()),
+            txt_bool(ts.has_brlen()),
+            txt_bool_option(ts.is_ultrametric()),
+        ]
+        .align_x(Horizontal::Right);
     stats_row = stats_row.push(rc);
     stats_row
 }
@@ -419,7 +486,7 @@ fn side_bar_main<'a>(
 
     sb = sb.push(rule_h(SF));
 
-    if ts.is_rooted() && tv.tre_cnv.draw_root {
+    if ts.is_rooted() && tv.tre_cnv.draw_root && !ts.is_subtree_view_active() {
         sb = sb.push(iced_col![
             toggler_root(true, tv.tre_cnv.draw_root),
             space_v(ONE, PADDING / TWO),
@@ -434,7 +501,10 @@ fn side_bar_main<'a>(
             )
         ]);
     } else {
-        sb = sb.push(toggler_root(ts.is_rooted(), tv.tre_cnv.draw_root));
+        sb = sb.push(toggler_root(
+            ts.is_rooted() && !ts.is_subtree_view_active(),
+            tv.tre_cnv.draw_root,
+        ));
     }
 
     sb = sb.push(iced_col![toggler_legend(
@@ -473,7 +543,7 @@ fn side_bar_annotations<'a>(
     sb = sb.width(Length::Fill);
     sb = sb.height(Length::Fill);
 
-    if ts.has_tip_labs()
+    if ts.has_tip_labels()
         && tv.tre_cnv.draw_labs_tip
         && tv.tre_cnv.draw_labs_allowed
     {
@@ -515,7 +585,7 @@ fn side_bar_annotations<'a>(
         ]);
     } else {
         sb = sb.push(toggler_label_tip(
-            ts.has_tip_labs() && tv.tre_cnv.draw_labs_allowed,
+            ts.has_tip_labels() && tv.tre_cnv.draw_labs_allowed,
             tv.tre_cnv.draw_labs_tip,
         ));
     }
@@ -624,7 +694,9 @@ pub(crate) fn btn_root<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
     btn_txt("Root", {
         if sel_tre.sel_node_ids().len() == 1 {
             let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
-            match sel_tre.is_valid_potential_outgroup_node(node_id) {
+            match sel_tre.is_valid_potential_outgroup_node(node_id)
+                && !sel_tre.is_subtree_view_active()
+            {
                 true => Some(TvMsg::Root(node_id)),
                 false => None,
             }
@@ -638,8 +710,38 @@ pub(crate) fn btn_root<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
 pub(crate) fn btn_unroot<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
     btn_txt(
         "Unroot",
-        match sel_tre.is_rooted() {
+        match sel_tre.is_rooted() && !sel_tre.is_subtree_view_active() {
             true => Some(TvMsg::Unroot),
+            false => None,
+        },
+    )
+    .width(BTN_H1 * TWO)
+}
+
+pub(crate) fn btn_set_subtree_view<'a>(
+    sel_tre: Rc<TreeState>,
+) -> Button<'a, TvMsg> {
+    btn_txt("Subtree", {
+        if sel_tre.sel_node_ids().len() == 1 {
+            let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
+            match sel_tre.is_valid_potential_subtree_view_node(node_id) {
+                true => Some(TvMsg::SetSubtreeView(node_id)),
+                false => None,
+            }
+        } else {
+            None
+        }
+    })
+    .width(BTN_H1 * TWO)
+}
+
+pub(crate) fn btn_clear_subtree_view<'a>(
+    sel_tre: Rc<TreeState>,
+) -> Button<'a, TvMsg> {
+    btn_txt(
+        "Close Subtree",
+        match sel_tre.is_subtree_view_active() {
+            true => Some(TvMsg::ClearSubtreeView),
             false => None,
         },
     )

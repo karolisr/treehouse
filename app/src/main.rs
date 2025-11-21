@@ -25,6 +25,7 @@ fn main() -> riced::IcedResult {
         .subscription(App::subscription)
         .scale_factor(App::scale_factor)
         .theme(App::theme)
+        .style(App::theme_style)
         .settings(App::settings())
         .run()
 }

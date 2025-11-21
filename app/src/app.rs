@@ -11,11 +11,11 @@ use menu::ContextMenu;
 use menu::{AppMenu, AppMenuItemId};
 use riced::{
     Clr, Element, Font, IcedAppSettings, Key, Modifiers, Pixels, Subscription,
-    Task, Theme, WindowEvent, WindowId, close_window, error_container, exit,
-    modal, on_key_press, open_window, window_events,
+    Task, Theme, ThemeStyle, WindowEvent, WindowId, close_window,
+    error_container, exit, modal, on_key_press, open_window, window_events,
 };
 #[cfg(any(target_os = "macos", target_os = "windows"))]
-use riced::{HasWindowHandle, RawWindowHandle, run_with_handle};
+use riced::{RawWindowHandle, run};
 use std::path::PathBuf;
 use treeview::{
     // SidebarPosition,
@@ -273,7 +273,7 @@ impl App {
             AppMsg::ShowContextMenu(tree_view_context_menu_listing) => {
                 #[cfg(any(target_os = "windows", target_os = "macos"))]
                 if let Some(winid) = self.winid {
-                    let task_to_return = run_with_handle(winid, |h| {
+                    let task_to_return = run(winid, |h| {
                         if let Ok(handle) = h.window_handle() {
                             let context_menu: ContextMenu = tree_view_context_menu_listing.into();
 
@@ -539,9 +539,9 @@ impl App {
                 #[cfg(debug_assertions)]
                 {
                     task_to_return = task_to_return.chain({
-                        let path_buf =
-                            // PathBuf::from("tests/data/tree02.newick");
-                            PathBuf::from("tests/data/Czech_Huerta-Cepas_Stamatakis_2017/Czech_Huerta-Cepas_Stamatakis_2017_unrooted__node_and_branch_attributes.newick");
+                        let path_buf = PathBuf::from("tests/data/tree01.tre");
+                        // PathBuf::from("tests/data/tree02.newick");
+                        // PathBuf::from("tests/data/Czech_Huerta-Cepas_Stamatakis_2017/Czech_Huerta-Cepas_Stamatakis_2017_unrooted__node_and_branch_attributes.newick");
                         let path: &std::path::Path =
                             &path_buf.clone().into_boxed_path();
                         if path.exists() {
@@ -665,6 +665,13 @@ impl App {
         Theme::Light
     }
 
+    pub fn theme_style(&self, theme: &Theme) -> ThemeStyle {
+        ThemeStyle {
+            background_color: theme.palette().background,
+            text_color: theme.palette().text,
+        }
+    }
+
     pub fn settings() -> IcedAppSettings {
         IcedAppSettings {
             id: None,
@@ -672,6 +679,7 @@ impl App {
             default_font: Font::DEFAULT,
             default_text_size: Pixels(TXT_SIZE),
             antialiasing: true,
+            vsync: true,
             #[cfg(target_os = "macos")]
             allows_automatic_window_tabbing: false,
         }

@@ -40,7 +40,6 @@ pub use treeview::{
 use std::collections::HashSet;
 use std::f32 as float;
 use std::fmt::{Debug, Display, Formatter, Result};
-use std::ops::RangeInclusive;
 use std::rc::Rc;
 
 use cnv_plot::AXIS_SCALE_TYPE_OPTS;
@@ -55,8 +54,6 @@ use treestate::{EdgeSortField, TreeState};
 use treeview::{
     TRE_NODE_ORD_OPTS, TRE_STY_OPTS, TreNodeOrd, TreSty, TreeViewPane,
 };
-
-pub type IndexRange = RangeInclusive<usize>;
 
 #[derive(Debug, Clone, Copy)]
 pub enum SortOrd {

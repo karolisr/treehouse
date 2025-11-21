@@ -40,7 +40,8 @@ impl TvContextMenuListing {
             Values { enabled, label } = match tv_msg {
                 TvMsg::Root(node_id) => Values {
                     enabled: tree_state
-                        .is_valid_potential_outgroup_node(node_id),
+                        .is_valid_potential_outgroup_node(node_id)
+                        && !tree_state.is_subtree_view_active(),
                     label: "Root here",
                 },
 

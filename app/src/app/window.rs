@@ -14,12 +14,15 @@ pub fn window_settings() -> WindowSettings {
         maximized: false,
         fullscreen: false,
         resizable: true,
+        minimizable: true,
+        closeable: true,
         position: WindowPosition::Centered,
         icon: None,
         decorations: true,
         exit_on_close_request: false,
         level: WindowLevel::Normal,
-        transparent: false,
+        transparent: true,
+        blur: false,
         visible: true,
 
         #[cfg(target_os = "macos")]

@@ -115,6 +115,8 @@ pub enum TvMsg {
     PaneResized(ResizeEvent),
     Root(NodeId),
     Unroot,
+    SetSubtreeView(NodeId),
+    ClearSubtreeView,
     RotAngleChanged(u16),
     SelectDeselectNode(NodeId),
     SelectDeselectNodeExclusive(NodeId),
@@ -245,6 +247,28 @@ impl TreeView {
     pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
         let mut task: Option<Task<TvMsg>> = None;
         match tv_msg {
+            TvMsg::SetSubtreeView(node_id) => {
+                self.with_exclusive_sel_tre_mut(&mut |tre| {
+                    tre.set_subtree_view(node_id);
+                });
+                self.tre_cnv.root_len_frac = self.calc_root_len_frac();
+                self.populate_cache_of_edges_sorted_by_field();
+                self.update_draw_labs_allowed();
+                self.clear_caches_cnv_all();
+                self.tre_cnv.stale_tre_rect = true;
+            }
+
+            TvMsg::ClearSubtreeView => {
+                self.with_exclusive_sel_tre_mut(&mut |tre| {
+                    tre.close_subtree_view();
+                });
+                self.tre_cnv.root_len_frac = self.calc_root_len_frac();
+                self.populate_cache_of_edges_sorted_by_field();
+                self.update_draw_labs_allowed();
+                self.clear_caches_cnv_all();
+                self.tre_cnv.stale_tre_rect = true;
+            }
+
             TvMsg::ExportPdf(path_buf) => {
                 if let Some(tree_state) = self.sel_tre() {
                     let root_len = self.update_tre_vs();
@@ -447,7 +471,7 @@ impl TreeView {
                     self.nodes_table_sort_ord = SortOrd::Ascending;
                 }
 
-                self.populate_cache_edges();
+                self.populate_cache_of_edges_sorted_by_field();
             }
 
             TvMsg::ToggleNodesTable => {
@@ -461,7 +485,7 @@ impl TreeView {
                 self.set_ltt_plot_data();
                 self.update_draw_labs_allowed();
                 self.tre_cnv.stale_tre_rect = true;
-                self.populate_cache_edges();
+                self.populate_cache_of_edges_sorted_by_field();
             }
 
             TvMsg::NextTre => {
@@ -470,7 +494,7 @@ impl TreeView {
                 self.set_ltt_plot_data();
                 self.update_draw_labs_allowed();
                 self.tre_cnv.stale_tre_rect = true;
-                self.populate_cache_edges();
+                self.populate_cache_of_edges_sorted_by_field();
             }
 
             TvMsg::TreNodeOrdOptChanged(node_ord_opt) => {
@@ -479,7 +503,7 @@ impl TreeView {
                     self.sort();
                     task = self.scroll_to_current_found_edge();
                     self.tre_cnv.stale_tre_rect = true;
-                    self.populate_cache_edges();
+                    self.populate_cache_of_edges_sorted_by_field();
                 }
             }
 
@@ -493,7 +517,7 @@ impl TreeView {
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.clear_cache_cnv_legend();
                 self.tre_cnv.stale_tre_rect = true;
-                self.populate_cache_edges();
+                self.populate_cache_of_edges_sorted_by_field();
             }
 
             TvMsg::Root(node_id) => {
@@ -506,7 +530,7 @@ impl TreeView {
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.clear_cache_cnv_legend();
                 self.tre_cnv.stale_tre_rect = true;
-                self.populate_cache_edges();
+                self.populate_cache_of_edges_sorted_by_field();
             }
 
             TvMsg::TreesLoaded(trees) => {
@@ -536,7 +560,7 @@ impl TreeView {
                 }
                 self.sort();
                 self.set_ltt_plot_data();
-                self.populate_cache_edges();
+                self.populate_cache_of_edges_sorted_by_field();
 
                 if self.is_new {
                     self.tre_cnv.opn_angle = angle_from_idx(self.opn_angle_idx);
@@ -769,14 +793,14 @@ impl TreeView {
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
                     tre.select_deselect_node(node_id);
                 });
-                self.populate_cache_edges();
+                self.populate_cache_of_edges_sorted_by_field();
             }
 
             TvMsg::SelectDeselectNodeExclusive(node_id) => {
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
                     tre.select_deselect_node_exclusive(node_id);
                 });
-                self.populate_cache_edges();
+                self.populate_cache_of_edges_sorted_by_field();
             }
 
             TvMsg::OpnAngleChanged(idx) => {
@@ -902,7 +926,7 @@ impl TreeView {
         }
     }
 
-    fn populate_cache_edges(&mut self) {
+    fn populate_cache_of_edges_sorted_by_field(&mut self) {
         let sort_col = self.nodes_table_sort_col;
         let sort_dir = self.nodes_table_sort_ord;
         self.with_exclusive_sel_tre_mut(&mut |tre| {
@@ -914,14 +938,23 @@ impl TreeView {
         if let Some(ts) = self.sel_tre()
             && let Some(edges) = ts.edges()
         {
-            let plot_data = &ltt(ts.tre_height(), edges, 503);
+            let plot_data =
+                &ltt(ts.max_first_node_to_tip_distance(), edges, 503);
             self.ltt_cnv.set_plot_data(plot_data);
         }
     }
 
     fn calc_root_len_frac(&self) -> Float {
         if self.tre_cnv.draw_root {
-            self.root_len_idx as Float / 2e2
+            if let Some(ts) = self.sel_tre() {
+                if !ts.is_subtree_view_active() {
+                    self.root_len_idx as Float / 2e2
+                } else {
+                    ZRO
+                }
+            } else {
+                ZRO
+            }
         } else {
             ZRO
         }

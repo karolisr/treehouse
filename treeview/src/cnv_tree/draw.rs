@@ -118,7 +118,7 @@ pub(super) fn draw_legend(
                 SF * 12e0,
                 SF * 6e0,
                 st.root_len,
-                tst.tre_height() as Float,
+                tst.max_first_node_to_tip_distance() as Float,
                 f,
             );
         }));
@@ -537,21 +537,12 @@ pub(super) fn node_labs(
                     name_trimmed = ellipsize_unicode(name_trimmed, nchar);
                 }
 
-                // let props_vec: Vec<String> = edge
-                //     .node_props
-                //     .iter()
-                //     .map(|(k, v)| format!("{k}={v}"))
-                //     .collect();
-
-                // let name_lab =
-                //     format!("{} {}", name_trimmed, props_vec.join(";"));
-
                 let name_lab = name_trimmed;
-
                 let width = text_w.width(&name_lab);
 
                 let text =
                     lab_text(name_lab.to_string(), lab_pt, size, txt_lab_tmpl);
+
                 Some(Label {
                     text,
                     width,
@@ -560,23 +551,6 @@ pub(super) fn node_labs(
                 })
             } else if branch && edge.parent_node_id.is_some() {
                 let txt_tmpl = TEMPLATE_TXT_LAB_BRANCH;
-                // let props_vec: Vec<String> = edge
-                //     .branch_attributes
-                //     .iter()
-                //     .map(|(k, v)| format!("{k}={v}"))
-                //     .collect();
-                // let mut color = Clr::BLK;
-                // if edge.branch_attributes.contains_key("color") {
-                //     let color_prop = edge.branch_attributes.get("color").unwrap();
-                //     color = match color_prop.to_string().as_str() {
-                //         "red" => Clr::RED,
-                //         "green" => Clr::GRN,
-                //         "orange" => Clr::YEL,
-                //         _ => Clr::BLK,
-                //     }
-                // }
-                // txt_tmpl.color = color;
-                // let name = format!("{:.3} {}", edge.branch_length, props_vec.join(";"));
                 let name = format!("{:.3}", edge.branch_length);
                 let width = text_w.width(&name);
                 let text =

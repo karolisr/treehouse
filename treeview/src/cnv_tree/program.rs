@@ -14,13 +14,20 @@ impl Program<TvMsg> for TreeCnv {
         // ---------------------------------------------------------------------
         let mut action: Option<Action<TvMsg>> = None;
         // ---------------------------------------------------------------------
+
         let tree_state_opt = self.tree_state.as_deref();
+
         if !self.drawing_enabled || tree_state_opt.is_none() {
             return None;
         }
+
         let tst: &TreeState = tree_state_opt?;
+
         let edges = tst.edges()?;
-        let tip_edge_idxs = tst.edges_tip_idx();
+        let sel_edge_idxs = tst.sel_edge_idxs();
+        let found_edge_idxs = tst.found_edge_idxs();
+        let is_rooted = tst.is_rooted();
+
         st.tre_sty = self.tre_sty;
         st.opn_angle = self.opn_angle;
         // ---------------------------------------------------------------------
@@ -57,7 +64,7 @@ impl Program<TvMsg> for TreeCnv {
             (st.tre_vs, st.root_len) = self.calc_tre_vs(
                 &st.cnv_vs,
                 tst.edges_tip_tallest(),
-                tst.is_rooted(),
+                is_rooted,
                 tst.has_clade_labels(),
                 st.text_w_tip.as_mut()?,
             );
@@ -102,26 +109,19 @@ impl Program<TvMsg> for TreeCnv {
         }
         // ---------------------------------------------------------------------
         if st.stale_vis_rect || st.is_new || self.stale_tre_rect {
-            match st.tre_sty {
-                TreSty::PhyGrm => {
-                    let node_size = st.tre_vs.h / tst.tip_count() as Float;
-                    st.update_vis_node_idxs_phygrm(node_size, tip_edge_idxs);
-                }
-                TreSty::Fan => {
-                    st.update_vis_node_idxs_fan(edges);
-                }
-            }
+            st.update_vis_edge_idxs(edges);
         }
         // ---------------------------------------------------------------------
         st.update_vis_nodes(edges);
-        st.update_filtered_nodes(edges, tst.found_edge_idxs());
-        st.update_selected_nodes(edges, tst.sel_edge_idxs());
+        st.update_filtered_nodes(edges, found_edge_idxs);
+        st.update_selected_nodes(edges, sel_edge_idxs);
         // ---------------------------------------------------------------------
         st.labs_tip.clear();
         st.labs_int.clear();
         st.labs_brnch.clear();
         // ---------------------------------------------------------------------
-        if tst.has_tip_labs() && self.draw_labs_tip && self.draw_labs_allowed {
+        if tst.has_tip_labels() && self.draw_labs_tip && self.draw_labs_allowed
+        {
             node_labs(
                 &st.vis_nodes,
                 edges,
@@ -448,14 +448,11 @@ impl Program<TvMsg> for TreeCnv {
         bnds: Rectangle,
         _crsr: Cursor,
     ) -> Vec<Geometry> {
-        let tree_state_opt = self.tree_state.as_deref();
         let mut geoms: Vec<Geometry> = Vec::new();
-        if let Some(tree_state_opt) = tree_state_opt
+        if let Some(tst) = self.tree_state.as_deref()
             && self.drawing_enabled
         {
-            // -----------------------------------------------------------------
             let size = bnds.size();
-            let tst: &TreeState = tree_state_opt;
             if self.draw_debug {
                 draw_bounds(self, st, rndr, bnds, &mut geoms);
             }
@@ -477,7 +474,6 @@ impl Program<TvMsg> for TreeCnv {
             if self.draw_debug {
                 draw_palette(self, st, thm, rndr, size, &mut geoms);
             }
-            // -----------------------------------------------------------------
         }
         geoms
     }
