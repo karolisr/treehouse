@@ -5,17 +5,11 @@ pub use events::menu_events;
 #[cfg(target_os = "windows")]
 use muda::accelerator::Modifiers;
 use muda::{
-    // CheckMenuItem,
-    MenuItem,
-    MenuItemKind,
-    Submenu,
+    MenuItem, MenuItemKind, Submenu,
     accelerator::{Accelerator, CMD_OR_CTRL, Code},
 };
 use std::collections::HashMap;
-use treeview::{
-    // SidebarPosition,
-    TvContextMenuListing,
-};
+use treeview::TvContextMenuListing;
 
 impl From<muda::MenuItem> for AppMenuItemId {
     fn from(value: muda::MenuItem) -> Self {
@@ -112,33 +106,7 @@ impl AppMenu {
                 MenuItemKind::MenuItem(_) => (),
                 MenuItemKind::Submenu(_) => (),
                 MenuItemKind::Predefined(_) => (),
-                MenuItemKind::Check(mi) => match id {
-                    AppMenuItemId::SetSideBarPositionLeft => {
-                        mi.set_checked(true);
-                        mi.set_enabled(false);
-                        if let Some(miko) = self
-                            .items
-                            .get(&AppMenuItemId::SetSideBarPositionRight)
-                            && let Some(mio) = miko.as_check_menuitem()
-                        {
-                            mio.set_checked(false);
-                            mio.set_enabled(true);
-                        }
-                    }
-                    AppMenuItemId::SetSideBarPositionRight => {
-                        mi.set_checked(true);
-                        mi.set_enabled(false);
-                        if let Some(miko) = self
-                            .items
-                            .get(&AppMenuItemId::SetSideBarPositionLeft)
-                            && let Some(mio) = miko.as_check_menuitem()
-                        {
-                            mio.set_checked(false);
-                            mio.set_enabled(true);
-                        }
-                    }
-                    _ => (),
-                },
+                MenuItemKind::Check(_) => (),
                 MenuItemKind::Icon(_) => (),
             }
         }
@@ -153,12 +121,10 @@ impl AppMenu {
         };
     }
 
-    // pub fn new(sidebar_pos: SidebarPosition) -> Option<Self>
     pub fn new() -> Option<Self> {
         let menu: muda::Menu;
         let muda_menu: Option<muda::Menu>;
         let items: HashMap<AppMenuItemId, MenuItemKind>;
-        // (menu, items) = Self::prepare_app_menu(sidebar_pos);
         (menu, items) = Self::prepare_app_menu();
         #[cfg(target_os = "macos")]
         menu.init_for_nsapp();
@@ -166,7 +132,6 @@ impl AppMenu {
         Some(Self { _muda_menu: muda_menu, items })
     }
 
-    // fn prepare_app_menu(sidebar_pos: SidebarPosition) -> (muda::Menu, HashMap<AppMenuItemId, MenuItemKind>)
     fn prepare_app_menu() -> (muda::Menu, HashMap<AppMenuItemId, MenuItemKind>)
     {
         let menu = muda::Menu::default();
@@ -178,11 +143,6 @@ impl AppMenu {
         let submenu_app = Submenu::with_id("sub_app", "App", true);
         let submenu_file = Submenu::with_id("sub_file", "File", true);
         let submenu_view = Submenu::with_id("sub_view", "View", true);
-        let submenu_sidebar_pos = Submenu::with_id(
-            AppMenuItemId::SideBarPosition,
-            "Sidebar Position",
-            false,
-        );
 
         #[cfg(target_os = "macos")]
         let menu_item_about = muda::PredefinedMenuItem::about(
@@ -250,22 +210,6 @@ impl AppMenu {
             None,
         );
 
-        // let menu_item_sidebar_pos_left = CheckMenuItem::with_id(
-        //     AppMenuItemId::SetSideBarPositionLeft,
-        //     "Left",
-        //     sidebar_pos != SidebarPosition::Left,
-        //     sidebar_pos == SidebarPosition::Left,
-        //     Some(Accelerator::new(Some(modifier), Code::BracketLeft)),
-        // );
-
-        // let menu_item_sidebar_pos_right = CheckMenuItem::with_id(
-        //     AppMenuItemId::SetSideBarPositionRight,
-        //     "Right",
-        //     sidebar_pos != SidebarPosition::Right,
-        //     sidebar_pos == SidebarPosition::Right,
-        //     Some(Accelerator::new(Some(modifier), Code::BracketRight)),
-        // );
-
         let menu_item_toggle_search_bar = MenuItem::with_id(
             AppMenuItemId::ToggleSearchBar,
             "Search...",
@@ -302,9 +246,6 @@ impl AppMenu {
             _ = submenu_file.append(&menu_item_close_win).ok();
         }
 
-        // _ = submenu_sidebar_pos.append(&menu_item_sidebar_pos_left).ok();
-        // _ = submenu_sidebar_pos.append(&menu_item_sidebar_pos_right).ok();
-        // _ = submenu_view.append(&submenu_sidebar_pos).ok();
         _ = submenu_view.append(&menu_item_toggle_search_bar).ok();
 
         #[cfg(target_os = "macos")]
@@ -355,21 +296,9 @@ impl AppMenu {
                 );
             }
         }
-        // _ = items.insert(
-        //     menu_item_sidebar_pos_left.clone().into(),
-        //     MenuItemKind::Check(menu_item_sidebar_pos_left),
-        // );
-        // _ = items.insert(
-        //     menu_item_sidebar_pos_right.clone().into(),
-        //     MenuItemKind::Check(menu_item_sidebar_pos_right),
-        // );
         _ = items.insert(
             menu_item_toggle_search_bar.clone().into(),
             MenuItemKind::MenuItem(menu_item_toggle_search_bar),
-        );
-        _ = items.insert(
-            submenu_sidebar_pos.clone().into(),
-            MenuItemKind::Submenu(submenu_sidebar_pos),
         );
 
         (menu, items)

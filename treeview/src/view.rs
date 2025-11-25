@@ -39,18 +39,6 @@ impl TreeView {
         if self.show_side_bar {
             let side_bar_main = side_bar_main(self, ts.clone());
             let side_bar_annotations = side_bar_annotations(self, ts);
-            // match self.sidebar_pos {
-            //     SidebarPosition::Left => {
-            //         main_row = main_row.push(side_bar_main);
-            //         main_row = main_row.push(tool_bar_and_content_col);
-            //         main_row = main_row.push(side_bar_annotations);
-            //     }
-            //     SidebarPosition::Right => {
-            //         main_row = main_row.push(side_bar_annotations);
-            //         main_row = main_row.push(tool_bar_and_content_col);
-            //         main_row = main_row.push(side_bar_main);
-            //     }
-            // }
             main_row = main_row.push(side_bar_main);
             main_row = main_row.push(tool_bar_and_content_col);
             main_row = main_row.push(side_bar_annotations);
@@ -69,16 +57,7 @@ fn content<'a>(tv: &'a TreeView) -> Element<'a, TvMsg> {
                 center(responsive(move |size| pane_content(tv, tv_pane, size)))
                     .padding(PADDING),
             )
-            .style(
-                // match &_pane_idx == pane_grid.panes.last_key_value().unwrap().0 {
-                //     true => match tv.sidebar_pos {
-                //         SidebarPosition::Left => sty_pane_body_bottom_right,
-                //         SidebarPosition::Right => sty_pane_body_bottom_left,
-                //     },
-                //     false => sty_pane_body,
-                // },
-                sty_pane_body,
-            )
+            .style(sty_pane_body)
         })
         .style(sty_pane_grid)
         .on_resize(ZRO, TvMsg::PaneResized)
@@ -174,16 +153,6 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
                     Some(TvMsg::ToggleNodesTable),
                     tv.show_nodes_table,
                 ),
-                // match tv.sidebar_pos {
-                //     SidebarPosition::Left => btn_svg(
-                //         Icon::SidebarRight,
-                //         Some(TvMsg::SetSidebarPos(SidebarPosition::Right))
-                //     ),
-                //     SidebarPosition::Right => btn_svg(
-                //         Icon::SidebarLeft,
-                //         Some(TvMsg::SetSidebarPos(SidebarPosition::Left))
-                //     ),
-                // }
             ]
             .spacing(SF),
         )
@@ -523,10 +492,6 @@ fn side_bar_main<'a>(
     }
 
     container(sb.clip(true))
-        // .style(match tv.sidebar_pos {
-        //     SidebarPosition::Left => sty_cont_bottom_left,
-        //     SidebarPosition::Right => sty_cont_bottom_right,
-        // })
         .style(sty_cont_bottom_left)
         .padding(PADDING)
         .width(SIDE_BAR_W)
@@ -639,10 +604,6 @@ fn side_bar_annotations<'a>(
     }
 
     container(sb.clip(true))
-        // .style(match tv.sidebar_pos {
-        //     SidebarPosition::Left => sty_cont_bottom_right,
-        //     SidebarPosition::Right => sty_cont_bottom_left,
-        // })
         .style(sty_cont_bottom_right)
         .padding(PADDING)
         .width(SIDE_BAR_W)

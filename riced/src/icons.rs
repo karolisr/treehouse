@@ -5,16 +5,10 @@ use crate::*;
 pub enum Icon {
     ArrowLeft,
     ArrowRight,
-    SidebarLeft,
-    SidebarRight,
     Plot,
-    // ShowPlot,
-    // HidePlot,
     AddToSelection,
     RemoveFromSelection,
     Search,
-    // ShowSearch,
-    // HideSearch,
     DataTable,
 }
 
@@ -26,16 +20,10 @@ impl From<Icon> for SvgHandle {
         match icon {
             Icon::ArrowLeft => i(&ARROW_LEFT_ALT),
             Icon::ArrowRight => i(&ARROW_RIGHT_ALT),
-            Icon::SidebarLeft => i(&DOCK_TO_RIGHT),
-            Icon::SidebarRight => i(&DOCK_TO_LEFT),
             Icon::Plot => i(&AREA_CHART),
-            // Icon::ShowPlot => i(&DOCK_TO_BOTTOM),
-            // Icon::HidePlot => i(&CHECK_BOX_OUTLINE_BLANK),
             Icon::AddToSelection => i(&PLAYLIST_ADD),
             Icon::RemoveFromSelection => i(&PLAYLIST_REMOVE),
             Icon::Search => i(&SEARCH),
-            // Icon::ShowSearch => i(&SEARCH),
-            // Icon::HideSearch => i(&SEARCH_OFF),
             Icon::DataTable => i(&TABLE_ROWS_NARROW),
         }
     }

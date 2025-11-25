@@ -17,12 +17,7 @@ use riced::{
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 use riced::{RawWindowHandle, run};
 use std::path::PathBuf;
-use treeview::{
-    // SidebarPosition,
-    TreeView,
-    TvContextMenuListing,
-    TvMsg,
-};
+use treeview::{TreeView, TvContextMenuListing, TvMsg};
 use window::window_settings;
 
 pub struct App {
@@ -205,16 +200,6 @@ impl App {
                                         AppMenuItemId::ExportPdf,
                                     )));
                                 }
-                                "[" => {
-                                    task = Some(Task::done(AppMsg::MenuEvent(
-                                        AppMenuItemId::SetSideBarPositionLeft,
-                                    )));
-                                }
-                                "]" => {
-                                    task = Some(Task::done(AppMsg::MenuEvent(
-                                        AppMenuItemId::SetSideBarPositionRight,
-                                    )));
-                                }
                                 _ => {}
                             }
                             #[cfg(any(
@@ -280,7 +265,6 @@ impl App {
                     let task_to_return = run(winid, |h| {
                         if let Ok(handle) = h.window_handle() {
                             let context_menu: ContextMenu = tree_view_context_menu_listing.into();
-
                             let muda_menu: muda::Menu = context_menu.into();
 
                             #[cfg(target_os = "macos")]
@@ -339,18 +323,6 @@ impl App {
                             }
                         }
 
-                        // TvMsg::SetSidebarPos(sidebar_position) => {
-                        //     if let Some(menu) = &mut self.menu {
-                        //         match sidebar_position {
-                        //             SidebarPosition::Left => {
-                        //                 menu.update(&AppMenuItemId::SetSideBarPositionLeft);
-                        //             }
-                        //             SidebarPosition::Right => {
-                        //                 menu.update(&AppMenuItemId::SetSideBarPositionRight);
-                        //             }
-                        //         }
-                        //     }
-                        // }
                         _ => {}
                     }
                 }
@@ -388,9 +360,6 @@ impl App {
                                     if let Some(menu) = &mut self.menu {
                                         menu.enable(&AppMenuItemId::SaveAs);
                                         menu.enable(&AppMenuItemId::ExportPdf);
-                                        menu.enable(
-                                            &AppMenuItemId::SideBarPosition,
-                                        );
                                         menu.enable(
                                             &AppMenuItemId::ToggleSearchBar,
                                         );
@@ -485,13 +454,10 @@ impl App {
                         }
                         FileType::Other => {}
                     }
-                    // }
                 }
             }
             AppMsg::AppInitialized => {
-                self.menu = AppMenu::new(
-                    // consts::SIDEBAR_POSITION
-                );
+                self.menu = AppMenu::new();
                 if let Some(menu) = &mut self.menu {
                     menu.disable(&AppMenuItemId::SaveAs);
                     menu.disable(&AppMenuItemId::ExportPdf);
@@ -518,9 +484,7 @@ impl App {
                     let (window_id, open_window_task) =
                         open_window(window_settings());
                     self.winid = Some(window_id);
-                    self.treeview = Some(TreeView::new(
-                            // consts::SIDEBAR_POSITION
-                        ));
+                    self.treeview = Some(TreeView::new());
                     task = Some(open_window_task.discard());
                 } else {
                     eprintln!("AppMsg::OpenWindow -> Window is already open.");

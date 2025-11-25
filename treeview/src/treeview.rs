@@ -22,8 +22,6 @@ pub struct TreeView {
     pub(super) show_side_bar: bool,
     pub(super) show_search_bar: bool,
     // -------------------------------------------------------------------------
-    // pub(super) sidebar_pos: SidebarPosition,
-    // -------------------------------------------------------------------------
     pub(super) root_len_idx_min: u16,
     pub(super) root_len_idx: u16,
     pub(super) root_len_idx_max: u16,
@@ -120,7 +118,6 @@ pub enum TvMsg {
     RotAngleChanged(u16),
     SelectDeselectNode(NodeId),
     SelectDeselectNodeExclusive(NodeId),
-    // SetSidebarPos(SidebarPosition),
     TreesLoaded(Vec<Tree>),
     TreStyOptChanged(TreSty),
     RootVisChanged(bool),
@@ -228,11 +225,7 @@ impl Default for TreeView {
 }
 
 impl TreeView {
-    // pub fn new(sidebar_position: SidebarPosition) -> Self
     pub fn new() -> Self {
-        // let mut tv = Self::default();
-        // tv.sidebar_pos = sidebar_position;
-        // tv
         Self::default()
     }
 
@@ -844,10 +837,6 @@ impl TreeView {
                 }
             }
 
-            // TvMsg::SetSidebarPos(sidebar_pos) => {
-            //     self.sidebar_pos = sidebar_pos;
-            //     self.keep_scroll_position_requested = true;
-            // }
             TvMsg::CursorLineVisChanged(state) => {
                 self.tre_cnv.crsr_x_rel = None;
                 self.ltt_cnv.crsr_x_rel = None;
@@ -1462,13 +1451,6 @@ impl TreeView {
 fn angle_from_idx(idx: u16) -> Float {
     (idx as Float).to_radians()
 }
-
-// #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
-// pub enum SidebarPosition {
-//     Left,
-//     #[default]
-//     Right,
-// }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum TreSty {

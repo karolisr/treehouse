@@ -1,9 +1,6 @@
 use crate::app::AppMsg;
 use std::fmt::Display;
-use treeview::{
-    // SidebarPosition,
-    TvMsg,
-};
+use treeview::TvMsg;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum AppMenuItemId {
@@ -11,9 +8,6 @@ pub enum AppMenuItemId {
     SaveAs,
     Quit,
     CloseWindow,
-    SideBarPosition,
-    SetSideBarPositionLeft,
-    SetSideBarPositionRight,
     ToggleSearchBar,
     ExportPdf,
     ExportSubtree,
@@ -32,9 +26,6 @@ impl From<String> for AppMenuItemId {
             "SaveAs" => AppMenuItemId::SaveAs,
             "CloseWindow" => AppMenuItemId::CloseWindow,
             "Quit" => AppMenuItemId::Quit,
-            "SideBarPosition" => AppMenuItemId::SideBarPosition,
-            "SetSideBarPositionLeft" => AppMenuItemId::SetSideBarPositionLeft,
-            "SetSideBarPositionRight" => AppMenuItemId::SetSideBarPositionRight,
             "ToggleSearchBar" => AppMenuItemId::ToggleSearchBar,
             "ExportPdf" => AppMenuItemId::ExportPdf,
             "ExportSubtree" => AppMenuItemId::ExportSubtree,
@@ -71,12 +62,6 @@ impl From<&AppMenuItemId> for AppMsg {
             AppMenuItemId::SaveAs => AppMsg::SaveAs,
             AppMenuItemId::Quit => AppMsg::Quit,
             AppMenuItemId::CloseWindow => AppMsg::WinCloseRequested,
-            // AppMenuItemId::SetSideBarPositionLeft => {
-            //     AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPosition::Left))
-            // }
-            // AppMenuItemId::SetSideBarPositionRight => {
-            //     AppMsg::TvMsg(TvMsg::SetSidebarPos(SidebarPosition::Right))
-            // }
             AppMenuItemId::ToggleSearchBar => {
                 AppMsg::TvMsg(TvMsg::ToggleSearchBar)
             }
