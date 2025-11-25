@@ -16,6 +16,7 @@ pub enum AppMenuItemId {
     SetSideBarPositionRight,
     ToggleSearchBar,
     ExportPdf,
+    ExportSubtree,
     #[cfg(target_os = "windows")]
     RegisterFileTypes,
     #[cfg(target_os = "windows")]
@@ -36,6 +37,7 @@ impl From<String> for AppMenuItemId {
             "SetSideBarPositionRight" => AppMenuItemId::SetSideBarPositionRight,
             "ToggleSearchBar" => AppMenuItemId::ToggleSearchBar,
             "ExportPdf" => AppMenuItemId::ExportPdf,
+            "ExportSubtree" => AppMenuItemId::ExportSubtree,
             #[cfg(target_os = "windows")]
             "RegisterFileTypes" => AppMenuItemId::RegisterFileTypes,
             #[cfg(target_os = "windows")]
@@ -82,6 +84,7 @@ impl From<&AppMenuItemId> for AppMsg {
                 AppMsg::TvMsg(TvMsg::ContextMenuChosenIdx(*idx))
             }
             AppMenuItemId::ExportPdf => AppMsg::ExportPdf,
+            AppMenuItemId::ExportSubtree => AppMsg::ExportSubtree,
             #[cfg(target_os = "windows")]
             AppMenuItemId::RegisterFileTypes => AppMsg::RegisterFileTypes,
             #[cfg(target_os = "windows")]

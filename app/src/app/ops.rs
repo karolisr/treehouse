@@ -29,12 +29,15 @@ pub fn choose_file_to_open_sync() -> AppMsg {
     AppMsg::PathToOpen(chosen.map(|path_buf| path_buf.as_path().into()))
 }
 
-pub async fn choose_file_to_save() -> AppMsg {
+pub async fn choose_file_to_save(subtree: bool) -> AppMsg {
     let chosen = rfd::AsyncFileDialog::new()
         .add_filter("newick", &["newick", "tre"])
         .save_file()
         .await;
-    AppMsg::PathToSave(chosen.map(|file_handle| file_handle.path().into()))
+    AppMsg::PathToSave {
+        path: chosen.map(|file_handle| file_handle.path().into()),
+        subtree,
+    }
 }
 
 pub async fn choose_file_to_pdf_export() -> AppMsg {
@@ -42,7 +45,10 @@ pub async fn choose_file_to_pdf_export() -> AppMsg {
         .add_filter("pdf", &["pdf"])
         .save_file()
         .await;
-    AppMsg::PathToSave(chosen.map(|file_handle| file_handle.path().into()))
+    AppMsg::PathToSave {
+        path: chosen.map(|file_handle| file_handle.path().into()),
+        subtree: false,
+    }
 }
 
 pub fn read_text_file(path_buf: PathBuf) -> Result<String, FileReadError> {

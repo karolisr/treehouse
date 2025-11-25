@@ -49,8 +49,12 @@ pub enum AppMsg {
     OpenFile,
     SaveAs,
     ExportPdf,
+    ExportSubtree,
     PathToOpen(Option<PathBuf>),
-    PathToSave(Option<PathBuf>),
+    PathToSave {
+        path: Option<PathBuf>,
+        subtree: bool,
+    },
     // -------------------------------------------------------------------------
     AppInitialized,
     // -------------------------------------------------------------------------
@@ -322,6 +326,19 @@ impl App {
                                 tree_view_context_menu_listing,
                             )));
                         }
+
+                        TvMsg::SetSubtreeView(_node_id) => {
+                            if let Some(menu) = &mut self.menu {
+                                menu.enable(&AppMenuItemId::ExportSubtree);
+                            }
+                        }
+
+                        TvMsg::ClearSubtreeView => {
+                            if let Some(menu) = &mut self.menu {
+                                menu.disable(&AppMenuItemId::ExportSubtree);
+                            }
+                        }
+
                         // TvMsg::SetSidebarPos(sidebar_position) => {
                         //     if let Some(menu) = &mut self.menu {
                         //         match sidebar_position {
@@ -377,6 +394,9 @@ impl App {
                                         menu.enable(
                                             &AppMenuItemId::ToggleSearchBar,
                                         );
+                                        menu.disable(
+                                            &AppMenuItemId::ExportSubtree,
+                                        );
                                     };
                                     task = Some(Task::done(AppMsg::TvMsg(
                                         TvMsg::TreesLoaded(trees),
@@ -408,12 +428,15 @@ impl App {
                 }
             }
             AppMsg::SaveAs => {
-                task = Some(Task::future(ops::choose_file_to_save()));
+                task = Some(Task::future(ops::choose_file_to_save(false)));
+            }
+            AppMsg::ExportSubtree => {
+                task = Some(Task::future(ops::choose_file_to_save(true)));
             }
             AppMsg::ExportPdf => {
                 task = Some(Task::future(ops::choose_file_to_pdf_export()));
             }
-            AppMsg::PathToSave(path_buf_opt) => {
+            AppMsg::PathToSave { path: path_buf_opt, subtree } => {
                 if let Some(path_buf) = path_buf_opt {
                     println!("{path_buf:?}");
                     let file_type: FileType = match path_buf.extension() {
@@ -434,15 +457,24 @@ impl App {
                     match file_type {
                         FileType::Newick => {
                             if let Some(tv) = &self.treeview {
-                                let newick_string = &tv.newick_string();
+                                let newick_string = match subtree {
+                                    true => &tv.newick_string_subtree(),
+                                    false => &tv.newick_string(),
+                                };
                                 ops::write_text_file(&path_buf, newick_string);
-                                self.title = Some(
-                                    path_buf
-                                        .file_name()
-                                        .unwrap_or_default()
-                                        .to_string_lossy()
-                                        .to_string(),
-                                );
+
+                                match subtree {
+                                    true => {}
+                                    false => {
+                                        self.title = Some(
+                                            path_buf
+                                                .file_name()
+                                                .unwrap_or_default()
+                                                .to_string_lossy()
+                                                .to_string(),
+                                        );
+                                    }
+                                }
                             }
                         }
                         FileType::Nexus => {} // Save Nexus file
@@ -575,7 +607,7 @@ impl App {
                     menu.disable(&AppMenuItemId::CloseWindow);
                     menu.disable(&AppMenuItemId::SaveAs);
                     menu.disable(&AppMenuItemId::ExportPdf);
-                    menu.disable(&AppMenuItemId::SideBarPosition);
+                    menu.disable(&AppMenuItemId::ExportSubtree);
                     menu.disable(&AppMenuItemId::ToggleSearchBar);
                 }
                 #[cfg(target_os = "macos")]

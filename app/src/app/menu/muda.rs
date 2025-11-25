@@ -220,6 +220,13 @@ impl AppMenu {
             Some(Accelerator::new(Some(modifier), Code::KeyS)),
         );
 
+        let menu_item_export_subtree = MenuItem::with_id(
+            AppMenuItemId::ExportSubtree,
+            "Export Subtree",
+            false,
+            Some(Accelerator::new(Some(modifier), Code::KeyE)),
+        );
+
         let menu_item_export_pdf = MenuItem::with_id(
             AppMenuItemId::ExportPdf,
             "Export PDF",
@@ -277,6 +284,7 @@ impl AppMenu {
 
         _ = submenu_file.append(&menu_item_open).ok();
         _ = submenu_file.append(&menu_item_save_as).ok();
+        _ = submenu_file.append(&menu_item_export_subtree).ok();
         _ = submenu_file.append(&menu_item_export_pdf).ok();
         #[cfg(all(target_os = "windows", debug_assertions))]
         {
@@ -320,6 +328,10 @@ impl AppMenu {
         _ = items.insert(
             menu_item_save_as.clone().into(),
             MenuItemKind::MenuItem(menu_item_save_as),
+        );
+        _ = items.insert(
+            menu_item_export_subtree.clone().into(),
+            MenuItemKind::MenuItem(menu_item_export_subtree),
         );
         _ = items.insert(
             menu_item_export_pdf.clone().into(),

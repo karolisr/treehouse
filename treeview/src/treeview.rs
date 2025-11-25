@@ -1443,6 +1443,16 @@ impl TreeView {
         write_newick(&trees)
     }
 
+    pub fn newick_string_subtree(&self) -> String {
+        if let Some(tre) = self.sel_tre()
+            && let Some(subtree) = tre.subtree()
+        {
+            write_newick(&[subtree])
+        } else {
+            "".to_string()
+        }
+    }
+
     pub fn toggle_draw_debug(&mut self) {
         self.tre_cnv.draw_debug = !self.tre_cnv.draw_debug;
         self.ltt_cnv.draw_debug = !self.ltt_cnv.draw_debug;

@@ -365,6 +365,14 @@ impl TreeState {
 
     // --- Subtree View --------------------------------------------------------
 
+    pub(super) fn subtree(&self) -> Option<Tree> {
+        if let Some(subtree_view_node_id) = self.subtree_view_node_id {
+            self.tree().subtree(subtree_view_node_id).ok()
+        } else {
+            None
+        }
+    }
+
     pub(super) fn close_subtree_view(&mut self) {
         let current_found_node_id = self.current_found_node_id();
         self.subtree_view_node_id = None;
