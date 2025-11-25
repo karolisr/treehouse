@@ -56,7 +56,7 @@
         [workspace.dependencies.rfd]
             default-features=false
             features=[]
-            version="0.15.4"
+            version="0.16.0"
 
         [workspace.dependencies.oxidize-pdf]
             default-features=false
