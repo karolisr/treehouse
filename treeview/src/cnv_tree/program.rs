@@ -252,12 +252,37 @@ impl Program<TvMsg> for TreeCnv {
                     MouseEvent::ButtonPressed(btn) => {
                         match btn {
                             MouseButton::Left => {
-                                if st.mouse_is_over_tip_w_resize_area {
-                                    st.tip_lab_w_is_being_resized = true;
-                                } else if let Some((node_id, _)) =
-                                    &st.hovered_node
-                                {
-                                    match self.selection_lock {
+                                // ---------------------------------------------
+                                if let Some(position) = crsr.position() {
+                                    let new_click = MouseClick::new(
+                                        position,
+                                        MouseButton::Left,
+                                        st.previous_click,
+                                    );
+
+                                    st.previous_click = Some(new_click);
+
+                                    if new_click.kind()
+                                        == MouseClickKind::Double
+                                    {
+                                        if let Some((node_id, _)) =
+                                            st.hovered_node
+                                            && tst.is_valid_potential_subtree_view_node(node_id)
+                                        {
+                                            action = Some(Action::publish(
+                                                TvMsg::SetSubtreeView(node_id),
+                                            ));
+                                        }
+                                    }
+                                }
+                                // ---------------------------------------------
+                                if action.is_none() {
+                                    if st.mouse_is_over_tip_w_resize_area {
+                                        st.tip_lab_w_is_being_resized = true;
+                                    } else if let Some((node_id, _)) =
+                                        &st.hovered_node
+                                    {
+                                        match self.selection_lock {
                                         true => action = Some(Action::publish(
                                         TvMsg::SelectDeselectNode(*node_id),
                                     )),
@@ -265,13 +290,16 @@ impl Program<TvMsg> for TreeCnv {
                                         TvMsg::SelectDeselectNodeExclusive(*node_id),
                                     )),
                                 }
+                                    }
                                 }
+                                // ---------------------------------------------
                             }
                             MouseButton::Right => {
                                 if st.mouse_is_over_tip_w_resize_area
                                     && self.tip_w_set_by_user.is_some()
+                                    && let Some(position) = crsr.position()
                                 {
-                                    let listing = TvContextMenuListing::for_tip_lab_w_resize_area();
+                                    let listing = TvContextMenuListing::for_tip_lab_w_resize_area(position);
                                     action = Some(Action::publish(
                                         TvMsg::ContextMenuInteractionBegin(
                                             listing,
@@ -279,11 +307,12 @@ impl Program<TvMsg> for TreeCnv {
                                     ));
                                 } else if let Some((node_id, _)) =
                                     &st.hovered_node
+                                    && let Some(position) = crsr.position()
                                 {
                                     action = Some(Action::publish(
                                         TvMsg::ContextMenuInteractionBegin(
                                             TvContextMenuListing::for_node(
-                                                *node_id, tst,
+                                                *node_id, tst, position,
                                             ),
                                         ),
                                     ));

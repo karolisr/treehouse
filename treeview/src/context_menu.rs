@@ -1,3 +1,5 @@
+use riced::Point;
+
 use crate::{Clr, Display, Formatter, NodeId, Result, TreeState, TvMsg};
 
 #[derive(Debug, Clone)]
@@ -10,22 +12,42 @@ pub struct TvContextMenuItem {
 #[derive(Default, Debug, Clone)]
 pub struct TvContextMenuListing {
     items: Vec<TvContextMenuItem>,
+    position: Point,
 }
 
 impl TvContextMenuListing {
-    pub(crate) fn for_node(node_id: NodeId, tree_state: &TreeState) -> Self {
-        Self::default().push(TvMsg::Root(node_id), Some(tree_state)).push(
-            TvMsg::AddRemoveCladeLabel((node_id, Clr::GRN_25)),
-            Some(tree_state),
-        )
+    pub(crate) fn for_node(
+        node_id: NodeId,
+        tree_state: &TreeState,
+        position: Point,
+    ) -> Self {
+        Self::default()
+            .push(TvMsg::Root(node_id), Some(tree_state))
+            .push(TvMsg::SetSubtreeView(node_id), Some(tree_state))
+            .push(
+                TvMsg::AddRemoveCladeLabel((node_id, Clr::GRN_25)),
+                Some(tree_state),
+            )
+            .set_position(position)
     }
 
-    pub(crate) fn for_tip_lab_w_resize_area() -> Self {
-        Self::default().push(TvMsg::TipLabWidthSetByUser(None), None)
+    pub(crate) fn for_tip_lab_w_resize_area(position: Point) -> Self {
+        Self::default()
+            .push(TvMsg::TipLabWidthSetByUser(None), None)
+            .set_position(position)
     }
 
     pub fn items(&self) -> &[TvContextMenuItem] {
         &self.items
+    }
+
+    pub fn position(&self) -> Point {
+        self.position
+    }
+
+    fn set_position(mut self, position: Point) -> Self {
+        self.position = position;
+        self
     }
 
     fn push(mut self, tv_msg: TvMsg, tree_state: Option<&TreeState>) -> Self {
@@ -43,6 +65,12 @@ impl TvContextMenuListing {
                         .is_valid_potential_outgroup_node(node_id)
                         && !tree_state.is_subtree_view_active(),
                     label: "Root here",
+                },
+
+                TvMsg::SetSubtreeView(node_id) => Values {
+                    enabled: tree_state
+                        .is_valid_potential_subtree_view_node(node_id),
+                    label: "View subtree",
                 },
 
                 TvMsg::AddRemoveCladeLabel((node_id, _)) => {
@@ -77,6 +105,11 @@ impl TvContextMenuListing {
 impl Display for TvContextMenuListing {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let mut s: String = String::new();
+
+        s.push_str(
+            format!("{:0.2} {:0.2}", self.position.x, self.position.y).as_str(),
+        );
+
         self.items().iter().enumerate().for_each(|(i, item)| {
             s.push_str(
                 format!(

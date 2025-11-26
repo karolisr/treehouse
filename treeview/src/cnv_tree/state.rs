@@ -3,6 +3,7 @@ use crate::*;
 
 #[derive(Debug)]
 pub struct St {
+    pub(crate) previous_click: Option<MouseClick>,
     pub(crate) mouse: Option<Point>,
     pub(crate) modifs: Modifiers,
     pub(crate) hovered_node: Option<(NodeId, NodeData)>,
@@ -43,6 +44,7 @@ pub struct St {
 impl Default for St {
     fn default() -> Self {
         Self {
+            previous_click: None,
             mouse: None,
             modifs: Modifiers::empty(),
             hovered_node: None,
