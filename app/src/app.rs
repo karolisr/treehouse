@@ -6,16 +6,14 @@ mod window;
 
 use consts::*;
 use dendros::parse_trees;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
-use menu::ContextMenu;
-use menu::{AppMenu, AppMenuItemId};
+
+use menu::*;
 use riced::{
     Clr, Element, Font, IcedAppSettings, Key, Modifiers, Pixels, Subscription,
     Task, Theme, ThemeStyle, WindowEvent, WindowId, close_window,
-    error_container, exit, modal, on_key_press, open_window, window_events,
+    error_container, exit, modal_element, on_key_press, open_window,
+    window_events,
 };
-#[cfg(any(target_os = "macos", target_os = "windows"))]
-use riced::{RawWindowHandle, run};
 use std::path::PathBuf;
 use treeview::{TreeView, TvContextMenuListing, TvMsg};
 use window::window_settings;
@@ -27,6 +25,8 @@ pub struct App {
     title: Option<String>,
     error: Option<String>,
     explain: bool,
+    #[cfg(feature = "menu-custom")]
+    active_context_menu: Option<ContextMenu>,
 }
 
 #[derive(Debug, Clone)]
@@ -38,6 +38,10 @@ pub enum AppMsg {
     ErrorClear,
     // -------------------------------------------------------------------------
     ShowContextMenu(TvContextMenuListing),
+    #[cfg(feature = "menu-custom")]
+    SetCustomContextMenu(ContextMenu),
+    #[cfg(feature = "menu-custom")]
+    HideContextMenu,
     // -------------------------------------------------------------------------
     TvMsg(TvMsg),
     // -------------------------------------------------------------------------
@@ -106,6 +110,8 @@ impl App {
                 title: None,
                 error: None,
                 explain: false,
+                #[cfg(feature = "menu-custom")]
+                active_context_menu: None,
             },
             Task::done(AppMsg::AppInitialized),
         )
@@ -125,6 +131,11 @@ impl App {
                 .into();
             } else {
                 v = treeview.view().map(AppMsg::TvMsg);
+                // #[cfg(target_os = "linux")]
+                #[cfg(feature = "menu-custom")]
+                if let Some(context_menu) = &self.active_context_menu {
+                    v = context_menu.element(v);
+                }
             }
         } else {
             v = riced::container(riced::txt("App::view"))
@@ -137,7 +148,7 @@ impl App {
             v = v.explain(Clr::RED);
         };
         if let Some(error) = &self.error {
-            v = modal(v, error_container(error, AppMsg::ErrorClear));
+            v = modal_element(v, error_container(error, AppMsg::ErrorClear));
         }
         v
     }
@@ -148,12 +159,14 @@ impl App {
             AppMsg::ErrorSet(s) => {
                 self.error = Some(s);
             }
+
             AppMsg::ErrorClear => {
                 if let Some(menu) = &mut self.menu {
                     menu.enable(&AppMenuItemId::OpenFile);
                 }
                 self.error = None;
             }
+
             AppMsg::KeysPressed(key, modifiers) => {
                 if let Key::Character(k) = key {
                     let k: &str = k.as_str();
@@ -248,55 +261,40 @@ impl App {
                     }
                 }
             }
+
             AppMsg::Other(opt_msg) => {
                 if let Some(msg) = opt_msg {
                     println!("AppMsg::Other({msg})");
                 }
             }
+
             AppMsg::MenuEvent(miid) => {
                 if let Some(menu) = &mut self.menu {
                     menu.update(&miid);
                 }
                 task = Some(Task::done(miid.into()));
             }
-            AppMsg::ShowContextMenu(tree_view_context_menu_listing) => {
-                #[cfg(any(target_os = "windows", target_os = "macos"))]
-                if let Some(winid) = self.winid {
-                    let task_to_return = run(winid, |h| {
-                        if let Ok(handle) = h.window_handle() {
-                            let context_menu: ContextMenu = tree_view_context_menu_listing.into();
-                            let muda_menu: muda::Menu = context_menu.into();
 
-                            #[cfg(target_os = "macos")]
-                            unsafe {
-                                if let RawWindowHandle::AppKit(handle_raw) = handle.as_raw() {
-                                    _ = muda::ContextMenu::show_context_menu_for_nsview(
-                                        &muda_menu,
-                                        handle_raw.ns_view.as_ptr(),
-                                        None,
-                                    );
-                                }
-                            }
-                            #[cfg(target_os = "windows")]
-                            unsafe {
-                                if let RawWindowHandle::Win32(handle_raw) = handle.as_raw() {
-                                    _ = muda::ContextMenu::show_context_menu_for_hwnd(
-                                        &muda_menu,
-                                        handle_raw.hwnd.into(),
-                                        None,
-                                    );
-                                }
-                            }
-                        }
-                    })
-                    .discard();
+            AppMsg::ShowContextMenu(tree_view_context_menu_listing) => {
+                if let Some(winid) = self.winid {
+                    let task_to_return = show_context_menu(
+                        tree_view_context_menu_listing, winid,
+                    );
                     task = Some(task_to_return);
                 }
-                #[cfg(target_os = "linux")]
-                println!(
-                    "AppMsg::ShowContextMenu({tree_view_context_menu_listing})"
-                );
             }
+
+            // #[cfg(target_os = "linux")]
+            #[cfg(feature = "menu-custom")]
+            AppMsg::SetCustomContextMenu(context_menu) => {
+                self.active_context_menu = Some(context_menu);
+            }
+
+            #[cfg(feature = "menu-custom")]
+            AppMsg::HideContextMenu => {
+                self.active_context_menu = None;
+            }
+
             AppMsg::TvMsg(tv_msg) => {
                 if let Some(treeview) = &mut self.treeview {
                     task = Some(
@@ -309,6 +307,11 @@ impl App {
                             task = Some(Task::done(AppMsg::ShowContextMenu(
                                 tree_view_context_menu_listing,
                             )));
+                        }
+
+                        #[cfg(feature = "menu-custom")]
+                        TvMsg::ContextMenuChosenIdx(_) => {
+                            self.active_context_menu = None;
                         }
 
                         TvMsg::SetSubtreeView(_node_id) => {
@@ -327,6 +330,7 @@ impl App {
                     }
                 }
             }
+
             AppMsg::OpenFile => {
                 if self.winid.is_none() {
                     task = Some(
@@ -337,6 +341,7 @@ impl App {
                     task = Some(Task::future(ops::choose_file_to_open()));
                 }
             }
+
             AppMsg::PathToOpen(path_buf_opt) => {
                 if self.winid.is_none() {
                     return Task::done(AppMsg::WinOpen)
@@ -396,15 +401,19 @@ impl App {
                     }
                 }
             }
+
             AppMsg::SaveAs => {
                 task = Some(Task::future(ops::choose_file_to_save(false)));
             }
+
             AppMsg::ExportSubtree => {
                 task = Some(Task::future(ops::choose_file_to_save(true)));
             }
+
             AppMsg::ExportPdf => {
                 task = Some(Task::future(ops::choose_file_to_pdf_export()));
             }
+
             AppMsg::PathToSave { path: path_buf_opt, subtree } => {
                 if let Some(path_buf) = path_buf_opt {
                     println!("{path_buf:?}");
@@ -456,6 +465,7 @@ impl App {
                     }
                 }
             }
+
             AppMsg::AppInitialized => {
                 self.menu = AppMenu::new();
                 if let Some(menu) = &mut self.menu {
@@ -464,6 +474,7 @@ impl App {
                 }
                 task = Some(Task::done(AppMsg::WinOpen));
             }
+
             AppMsg::WinEvent(e) => match e {
                 WindowEvent::Opened { position: _, size: _ } => {
                     task = Some(Task::done(AppMsg::WinOpened));
@@ -477,8 +488,11 @@ impl App {
                 WindowEvent::FileDropped(path_buf) => {
                     task = Some(Task::done(AppMsg::PathToOpen(Some(path_buf))));
                 }
-                _ => {}
+                _ => {
+                    task = None;
+                }
             },
+
             AppMsg::WinOpen => {
                 if self.winid.is_none() {
                     let (window_id, open_window_task) =
@@ -490,6 +504,7 @@ impl App {
                     eprintln!("AppMsg::OpenWindow -> Window is already open.");
                 }
             }
+
             AppMsg::WinOpened => {
                 if let Some(menu) = &mut self.menu {
                     menu.enable(&AppMenuItemId::CloseWindow);
@@ -550,6 +565,7 @@ impl App {
 
                 task = Some(task_to_return);
             }
+
             AppMsg::WinCloseRequested => {
                 if self.winid.is_some() {
                     task = Some(Task::done(AppMsg::WinClose));
@@ -559,6 +575,7 @@ impl App {
                     );
                 }
             }
+
             AppMsg::WinClose => {
                 if let Some(window_id) = self.winid {
                     self.winid = None;
@@ -566,6 +583,7 @@ impl App {
                     task = Some(close_window(window_id));
                 }
             }
+
             AppMsg::WinClosed => {
                 if let Some(menu) = &mut self.menu {
                     menu.disable(&AppMenuItemId::CloseWindow);
@@ -583,6 +601,7 @@ impl App {
                     task = Some(Task::done(AppMsg::Quit));
                 }
             }
+
             AppMsg::Quit => task = Some(exit()),
             #[cfg(target_os = "windows")]
             AppMsg::AddMenuForHwnd(hwnd) => {
@@ -590,6 +609,7 @@ impl App {
                     menu.init_for_hwnd(hwnd);
                 }
             }
+
             #[cfg(target_os = "windows")]
             AppMsg::RegisterFileTypes => {
                 match platform::register_file_associations() {
@@ -606,6 +626,7 @@ impl App {
                     }
                 }
             }
+
             #[cfg(target_os = "windows")]
             AppMsg::UnregisterFileTypes => {
                 match platform::unregister_file_associations() {
@@ -636,7 +657,8 @@ impl App {
         {
             subs.push(platform::os_events());
         }
-        #[cfg(any(target_os = "windows", target_os = "macos"))]
+        // #[cfg(any(target_os = "windows", target_os = "macos"))]
+        #[cfg(feature = "menu-muda")]
         subs.push(menu::menu_events());
         subs.push(window_events().map(|(_, e)| AppMsg::WinEvent(e)));
         subs.push(on_key_press(|key, mods| {

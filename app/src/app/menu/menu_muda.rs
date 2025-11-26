@@ -1,5 +1,7 @@
 mod events;
 
+use crate::app::AppMsg;
+
 pub use super::events::AppMenuItemId;
 pub use events::menu_events;
 #[cfg(target_os = "windows")]
@@ -8,6 +10,7 @@ use muda::{
     MenuItem, MenuItemKind, Submenu,
     accelerator::{Accelerator, CMD_OR_CTRL, Code},
 };
+use riced::{RawWindowHandle, Task, WindowId, run};
 use std::collections::HashMap;
 use treeview::TvContextMenuListing;
 
@@ -44,6 +47,41 @@ impl ContextMenu {
     pub fn with_muda_menu(muda_menu: muda::Menu) -> Self {
         Self { muda_menu }
     }
+}
+
+pub fn show_context_menu(
+    tree_view_context_menu_listing: TvContextMenuListing,
+    winid: WindowId,
+) -> Task<AppMsg> {
+    run(winid, |h| {
+        if let Ok(handle) = h.window_handle() {
+            let context_menu: ContextMenu =
+                tree_view_context_menu_listing.into();
+            let muda_menu: muda::Menu = context_menu.into();
+
+            #[cfg(target_os = "macos")]
+            unsafe {
+                if let RawWindowHandle::AppKit(handle_raw) = handle.as_raw() {
+                    _ = muda::ContextMenu::show_context_menu_for_nsview(
+                        &muda_menu,
+                        handle_raw.ns_view.as_ptr(),
+                        None,
+                    );
+                }
+            }
+            #[cfg(target_os = "windows")]
+            unsafe {
+                if let RawWindowHandle::Win32(handle_raw) = handle.as_raw() {
+                    _ = muda::ContextMenu::show_context_menu_for_hwnd(
+                        &muda_menu,
+                        handle_raw.hwnd.into(),
+                        None,
+                    );
+                }
+            }
+        }
+    })
+    .discard()
 }
 
 impl From<ContextMenu> for muda::Menu {

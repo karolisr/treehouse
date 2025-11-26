@@ -420,10 +420,10 @@ pub(crate) fn sty_pick_lst(
     }
 }
 
-pub(crate) fn sty_menu(theme: &Theme) -> MenuStyle {
+pub(crate) fn sty_menu(theme: &Theme) -> IcedMenuStyle {
     let palette = theme.extended_palette();
 
-    MenuStyle {
+    IcedMenuStyle {
         text_color: palette.primary.weak.text,
         background: palette.background.weak.color.into(),
         border: Border {

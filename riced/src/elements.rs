@@ -1,15 +1,41 @@
 use crate::style::*;
 use crate::*;
 
-pub fn modal<'a, Msg: 'a>(
+pub fn context_menu_element<'a, Msg: 'a + Clone>(
+    base: impl Into<Element<'a, Msg>>,
+    content: impl Into<Element<'a, Msg>>,
+    position: Point,
+    hide: Msg,
+) -> Element<'a, Msg> {
+    stack![
+        base.into(),
+        mouse_area(
+            container(float(content).translate(move |_bounds, _viewport| {
+                Vector { x: position.x, y: position.y }
+            }))
+            .width(Length::Fill)
+            .height(Length::Fill)
+        )
+        .on_press(hide)
+    ]
+    .into()
+}
+
+pub fn modal_element<'a, Msg: 'a>(
     base: impl Into<Element<'a, Msg>>,
     content: impl Into<Element<'a, Msg>>,
 ) -> Element<'a, Msg> {
     stack![
         base.into(),
-        opaque(center(opaque(content)).style(|_theme| {
+        opaque(center(content).style(|theme| {
+            let bg_color = theme
+                .extended_palette()
+                .background
+                .weakest
+                .color
+                .scale_alpha(0.35);
             ContainerStyle {
-                background: Some(Clr::BLK_75.into()),
+                background: Some(bg_color.into()),
                 ..ContainerStyle::default()
             }
         }))

@@ -29,6 +29,7 @@ use std::fmt::Display;
 
 use iced as i;
 use iced::widget as w;
+// use iced_aw as iaw;
 
 pub use colors::Clr;
 pub use consts::*;
@@ -38,6 +39,14 @@ pub use path_utils::*;
 pub use style::*;
 pub use text_width::{TextWidth, text_width, text_width_line_height};
 
+// pub use iaw::{
+//     menu::{Item as IawMenuItem, Menu as IawMenu},
+//     menu_bar as iaw_menu_bar, menu_items as iaw_menu_items,
+// };
+
+pub use i::advanced::mouse::click::{
+    Click as MouseClick, Kind as MouseClickKind,
+};
 pub use i::alignment::{Horizontal, Vertical};
 pub use i::border::{Border, Radius};
 pub use i::debug::{time as timer, time_with as timer_with};
@@ -90,9 +99,10 @@ pub use w::checkbox::{
 pub use w::column as iced_col;
 pub use w::container;
 pub use w::container::{Container, Style as ContainerStyle};
+pub use w::float;
 pub use w::mouse_area;
 pub use w::operation::{focus, scroll_to};
-pub use w::overlay::menu::{Menu, State as MenuState, Style as MenuStyle};
+pub use w::overlay::menu::Style as IcedMenuStyle;
 pub use w::pane_grid::{
     Axis as PgAxis, Content as PgContent, Highlight as PgHighlight,
     Line as PgLine, Pane, PaneGrid, ResizeEvent, State as PgState,

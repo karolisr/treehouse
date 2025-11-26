@@ -55,11 +55,12 @@
         ]
         git="https://github.com/karolisr/iced.git"
 
-    [dependencies.iced_aw]
-        branch="custom"
-        default-features=false
-        features=["context_menu", "menu"]
-        git="https://github.com/karolisr/iced_aw.git"
+    # [dependencies.iced_aw]
+    #     branch="custom"
+    #     default-features=false
+    #     features=["context_menu", "menu"]
+    #     git="https://github.com/karolisr/iced_aw.git"
+    #     optional=true
 
 [features]
     crisp=["iced/crisp"]

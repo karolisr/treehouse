@@ -27,6 +27,14 @@
         short_description="View and edit gene trees and phylogenies."
         # --------------------------------------------------------------------------
 
+[features]
+    default=[
+        # "menu-custom",
+        "menu-muda"
+    ]
+    menu-custom=[]
+    menu-muda=["dep:muda"]
+
 [dependencies]
     dendros={workspace=true}
     riced={workspace=true}
@@ -38,14 +46,14 @@
     rfd={workspace=true, features=["gtk3"]}
 
 [target.'cfg(target_os = "macos")'.dependencies]
-    muda={workspace=true}
+    muda={workspace=true, optional=true}
     objc2={workspace=true}
     objc2-app-kit={workspace=true}
     objc2-foundation={workspace=true}
     rfd={workspace=true}
 
 [target.'cfg(target_os = "windows")'.dependencies]
-    muda={workspace=true}
+    muda={workspace=true, optional=true}
     rfd={workspace=true}
     windows={workspace=true, features=[
         "Win32_Foundation",

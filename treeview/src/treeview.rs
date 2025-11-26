@@ -317,6 +317,8 @@ impl TreeView {
             TvMsg::ContextMenuChosenIdx(idx) => {
                 let msg =
                     self.pending_context_menu_listing.items()[idx].msg.clone();
+                self.pending_context_menu_listing =
+                    TvContextMenuListing::default();
                 task = Some(Task::done(msg));
             }
 
