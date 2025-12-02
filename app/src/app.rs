@@ -68,7 +68,7 @@ pub enum AppMsg {
     // -------------------------------------------------------------------------
     KeysPressed(Key, Modifiers),
     // -------------------------------------------------------------------------
-    #[cfg(target_os = "windows")]
+    #[cfg(all(target_os = "windows", feature = "menu-muda"))]
     AddMenuForHwnd(u64),
     #[cfg(target_os = "windows")]
     RegisterFileTypes,
@@ -95,10 +95,7 @@ impl App {
         #[cfg(target_os = "windows")]
         {
             if let Err(e) = platform::setup_file_handling() {
-                eprintln!(
-                    "Warning: Failed to set up file type associations: {}",
-                    e
-                );
+                eprintln!("Failed to set up file type associations: {}", e);
             }
         }
 
@@ -131,7 +128,6 @@ impl App {
                 .into();
             } else {
                 v = treeview.view().map(AppMsg::TvMsg);
-                // #[cfg(target_os = "linux")]
                 #[cfg(feature = "menu-custom")]
                 if let Some(context_menu) = &self.active_context_menu {
                     v = context_menu.element(v);
@@ -144,12 +140,20 @@ impl App {
                 .center(riced::Length::Fill)
                 .into();
         }
+
         if self.explain {
             v = v.explain(Clr::RED);
         };
+
         if let Some(error) = &self.error {
             v = modal_element(v, error_container(error, AppMsg::ErrorClear));
         }
+
+        #[cfg(feature = "menu-custom")]
+        if let Some(menu) = &self.menu {
+            v = menu.menu_bar(v);
+        }
+
         v
     }
 
@@ -284,7 +288,6 @@ impl App {
                 }
             }
 
-            // #[cfg(target_os = "linux")]
             #[cfg(feature = "menu-custom")]
             AppMsg::SetCustomContextMenu(context_menu) => {
                 self.active_context_menu = Some(context_menu);
@@ -523,7 +526,7 @@ impl App {
                 // #[cfg(all(not(debug_assertions), target_os = "linux"))]
                 // let mut task_to_return = Task::none();
 
-                #[cfg(target_os = "windows")]
+                #[cfg(all(target_os = "windows", feature = "menu-muda"))]
                 if let Some(id) = self.winid {
                     task_to_return = riced::get_raw_id::<AppMsg>(id)
                         .map(AppMsg::AddMenuForHwnd);
@@ -551,9 +554,10 @@ impl App {
                 {
                     task_to_return = task_to_return.chain({
                         let path_buf = PathBuf::from("tests/data/tree01.tre");
-                        // let path_buf = PathBuf::from("tests/data/big_seed_plant_trees/ALLMB.tre");
                         // let path_buf = PathBuf::from("tests/data/tree02.newick");
+                        // let path_buf = PathBuf::from("tests/data/big_seed_plant_trees/ALLMB.tre");
                         // let path_buf = PathBuf::from("tests/data/Czech_Huerta-Cepas_Stamatakis_2017/Czech_Huerta-Cepas_Stamatakis_2017_unrooted__node_and_branch_attributes.newick");
+
                         let path: &std::path::Path =
                             &path_buf.clone().into_boxed_path();
                         if path.exists() {
@@ -593,18 +597,12 @@ impl App {
                     menu.disable(&AppMenuAction::ExportSubtree);
                     menu.disable(&AppMenuAction::ToggleSearchBar);
                 }
-                #[cfg(target_os = "macos")]
-                {
-                    task = Some(Task::done(AppMsg::Quit));
-                }
-                #[cfg(any(target_os = "windows", target_os = "linux"))]
-                {
-                    task = Some(Task::done(AppMsg::Quit));
-                }
+                task = Some(Task::done(AppMsg::Quit));
             }
 
             AppMsg::Quit => task = Some(exit()),
-            #[cfg(target_os = "windows")]
+
+            #[cfg(all(target_os = "windows", feature = "menu-muda"))]
             AppMsg::AddMenuForHwnd(hwnd) => {
                 if let Some(menu) = &self.menu {
                     menu.init_for_hwnd(hwnd);
@@ -614,16 +612,11 @@ impl App {
             #[cfg(target_os = "windows")]
             AppMsg::RegisterFileTypes => {
                 match platform::register_file_associations() {
-                    Ok(()) => {
-                        println!(
-                            "File type associations registered successfully!"
-                        );
+                    Ok(_) => {
+                        println!("File type assoc. added.");
                     }
                     Err(e) => {
-                        eprintln!(
-                            "Failed to register file type associations: {}",
-                            e
-                        );
+                        eprintln!("Failed to add file type assoc.: {}", e);
                     }
                 }
             }
@@ -631,16 +624,11 @@ impl App {
             #[cfg(target_os = "windows")]
             AppMsg::UnregisterFileTypes => {
                 match platform::unregister_file_associations() {
-                    Ok(()) => {
-                        println!(
-                            "File type associations unregistered successfully!"
-                        );
+                    Ok(_) => {
+                        println!("File type assoc. removed.");
                     }
                     Err(e) => {
-                        eprintln!(
-                            "Failed to unregister file type associations: {}",
-                            e
-                        );
+                        eprintln!("Failed to remove file type assoc.: {}", e);
                     }
                 }
             }
@@ -658,7 +646,6 @@ impl App {
         {
             subs.push(platform::os_events());
         }
-        // #[cfg(any(target_os = "windows", target_os = "macos"))]
         #[cfg(feature = "menu-muda")]
         subs.push(menu::menu_events());
         subs.push(window_events().map(|(_, e)| AppMsg::WinEvent(e)));

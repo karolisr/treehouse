@@ -32,14 +32,21 @@
         "menu-custom",
         # "menu-muda"
     ]
-    menu-custom=["dep:iced_aw"]
+    menu-custom=["dep:iced_aw", "dep:iced_fonts"]
     menu-muda=["dep:muda"]
 
 [dependencies.iced_aw]
     branch="custom"
     default-features=false
-    features=["context_menu", "menu"]
+    features=["menu"]
     git="https://github.com/karolisr/iced_aw.git"
+    optional=true
+
+[dependencies.iced_fonts]
+    branch="custom"
+    default-features=false
+    features=[]
+    git="https://github.com/karolisr/iced_fonts.git"
     optional=true
 
 [dependencies]
