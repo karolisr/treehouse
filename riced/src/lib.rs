@@ -29,7 +29,6 @@ use std::fmt::Display;
 
 use iced as i;
 use iced::widget as w;
-// use iced_aw as iaw;
 
 pub use colors::Clr;
 pub use consts::*;
@@ -38,11 +37,6 @@ pub use icons::Icon;
 pub use path_utils::*;
 pub use style::*;
 pub use text_width::{TextWidth, text_width, text_width_line_height};
-
-// pub use iaw::{
-//     menu::{Item as IawMenuItem, Menu as IawMenu},
-//     menu_bar as iaw_menu_bar, menu_items as iaw_menu_items,
-// };
 
 pub use i::advanced::mouse::click::{
     Click as MouseClick, Kind as MouseClickKind,

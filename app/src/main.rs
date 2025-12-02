@@ -16,6 +16,9 @@
 // -------------------------------------
 
 mod app;
+
+pub(crate) use app::AppMsg;
+
 use app::App;
 
 fn main() -> riced::IcedResult {

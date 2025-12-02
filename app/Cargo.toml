@@ -29,11 +29,18 @@
 
 [features]
     default=[
-        # "menu-custom",
-        "menu-muda"
+        "menu-custom",
+        # "menu-muda"
     ]
-    menu-custom=[]
+    menu-custom=["dep:iced_aw"]
     menu-muda=["dep:muda"]
+
+[dependencies.iced_aw]
+    branch="custom"
+    default-features=false
+    features=["context_menu", "menu"]
+    git="https://github.com/karolisr/iced_aw.git"
+    optional=true
 
 [dependencies]
     dendros={workspace=true}

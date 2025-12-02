@@ -32,7 +32,7 @@ pub struct App {
 #[derive(Debug, Clone)]
 pub enum AppMsg {
     Other(Option<String>),
-    MenuEvent(AppMenuItemId),
+    MenuEvent(AppMenuAction),
     // -------------------------------------------------------------------------
     ErrorSet(String),
     ErrorClear,
@@ -162,7 +162,7 @@ impl App {
 
             AppMsg::ErrorClear => {
                 if let Some(menu) = &mut self.menu {
-                    menu.enable(&AppMenuItemId::OpenFile);
+                    menu.enable(&AppMenuAction::OpenFile);
                 }
                 self.error = None;
             }
@@ -200,17 +200,17 @@ impl App {
                                 }
                                 "o" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
-                                        AppMenuItemId::OpenFile,
+                                        AppMenuAction::OpenFile,
                                     )));
                                 }
                                 "s" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
-                                        AppMenuItemId::SaveAs,
+                                        AppMenuAction::SaveAs,
                                     )));
                                 }
                                 "p" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
-                                        AppMenuItemId::ExportPdf,
+                                        AppMenuAction::ExportPdf,
                                     )));
                                 }
                                 _ => {}
@@ -222,7 +222,7 @@ impl App {
                             match k {
                                 "w" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
-                                        AppMenuItemId::CloseWindow,
+                                        AppMenuAction::CloseWindow,
                                     )));
                                 }
                                 _ => {}
@@ -231,7 +231,7 @@ impl App {
                             match k {
                                 "q" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
-                                        AppMenuItemId::CloseWindow,
+                                        AppMenuAction::CloseWindow,
                                     )));
                                 }
                                 _ => {}
@@ -316,13 +316,13 @@ impl App {
 
                         TvMsg::SetSubtreeView(_node_id) => {
                             if let Some(menu) = &mut self.menu {
-                                menu.enable(&AppMenuItemId::ExportSubtree);
+                                menu.enable(&AppMenuAction::ExportSubtree);
                             }
                         }
 
                         TvMsg::ClearSubtreeView => {
                             if let Some(menu) = &mut self.menu {
-                                menu.disable(&AppMenuItemId::ExportSubtree);
+                                menu.disable(&AppMenuAction::ExportSubtree);
                             }
                         }
 
@@ -363,13 +363,13 @@ impl App {
                                             .to_string(),
                                     );
                                     if let Some(menu) = &mut self.menu {
-                                        menu.enable(&AppMenuItemId::SaveAs);
-                                        menu.enable(&AppMenuItemId::ExportPdf);
+                                        menu.enable(&AppMenuAction::SaveAs);
+                                        menu.enable(&AppMenuAction::ExportPdf);
                                         menu.enable(
-                                            &AppMenuItemId::ToggleSearchBar,
+                                            &AppMenuAction::ToggleSearchBar,
                                         );
                                         menu.disable(
-                                            &AppMenuItemId::ExportSubtree,
+                                            &AppMenuAction::ExportSubtree,
                                         );
                                     };
                                     task = Some(Task::done(AppMsg::TvMsg(
@@ -378,9 +378,9 @@ impl App {
                                 }
                                 Err(error) => {
                                     if let Some(menu) = &mut self.menu {
-                                        menu.disable(&AppMenuItemId::OpenFile);
-                                        menu.disable(&AppMenuItemId::SaveAs);
-                                        menu.disable(&AppMenuItemId::ExportPdf);
+                                        menu.disable(&AppMenuAction::OpenFile);
+                                        menu.disable(&AppMenuAction::SaveAs);
+                                        menu.disable(&AppMenuAction::ExportPdf);
                                     };
                                     task = Some(Task::done(AppMsg::ErrorSet(
                                         error.to_string(),
@@ -390,9 +390,9 @@ impl App {
                         }
                         Err(file_read_error) => {
                             if let Some(menu) = &mut self.menu {
-                                menu.disable(&AppMenuItemId::OpenFile);
-                                menu.disable(&AppMenuItemId::SaveAs);
-                                menu.disable(&AppMenuItemId::ExportPdf);
+                                menu.disable(&AppMenuAction::OpenFile);
+                                menu.disable(&AppMenuAction::SaveAs);
+                                menu.disable(&AppMenuAction::ExportPdf);
                             };
                             task = Some(Task::done(AppMsg::ErrorSet(
                                 file_read_error.to_string(),
@@ -469,8 +469,8 @@ impl App {
             AppMsg::AppInitialized => {
                 self.menu = AppMenu::new();
                 if let Some(menu) = &mut self.menu {
-                    menu.disable(&AppMenuItemId::SaveAs);
-                    menu.disable(&AppMenuItemId::ExportPdf);
+                    menu.disable(&AppMenuAction::SaveAs);
+                    menu.disable(&AppMenuAction::ExportPdf);
                 }
                 task = Some(Task::done(AppMsg::WinOpen));
             }
@@ -507,7 +507,7 @@ impl App {
 
             AppMsg::WinOpened => {
                 if let Some(menu) = &mut self.menu {
-                    menu.enable(&AppMenuItemId::CloseWindow);
+                    menu.enable(&AppMenuAction::CloseWindow);
                 }
 
                 #[cfg(any(
@@ -587,11 +587,11 @@ impl App {
 
             AppMsg::WinClosed => {
                 if let Some(menu) = &mut self.menu {
-                    menu.disable(&AppMenuItemId::CloseWindow);
-                    menu.disable(&AppMenuItemId::SaveAs);
-                    menu.disable(&AppMenuItemId::ExportPdf);
-                    menu.disable(&AppMenuItemId::ExportSubtree);
-                    menu.disable(&AppMenuItemId::ToggleSearchBar);
+                    menu.disable(&AppMenuAction::CloseWindow);
+                    menu.disable(&AppMenuAction::SaveAs);
+                    menu.disable(&AppMenuAction::ExportPdf);
+                    menu.disable(&AppMenuAction::ExportSubtree);
+                    menu.disable(&AppMenuAction::ToggleSearchBar);
                 }
                 #[cfg(target_os = "macos")]
                 {
