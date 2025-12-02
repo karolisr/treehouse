@@ -1,5 +1,5 @@
-use crate::CladeLabel;
-use crate::CladeLabelType;
+use crate::CladeHighlight;
+use crate::CladeHighlightType;
 use crate::SortOrd;
 use crate::TreNodeOrd;
 
@@ -52,7 +52,6 @@ pub(super) struct TreeState {
     id: usize,
     sel_edge_idxs: Vec<usize>,
     sel_node_ids: HashSet<NodeId>,
-    labeled_clades: HashMap<NodeId, CladeLabel>,
     node_ord_opt: TreNodeOrd,
 
     t_orig: Tree,
@@ -63,6 +62,10 @@ pub(super) struct TreeState {
     edges_tip: Vec<Edge>,
     edges_tip_tallest: Vec<Edge>,
 
+    // --- Highlighted Clades --------------------------------------------------
+    highlighted_clades: HashMap<NodeId, CladeHighlight>,
+    highlighted_clade_draw_order: Vec<NodeId>,
+
     // --- Canvas Geometry Caches ----------------------------------------------
     cache_cnv_edge: CnvCache,
     cache_cnv_lab_tip: CnvCache,
@@ -70,7 +73,7 @@ pub(super) struct TreeState {
     cache_cnv_lab_brnch: CnvCache,
     cache_cnv_sel_nodes: CnvCache,
     cache_cnv_filtered_nodes: CnvCache,
-    cache_cnv_clade_labels: CnvCache,
+    cache_cnv_clade_highlights: CnvCache,
 
     // --- Caches of Edges Sorted by the Fields in the Edge Struct -------------
     cache_edges_node_id_asc: Option<Vec<Edge>>,
@@ -103,6 +106,7 @@ pub(super) struct TreeState {
     subtree_view_node_branch_length: Option<TreeFloat>,
     subtree_view_tip_edge_idx_range: Option<IndexRange>,
     subtree_view_edges: Option<Vec<Edge>>,
+    subtree_view_node_id_to_edge_idx_map: Option<HashMap<NodeId, usize>>,
     subtree_view_cache_tip_count: Option<usize>,
     subtree_view_cache_node_count: Option<usize>,
     subtree_view_cache_max_first_node_to_tip_distance: Option<TreeFloat>,
@@ -379,6 +383,7 @@ impl TreeState {
         self.subtree_view_node_branch_length = None;
         self.subtree_view_tip_edge_idx_range = None;
         self.subtree_view_edges = None;
+        self.subtree_view_node_id_to_edge_idx_map = None;
         self.subtree_view_cache_tip_count = None;
         self.subtree_view_cache_node_count = None;
         self.subtree_view_cache_max_first_node_to_tip_distance = None;
@@ -447,18 +452,21 @@ impl TreeState {
                 .map(|edge| edge.y)
                 .reduce(|| 0.0, TreeFloat::max);
 
+            let mut node_id_to_edge_idx_map: HashMap<NodeId, usize> =
+                HashMap::new();
+
             subtree_edges.iter_mut().enumerate().for_each(|(i, edge)| {
+                _ = node_id_to_edge_idx_map.insert(edge.node_id, i);
                 edge.edge_index = i;
                 edge.x0 = normalize_value(min_x, max_x, edge.x0);
                 edge.x_mid = normalize_value(min_x, max_x, edge.x_mid);
                 edge.x1 = normalize_value(min_x, max_x, edge.x1);
-
                 edge.y = normalize_value(min_y, max_y, edge.y);
-                if let Some(y_parent) = edge.y_parent {
-                    edge.y_parent =
-                        Some(normalize_value(min_y, max_y, y_parent));
-                }
+                edge.y_parent = normalize_value(min_y, max_y, edge.y_parent);
             });
+
+            self.subtree_view_node_id_to_edge_idx_map =
+                Some(node_id_to_edge_idx_map);
 
             self.subtree_view_edges = Some(subtree_edges);
 
@@ -593,24 +601,26 @@ impl TreeState {
 
         let edges = self.edges_for_subtree_view()?;
 
-        let mut edges_top: Vec<Edge> = Vec::new();
-        let mut edges_bottom: Vec<Edge> = Vec::new();
+        let node_id_to_edge_idx_map =
+            self.subtree_view_node_id_to_edge_idx_map.as_ref()?;
 
-        node_ids_top.iter().for_each(|&node_id_top| {
-            edges.iter().for_each(|edge| {
-                if edge.node_id == node_id_top {
-                    edges_top.push(edge.clone());
-                }
-            });
-        });
+        let edges_top: Vec<Edge> = node_ids_top
+            .iter()
+            .filter_map(|id| {
+                node_id_to_edge_idx_map
+                    .get(id)
+                    .map(|edge_idx| edges[*edge_idx].clone())
+            })
+            .collect();
 
-        node_ids_bottom.iter().for_each(|&node_id_bottom| {
-            edges.iter().for_each(|edge| {
-                if edge.node_id == node_id_bottom {
-                    edges_bottom.push(edge.clone());
-                }
-            });
-        });
+        let edges_bottom: Vec<Edge> = node_ids_bottom
+            .iter()
+            .filter_map(|id| {
+                node_id_to_edge_idx_map
+                    .get(id)
+                    .map(|edge_idx| edges[*edge_idx].clone())
+            })
+            .collect();
 
         Some((edges_top, edges_bottom))
     }
@@ -688,15 +698,15 @@ impl TreeState {
         self.update_filter_results(current_found_node_id);
         self.sel_edge_idxs = self.sel_edge_idxs_prep_tree();
         // ---------------------------------------------------------------------
-        // Drop clade label for nodes that may not exist anymore.
+        // Drop clade highlight for nodes that may not exist anymore.
         let mut node_ids_to_drop: Vec<NodeId> = Vec::new();
-        for &node_id in self.labeled_clades.keys() {
+        for &node_id in self.highlighted_clades.keys() {
             if !self.tree().node_exists(Some(node_id)) {
                 node_ids_to_drop.push(node_id);
             }
         }
         for node_id in node_ids_to_drop {
-            self.remove_clade_label(node_id);
+            self.remove_clade_highlight(node_id);
         }
         // ---------------------------------------------------------------------
         self.clear_caches_of_edges_sorted_by_field();
@@ -732,11 +742,11 @@ impl TreeState {
             let mut found_node_ids: HashSet<NodeId> = HashSet::new();
             let mut found_edge_idxs: Vec<usize> = Vec::new();
             let mut vec_idx_to_found_edge_idxs: usize = idx;
-            for e in edges {
-                if found_node_ids_old.contains(&e.node_id) {
-                    _ = found_node_ids.insert(e.node_id);
-                    found_edge_idxs.push(e.edge_index);
-                    if e.node_id == current_found_node_id {
+            for edge in edges {
+                if found_node_ids_old.contains(&edge.node_id) {
+                    _ = found_node_ids.insert(edge.node_id);
+                    found_edge_idxs.push(edge.edge_index);
+                    if edge.node_id == current_found_node_id {
                         vec_idx_to_found_edge_idxs = idx;
                     }
                     idx += 1;
@@ -788,7 +798,7 @@ impl TreeState {
             Some(
                 edges
                     .iter()
-                    .find(|j| j.parent_node_id.is_none())
+                    .find(|j| j.node_id == j.parent_node_id)
                     .expect("Should have root!")
                     .clone(),
             )
@@ -1014,12 +1024,12 @@ impl TreeState {
         let mut found_node_ids: HashSet<NodeId> = HashSet::new();
         let mut found_edge_idxs: Vec<usize> = Vec::new();
 
-        for e in edges_to_search {
-            if let Some(n) = &e.label
+        for edge in edges_to_search {
+            if let Some(n) = &edge.label
                 && let Some(_) = n.to_lowercase().find(&query.to_lowercase())
             {
-                _ = found_node_ids.insert(e.node_id);
-                found_edge_idxs.push(e.edge_index);
+                _ = found_node_ids.insert(edge.node_id);
+                found_edge_idxs.push(edge.edge_index);
             }
         }
 
@@ -1031,48 +1041,73 @@ impl TreeState {
 
     // =========================================================================
 
-    // --- Clade Labels --------------------------------------------------------
+    // --- Clade Highlights ----------------------------------------------------
 
-    pub(super) fn add_remove_clade_label(
+    pub(super) fn add_remove_clade_highlight(
         &mut self,
         node_id: NodeId,
         color: Color,
         label: impl Into<String>,
-        label_type: CladeLabelType,
+        highlight_type: CladeHighlightType,
     ) {
-        if self.clade_has_label(node_id) {
-            self.remove_clade_label(node_id);
+        if self.clade_has_highlight(node_id) {
+            self.remove_clade_highlight(node_id);
         } else {
-            self.add_clade_label(node_id, color, label, label_type);
+            self.add_clade_highlight(node_id, color, label, highlight_type);
         }
     }
 
-    pub(super) fn add_clade_label(
+    pub(super) fn add_clade_highlight(
         &mut self,
         node_id: NodeId,
         color: Color,
         label: impl Into<String>,
-        label_type: CladeLabelType,
+        highlight_type: CladeHighlightType,
     ) {
-        let clade_label: CladeLabel =
-            CladeLabel { node_id, color, label: label.into(), label_type };
-        _ = self.labeled_clades.insert(node_id, clade_label);
+        let clade_highlight: CladeHighlight = CladeHighlight {
+            node_id,
+            color,
+            label: label.into(),
+            highlight_type,
+        };
+        _ = self.highlighted_clades.insert(node_id, clade_highlight);
+        self.update_highlighted_clade_draw_order();
     }
 
-    pub(super) fn remove_clade_label(&mut self, node_id: NodeId) {
-        _ = self.labeled_clades.remove(&node_id);
+    fn update_highlighted_clade_draw_order(&mut self) {
+        if let Some(t) = &self.t_srtd_asc {
+            let mut node_ids: Vec<NodeId> =
+                self.highlighted_clades.keys().copied().collect();
+            node_ids.sort_by_key(|&node_id| {
+                t.node(Some(node_id)).unwrap().node_order()
+            });
+            self.highlighted_clade_draw_order = node_ids;
+        };
     }
 
-    pub(super) fn clade_has_label(&self, node_id: NodeId) -> bool {
-        self.labeled_clades.contains_key(&node_id)
+    pub(super) fn remove_clade_highlight(&mut self, node_id: NodeId) {
+        _ = self.highlighted_clades.remove(&node_id);
     }
 
-    pub(super) fn labeled_clades(&self) -> &HashMap<NodeId, CladeLabel> {
-        &self.labeled_clades
+    pub(super) fn clade_has_highlight(&self, node_id: NodeId) -> bool {
+        self.highlighted_clades.contains_key(&node_id)
     }
 
-    pub(super) fn has_clade_labels(&self) -> bool {
-        !self.labeled_clades().is_empty()
+    pub(super) fn highlighted_clades(
+        &self,
+    ) -> &HashMap<NodeId, CladeHighlight> {
+        &self.highlighted_clades
+    }
+
+    pub(super) fn highlighted_clades_ordered(&self) -> Vec<&CladeHighlight> {
+        self.highlighted_clade_draw_order
+            .iter()
+            .filter_map(|node_id| self.highlighted_clades.get(node_id))
+            .collect()
+    }
+
+    pub(super) fn has_clade_highlights(&self) -> bool {
+        !self.highlighted_clades.is_empty()
     }
 
     // -------------------------------------------------------------------------
@@ -1238,8 +1273,8 @@ impl TreeState {
         &self.cache_cnv_filtered_nodes
     }
 
-    pub(super) fn cache_cnv_clade_labels(&self) -> &CnvCache {
-        &self.cache_cnv_clade_labels
+    pub(super) fn cache_cnv_clade_highlights(&self) -> &CnvCache {
+        &self.cache_cnv_clade_highlights
     }
 
     // -------------------------------------------------------------------------
@@ -1268,8 +1303,8 @@ impl TreeState {
         self.cache_cnv_filtered_nodes.clear();
     }
 
-    pub(super) fn clear_cache_cnv_clade_labels(&self) {
-        self.cache_cnv_clade_labels.clear();
+    pub(super) fn clear_cache_cnv_clade_highlights(&self) {
+        self.cache_cnv_clade_highlights.clear();
     }
 
     pub(super) fn clear_caches_cnv(&self) {
@@ -1279,7 +1314,7 @@ impl TreeState {
         self.clear_cache_cnv_lab_brnch();
         self.clear_cache_cnv_sel_nodes();
         self.clear_cache_cnv_filtered_nodes();
-        self.clear_cache_cnv_clade_labels();
+        self.clear_cache_cnv_clade_highlights();
     }
 
     // -------------------------------------------------------------------------

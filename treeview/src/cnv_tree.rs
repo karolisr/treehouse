@@ -38,7 +38,7 @@ pub(super) struct TreeCnv {
     pub(super) draw_labs_brnch: bool,
     pub(super) draw_labs_int: bool,
     pub(super) draw_labs_tip: bool,
-    pub(super) draw_clade_labs: bool,
+    pub(super) draw_clade_highlights: bool,
     pub(super) draw_legend: bool,
     pub(super) draw_root: bool,
     pub(super) drawing_enabled: bool,
@@ -56,7 +56,7 @@ pub(super) struct TreeCnv {
     pub(super) lab_offset_int: Float,
     pub(super) lab_offset_brnch: Float,
     // -------------------------------------------------------------------------
-    pub(super) clade_labs_w: Float,
+    pub(super) clade_highlights_w: Float,
     // -------------------------------------------------------------------------
     pub(super) opn_angle: Float,
     pub(super) rot_angle: Float,
@@ -90,7 +90,7 @@ impl TreeCnv {
             draw_root: true,
             draw_labs_allowed: false,
             draw_labs_tip: true,
-            draw_clade_labs: true,
+            draw_clade_highlights: true,
             draw_labs_int: false,
             draw_labs_brnch: false,
             draw_legend: false,
@@ -112,7 +112,7 @@ impl TreeCnv {
             lab_offset_int: ZRO,
             lab_offset_brnch: ZRO,
             // -----------------------------------------------------------------
-            clade_labs_w: ZRO,
+            clade_highlights_w: ZRO,
             // -----------------------------------------------------------------
             cache_cnv_bnds: Default::default(),
             cache_cnv_tip_lab_w_resize_area: Default::default(),
@@ -185,7 +185,7 @@ impl TreeCnv {
         cnv_vs: &RectVals<Float>,
         edges_tip_tallest: &[Edge],
         is_rooted: bool,
-        has_clade_labels: bool,
+        has_clade_highlights: bool,
         text_w_tip: &mut TextWidth<'static>,
     ) -> (RectVals<Float>, Float) {
         let tre_vs_prelim =
@@ -201,9 +201,9 @@ impl TreeCnv {
                 edges_tip_tallest, self.lab_offset_tip, trim_to, text_w_tip,
             );
         }
-        let mut offset_due_to_clade_lab = ZRO;
-        if has_clade_labels && self.draw_clade_labs {
-            offset_due_to_clade_lab = self.clade_labs_w;
+        let mut offset_due_to_clade_highlight = ZRO;
+        if has_clade_highlights && self.draw_clade_highlights {
+            offset_due_to_clade_highlight = self.clade_highlights_w;
         }
         let mut root_len = ZRO;
         match self.tre_sty {
@@ -217,7 +217,7 @@ impl TreeCnv {
                     offset_due_to_brnch_lab =
                         self.lab_size_brnch + self.lab_offset_brnch.abs();
                 }
-                let right = tip_w + offset_due_to_clade_lab;
+                let right = tip_w + offset_due_to_clade_highlight;
                 let top = (offset_due_to_tip_lab).max(offset_due_to_brnch_lab);
                 let bottom = offset_due_to_tip_lab;
                 let mut tre_vs = tre_vs_prelim.padded(ZRO, right, top, bottom);
@@ -240,7 +240,7 @@ impl TreeCnv {
                 (tre_vs, root_len)
             }
             TreSty::Fan => {
-                let p = tip_w + offset_due_to_clade_lab;
+                let p = tip_w + offset_due_to_clade_highlight;
                 let tre_vs = tre_vs_prelim.padded(p, p, p, p);
                 if is_rooted {
                     root_len = tre_vs.radius_min * self.root_len_frac;

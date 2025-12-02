@@ -52,7 +52,7 @@ pub(crate) fn draw_labels(
         };
         text.align_y = Vertical::Center;
         // ---------------------------------------------------------------------
-        if let Some(angle) = angle {
+        if *angle != 0.0 {
             let angle_orig = *angle;
             let mut angle = *angle;
             let mut adjust_w = match text.align_x {

@@ -7,8 +7,8 @@ impl From<NodeDataCart> for NodeData {
             edge_idx: nd.edge_idx,
             points: nd.points,
             y_parent: nd.y_parent,
-            angle: None,
-            angle_parent: None,
+            angle: 0.0,
+            angle_parent: 0.0,
         }
     }
 }
@@ -19,8 +19,8 @@ impl From<NodeDataPol> for NodeData {
             node_id: nd.node_id,
             edge_idx: nd.edge_idx,
             points: nd.points,
-            y_parent: None,
-            angle: Some(nd.angle),
+            y_parent: 0.0,
+            angle: nd.angle,
             angle_parent: nd.angle_parent,
         }
     }
@@ -31,12 +31,8 @@ pub fn edge_path_cart(nd: &NodeDataCart, pb: PathBuilder) -> PathBuilder {
 }
 
 pub fn edge_path_diag_cart(nd: &NodeDataCart, pb: PathBuilder) -> PathBuilder {
-    if let Some(y_parent) = nd.y_parent {
-        let pt_parent = Point { x: nd.points.p0.x, y: y_parent };
-        pb.move_to(nd.points.p1).line_to(pt_parent)
-    } else {
-        pb
-    }
+    let pt_parent = Point { x: nd.points.p0.x, y: nd.y_parent };
+    pb.move_to(nd.points.p1).line_to(pt_parent)
 }
 
 pub fn edge_path_pol(nd: &NodeDataPol, pb: PathBuilder) -> PathBuilder {
@@ -44,25 +40,17 @@ pub fn edge_path_pol(nd: &NodeDataPol, pb: PathBuilder) -> PathBuilder {
 }
 
 pub fn edge_path_vert_cart(nd: &NodeDataCart, pb: PathBuilder) -> PathBuilder {
-    if let Some(y_parent) = nd.y_parent {
-        let pt_parent = Point { x: nd.points.p0.x, y: y_parent };
-        pb.move_to(nd.points.p0).line_to(pt_parent)
-    } else {
-        pb
-    }
+    let pt_parent = Point { x: nd.points.p0.x, y: nd.y_parent };
+    pb.move_to(nd.points.p0).line_to(pt_parent)
 }
 
 pub fn edge_path_arc_pol(nd: &NodeDataPol, pb: PathBuilder) -> PathBuilder {
-    if let Some(angle_parent) = nd.angle_parent {
-        pb.move_to(nd.points.p0).arc(
-            nd.angle,
-            angle_parent,
-            ORIGIN,
-            ORIGIN.distance(nd.points.p0),
-        )
-    } else {
-        pb
-    }
+    pb.move_to(nd.points.p0).arc(
+        nd.angle,
+        nd.angle_parent,
+        ORIGIN,
+        ORIGIN.distance(nd.points.p0),
+    )
 }
 
 pub fn point_cart(
@@ -160,10 +148,7 @@ pub fn edge_points_pol(
 
 pub fn node_data_cart(w: Float, h: Float, edge: &Edge) -> NodeDataCart {
     let points = edge_points_cart(w, h, edge);
-    let mut y_parent: Option<Float> = None;
-    if let Some(y) = edge.y_parent {
-        y_parent = Some(y as Float * h);
-    }
+    let y_parent = edge.y_parent as Float * h;
     NodeDataCart {
         node_id: edge.node_id,
         edge_idx: edge.edge_index,
@@ -172,7 +157,7 @@ pub fn node_data_cart(w: Float, h: Float, edge: &Edge) -> NodeDataCart {
     }
 }
 
-pub fn node_data_rad(
+pub fn node_data_pol(
     opn_angle: Float,
     rot_angle: Float,
     radius: Float,
@@ -180,10 +165,7 @@ pub fn node_data_rad(
     edge: &Edge,
 ) -> NodeDataPol {
     let angle = edge_angle(opn_angle, edge) + rot_angle;
-    let mut angle_parent: Option<Float> = None;
-    if let Some(y) = edge.y_parent {
-        angle_parent = Some(opn_angle * y as Float);
-    }
+    let angle_parent = opn_angle * edge.y_parent as Float;
     let points = edge_points_pol(angle, radius, offset, edge);
     NodeDataPol {
         node_id: edge.node_id,
@@ -209,7 +191,7 @@ pub fn prepare_nodes(
             TreSty::PhyGrm => {
                 node_data_cart(tre_vs.w, tre_vs.h, &edges[idx]).into()
             }
-            TreSty::Fan => node_data_rad(
+            TreSty::Fan => node_data_pol(
                 opn_angle, ZRO, tre_vs.radius_min, root_len, &edges[idx],
             )
             .into(),

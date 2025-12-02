@@ -122,7 +122,7 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         .height(Length::Shrink),
     );
 
-    tb_row = tb_row.push(btn_clade_label(ts.clone()));
+    tb_row = tb_row.push(btn_clade_highlight(ts.clone()));
 
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
 
@@ -634,21 +634,26 @@ pub(crate) fn btn_next_tre<'a>(enabled: bool) -> Button<'a, TvMsg> {
     .height(BTN_H2)
 }
 
-pub(crate) fn btn_clade_label<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
+pub(crate) fn btn_clade_highlight<'a>(
+    sel_tre: Rc<TreeState>,
+) -> Button<'a, TvMsg> {
     let (lab, msg) = match sel_tre.sel_node_ids().len() == 1 {
         true => {
             let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
-            match sel_tre.clade_has_label(node_id) {
+            match sel_tre.clade_has_highlight(node_id) {
                 false => (
-                    "Label",
-                    Some(TvMsg::AddCladeLabel((node_id, Clr::BLU_25))),
+                    "Highlight Clade",
+                    Some(TvMsg::AddCladeHighlight((node_id, Clr::BLU_25))),
                 ),
-                true => ("Unlabel", Some(TvMsg::RemoveCladeLabel(node_id))),
+                true => (
+                    "Remove Clade Highlight",
+                    Some(TvMsg::RemoveCladeHighlight(node_id)),
+                ),
             }
         }
-        false => ("Label", None),
+        false => ("Highlight Clade", None),
     };
-    btn_txt(lab, msg).width(BTN_H1 * TWO)
+    btn_txt(lab, msg).width(BTN_H1 * 5.0)
 }
 
 pub(crate) fn btn_root<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
@@ -706,7 +711,7 @@ pub(crate) fn btn_clear_subtree_view<'a>(
             false => None,
         },
     )
-    .width(BTN_H1 * TWO)
+    .width(BTN_H1 * 3.0)
 }
 
 pub(crate) fn pick_list_ltt_y_axis_scale_type<'a>(

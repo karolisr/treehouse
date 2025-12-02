@@ -150,7 +150,7 @@ fn path_builder_axes(
             TEMPLATE_TXT_LAB_PLOT_AXIS_X,
             false,
         );
-        let label = Label { text, width: ZRO, angle: None, aligned_from: None };
+        let label = Label { text, width: ZRO, angle: 0.0, aligned_from: None };
         labs_x.push(label);
     } // -----------------------------------------------------------------------
 
@@ -173,7 +173,7 @@ fn path_builder_axes(
             TEMPLATE_TXT_LAB_PLOT_AXIS_Y,
             false,
         );
-        let label = Label { text, width: ZRO, angle: None, aligned_from: None };
+        let label = Label { text, width: ZRO, angle: 0.0, aligned_from: None };
         labs_y.push(label);
     } // -----------------------------------------------------------------------
 
@@ -226,7 +226,7 @@ pub(super) fn draw_cursor_line(
             let name = format!("{tree_height_at_x:.3}");
             let text = lab_text(name, p, st.text_size, txt_template, false);
             let label =
-                Label { text, width: ZRO, angle: None, aligned_from: None };
+                Label { text, width: ZRO, angle: 0.0, aligned_from: None };
             draw_labels(
                 &[label],
                 Vector { x: PADDING, y: y_offset },

@@ -71,25 +71,25 @@ pub(crate) enum Zone {
 
 #[allow(dead_code)]
 #[derive(Debug)]
-pub(crate) enum CladeLabelType {
+pub(crate) enum CladeHighlightType {
     Outside,
     Inside,
 }
 
 #[allow(dead_code)]
 #[derive(Debug)]
-pub(crate) struct CladeLabel {
+pub(crate) struct CladeHighlight {
     node_id: NodeId,
     color: Color,
     label: String,
-    label_type: CladeLabelType,
+    highlight_type: CladeHighlightType,
 }
 
 #[derive(Debug, Clone, Default)]
 struct Label {
     text: CnvText,
     width: Float,
-    angle: Option<Float>,
+    angle: Float,
     aligned_from: Option<Point>,
 }
 
@@ -105,9 +105,9 @@ struct NodeData {
     node_id: NodeId,
     edge_idx: usize,
     points: EdgePoints,
-    angle: Option<Float>,
-    y_parent: Option<Float>,
-    angle_parent: Option<Float>,
+    angle: Float,
+    y_parent: Float,
+    angle_parent: Float,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -115,7 +115,7 @@ struct NodeDataCart {
     node_id: NodeId,
     edge_idx: usize,
     points: EdgePoints,
-    y_parent: Option<Float>,
+    y_parent: Float,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -124,7 +124,7 @@ struct NodeDataPol {
     edge_idx: usize,
     points: EdgePoints,
     angle: Float,
-    angle_parent: Option<Float>,
+    angle_parent: Float,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]

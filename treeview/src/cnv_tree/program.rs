@@ -63,7 +63,7 @@ impl Program<TvMsg> for TreeCnv {
                 &st.cnv_vs,
                 tst.edges_tip_tallest(),
                 is_rooted,
-                tst.has_clade_labels(),
+                tst.has_clade_highlights(),
                 st.text_w_tip.as_mut()?,
             );
             st.tre_rect = st.tre_vs.clone().into();
@@ -203,7 +203,14 @@ impl Program<TvMsg> for TreeCnv {
                         st.mouse = st.mouse_point(crsr);
                         st.mouse_angle = st.mouse_angle(crsr);
                         st.mouse_zone = st.mouse_angle_to_zone();
+
+                        let hovered_node_prev = st.hovered_node.clone();
                         st.hovered_node = st.hovered_node(edges);
+
+                        if st.hovered_node != hovered_node_prev {
+                            action = Some(Action::request_redraw());
+                        }
+
                         st.cursor_tracking_point = st.cursor_tracking_point();
                         st.mouse_is_over_tip_w_resize_area = self.draw_labs_tip
                             && self.draw_labs_allowed
@@ -216,7 +223,9 @@ impl Program<TvMsg> for TreeCnv {
                                     st.calc_tip_lab_w(),
                                 )),
                             ));
-                        } else if let Some(pt) = st.cursor_tracking_point {
+                        } else if self.draw_cursor_line
+                            && let Some(pt) = st.cursor_tracking_point
+                        {
                             let crsr_x_rel = match st.tre_sty {
                                 TreSty::PhyGrm => pt.x / st.tre_vs.w,
                                 TreSty::Fan => {
@@ -359,7 +368,7 @@ impl Program<TvMsg> for TreeCnv {
                         match k {
                             "1" => {
                                 action = Some(Action::publish(
-                                    TvMsg::AddCladeLabel((
+                                    TvMsg::AddCladeHighlight((
                                         *node_id,
                                         Clr::BLU_25,
                                     )),
@@ -367,7 +376,7 @@ impl Program<TvMsg> for TreeCnv {
                             }
                             "2" => {
                                 action = Some(Action::publish(
-                                    TvMsg::AddCladeLabel((
+                                    TvMsg::AddCladeHighlight((
                                         *node_id,
                                         Clr::CYA_25,
                                     )),
@@ -375,7 +384,7 @@ impl Program<TvMsg> for TreeCnv {
                             }
                             "3" => {
                                 action = Some(Action::publish(
-                                    TvMsg::AddCladeLabel((
+                                    TvMsg::AddCladeHighlight((
                                         *node_id,
                                         Clr::GRN_25,
                                     )),
@@ -383,7 +392,7 @@ impl Program<TvMsg> for TreeCnv {
                             }
                             "4" => {
                                 action = Some(Action::publish(
-                                    TvMsg::AddCladeLabel((
+                                    TvMsg::AddCladeHighlight((
                                         *node_id,
                                         Clr::MAG_25,
                                     )),
@@ -391,7 +400,7 @@ impl Program<TvMsg> for TreeCnv {
                             }
                             "5" => {
                                 action = Some(Action::publish(
-                                    TvMsg::AddCladeLabel((
+                                    TvMsg::AddCladeHighlight((
                                         *node_id,
                                         Clr::YEL_25,
                                     )),
@@ -399,7 +408,7 @@ impl Program<TvMsg> for TreeCnv {
                             }
                             "6" => {
                                 action = Some(Action::publish(
-                                    TvMsg::AddCladeLabel((
+                                    TvMsg::AddCladeHighlight((
                                         *node_id,
                                         Clr::RED_25,
                                     )),
@@ -502,26 +511,65 @@ impl Program<TvMsg> for TreeCnv {
             && self.drawing_enabled
         {
             let size = bnds.size();
+
             if self.draw_debug {
+                // let timer = timer("bounds");
                 draw_bounds(self, st, rndr, bnds, &mut geoms);
+                // timer.finish();
             }
-            draw_clade_labels(st, tst, rndr, size, &mut geoms);
+
+            let t = timer("clade_highlights");
+            draw_clade_highlights(st, tst, rndr, size, &mut geoms);
+            t.finish();
+
+            let t = timer("edges");
             draw_edges(self, st, tst, rndr, size, &mut geoms);
+            t.finish();
+
             if st.mouse_is_over_tip_w_resize_area
                 || st.tip_lab_w_is_being_resized
             {
+                // let t = timer("tip_lab_w_resize_area");
                 draw_tip_lab_w_resize_area(self, st, rndr, bnds, &mut geoms);
+                // t.finish();
             }
+
+            // let t = timer("hovered_node");
             draw_hovered_node(self, st, tst, rndr, size, &mut geoms);
+            // t.finish();
+
+            // let t = timer("legend");
             draw_legend(self, st, tst, rndr, size, &mut geoms);
+            // t.finish();
+
+            // let t = timer("cursor_line");
             draw_cursor_line(self, st, rndr, size, &mut geoms);
+            // t.finish();
+
+            let t = timer("labs_tip");
             draw_labs_tip(self, st, tst, rndr, size, &mut geoms);
+            t.finish();
+
+            let t = timer("labs_int");
             draw_labs_int(self, st, tst, rndr, size, &mut geoms);
+            t.finish();
+
+            let t = timer("labs_brnch");
             draw_labs_brnch(self, st, tst, rndr, size, &mut geoms);
+            t.finish();
+
+            let t = timer("selected_nodes");
             draw_selected_nodes(st, tst, rndr, size, &mut geoms);
+            t.finish();
+
+            let t = timer("filtered_nodes");
             draw_filtered_nodes(self, st, tst, rndr, size, &mut geoms);
+            t.finish();
+
             if self.draw_debug {
+                // let t = timer("palette");
                 draw_palette(self, st, thm, rndr, size, &mut geoms);
+                // t.finish();
             }
         }
         geoms

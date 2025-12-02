@@ -1,5 +1,5 @@
 use crate::consts::{STRK_EDGE, STRK_EDGE_LAB_ALN, STRK_ROOT};
-use crate::edge_utils::{node_data_cart, node_data_rad};
+use crate::edge_utils::{node_data_cart, node_data_pol};
 use crate::path_builders::{
     path_clade_highlight, path_edges_fan, path_edges_phygrm,
     path_root_edge_fan, path_root_edge_phygrm,
@@ -47,7 +47,7 @@ pub fn tree_to_pdf(
     draw_labs_tip: bool,
     draw_labs_int: bool,
     draw_labs_brnch: bool,
-    draw_clade_labs: bool,
+    draw_clade_highlights: bool,
     _draw_legend: bool,
     draw_debug: bool,
     // --------------------------------
@@ -115,19 +115,19 @@ pub fn tree_to_pdf(
     };
 
     // Clade highlights --------------------------------------------------------
-    if draw_clade_labs {
-        let labeled_clades = tree_state.labeled_clades();
+    if draw_clade_highlights {
+        let highlighted_clades = tree_state.highlighted_clades();
         for node_id in tree_state.node_ids_srtd_asc() {
-            if labeled_clades.contains_key(&node_id) {
-                let clade_label = labeled_clades.get(&node_id).unwrap();
+            if highlighted_clades.contains_key(&node_id) {
+                let clade_highlight = highlighted_clades.get(&node_id).unwrap();
 
                 let iced_path = path_clade_highlight(
                     node_id, &tree_state, tre_w as Float, tre_h as Float,
                     radius as Float, root_len as Float, opn_angle, tree_style,
                 );
 
-                let color = color_from_iced_color(clade_label.color);
-                let alpha = alpha_from_iced_color(clade_label.color);
+                let color = color_from_iced_color(clade_highlight.color);
+                let alpha = alpha_from_iced_color(clade_highlight.color);
 
                 _ = pg.graphics().save_state();
                 _ = apply_iced_path_to_gc(iced_path.clone(), pg.graphics());
@@ -179,7 +179,7 @@ pub fn tree_to_pdf(
             TreSty::PhyGrm => {
                 node_data_cart(tre_w as Float, tre_h as Float, edge).into()
             }
-            TreSty::Fan => node_data_rad(
+            TreSty::Fan => node_data_pol(
                 opn_angle, 0e0, radius as Float, root_len as Float, edge,
             )
             .into(),
@@ -189,14 +189,7 @@ pub fn tree_to_pdf(
     let font = Font::Courier.with_recommended_encoding();
     for nd in node_data {
         let edge = &edges[nd.edge_idx];
-
-        let mut angle = 0e0;
-
-        if let Some(a) = nd.angle {
-            angle = a as f64;
-        }
-
-        if edge.parent_node_id.is_some() && draw_labs_brnch {
+        if edge.parent_node_id != edge.node_id && draw_labs_brnch {
             let text = format!("{:.3}", edge.branch_length);
             let text_w = measure_text(&text, font.font.clone(), lab_size_brnch);
             write_text(
@@ -208,7 +201,7 @@ pub fn tree_to_pdf(
                 -text_w / 2e0,
                 lab_offset_brnch,
                 None,
-                angle,
+                nd.angle as f64,
                 rot_angle,
                 font.font.clone(),
                 scaling,
@@ -259,7 +252,7 @@ pub fn tree_to_pdf(
                 lab_offset_x,
                 lab_offset_y,
                 align_at,
-                angle,
+                nd.angle as f64,
                 rot_angle,
                 font.font.clone(),
                 scaling,

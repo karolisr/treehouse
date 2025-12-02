@@ -3,8 +3,8 @@ use crate::*;
 
 pub fn path_edges_phygrm(edges: &[Edge], w: Float, h: Float) -> IcedPath {
     let mut pb: PathBuilder = PathBuilder::new();
-    for e in edges {
-        let nd = node_data_cart(w, h, e);
+    let nds = edges.iter().map(|edge| node_data_cart(w, h, edge));
+    for nd in nds {
         pb = edge_path_cart(&nd, pb);
         pb = edge_path_vert_cart(&nd, pb);
     }
@@ -19,8 +19,10 @@ pub fn path_edges_fan(
 ) -> IcedPath {
     let mut pb: PathBuilder = PathBuilder::new();
     if opn_angle >= ONE.to_radians() {
-        for e in edges {
-            let nd = node_data_rad(opn_angle, ZRO, radius, root_len, e);
+        let nds = edges
+            .iter()
+            .map(|edge| node_data_pol(opn_angle, ZRO, radius, root_len, edge));
+        for nd in nds {
             pb = edge_path_pol(&nd, pb);
             pb = edge_path_arc_pol(&nd, pb);
         }
@@ -50,7 +52,7 @@ pub fn path_root_edge_fan(
     root_edge: &Edge,
 ) -> IcedPath {
     let nd: NodeDataPol =
-        node_data_rad(opn_angle, ZRO, radius, root_len, root_edge);
+        node_data_pol(opn_angle, ZRO, radius, root_len, root_edge);
     PathBuilder::new().move_to(ORIGIN).line_to(nd.points.p0).build()
 }
 
@@ -80,10 +82,8 @@ pub fn path_clade_highlight_phygrm(
     w: Float,
     h: Float,
 ) -> IcedPath {
-    let mut pb: PathBuilder = PathBuilder::new();
-
     let bounding_edges_opt = tree_state.bounding_edges_for_clade(node_id);
-
+    let mut pb: PathBuilder = PathBuilder::new();
     if let Some((edges_top, edges_bottom)) = bounding_edges_opt
         && !edges_top.is_empty()
         && !edges_bottom.is_empty()
@@ -94,21 +94,17 @@ pub fn path_clade_highlight_phygrm(
             pb = pb.move_to(top_right);
         }
 
-        for e in &edges_top {
-            let nd = node_data_cart(w, h, e);
+        for edge in &edges_top {
+            let nd = node_data_cart(w, h, edge);
             pb = pb.line_to(nd.points.p0);
-            if let Some(y_parent) = nd.y_parent {
-                let pt_parent = Point { x: nd.points.p0.x, y: y_parent };
-                pb = pb.line_to(pt_parent);
-            }
+            let pt_parent = Point { x: nd.points.p0.x, y: nd.y_parent };
+            pb = pb.line_to(pt_parent);
         }
 
-        for e in &edges_bottom {
-            let nd = node_data_cart(w, h, e);
-            if let Some(y_parent) = nd.y_parent {
-                let pt_parent = Point { x: nd.points.p0.x, y: y_parent };
-                pb = pb.line_to(pt_parent);
-            }
+        for edge in &edges_bottom {
+            let nd = node_data_cart(w, h, edge);
+            let pt_parent = Point { x: nd.points.p0.x, y: nd.y_parent };
+            pb = pb.line_to(pt_parent);
             pb = pb.line_to(nd.points.p0);
         }
 
@@ -130,15 +126,13 @@ pub fn path_clade_highlight_fan(
     root_len: Float,
     opn_angle: Float,
 ) -> IcedPath {
-    let mut pb: PathBuilder = PathBuilder::new();
-
     let bounding_edges_opt = tree_state.bounding_edges_for_clade(node_id);
-
+    let mut pb: PathBuilder = PathBuilder::new();
     if let Some((edges_top, edges_bottom)) = bounding_edges_opt
         && !edges_top.is_empty()
         && !edges_bottom.is_empty()
     {
-        let nd = node_data_rad(
+        let nd = node_data_pol(
             opn_angle,
             ZRO,
             radius,
@@ -150,33 +144,29 @@ pub fn path_clade_highlight_fan(
         let top_right = point_pol(angle_top, radius, root_len, ONE);
         pb = pb.move_to(top_right);
 
-        for e in &edges_top {
-            let nd = node_data_rad(opn_angle, ZRO, radius, root_len, e);
+        for edge in &edges_top {
+            let nd = node_data_pol(opn_angle, ZRO, radius, root_len, edge);
             pb = pb.line_to(nd.points.p0);
-            if let Some(angle_parent) = nd.angle_parent {
-                pb = pb.arc(
-                    nd.angle,
-                    angle_parent,
-                    ORIGIN,
-                    ORIGIN.distance(nd.points.p0),
-                );
-            }
+            pb = pb.arc(
+                nd.angle,
+                nd.angle_parent,
+                ORIGIN,
+                ORIGIN.distance(nd.points.p0),
+            );
         }
 
-        for e in &edges_bottom {
-            let nd = node_data_rad(opn_angle, ZRO, radius, root_len, e);
-            if let Some(angle_parent) = nd.angle_parent {
-                pb = pb.arc(
-                    angle_parent,
-                    nd.angle,
-                    ORIGIN,
-                    ORIGIN.distance(nd.points.p0),
-                );
-            }
+        for edge in &edges_bottom {
+            let nd = node_data_pol(opn_angle, ZRO, radius, root_len, edge);
+            pb = pb.arc(
+                nd.angle_parent,
+                nd.angle,
+                ORIGIN,
+                ORIGIN.distance(nd.points.p0),
+            );
             pb = pb.line_to(nd.points.p1);
         }
 
-        let nd = node_data_rad(
+        let nd = node_data_pol(
             opn_angle,
             ZRO,
             radius,

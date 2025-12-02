@@ -25,20 +25,19 @@ pub(super) fn draw_bounds(
     }));
 }
 
-pub(super) fn draw_clade_labels(
+pub(super) fn draw_clade_highlights(
     st: &St,
     tst: &TreeState,
     rndr: &Renderer,
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(tst.cache_cnv_clade_labels().draw(rndr, sz, |f| {
-        let labeled_clades = tst.labeled_clades();
-        for node_id in tst.node_ids_srtd_asc() {
-            if labeled_clades.contains_key(&node_id) {
-                let clade_label = labeled_clades.get(&node_id).unwrap();
-                draw_clade_highlight(node_id, clade_label.color, st, tst, f);
-            }
+    g.push(tst.cache_cnv_clade_highlights().draw(rndr, sz, |f| {
+        let highlighted_clades = tst.highlighted_clades_ordered();
+        for clade_highlight in highlighted_clades {
+            draw_clade_highlight(
+                clade_highlight.node_id, clade_highlight.color, st, tst, f,
+            );
         }
     }));
 }
@@ -284,18 +283,6 @@ pub(super) fn draw_filtered_nodes(
     g: &mut Vec<Geometry>,
 ) {
     g.push(tst.cache_cnv_filtered_nodes().draw(rndr, sz, |f| {
-        // let points: Vec<Point> =
-        //     st.filtered_nodes.par_iter().map(|nd| nd.points.p1).collect();
-        // draw_nodes(
-        //     &points,
-        //     st.node_radius + SF * TWO,
-        //     STRK_NODE_FILTERED,
-        //     FILL_NODE_FILTERED,
-        //     Some(st.translation),
-        //     st.rotation,
-        //     f,
-        // );
-
         let edges = tst.edges().unwrap();
         let found_edges: Vec<Edge> = tst
             .found_edge_idxs()
@@ -407,12 +394,8 @@ fn draw_scale_bar(
         TEMPLATE_TXT_LAB_SCALEBAR,
         false,
     );
-    let lab = Label {
-        text,
-        width: sb_len_on_screen,
-        angle: None,
-        aligned_from: None,
-    };
+    let lab =
+        Label { text, width: sb_len_on_screen, angle: 0.0, aligned_from: None };
     draw_labels(&[lab], Vector { x: ZRO, y: lab_y_offset }, None, ZRO, f);
 }
 
@@ -494,8 +477,8 @@ fn stroke_edges_cladogram(
     f: &mut Frame,
 ) {
     let mut pb: PathBuilder = PathBuilder::new();
-    for e in edges {
-        let nd: NodeDataCart = node_data_cart(tre_vs.w, tre_vs.h, e);
+    for edge in edges {
+        let nd: NodeDataCart = node_data_cart(tre_vs.w, tre_vs.h, edge);
         pb = edge_path_diag_cart(&nd, pb);
     }
 
@@ -593,8 +576,8 @@ pub(super) fn node_labs(
 
                 let mut lab_pt: Point = nd.points.p1;
                 if let Some(align_at) = align_at {
-                    if let Some(angle) = nd.angle {
-                        lab_pt = point_pol(angle, align_at, ZRO, ONE);
+                    if nd.angle != 0.0 {
+                        lab_pt = point_pol(nd.angle, align_at, ZRO, ONE);
                     } else {
                         lab_pt = Point { y: lab_pt.y, x: align_at }
                     }
@@ -622,7 +605,7 @@ pub(super) fn node_labs(
                     angle: nd.angle,
                     aligned_from: Some(nd.points.p1),
                 })
-            } else if branch && edge.parent_node_id.is_some() {
+            } else if branch && edge.parent_node_id != edge.node_id {
                 let txt_tmpl = TEMPLATE_TXT_LAB_BRANCH;
                 let name = format!("{:.3}", edge.branch_length);
                 let width = text_w.width(&name);

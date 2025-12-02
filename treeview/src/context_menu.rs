@@ -25,7 +25,7 @@ impl TvContextMenuListing {
             .push(TvMsg::Root(node_id), Some(tree_state))
             .push(TvMsg::SetSubtreeView(node_id), Some(tree_state))
             .push(
-                TvMsg::AddRemoveCladeLabel((node_id, Clr::GRN_25)),
+                TvMsg::AddRemoveCladeHighlight((node_id, Clr::GRN_25)),
                 Some(tree_state),
             )
             .set_position(position)
@@ -73,10 +73,10 @@ impl TvContextMenuListing {
                     label: "View subtree",
                 },
 
-                TvMsg::AddRemoveCladeLabel((node_id, _)) => {
-                    let label = match tree_state.clade_has_label(node_id) {
-                        true => "Unlabel",
-                        false => "Label",
+                TvMsg::AddRemoveCladeHighlight((node_id, _)) => {
+                    let label = match tree_state.clade_has_highlight(node_id) {
+                        true => "Remove Clade Highlight",
+                        false => "Highlight Clade",
                     };
                     Values { enabled: true, label }
                 }

@@ -127,10 +127,10 @@ pub enum TvMsg {
     NodesTableSortColumnChanged(EdgeSortField),
     NodesTableScrolledOrResized(Viewport),
     // -------------------------------------------------------------------------
-    AddCladeLabel((NodeId, Color)),
-    RemoveCladeLabel(NodeId),
-    AddRemoveCladeLabel((NodeId, Color)),
-    AddRemoveCladeLabelForSelectedNode,
+    AddCladeHighlight((NodeId, Color)),
+    RemoveCladeHighlight(NodeId),
+    AddRemoveCladeHighlight((NodeId, Color)),
+    AddRemoveCladeHighlightForSelectedNode,
     // -------------------------------------------------------------------------
     TreCnvScrolledOrResized(Viewport),
     LttCnvScrolledOrResized(Viewport),
@@ -229,9 +229,9 @@ impl TreeView {
         Self::default()
     }
 
-    fn tree_has_clade_labels(&self) -> bool {
+    fn tree_has_clade_highlights(&self) -> bool {
         if let Some(tree) = self.sel_tre() {
-            tree.has_clade_labels()
+            tree.has_clade_highlights()
         } else {
             false
         }
@@ -291,8 +291,8 @@ impl TreeView {
                         self.tre_cnv.trim_tip_labs,
                         self.tre_cnv.trim_tip_labs_to_nchar, draw_labs_tip,
                         draw_labs_int, draw_labs_brnch,
-                        self.tre_cnv.draw_clade_labs, self.tre_cnv.draw_legend,
-                        self.tre_cnv.draw_debug,
+                        self.tre_cnv.draw_clade_highlights,
+                        self.tre_cnv.draw_legend, self.tre_cnv.draw_debug,
                     );
                 }
             }
@@ -322,41 +322,41 @@ impl TreeView {
                 task = Some(Task::done(msg));
             }
 
-            TvMsg::AddCladeLabel((node_id, color)) => {
+            TvMsg::AddCladeHighlight((node_id, color)) => {
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
-                    tre.add_clade_label(
+                    tre.add_clade_highlight(
                         node_id,
                         color,
                         node_id,
-                        CladeLabelType::Inside,
+                        CladeHighlightType::Inside,
                     );
                 });
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_cnv_all();
             }
 
-            TvMsg::RemoveCladeLabel(node_id) => {
+            TvMsg::RemoveCladeHighlight(node_id) => {
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
-                    tre.remove_clade_label(node_id);
+                    tre.remove_clade_highlight(node_id);
                 });
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_cnv_all();
             }
 
-            TvMsg::AddRemoveCladeLabel((node_id, color)) => {
+            TvMsg::AddRemoveCladeHighlight((node_id, color)) => {
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
-                    tre.add_remove_clade_label(
+                    tre.add_remove_clade_highlight(
                         node_id,
                         color,
                         node_id,
-                        CladeLabelType::Inside,
+                        CladeHighlightType::Inside,
                     );
                 });
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_cnv_all();
             }
 
-            TvMsg::AddRemoveCladeLabelForSelectedNode => {
+            TvMsg::AddRemoveCladeHighlightForSelectedNode => {
                 if let Some(sel_tre) = self.sel_tre() {
                     if let Some(node_id) = match sel_tre.sel_node_ids().len()
                         == 1
@@ -364,10 +364,11 @@ impl TreeView {
                         true => sel_tre.sel_node_ids().iter().last().copied(),
                         false => None,
                     } {
-                        task = Some(Task::done(TvMsg::AddRemoveCladeLabel((
-                            node_id,
-                            Clr::RED_25,
-                        ))));
+                        task =
+                            Some(Task::done(TvMsg::AddRemoveCladeHighlight((
+                                node_id,
+                                Clr::RED_25,
+                            ))));
                     }
                 }
             }
@@ -574,8 +575,6 @@ impl TreeView {
                     self.tre_cnv.lab_offset_tip = SF * 3e0;
                     self.tre_cnv.lab_offset_int = SF * 3e0;
                     self.tre_cnv.lab_offset_brnch = -SF * 3e0;
-
-                    // self.tre_cnv.clade_labs_w = SF * TEN;
 
                     self.tre_cnv.root_len_frac = self.calc_root_len_frac();
 
@@ -1257,7 +1256,7 @@ impl TreeView {
                 &cnv_vs,
                 sel_tre.edges_tip_tallest(),
                 self.is_rooted(),
-                self.tree_has_clade_labels(),
+                self.tree_has_clade_highlights(),
                 self.text_w_tip.as_mut().unwrap(),
             );
         }
@@ -1278,7 +1277,7 @@ impl TreeView {
                 }
             }
             TreSty::Fan => {
-                node_data_rad(
+                node_data_pol(
                     self.tre_cnv.opn_angle, self.tre_cnv.rot_angle,
                     self.tre_cnv.tre_vs.radius_min, root_len, edge,
                 )
