@@ -74,6 +74,7 @@ pub use i::{
     Settings as IcedAppSettings, Shadow, Size, Subscription, Task, Vector,
     daemon, exit,
 };
+pub use w::button;
 pub use w::button::{Button, Status as ButtonStatus, Style as ButtonStyle};
 pub use w::canvas::{
     Action, Cache as CnvCache, Canvas as Cnv, Frame, Geometry, Program,
@@ -136,4 +137,6 @@ pub use w::text_input::{
     Status as TextInputStatus, Style as TextInputStyle, TextInput,
 };
 pub use w::toggler::{Status as TogglerStatus, Style as TogglerStyle, Toggler};
+pub use w::tooltip;
+pub use w::tooltip::Position as TooltipPosition;
 pub use w::{Column, Row, opaque, stack};

@@ -9,7 +9,7 @@ use treeview::TvContextMenuListing;
 
 use crate::AppMsg;
 
-use super::AppMenuAction;
+use super::MenuItemId;
 
 #[allow(missing_debug_implementations)]
 #[derive(Default, Clone)]
@@ -74,7 +74,7 @@ impl From<TvContextMenuListing> for ContextMenu {
         let muda_menu = muda::Menu::new();
         tv_context_menu_listing.items().iter().enumerate().for_each(
             |(idx, item)| {
-                let mii = AppMenuAction::ContextMenuIndex(idx);
+                let mii = MenuItemId::ContextMenuIndex(idx);
                 let mmi = MenuItem::with_id(
                     mii,
                     item.label.clone(),

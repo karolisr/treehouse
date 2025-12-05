@@ -17,8 +17,8 @@ use treeview::TvContextMenuListing;
 use crate::AppMsg;
 
 use super::AppMenu;
-use super::AppMenuAction;
 use super::MenuItem;
+use super::MenuItemId;
 
 pub fn show_context_menu(
     tree_view_context_menu_listing: TvContextMenuListing,
@@ -56,14 +56,18 @@ impl ContextMenu {
     fn context_menu_container(&self) -> Container<'_, AppMsg> {
         let mut btns: Vec<Element<'_, AppMsg>> = Vec::new();
         for item in &self.menu.items {
-            let btn: Button<'_, AppMsg> = btn_txt(
-                &item.label,
-                match item.enabled {
-                    true => Some(AppMsg::MenuEvent(item.id.clone())),
-                    false => None,
-                },
-            );
-            btns.push(btn.width(SF * 100.0).into());
+            match item {
+                MenuItem::Item { id, label, enabled, .. } => {
+                    let btn: Button<'_, AppMsg> = btn_txt(
+                        label,
+                        match enabled {
+                            true => Some(AppMsg::MenuEvent(id.clone())),
+                            false => None,
+                        },
+                    );
+                    btns.push(btn.width(SF * 100.0).into());
+                }
+            }
         }
         container(Column::from_vec(btns).spacing(PADDING).padding(PADDING))
             .style(sty_cont_message)
@@ -75,10 +79,11 @@ impl From<TvContextMenuListing> for ContextMenu {
         let mut menu_items: Vec<MenuItem> = Vec::new();
         tv_context_menu_listing.items().iter().enumerate().for_each(
             |(idx, item)| {
-                let menu_item = MenuItem::new(
-                    AppMenuAction::ContextMenuIndex(idx),
+                let menu_item = MenuItem::new_item(
+                    MenuItemId::ContextMenuIndex(idx),
                     item.label.clone(),
                     item.enabled,
+                    None,
                 );
                 menu_items.push(menu_item);
             },
