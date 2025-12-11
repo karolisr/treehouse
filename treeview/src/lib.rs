@@ -29,7 +29,7 @@ mod view;
 
 pub type Float = f32;
 
-pub use context_menu::{TvContextMenuItem, TvContextMenuListing};
+pub use context_menu::{TvContextMenuItem, TvContextMenuSpecification};
 pub use riced::{SF, TXT_SIZE};
 pub use treeview::{TreeView, TvMsg};
 

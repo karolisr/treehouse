@@ -23,6 +23,7 @@ pub const WIDGET_RADIUS: Float = WIDGET_H_UNIT - SF;
 pub const PADDING: Float = WIDGET_H_UNIT + SF;
 pub const BTN_H1: Float = WIDGET_H_UNIT * FIVE + SF * TWO;
 pub const BTN_H2: Float = BTN_H1 - SF * TWO;
+pub const BTN_H_MENU: Float = WIDGET_H_UNIT * FOUR + SF * TWO;
 pub const SLIDER_H: Float = WIDGET_H_UNIT * THREE;
 pub const TOGGLER_H: Float = WIDGET_H_UNIT * THREE + SF;
 pub const CHECKBOX_H: Float = WIDGET_H_UNIT * THREE;

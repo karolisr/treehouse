@@ -308,10 +308,10 @@ impl Program<TvMsg> for TreeCnv {
                                     && self.tip_w_set_by_user.is_some()
                                     && let Some(position) = crsr.position()
                                 {
-                                    let listing = TvContextMenuListing::for_tip_lab_w_resize_area(position);
+                                    let specification = TvContextMenuSpecification::for_tip_lab_w_resize_area(position);
                                     action = Some(Action::publish(
                                         TvMsg::ContextMenuInteractionBegin(
-                                            listing,
+                                            specification,
                                         ),
                                     ));
                                 } else if let Some((node_id, _)) =
@@ -320,7 +320,7 @@ impl Program<TvMsg> for TreeCnv {
                                 {
                                     action = Some(Action::publish(
                                         TvMsg::ContextMenuInteractionBegin(
-                                            TvContextMenuListing::for_node(
+                                            TvContextMenuSpecification::for_node(
                                                 *node_id, tst, position,
                                             ),
                                         ),

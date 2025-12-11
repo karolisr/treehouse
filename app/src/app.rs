@@ -15,29 +15,29 @@ use riced::{
     window_events,
 };
 use std::path::PathBuf;
-use treeview::{TreeView, TvContextMenuListing, TvMsg};
+use treeview::{TreeView, TvContextMenuSpecification, TvMsg};
 use window::window_settings;
 
 pub struct App {
     winid: Option<WindowId>,
     treeview: Option<TreeView>,
     menu: Option<AppMenu>,
+    #[cfg(feature = "menu-custom")]
+    active_context_menu: Option<ContextMenu>,
     title: Option<String>,
     error: Option<String>,
     explain: bool,
-    #[cfg(feature = "menu-custom")]
-    active_context_menu: Option<ContextMenu>,
 }
 
 #[derive(Debug, Clone)]
 pub enum AppMsg {
     Other(Option<String>),
-    MenuEvent(MenuItemId),
+    MenuEvent(AppMenuItemId),
     // -------------------------------------------------------------------------
     ErrorSet(String),
     ErrorClear,
     // -------------------------------------------------------------------------
-    ShowContextMenu(TvContextMenuListing),
+    ShowTvContextMenu(TvContextMenuSpecification),
     #[cfg(feature = "menu-custom")]
     SetCustomContextMenu(ContextMenu),
     #[cfg(feature = "menu-custom")]
@@ -166,7 +166,7 @@ impl App {
 
             AppMsg::ErrorClear => {
                 if let Some(menu) = &mut self.menu {
-                    menu.enable(&MenuItemId::OpenFile);
+                    menu.enable(AppMenuItemId::OpenFile);
                 }
                 self.error = None;
             }
@@ -204,17 +204,17 @@ impl App {
                                 }
                                 "o" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
-                                        MenuItemId::OpenFile,
+                                        AppMenuItemId::OpenFile,
                                     )));
                                 }
                                 "s" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
-                                        MenuItemId::SaveAs,
+                                        AppMenuItemId::SaveAs,
                                     )));
                                 }
                                 "p" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
-                                        MenuItemId::ExportPdf,
+                                        AppMenuItemId::ExportPdf,
                                     )));
                                 }
                                 _ => {}
@@ -226,7 +226,7 @@ impl App {
                             match k {
                                 "w" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
-                                        MenuItemId::CloseWindow,
+                                        AppMenuItemId::CloseWindow,
                                     )));
                                 }
                                 _ => {}
@@ -235,7 +235,7 @@ impl App {
                             match k {
                                 "q" => {
                                     task = Some(Task::done(AppMsg::MenuEvent(
-                                        MenuItemId::CloseWindow,
+                                        AppMenuItemId::CloseWindow,
                                     )));
                                 }
                                 _ => {}
@@ -272,18 +272,17 @@ impl App {
                 }
             }
 
-            AppMsg::MenuEvent(miid) => {
+            AppMsg::MenuEvent(app_menu_item_id) => {
                 if let Some(menu) = &mut self.menu {
-                    menu.update(&miid);
+                    menu.update(app_menu_item_id.clone());
                 }
-                task = Some(Task::done(miid.into()));
+                task = Some(Task::done(app_menu_item_id.into()));
             }
 
-            AppMsg::ShowContextMenu(tree_view_context_menu_listing) => {
+            AppMsg::ShowTvContextMenu(specification) => {
                 if let Some(winid) = self.winid {
-                    let task_to_return = show_context_menu(
-                        tree_view_context_menu_listing, winid,
-                    );
+                    let task_to_return =
+                        show_tv_context_menu(specification, winid);
                     task = Some(task_to_return);
                 }
             }
@@ -304,28 +303,33 @@ impl App {
                         treeview.update(tv_msg.clone()).map(AppMsg::TvMsg),
                     );
                     match tv_msg {
-                        TvMsg::ContextMenuInteractionBegin(
-                            tree_view_context_menu_listing,
-                        ) => {
-                            task = Some(Task::done(AppMsg::ShowContextMenu(
-                                tree_view_context_menu_listing,
+                        TvMsg::ContextMenuInteractionBegin(specification) => {
+                            task = Some(Task::done(AppMsg::ShowTvContextMenu(
+                                specification,
                             )));
                         }
 
                         #[cfg(feature = "menu-custom")]
                         TvMsg::ContextMenuChosenIdx(_) => {
-                            self.active_context_menu = None;
+                            if let Some(current_task) = task {
+                                task = Some(current_task.chain(Task::done(
+                                    AppMsg::HideContextMenu,
+                                )));
+                            } else {
+                                task =
+                                    Some(Task::done(AppMsg::HideContextMenu));
+                            }
                         }
 
                         TvMsg::SetSubtreeView(_node_id) => {
                             if let Some(menu) = &mut self.menu {
-                                menu.enable(&MenuItemId::ExportSubtree);
+                                menu.enable(AppMenuItemId::ExportSubtree);
                             }
                         }
 
                         TvMsg::ClearSubtreeView => {
                             if let Some(menu) = &mut self.menu {
-                                menu.disable(&MenuItemId::ExportSubtree);
+                                menu.disable(AppMenuItemId::ExportSubtree);
                             }
                         }
 
@@ -366,13 +370,13 @@ impl App {
                                             .to_string(),
                                     );
                                     if let Some(menu) = &mut self.menu {
-                                        menu.enable(&MenuItemId::SaveAs);
-                                        menu.enable(&MenuItemId::ExportPdf);
+                                        menu.enable(AppMenuItemId::SaveAs);
+                                        menu.enable(AppMenuItemId::ExportPdf);
                                         menu.enable(
-                                            &MenuItemId::ToggleSearchBar,
+                                            AppMenuItemId::ToggleSearchBar,
                                         );
                                         menu.disable(
-                                            &MenuItemId::ExportSubtree,
+                                            AppMenuItemId::ExportSubtree,
                                         );
                                     };
                                     task = Some(Task::done(AppMsg::TvMsg(
@@ -381,9 +385,9 @@ impl App {
                                 }
                                 Err(error) => {
                                     if let Some(menu) = &mut self.menu {
-                                        menu.disable(&MenuItemId::OpenFile);
-                                        menu.disable(&MenuItemId::SaveAs);
-                                        menu.disable(&MenuItemId::ExportPdf);
+                                        menu.disable(AppMenuItemId::OpenFile);
+                                        menu.disable(AppMenuItemId::SaveAs);
+                                        menu.disable(AppMenuItemId::ExportPdf);
                                     };
                                     task = Some(Task::done(AppMsg::ErrorSet(
                                         error.to_string(),
@@ -393,9 +397,9 @@ impl App {
                         }
                         Err(file_read_error) => {
                             if let Some(menu) = &mut self.menu {
-                                menu.disable(&MenuItemId::OpenFile);
-                                menu.disable(&MenuItemId::SaveAs);
-                                menu.disable(&MenuItemId::ExportPdf);
+                                menu.disable(AppMenuItemId::OpenFile);
+                                menu.disable(AppMenuItemId::SaveAs);
+                                menu.disable(AppMenuItemId::ExportPdf);
                             };
                             task = Some(Task::done(AppMsg::ErrorSet(
                                 file_read_error.to_string(),
@@ -470,10 +474,10 @@ impl App {
             }
 
             AppMsg::AppInitialized => {
-                self.menu = AppMenu::new();
+                self.menu = Some(AppMenu::new());
                 if let Some(menu) = &mut self.menu {
-                    menu.disable(&MenuItemId::SaveAs);
-                    menu.disable(&MenuItemId::ExportPdf);
+                    menu.disable(AppMenuItemId::SaveAs);
+                    menu.disable(AppMenuItemId::ExportPdf);
                 }
                 task = Some(Task::done(AppMsg::WinOpen));
             }
@@ -510,7 +514,7 @@ impl App {
 
             AppMsg::WinOpened => {
                 if let Some(menu) = &mut self.menu {
-                    menu.enable(&MenuItemId::CloseWindow);
+                    menu.enable(AppMenuItemId::CloseWindow);
                 }
 
                 #[cfg(any(
@@ -591,11 +595,11 @@ impl App {
 
             AppMsg::WinClosed => {
                 if let Some(menu) = &mut self.menu {
-                    menu.disable(&MenuItemId::CloseWindow);
-                    menu.disable(&MenuItemId::SaveAs);
-                    menu.disable(&MenuItemId::ExportPdf);
-                    menu.disable(&MenuItemId::ExportSubtree);
-                    menu.disable(&MenuItemId::ToggleSearchBar);
+                    menu.disable(AppMenuItemId::CloseWindow);
+                    menu.disable(AppMenuItemId::SaveAs);
+                    menu.disable(AppMenuItemId::ExportPdf);
+                    menu.disable(AppMenuItemId::ExportSubtree);
+                    menu.disable(AppMenuItemId::ToggleSearchBar);
                 }
                 task = Some(Task::done(AppMsg::Quit));
             }

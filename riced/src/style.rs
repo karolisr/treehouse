@@ -319,6 +319,27 @@ pub fn sty_table_cell_selected(theme: &Theme) -> ContainerStyle {
     }
 }
 
+pub fn sty_cont_menu_bar(theme: &Theme) -> ContainerStyle {
+    let pb = theme.palette();
+    let ep = theme.extended_palette();
+
+    ContainerStyle {
+        text_color: Some(pb.text),
+        background: Some(ep.background.weakest.color.into()),
+        border: Border {
+            width: BORDER_W,
+            color: ep.background.strong.color,
+            radius: 0.0.into(),
+        },
+        shadow: Shadow {
+            color: ep.background.strong.color.scale_alpha(0.77),
+            offset: Vector { x: ZERO, y: ZERO },
+            blur_radius: PADDING - PADDING / THREE,
+        },
+        snap: cfg!(feature = "crisp"),
+    }
+}
+
 pub(crate) fn sty_svg_plain(theme: &Theme, status: SvgStatus) -> SvgStyle {
     let ep = theme.extended_palette();
     let color = match status {

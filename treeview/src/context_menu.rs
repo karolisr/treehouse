@@ -10,12 +10,12 @@ pub struct TvContextMenuItem {
 }
 
 #[derive(Default, Debug, Clone)]
-pub struct TvContextMenuListing {
+pub struct TvContextMenuSpecification {
     items: Vec<TvContextMenuItem>,
     position: Point,
 }
 
-impl TvContextMenuListing {
+impl TvContextMenuSpecification {
     pub(crate) fn for_node(
         node_id: NodeId,
         tree_state: &TreeState,
@@ -102,23 +102,27 @@ impl TvContextMenuListing {
     }
 }
 
-impl Display for TvContextMenuListing {
+impl Display for TvContextMenuSpecification {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let mut s: String = String::new();
 
         s.push_str(
-            format!("{:0.2} {:0.2}", self.position.x, self.position.y).as_str(),
+            format!(
+                "    position: {:0.2}, {:0.2}\n    items:",
+                self.position.x, self.position.y
+            )
+            .as_str(),
         );
 
         self.items().iter().enumerate().for_each(|(i, item)| {
             s.push_str(
                 format!(
-                    "\n\t{i}: {} [enabled={}] {:?}",
+                    "\n      {i}: {} [enabled={}] {:?}",
                     item.label, item.enabled, item.msg
                 )
                 .as_str(),
             );
         });
-        writeln!(f, "{s}")
+        write!(f, "{s}")
     }
 }

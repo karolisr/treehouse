@@ -74,13 +74,13 @@ pub struct TreeView {
     // -------------------------------------------------------------------------
     text_w_tip: Option<TextWidth<'static>>,
     // -------------------------------------------------------------------------
-    pending_context_menu_listing: TvContextMenuListing,
+    pending_context_menu_specification: TvContextMenuSpecification,
 }
 
 #[derive(Debug, Clone)]
 pub enum TvMsg {
     // -------------------------------------------------------------------------
-    ContextMenuInteractionBegin(TvContextMenuListing),
+    ContextMenuInteractionBegin(TvContextMenuSpecification),
     ContextMenuChosenIdx(usize),
     // -------------------------------------------------------------------------
     ExportPdf(std::path::PathBuf),
@@ -219,7 +219,8 @@ impl Default for TreeView {
                 FNT_NAME_LAB,
             )),
             // -----------------------------------------------------------------
-            pending_context_menu_listing: TvContextMenuListing::default(),
+            pending_context_menu_specification:
+                TvContextMenuSpecification::default(),
         }
     }
 }
@@ -307,18 +308,16 @@ impl TreeView {
                 self.clear_caches_cnv_all();
             }
 
-            TvMsg::ContextMenuInteractionBegin(
-                tree_view_context_menu_listing,
-            ) => {
-                self.pending_context_menu_listing =
-                    tree_view_context_menu_listing;
+            TvMsg::ContextMenuInteractionBegin(specification) => {
+                self.pending_context_menu_specification = specification;
             }
 
             TvMsg::ContextMenuChosenIdx(idx) => {
-                let msg =
-                    self.pending_context_menu_listing.items()[idx].msg.clone();
-                self.pending_context_menu_listing =
-                    TvContextMenuListing::default();
+                let msg = self.pending_context_menu_specification.items()[idx]
+                    .msg
+                    .clone();
+                self.pending_context_menu_specification =
+                    TvContextMenuSpecification::default();
                 task = Some(Task::done(msg));
             }
 

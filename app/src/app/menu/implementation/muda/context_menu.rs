@@ -1,15 +1,10 @@
-use muda::MenuItem;
-
+use super::super::super::AppMenuItemId;
+use crate::AppMsg;
 use riced::RawWindowHandle;
 use riced::Task;
 use riced::WindowId;
 use riced::run;
-
-use treeview::TvContextMenuListing;
-
-use crate::AppMsg;
-
-use super::MenuItemId;
+use treeview::TvContextMenuSpecification;
 
 #[allow(missing_debug_implementations)]
 #[derive(Default, Clone)]
@@ -28,14 +23,14 @@ impl ContextMenu {
     }
 }
 
-pub fn show_context_menu(
-    tree_view_context_menu_listing: TvContextMenuListing,
-    winid: WindowId,
+pub fn show_tv_context_menu(
+    specification: TvContextMenuSpecification,
+    window_id: WindowId,
 ) -> Task<AppMsg> {
-    run(winid, |h| {
+    // println!("app::menu::show_tv_context_menu\n  window_id: {window_id}\n  specification:\n{specification}");
+    run(window_id, |h| {
         if let Ok(handle) = h.window_handle() {
-            let context_menu: ContextMenu =
-                tree_view_context_menu_listing.into();
+            let context_menu: ContextMenu = specification.into();
             let muda_menu: muda::Menu = context_menu.into();
 
             #[cfg(target_os = "macos")]
@@ -69,13 +64,13 @@ impl From<ContextMenu> for muda::Menu {
     }
 }
 
-impl From<TvContextMenuListing> for ContextMenu {
-    fn from(tv_context_menu_listing: TvContextMenuListing) -> Self {
+impl From<TvContextMenuSpecification> for ContextMenu {
+    fn from(tv_context_menu_listing: TvContextMenuSpecification) -> Self {
         let muda_menu = muda::Menu::new();
         tv_context_menu_listing.items().iter().enumerate().for_each(
             |(idx, item)| {
-                let mii = MenuItemId::ContextMenuIndex(idx);
-                let mmi = MenuItem::with_id(
+                let mii = AppMenuItemId::ContextMenuIndex(idx);
+                let mmi = muda::MenuItem::with_id(
                     mii,
                     item.label.clone(),
                     item.enabled,
