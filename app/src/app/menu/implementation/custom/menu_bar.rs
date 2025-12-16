@@ -1,18 +1,11 @@
-use super::super::super::menu_model::Accelerator;
-use super::super::super::menu_model::KeyCode;
 use super::super::super::menu_model::Menu;
 use super::super::super::menu_model::MenuItem;
 use super::super::super::menu_model::MenuItemId;
-use super::super::super::menu_model::Modifier;
 
-use super::ui::btn_menu_item;
+use super::ui::btn_menu_item_ele;
+use super::ui::btn_menu_item_txt;
 
-use riced::BTN_H_MENU;
-use riced::Background;
 use riced::Border;
-use riced::Button;
-use riced::ButtonStatus;
-use riced::ButtonStyle;
 use riced::Clr;
 use riced::Element;
 use riced::Horizontal;
@@ -30,6 +23,7 @@ use riced::WIDGET_RADIUS;
 use riced::container;
 use riced::horizontal_rule;
 use riced::iced_col;
+use riced::iced_row;
 use riced::sty_cont_menu_bar;
 
 use iced_aw::Menu as AwMenu;
@@ -77,15 +71,30 @@ impl<'a, Msg: 'a + Clone + From<MenuItemId>> From<MenuItem>
 {
     fn from(itm: MenuItem) -> Self {
         match itm {
-            MenuItem::Item { label, enabled, id, accelerator: _ } => {
-                AwMenuItem::new(btn_menu_item(label, {
+            MenuItem::Item { label, enabled, id, accelerator } => {
+                let label_txt = Text::new(label)
+                    .align_x(Horizontal::Left)
+                    .align_y(Vertical::Center)
+                    .width(90.0 * SF);
+
+                let accelerator_ele = if let Some(accelerator) = accelerator {
+                    Text::new(accelerator.to_string())
+                        .align_x(Horizontal::Left)
+                        .align_y(Vertical::Center)
+                        .width(Length::Fill)
+                } else {
+                    Text::new(String::new())
+                };
+
+                let content = iced_row![label_txt, accelerator_ele];
+                AwMenuItem::new(btn_menu_item_ele(content, {
                     if enabled { Some(id.into()) } else { None }
                 }))
             }
             MenuItem::Submenu { label, enabled, id, menu } => {
                 let aw_menu = menu.into();
                 AwMenuItem::with_menu(
-                    btn_menu_item(label, {
+                    btn_menu_item_txt(label, {
                         if enabled { Some(id.into()) } else { None }
                     }),
                     aw_menu,

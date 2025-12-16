@@ -3,8 +3,13 @@ mod menu_bar;
 mod ui;
 
 use riced::Element;
+use riced::Key as RicedKey;
+use riced::Modifiers as RicedModifiers;
 
 use crate::AppMsg;
+use crate::app::menu::menu_model::Accelerator;
+use crate::app::menu::menu_model::KeyCode;
+use crate::app::menu::menu_model::Modifier;
 
 use super::super::app_menu_bar::app_menu_bar;
 use super::super::app_menu_item_id::AppMenuItemId;
@@ -22,21 +27,34 @@ pub(crate) struct AppMenu {
 
 impl AppMenu {
     pub(crate) fn new() -> Self {
-        // println!("app::menu::AppMenu::new");
         let menu = app_menu_bar();
         AppMenu { menu }
     }
 
     pub(crate) fn enable(&mut self, app_menu_item_id: AppMenuItemId) {
-        // println!("app::menu::AppMenu -> enable({app_menu_item_id})");
+        self.set_enabled(app_menu_item_id, true);
     }
 
     pub(crate) fn disable(&mut self, app_menu_item_id: AppMenuItemId) {
-        // println!("app::menu::AppMenu -> disable({app_menu_item_id})");
+        self.set_enabled(app_menu_item_id, false);
     }
 
-    pub(crate) fn update(&mut self, app_menu_item_id: AppMenuItemId) {
-        // println!("app::menu::AppMenu -> update({app_menu_item_id})");
+    fn set_enabled(&mut self, app_menu_item_id: AppMenuItemId, state: bool) {
+        self.menu.set_enabled(app_menu_item_id.into(), state);
+    }
+
+    pub(crate) fn update(&mut self, _app_menu_item_id: AppMenuItemId) {}
+
+    pub(crate) fn process_menu_accelerator(
+        &self,
+        riced_modifiers: RicedModifiers,
+        riced_key: RicedKey,
+    ) -> Option<AppMenuItemId> {
+        let modifier: Modifier = riced_modifiers.into();
+        let key_code: KeyCode = riced_key.into();
+        let accel = Accelerator { modifier: Some(modifier), key: key_code };
+        let menu_item_id = self.menu.menu_item_id_for_accelerator(accel);
+        menu_item_id.map(std::convert::Into::into)
     }
 
     pub(crate) fn menu_bar<'a>(

@@ -1,10 +1,3 @@
-use super::super::super::menu_model::Accelerator;
-use super::super::super::menu_model::KeyCode;
-use super::super::super::menu_model::Menu;
-use super::super::super::menu_model::MenuItem;
-use super::super::super::menu_model::MenuItemId;
-use super::super::super::menu_model::Modifier;
-
 use riced::BTN_H_MENU;
 use riced::Background;
 use riced::Border;
@@ -14,29 +7,13 @@ use riced::ButtonStyle;
 use riced::Clr;
 use riced::Element;
 use riced::Horizontal;
-use riced::Length;
-use riced::PADDING;
-use riced::Radius;
-use riced::Renderer;
 use riced::SF;
-use riced::Shadow;
 use riced::Text;
 use riced::Theme;
-use riced::Vector;
 use riced::Vertical;
 use riced::WIDGET_RADIUS;
-use riced::container;
-use riced::horizontal_rule;
-use riced::iced_col;
-use riced::sty_cont_menu_bar;
 
-use iced_aw::Menu as AwMenu;
-use iced_aw::MenuBar as AwMenuBar;
-use iced_aw::menu::Item as AwMenuItem;
-use iced_aw::style::menu_bar::Style as MenuBarStyle;
-use iced_aw::style::status::Status as AwStatus;
-
-pub(crate) fn btn_menu_item<'a, Msg>(
+pub(crate) fn btn_menu_item_txt<'a, Msg>(
     lab: impl Into<String>,
     msg: Option<Msg>,
 ) -> Button<'a, Msg> {
@@ -46,7 +23,20 @@ pub(crate) fn btn_menu_item<'a, Msg>(
     let mut btn = Button::new(txt);
     btn = btn.on_press_maybe(msg);
     btn = btn.clip(true);
-    btn = btn.width(100.0 * SF);
+    btn = btn.width(150.0 * SF);
+    btn = btn.height(BTN_H_MENU);
+    btn = btn.style(sty_btn_menu_item);
+    btn
+}
+
+pub(crate) fn btn_menu_item_ele<'a, Msg>(
+    ele: impl Into<Element<'a, Msg>>,
+    msg: Option<Msg>,
+) -> Button<'a, Msg> {
+    let mut btn = Button::new(ele.into());
+    btn = btn.on_press_maybe(msg);
+    btn = btn.clip(true);
+    btn = btn.width(150.0 * SF);
     btn = btn.height(BTN_H_MENU);
     btn = btn.style(sty_btn_menu_item);
     btn

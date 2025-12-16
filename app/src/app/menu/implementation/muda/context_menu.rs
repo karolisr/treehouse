@@ -27,7 +27,6 @@ pub fn show_tv_context_menu(
     specification: TvContextMenuSpecification,
     window_id: WindowId,
 ) -> Task<AppMsg> {
-    // println!("app::menu::show_tv_context_menu\n  window_id: {window_id}\n  specification:\n{specification}");
     run(window_id, |h| {
         if let Ok(handle) = h.window_handle() {
             let context_menu: ContextMenu = specification.into();

@@ -172,7 +172,24 @@ impl App {
             }
 
             AppMsg::KeysPressed(key, modifiers) => {
-                if let Key::Character(k) = key {
+                #[cfg(feature = "menu-custom")]
+                let menu_custom_process_accelerator = if let Some(menu) =
+                    &self.menu
+                    && let Some(app_menu_item_id) =
+                        menu.process_menu_accelerator(modifiers, key.clone())
+                {
+                    task = Some(Task::done(app_menu_item_id.into()));
+                    true
+                } else {
+                    false
+                };
+
+                #[cfg(feature = "menu-muda")]
+                let menu_custom_process_accelerator = false;
+
+                if !menu_custom_process_accelerator
+                    && let Key::Character(k) = key
+                {
                     let k: &str = k.as_str();
                     match modifiers {
                         mods if mods.contains(
@@ -192,33 +209,6 @@ impl App {
                             }
                         }
                         Modifiers::COMMAND => {
-                            #[cfg(any(
-                                target_os = "windows",
-                                target_os = "linux"
-                            ))]
-                            match k {
-                                "f" => {
-                                    task = Some(Task::done(AppMsg::TvMsg(
-                                        TvMsg::ToggleSearchBar,
-                                    )));
-                                }
-                                "o" => {
-                                    task = Some(Task::done(AppMsg::MenuEvent(
-                                        AppMenuItemId::OpenFile,
-                                    )));
-                                }
-                                "s" => {
-                                    task = Some(Task::done(AppMsg::MenuEvent(
-                                        AppMenuItemId::SaveAs,
-                                    )));
-                                }
-                                "p" => {
-                                    task = Some(Task::done(AppMsg::MenuEvent(
-                                        AppMenuItemId::ExportPdf,
-                                    )));
-                                }
-                                _ => {}
-                            }
                             #[cfg(any(
                                 target_os = "macos",
                                 target_os = "linux"
@@ -653,8 +643,8 @@ impl App {
         #[cfg(feature = "menu-muda")]
         subs.push(menu::menu_events());
         subs.push(window_events().map(|(_, e)| AppMsg::WinEvent(e)));
-        subs.push(on_key_press(|key, mods| {
-            Some(AppMsg::KeysPressed(key, mods))
+        subs.push(on_key_press(|key, modifiers| {
+            Some(AppMsg::KeysPressed(key, modifiers))
         }));
         Subscription::batch(subs)
     }

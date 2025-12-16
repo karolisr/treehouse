@@ -20,7 +20,6 @@ pub(crate) struct AppMenu {
 
 impl AppMenu {
     pub(crate) fn new() -> Self {
-        // println!("app::menu::AppMenu::new");
         let muda_menu = Self::prepare_app_menu();
         #[cfg(target_os = "macos")]
         muda_menu.init_for_nsapp();
@@ -37,12 +36,10 @@ impl AppMenu {
     }
 
     pub(crate) fn enable(&self, app_menu_item_id: AppMenuItemId) {
-        // println!("app::menu::AppMenu -> enable({app_menu_item_id})");
         self.set_enabled(&app_menu_item_id, true);
     }
 
     pub(crate) fn disable(&self, app_menu_item_id: AppMenuItemId) {
-        // println!("app::menu::AppMenu -> disable({app_menu_item_id})");
         self.set_enabled(&app_menu_item_id, false);
     }
 
@@ -86,7 +83,6 @@ impl AppMenu {
     }
 
     pub(crate) fn update(&self, app_menu_item_id: AppMenuItemId) {
-        // println!("app::menu::AppMenu -> update({app_menu_item_id})");
         if let Some(muda_menu) = &self.muda_menu {
             Self::update_recursive(&muda_menu.items(), &app_menu_item_id);
         }
@@ -168,6 +164,9 @@ impl From<MenuItem> for muda::MenuItemKind {
                                 muda::accelerator::CMD_OR_CTRL
                             }
                             Modifier::Alt => muda::accelerator::Modifiers::ALT,
+                            Modifier::Other => {
+                                muda::accelerator::Modifiers::empty()
+                            }
                         });
 
                         let muda_key_code = match key {
@@ -178,6 +177,9 @@ impl From<MenuItem> for muda::MenuItemKind {
                             KeyCode::KeyQ => muda::accelerator::Code::KeyQ,
                             KeyCode::KeyS => muda::accelerator::Code::KeyS,
                             KeyCode::F4 => muda::accelerator::Code::F4,
+                            KeyCode::Other => {
+                                muda::accelerator::Code::Unidentified
+                            }
                         };
 
                         Some(muda::accelerator::Accelerator::new(

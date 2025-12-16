@@ -9,6 +9,7 @@ use riced::Task;
 use riced::WindowId;
 use riced::container;
 use riced::context_menu_element;
+use riced::horizontal_rule;
 use riced::sty_cont_message;
 
 use treeview::TvContextMenuSpecification;
@@ -18,15 +19,13 @@ use crate::AppMsg;
 use super::super::super::AppMenuItemId;
 use super::super::super::menu_model::Menu;
 use super::super::super::menu_model::MenuItem;
-use super::super::super::menu_model::MenuItemId;
 
-use super::ui::btn_menu_item;
+use super::ui::btn_menu_item_txt;
 
 pub fn show_tv_context_menu(
     specification: TvContextMenuSpecification,
     _window_id: WindowId,
 ) -> Task<AppMsg> {
-    // println!("app::menu::show_tv_context_menu\n  window_id: {_window_id}\n  specification:\n{specification}");
     Task::done(AppMsg::SetCustomContextMenu(specification.into()))
 }
 
@@ -55,24 +54,26 @@ impl ContextMenu {
     }
 
     fn context_menu_container(&self) -> Container<'_, AppMsg> {
-        let mut btns: Vec<Element<'_, AppMsg>> = Vec::new();
+        let mut items: Vec<Element<'_, AppMsg>> = Vec::new();
         for item in self.menu.items() {
             match item {
                 MenuItem::Item { id, label, enabled, .. } => {
-                    let btn: Button<'_, AppMsg> = btn_menu_item(
-                        &label.clone(),
+                    let btn: Button<'_, AppMsg> = btn_menu_item_txt(
+                        label.clone(),
                         match enabled {
                             true => Some(AppMsg::MenuEvent(id.clone().into())),
                             false => None,
                         },
                     );
-                    btns.push(btn.width(SF * 100.0).into());
+                    items.push(btn.width(SF * 100.0).into());
                 }
-                MenuItem::Submenu { label, enabled, id, menu } => todo!(),
-                MenuItem::Separator => todo!(),
+                MenuItem::Submenu { .. } => todo!(),
+                MenuItem::Separator => {
+                    items.push(horizontal_rule(SF).into());
+                }
             }
         }
-        container(Column::from_vec(btns).spacing(PADDING).padding(PADDING))
+        container(Column::from_vec(items).spacing(PADDING).padding(PADDING))
             .style(sty_cont_message)
     }
 }
