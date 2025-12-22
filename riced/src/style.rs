@@ -114,6 +114,16 @@ pub fn sty_cont_message(theme: &Theme) -> ContainerStyle {
     }
 }
 
+pub fn sty_cont_context_menu(theme: &Theme) -> ContainerStyle {
+    let base = sty_cont(theme);
+    let pe = theme.extended_palette();
+    ContainerStyle {
+        background: Some(Background::Color(pe.background.weakest.color)),
+        border: Border { color: pe.background.strongest.color, ..base.border },
+        ..base
+    }
+}
+
 pub fn sty_cont_bottom(theme: &Theme) -> ContainerStyle {
     let base = sty_cont(theme);
     ContainerStyle {
@@ -329,7 +339,7 @@ pub fn sty_cont_menu_bar(theme: &Theme) -> ContainerStyle {
         border: Border {
             width: BORDER_W,
             color: ep.background.strong.color,
-            radius: 0.0.into(),
+            radius: WIDGET_RADIUS.into(),
         },
         shadow: Shadow {
             color: ep.background.strong.color.scale_alpha(0.77),

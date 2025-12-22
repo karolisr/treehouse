@@ -5,6 +5,7 @@ mod ui;
 use riced::Element;
 use riced::Key as RicedKey;
 use riced::Modifiers as RicedModifiers;
+use riced::SF;
 
 use crate::AppMsg;
 use crate::app::menu::menu_model::Accelerator;
@@ -19,6 +20,8 @@ use menu_bar::menu_bar;
 
 pub(crate) use context_menu::ContextMenu;
 pub(crate) use context_menu::show_tv_context_menu;
+
+pub(super) const SUBMENU_W: f32 = 165.0 * SF;
 
 #[derive(Clone, Debug)]
 pub(crate) struct AppMenu {

@@ -1,4 +1,5 @@
 use riced::Point;
+use riced::Vector;
 
 use crate::{Clr, Display, Formatter, NodeId, Result, TreeState, TvMsg};
 
@@ -47,6 +48,11 @@ impl TvContextMenuSpecification {
 
     fn set_position(mut self, position: Point) -> Self {
         self.position = position;
+        self
+    }
+
+    pub fn set_position_offset(mut self, offset: Vector) -> Self {
+        self.position = self.position + offset;
         self
     }
 

@@ -2,28 +2,27 @@ use super::super::super::menu_model::Menu;
 use super::super::super::menu_model::MenuItem;
 use super::super::super::menu_model::MenuItemId;
 
-use super::ui::btn_menu_item_ele;
+use super::SUBMENU_W;
+use super::ui::btn_menu_item;
 use super::ui::btn_menu_item_txt;
 
+use riced::BORDER_W;
 use riced::Border;
 use riced::Clr;
 use riced::Element;
-use riced::Horizontal;
 use riced::Length;
 use riced::PADDING;
+use riced::Padding;
 use riced::Radius;
 use riced::Renderer;
 use riced::SF;
 use riced::Shadow;
-use riced::Text;
 use riced::Theme;
 use riced::Vector;
-use riced::Vertical;
 use riced::WIDGET_RADIUS;
 use riced::container;
 use riced::horizontal_rule;
 use riced::iced_col;
-use riced::iced_row;
 use riced::sty_cont_menu_bar;
 
 use iced_aw::Menu as AwMenu;
@@ -42,9 +41,15 @@ impl<'a, Msg: 'a + Clone + From<MenuItemId>> From<Menu>
                 .map(|menu_item| menu_item.clone().into())
                 .collect()
         })
-        .padding(0.0)
-        .spacing(PADDING / 2.0)
+        .close_on_background_click(true)
+        .close_on_background_click_global(true)
+        .close_on_item_click(true)
+        .close_on_item_click_global(true)
+        .safe_bounds_margin(PADDING)
         .width(Length::Fill)
+        .height(Length::Shrink)
+        .padding(PADDING)
+        .spacing(PADDING)
         .style(sty_menu_bar)
     }
 }
@@ -59,10 +64,12 @@ impl<'a, Msg: 'a + Clone + From<MenuItemId>> From<Menu>
                 .map(|menu_item| menu_item.clone().into())
                 .collect()
         })
-        .offset(PADDING * 2.0)
+        .width(SUBMENU_W)
         .padding(PADDING)
-        .spacing(PADDING / 2.0)
-        .width(Length::Shrink)
+        .spacing(0)
+        .offset(PADDING * 2.0)
+        .close_on_background_click(true)
+        .close_on_item_click(true)
     }
 }
 
@@ -72,35 +79,23 @@ impl<'a, Msg: 'a + Clone + From<MenuItemId>> From<MenuItem>
     fn from(itm: MenuItem) -> Self {
         match itm {
             MenuItem::Item { label, enabled, id, accelerator } => {
-                let label_txt = Text::new(label)
-                    .align_x(Horizontal::Left)
-                    .align_y(Vertical::Center)
-                    .width(90.0 * SF);
-
-                let accelerator_ele = if let Some(accelerator) = accelerator {
-                    Text::new(accelerator.to_string())
-                        .align_x(Horizontal::Left)
-                        .align_y(Vertical::Center)
-                        .width(Length::Fill)
-                } else {
-                    Text::new(String::new())
-                };
-
-                let content = iced_row![label_txt, accelerator_ele];
-                AwMenuItem::new(btn_menu_item_ele(content, {
-                    if enabled { Some(id.into()) } else { None }
-                }))
+                AwMenuItem::new(btn_menu_item(
+                    label,
+                    accelerator,
+                    if enabled { Some(id.into()) } else { None },
+                ))
             }
             MenuItem::Submenu { label, enabled, id, menu } => {
-                let aw_menu = menu.into();
                 AwMenuItem::with_menu(
                     btn_menu_item_txt(label, {
                         if enabled { Some(id.into()) } else { None }
                     }),
-                    aw_menu,
+                    menu.into(),
                 )
             }
-            MenuItem::Separator => AwMenuItem::new(horizontal_rule(SF)),
+            MenuItem::Separator => {
+                AwMenuItem::new(container(horizontal_rule(SF)).padding(PADDING))
+            }
         }
         .close_on_click(true)
     }
@@ -112,14 +107,14 @@ pub fn menu_bar<'a, Msg: 'a + Clone + From<MenuItemId>>(
 ) -> Element<'a, Msg, Theme, Renderer> {
     let mb: AwMenuBar<'a, Msg, Theme, Renderer> = menu.into();
     iced_col![
-        container(mb)
-            .width(Length::Fill)
-            .height(Length::Shrink)
-            .padding(PADDING)
-            .style(sty_cont_menu_bar),
+        container(container(mb).style(sty_cont_menu_bar)).padding(Padding {
+            top: 0.0,
+            right: PADDING,
+            bottom: 0.0,
+            left: PADDING
+        }),
         base
     ]
-    .width(Length::Fill)
     .into()
 }
 
@@ -129,21 +124,16 @@ fn sty_menu_bar(theme: &Theme, _status: AwStatus) -> MenuBarStyle {
 
     let bar_border = Border {
         color: Clr::TRN,
-        width: 0.0,
-        radius: Radius {
-            top_left: 0.0,
-            top_right: 0.0,
-            bottom_right: 0.0,
-            bottom_left: 0.0,
-        },
+        width: BORDER_W,
+        radius: WIDGET_RADIUS.into(),
     };
 
     let menu_border = Border {
-        color: Clr::TRN,
-        width: 0.0,
+        color: ep.background.strong.color,
+        width: BORDER_W,
         radius: Radius {
-            top_left: 0.0,
-            top_right: 0.0,
+            top_left: WIDGET_RADIUS,
+            top_right: WIDGET_RADIUS,
             bottom_right: WIDGET_RADIUS,
             bottom_left: WIDGET_RADIUS,
         },
@@ -151,7 +141,7 @@ fn sty_menu_bar(theme: &Theme, _status: AwStatus) -> MenuBarStyle {
 
     let path_border = Border {
         color: Clr::RED,
-        width: SF,
+        width: BORDER_W,
         radius: Radius {
             top_left: WIDGET_RADIUS,
             top_right: WIDGET_RADIUS,
@@ -169,11 +159,11 @@ fn sty_menu_bar(theme: &Theme, _status: AwStatus) -> MenuBarStyle {
     let menu_shadow = Shadow {
         color: ep.background.strong.color.scale_alpha(0.77),
         offset: Vector { x: 0.0, y: 0.0 },
-        blur_radius: PADDING,
+        blur_radius: PADDING - PADDING / 3.0,
     };
 
     MenuBarStyle {
-        bar_background: base_background,
+        bar_background: Clr::TRN.into(),
         bar_border,
         bar_shadow,
 

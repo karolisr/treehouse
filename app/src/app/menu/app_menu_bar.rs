@@ -25,6 +25,7 @@ pub(crate) fn app_menu_bar() -> Menu {
         );
 
         subm_app_items.push(mi_about);
+        subm_app_items.push(MenuItem::separator());
         subm_app_items.push(mi_quit);
 
         let subm_app = MenuItem::submenu(
@@ -55,29 +56,31 @@ pub(crate) fn app_menu_bar() -> Menu {
     );
 
     let mi_export_subtree = MenuItem::item(
-        "Export Subtree",
+        "Save Current Subtree",
         false,
         AppMenuItemId::ExportSubtree,
         Some(Accelerator { modifier, key: KeyCode::KeyE }),
     );
 
     let mi_export_pdf = MenuItem::item(
-        "Export PDF",
+        "Export as PDF",
         false,
         AppMenuItemId::ExportPdf,
         Some(Accelerator { modifier, key: KeyCode::KeyP }),
     );
 
     let mi_toggle_search_bar = MenuItem::item(
-        "Search...",
+        "Find",
         false,
         AppMenuItemId::ToggleSearchBar,
         Some(Accelerator { modifier, key: KeyCode::KeyF }),
     );
 
     subm_file_items.push(mi_open);
+    subm_file_items.push(MenuItem::separator());
     subm_file_items.push(mi_save_as);
     subm_file_items.push(mi_export_subtree);
+    subm_file_items.push(MenuItem::separator());
     subm_file_items.push(mi_export_pdf);
 
     #[cfg(all(target_os = "windows", debug_assertions))]

@@ -29,8 +29,8 @@
 
 [features]
     default=[
-        "menu-custom",
-        # "menu-muda"
+        # "menu-custom",
+        "menu-muda"
     ]
     menu-custom=["dep:iced_aw", "dep:iced_fonts"]
     menu-muda=["dep:muda"]
