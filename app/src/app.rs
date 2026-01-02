@@ -188,7 +188,7 @@ impl App {
                 let menu_custom_process_accelerator = false;
 
                 if !menu_custom_process_accelerator
-                    && let Key::Character(k) = key
+                    && let Key::Character(k) = key.clone()
                 {
                     let k: &str = k.as_str();
                     match modifiers {
@@ -243,6 +243,16 @@ impl App {
                                 }
                                 _ => {}
                             }
+                            // if let Key::Named(key_name) = key {
+                            //     match key_name {
+                            //         riced::KeyName::Delete => {
+                            //             task = Some(Task::done(AppMsg::TvMsg(
+                            //                 TvMsg::RemoveNode(),
+                            //             )));
+                            //         }
+                            //         _ => {}
+                            //     }
+                            // }
                         }
                         _ => match k {
                             "l" => {
@@ -547,8 +557,9 @@ impl App {
                 #[cfg(debug_assertions)]
                 {
                     task_to_return = task_to_return.chain({
-                        let path_buf = PathBuf::from("tests/data/tree01.tre");
-                        // let path_buf = PathBuf::from("tests/data/tree02.newick");
+                        // let path_buf = PathBuf::from("tests/data/tree01.tre");
+                        let path_buf =
+                            PathBuf::from("tests/data/tree02.newick");
                         // let path_buf = PathBuf::from("tests/data/big_seed_plant_trees/ALLMB.tre");
                         // let path_buf = PathBuf::from("tests/data/Czech_Huerta-Cepas_Stamatakis_2017/Czech_Huerta-Cepas_Stamatakis_2017_unrooted__node_and_branch_attributes.newick");
 

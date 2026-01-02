@@ -113,6 +113,7 @@ pub enum TvMsg {
     PaneResized(ResizeEvent),
     Root(NodeId),
     Unroot,
+    RemoveNode(NodeId),
     SetSubtreeView(NodeId),
     ClearSubtreeView,
     RotAngleChanged(u16),
@@ -241,6 +242,17 @@ impl TreeView {
     pub fn update(&mut self, tv_msg: TvMsg) -> Task<TvMsg> {
         let mut task: Option<Task<TvMsg>> = None;
         match tv_msg {
+            TvMsg::RemoveNode(node_id) => {
+                self.with_exclusive_sel_tre_mut(&mut |tre| {
+                    _ = tre.remove_node(node_id);
+                });
+                self.tre_cnv.root_len_frac = self.calc_root_len_frac();
+                self.populate_cache_of_edges_sorted_by_field();
+                self.update_draw_labs_allowed();
+                self.clear_caches_cnv_all();
+                self.tre_cnv.stale_tre_rect = true;
+            }
+
             TvMsg::SetSubtreeView(node_id) => {
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
                     tre.set_subtree_view(node_id);
@@ -969,7 +981,7 @@ impl TreeView {
         }
     }
 
-    pub(super) fn sel_tre(&self) -> Option<Rc<TreeState>> {
+    pub(crate) fn sel_tre(&self) -> Option<Rc<TreeState>> {
         if let Some(sel_tre_state_idx) = self.tre_state_idx {
             let sel_tre_state = &self.tre_states[sel_tre_state_idx];
             Some(sel_tre_state.clone())

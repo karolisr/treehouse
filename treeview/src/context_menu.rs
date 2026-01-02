@@ -23,12 +23,13 @@ impl TvContextMenuSpecification {
         position: Point,
     ) -> Self {
         Self::default()
-            .push(TvMsg::Root(node_id), Some(tree_state))
             .push(TvMsg::SetSubtreeView(node_id), Some(tree_state))
             .push(
                 TvMsg::AddRemoveCladeHighlight((node_id, Clr::GRN_25)),
                 Some(tree_state),
             )
+            .push(TvMsg::Root(node_id), Some(tree_state))
+            .push(TvMsg::RemoveNode(node_id), Some(tree_state))
             .set_position(position)
     }
 
@@ -64,19 +65,20 @@ impl TvContextMenuSpecification {
 
         let enabled: bool;
         let label: &str;
+
         if let Some(tree_state) = tree_state {
             Values { enabled, label } = match tv_msg {
                 TvMsg::Root(node_id) => Values {
                     enabled: tree_state
                         .is_valid_potential_outgroup_node(node_id)
                         && !tree_state.is_subtree_view_active(),
-                    label: "Root here",
+                    label: "Root Here",
                 },
 
                 TvMsg::SetSubtreeView(node_id) => Values {
                     enabled: tree_state
                         .is_valid_potential_subtree_view_node(node_id),
-                    label: "View subtree",
+                    label: "View Subtree",
                 },
 
                 TvMsg::AddRemoveCladeHighlight((node_id, _)) => {
@@ -86,6 +88,12 @@ impl TvContextMenuSpecification {
                     };
                     Values { enabled: true, label }
                 }
+
+                TvMsg::RemoveNode(node_id) => Values {
+                    enabled: tree_state.can_node_be_removed(node_id),
+                    label: "Drop This Node",
+                },
+
                 _ => return self,
             };
         } else {

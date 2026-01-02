@@ -63,7 +63,7 @@ pub(crate) fn nodes_table<'a>(
     cached_edges: &[Edge],
 ) -> Element<'a, TvMsg> {
     // ToDo: need to determine column count dynamically.
-    let column_count: usize = 3;
+    let column_count: usize = 4;
 
     let row_height = TXT_SIZE + PADDING;
     // Scrollable height allowing for a header row.
@@ -88,9 +88,13 @@ pub(crate) fn nodes_table<'a>(
     let node_selected_column_width =
         (width_available_to_columns * min_column_width_fraction).max(7e1 * SF);
 
+    let node_type_column_width =
+        (width_available_to_columns * min_column_width_fraction).max(7e1 * SF);
+
     let node_label_column_width = width_available_to_columns
+        - node_id_column_width
         - node_selected_column_width
-        - node_id_column_width;
+        - node_type_column_width;
 
     // ToDo: should be refectored into a generic "header_row" function.
     // The header row is created manually, because we want it to stay on top of
@@ -107,7 +111,7 @@ pub(crate) fn nodes_table<'a>(
             ),
             data_table_header_cell(
                 tv,
-                "Node ID",
+                "ID",
                 EdgeSortField::NodeId,
                 node_id_column_width,
                 row_height,
@@ -115,7 +119,15 @@ pub(crate) fn nodes_table<'a>(
             ),
             data_table_header_cell(
                 tv,
-                "Node Label",
+                "Type",
+                EdgeSortField::NodeType,
+                node_type_column_width,
+                row_height,
+                sty_table_cell_header
+            ),
+            data_table_header_cell(
+                tv,
+                "Label",
                 EdgeSortField::NodeLabel,
                 node_label_column_width,
                 row_height,
@@ -157,6 +169,29 @@ pub(crate) fn nodes_table<'a>(
             },
         )
         .width(Length::Fixed(node_id_column_width)),
+        table_col(
+            space_h(Length::Shrink, Length::Shrink),
+            |edge: Edge| -> Element<'a, TvMsg> {
+                let is_selected = sel_node_ids.contains(&edge.node_id);
+                node_data_table_cell(
+                    if let Some(ts) = tv.sel_tre() {
+                        let tre = ts.tree();
+                        if let Some(node) = tre.node(Some(edge.node_id)) {
+                            txt(node.node_type().to_string()).into()
+                        } else {
+                            txt("-").into()
+                        }
+                    } else {
+                        txt("-").into()
+                    },
+                    edge.node_id,
+                    is_selected,
+                    node_type_column_width,
+                    row_height,
+                )
+            },
+        )
+        .width(Length::Fixed(node_type_column_width)),
         table_col(
             space_h(Length::Shrink, Length::Shrink),
             |edge: Edge| -> Element<'a, TvMsg> {

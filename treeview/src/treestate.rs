@@ -43,8 +43,9 @@ where
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EdgeSortField {
     NodeId,
-    NodeLabel,
     Selected,
+    NodeType,
+    NodeLabel,
 }
 
 #[derive(Default, Debug)]
@@ -80,6 +81,8 @@ pub(super) struct TreeState {
     cache_edges_node_id_desc: Option<Vec<Edge>>,
     cache_edges_node_label_asc: Option<Vec<Edge>>,
     cache_edges_node_label_desc: Option<Vec<Edge>>,
+    cache_edges_node_type_asc: Option<Vec<Edge>>,
+    cache_edges_node_type_desc: Option<Vec<Edge>>,
     cache_edges_selected_asc: Option<Vec<Edge>>,
     cache_edges_selected_desc: Option<Vec<Edge>>,
 
@@ -148,12 +151,17 @@ impl TreeState {
         self.cache_max_first_node_to_tip_distance =
             Some(self.max_first_node_to_tip_distance());
 
-        self.close_subtree_view();
         self.clear_caches_of_edges_sorted_by_field();
         self.clear_caches_cnv();
 
+        self.update_selected_node_ids();
+
         self.sort_asc();
         self.sort(self.node_ord_opt);
+
+        if let Some(subtree_view_node_id) = self.subtree_view_node_id {
+            self.set_subtree_view(subtree_view_node_id);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -166,7 +174,7 @@ impl TreeState {
         self.id
     }
 
-    pub(super) fn tree(&self) -> &Tree {
+    pub(crate) fn tree(&self) -> &Tree {
         match self.node_ord_opt {
             TreNodeOrd::Unordered => &self.t_orig,
             TreNodeOrd::Ascending => match &self.t_srtd_asc {
@@ -415,7 +423,8 @@ impl TreeState {
             && let Some(edges_within_tip_index_range) =
                 self.tree().edges_within_tip_index_range(idx_range.clone())
         {
-            let subtree_node_ids = self.tree().descending_node_ids(node_id);
+            let subtree_node_ids =
+                self.tree().descending_node_ids(node_id, true);
 
             let subtree_edge_indexes =
                 subtree_node_ids.iter().filter_map(|&subtree_node_id| {
@@ -626,6 +635,30 @@ impl TreeState {
     }
 
     // -------------------------------------------------------------------------
+
+    // =========================================================================
+
+    // --- Tree Pruning --------------------------------------------------------
+
+    pub(super) fn can_node_be_removed(&self, node_id: NodeId) -> bool {
+        self.tree().can_node_be_removed(node_id)
+    }
+
+    pub(super) fn remove_node(&mut self, node_id: NodeId) -> Option<NodeId> {
+        self.tmp_found_node_id = self.current_found_node_id();
+        let mut tre = self.tree().clone();
+        let rslt = tre.remove_node(node_id);
+        match rslt {
+            Ok(node_id) => {
+                self.init(tre);
+                Some(node_id)
+            }
+            Err(err) => {
+                println!("{err}");
+                None
+            }
+        }
+    }
 
     // =========================================================================
 
@@ -854,7 +887,14 @@ impl TreeState {
     }
 
     pub(super) fn deselect_node(&mut self, node_id: NodeId) {
-        _ = self.sel_node_ids.remove(&node_id);
+        self.deselect_nodes(vec![node_id]);
+    }
+
+    pub(super) fn deselect_nodes(&mut self, node_ids: Vec<NodeId>) {
+        let tmp_node_ids_set: HashSet<NodeId> = HashSet::from_iter(node_ids);
+        self.sel_node_ids = HashSet::from_iter(
+            self.sel_node_ids.difference(&tmp_node_ids_set).copied(),
+        );
 
         match self.is_subtree_view_active() {
             true => {
@@ -899,6 +939,14 @@ impl TreeState {
                 .collect();
         }
         rv_edge_idx
+    }
+
+    fn update_selected_node_ids(&mut self) {
+        let tmp_node_ids_set: HashSet<NodeId> =
+            HashSet::from_iter(self.t_orig.node_ids_all());
+        self.sel_node_ids = HashSet::from_iter(
+            self.sel_node_ids.intersection(&tmp_node_ids_set).copied(),
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -1124,21 +1172,27 @@ impl TreeState {
         match sort_direction {
             SortOrd::Ascending => match sort_column {
                 EdgeSortField::NodeId => self.cache_edges_node_id_asc.as_ref(),
+                EdgeSortField::Selected => {
+                    self.cache_edges_selected_asc.as_ref()
+                }
                 EdgeSortField::NodeLabel => {
                     self.cache_edges_node_label_asc.as_ref()
                 }
-                EdgeSortField::Selected => {
-                    self.cache_edges_selected_asc.as_ref()
+                EdgeSortField::NodeType => {
+                    self.cache_edges_node_type_asc.as_ref()
                 }
             },
 
             SortOrd::Descending => match sort_column {
                 EdgeSortField::NodeId => self.cache_edges_node_id_desc.as_ref(),
+                EdgeSortField::Selected => {
+                    self.cache_edges_selected_desc.as_ref()
+                }
                 EdgeSortField::NodeLabel => {
                     self.cache_edges_node_label_desc.as_ref()
                 }
-                EdgeSortField::Selected => {
-                    self.cache_edges_selected_desc.as_ref()
+                EdgeSortField::NodeType => {
+                    self.cache_edges_node_type_desc.as_ref()
                 }
             },
         }
@@ -1158,6 +1212,9 @@ impl TreeState {
                 EdgeSortField::Selected => {
                     self.cache_edges_selected_asc.is_none()
                 }
+                EdgeSortField::NodeType => {
+                    self.cache_edges_node_type_asc.is_none()
+                }
             },
 
             SortOrd::Descending => match sort_column {
@@ -1169,6 +1226,9 @@ impl TreeState {
                 }
                 EdgeSortField::Selected => {
                     self.cache_edges_selected_desc.is_none()
+                }
+                EdgeSortField::NodeType => {
+                    self.cache_edges_node_type_desc.is_none()
                 }
             },
         };
@@ -1209,6 +1269,25 @@ impl TreeState {
                         }
                     });
                 }
+                EdgeSortField::NodeType => {
+                    sorted_edges.sort_by(|a, b| {
+                        let type_a = self
+                            .t_orig
+                            .node(Some(a.node_id))
+                            .unwrap()
+                            .node_type();
+                        let type_b = self
+                            .t_orig
+                            .node(Some(b.node_id))
+                            .unwrap()
+                            .node_type();
+                        let ord = type_a.cmp(&type_b);
+                        match sort_direction {
+                            SortOrd::Ascending => ord,
+                            SortOrd::Descending => ord.reverse(),
+                        }
+                    });
+                }
             }
 
             match (sort_column, sort_direction) {
@@ -1230,6 +1309,12 @@ impl TreeState {
                 (EdgeSortField::Selected, SortOrd::Descending) => {
                     self.cache_edges_selected_desc = Some(sorted_edges);
                 }
+                (EdgeSortField::NodeType, SortOrd::Ascending) => {
+                    self.cache_edges_node_type_asc = Some(sorted_edges);
+                }
+                (EdgeSortField::NodeType, SortOrd::Descending) => {
+                    self.cache_edges_node_type_desc = Some(sorted_edges);
+                }
             }
         }
     }
@@ -1241,6 +1326,8 @@ impl TreeState {
         self.cache_edges_node_label_desc = None;
         self.cache_edges_selected_asc = None;
         self.cache_edges_selected_desc = None;
+        self.cache_edges_node_type_asc = None;
+        self.cache_edges_node_type_desc = None;
     }
 
     // -------------------------------------------------------------------------
