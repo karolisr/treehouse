@@ -149,6 +149,8 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         .height(Length::Shrink),
     );
 
+    tb_row = tb_row.push(btn_clade_highlight(ts.clone()));
+
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
 
     if tv.tre_states.len() > 1 {
