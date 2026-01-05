@@ -579,7 +579,7 @@ impl TreeState {
         }
     }
 
-    fn subtree_view_node_id(&self) -> Option<NodeId> {
+    pub(super) fn subtree_view_node_id(&self) -> Option<NodeId> {
         self.subtree_view_node_id
     }
 

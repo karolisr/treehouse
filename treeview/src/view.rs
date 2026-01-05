@@ -38,7 +38,7 @@ impl TreeView {
 
         if self.show_side_bar {
             let side_bar_main = side_bar_main(self, ts.clone());
-            let side_bar_annotations = side_bar_annotations(self, ts);
+            let side_bar_annotations = side_bar_annotations(self, ts.clone());
             main_row = main_row.push(side_bar_main);
             main_row = main_row.push(tool_bar_and_content_col);
             main_row = main_row.push(side_bar_annotations);
@@ -48,6 +48,32 @@ impl TreeView {
 
         main_row.into()
     }
+}
+
+pub(crate) fn btn_subtree_parent_node<'a>(
+    ts: Rc<TreeState>,
+) -> Button<'a, TvMsg> {
+    btn_svg(
+        Icon::ArrowLeft,
+        if let Some(subtree_view_node_id) = ts.subtree_view_node_id()
+            && let Some(parent_node_id) =
+                ts.tree().parent_node_id(subtree_view_node_id)
+        {
+            if let Some(first_node_id) = ts.tree().first_node_id() {
+                if parent_node_id != first_node_id {
+                    Some(TvMsg::SetSubtreeView(parent_node_id))
+                } else {
+                    Some(TvMsg::ClearSubtreeView)
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        },
+    )
+    .width(BTN_H1)
+    .height(BTN_H1)
 }
 
 fn content<'a>(tv: &'a TreeView) -> Element<'a, TvMsg> {
@@ -114,6 +140,7 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         center(
             iced_row![
                 btn_set_subtree_view(ts.clone()),
+                btn_subtree_parent_node(ts.clone()),
                 btn_clear_subtree_view(ts.clone())
             ]
             .spacing(SF),
@@ -121,8 +148,6 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         .width(Length::Shrink)
         .height(Length::Shrink),
     );
-
-    tb_row = tb_row.push(btn_clade_highlight(ts.clone()));
 
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
 
