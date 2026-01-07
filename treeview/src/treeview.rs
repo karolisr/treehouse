@@ -250,6 +250,7 @@ impl TreeView {
                 self.populate_cache_of_edges_sorted_by_field();
                 self.update_draw_labs_allowed();
                 self.clear_caches_cnv_all();
+                self.set_ltt_plot_data();
                 self.tre_cnv.stale_tre_rect = true;
             }
 
@@ -261,6 +262,7 @@ impl TreeView {
                 self.populate_cache_of_edges_sorted_by_field();
                 self.update_draw_labs_allowed();
                 self.clear_caches_cnv_all();
+                self.set_ltt_plot_data();
                 self.tre_cnv.stale_tre_rect = true;
             }
 
@@ -272,6 +274,7 @@ impl TreeView {
                 self.populate_cache_of_edges_sorted_by_field();
                 self.update_draw_labs_allowed();
                 self.clear_caches_cnv_all();
+                self.set_ltt_plot_data();
                 self.tre_cnv.stale_tre_rect = true;
             }
 
