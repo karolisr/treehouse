@@ -948,8 +948,16 @@ impl TreeView {
         if let Some(ts) = self.sel_tre()
             && let Some(edges) = ts.edges()
         {
-            let plot_data =
-                &ltt(ts.max_first_node_to_tip_distance(), edges, 503);
+            let mut tree_height = ts.max_first_node_to_tip_distance();
+
+            if ts.is_subtree_view_active()
+                && let Some(subtree_view_node_branch_length) =
+                    ts.subtree_view_node_branch_length()
+            {
+                tree_height += subtree_view_node_branch_length;
+            }
+
+            let plot_data = &ltt(tree_height, edges, 503);
             self.ltt_cnv.set_plot_data(plot_data);
         }
     }
