@@ -331,25 +331,10 @@ fn normalize_scale_bar_length(value: Float) -> Float {
     if value <= 0.0 {
         return value;
     }
-
     let magnitude = value.log10().floor();
-    let normalized = value / (10.0_f32.powf(magnitude));
-
-    let nice_normalized = if normalized <= 1.0 {
-        1.0
-    } else if normalized <= 2.0 {
-        2.0
-    } else if normalized <= 2.5 {
-        2.5
-    } else if normalized <= 5.0 {
-        5.0
-    } else if normalized <= 7.5 {
-        7.5
-    } else {
-        10.0
-    };
-
-    nice_normalized * (10.0_f32.powf(magnitude))
+    let norm_factor = 10.0_f32.powf(magnitude);
+    let normalized = value / norm_factor;
+    normalized.ceil() * norm_factor
 }
 
 fn draw_scale_bar(

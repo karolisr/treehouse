@@ -76,7 +76,7 @@ pub(super) struct TreeCnv {
 }
 
 impl TreeCnv {
-    pub fn new() -> Self {
+    pub fn new(draw_debug: bool) -> Self {
         Self {
             tre_sty: TreSty::PhyGrm,
             // -----------------------------------------------------------------
@@ -85,7 +85,7 @@ impl TreeCnv {
             padd_t: TREE_PADDING,
             padd_b: TREE_PADDING,
             // -----------------------------------------------------------------
-            draw_debug: false,
+            draw_debug,
             drawing_enabled: false,
             draw_root: true,
             draw_labs_allowed: false,

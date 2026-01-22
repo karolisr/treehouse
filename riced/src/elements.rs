@@ -261,9 +261,9 @@ pub fn txt_bool_option(ob: Option<bool>) -> Text<'static> {
     }
 }
 
-pub fn txt_float(n: impl Into<f32>) -> Text<'static> {
+pub fn txt_float(n: impl Into<f32>, decimals: u8) -> Text<'static> {
     let mut num_fmt = numfmt::Formatter::new();
-    num_fmt = num_fmt.precision(numfmt::Precision::Decimals(3));
+    num_fmt = num_fmt.precision(numfmt::Precision::Decimals(decimals));
     num_fmt = num_fmt.separator(',').unwrap();
     let s = num_fmt.fmt2(n.into());
     txt(s)

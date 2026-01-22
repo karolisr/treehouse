@@ -6,39 +6,37 @@ pub(super) fn draw_plot(
     plt: &PlotCnv,
     st: &St,
     rndr: &Renderer,
-    sz: Size,
+    size: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(plt.cache_cnv_plot.draw(rndr, sz, |f| {
-        let pb_plot = path_builder_plot(
-            &plt.plot_data, &plt.scale_x, &plt.scale_y, st.plt_vs.w,
-            st.plt_vs.h,
+    g.push(plt.cache_cnv_plot.draw(rndr, size, |f| {
+        let (pb_axes, labs_x, labs_y) = path_builder_axes(
+            &st.ticks_x, &st.ticks_y, st.plt_vs.w, st.plt_vs.h, st.tick_size,
+            st.text_size,
         );
 
-        let (pb_axes, labs_x, labs_y) = path_builder_axes(
-            &plt.plot_data, &plt.scale_x, &plt.scale_y, st.plt_vs.w,
-            st.plt_vs.h, st.text_size,
+        let pb_plot = path_builder_plot(
+            &st.plot_data, plt.scale_x, plt.scale_y, st.plt_vs.w, st.plt_vs.h,
         );
 
         f.push_transform();
-        f.translate(st.translation);
+        f.translate(st.plt_vs.trans);
         f.stroke(&pb_plot.build(), STRK_1_BLK);
         f.stroke(&pb_axes.build(), STRK_1_BLK);
         f.pop_transform();
 
-        let lab_offset = SF * 5e0;
-
         draw_labels(
             &labs_x,
-            Vector { x: ZRO, y: lab_offset },
-            Some(st.translation),
+            Vector { x: ZRO, y: st.lab_offset },
+            Some(st.plt_vs.trans),
             ZRO,
             f,
         );
+
         draw_labels(
             &labs_y,
-            Vector { x: lab_offset, y: ZRO },
-            Some(st.translation),
+            Vector { x: -st.lab_offset, y: ZRO },
+            Some(st.plt_vs.trans),
             ZRO,
             f,
         );
@@ -47,105 +45,64 @@ pub(super) fn draw_plot(
 
 fn path_builder_plot(
     data: &PlotData,
-    scale_x: &AxisScaleType,
-    scale_y: &AxisScaleType,
+    scale_x: AxisScaleType,
+    scale_y: AxisScaleType,
     w: Float,
     h: Float,
 ) -> PathBuilder {
     let mut first = true;
     let mut pb: PathBuilder = PathBuilder::new();
     for plot_point in &data.plot_points {
-        let x_relative = transform_value(plot_point.x, scale_x)
-            / transform_value(data.x_max, scale_x);
-        let y_relative = transform_value(plot_point.y, scale_y)
-            / transform_value(data.y_max, scale_y);
+        let x_relative = transform_value(plot_point.x - data.x_min, scale_x)
+            / transform_value(data.x_max - data.x_min, scale_x);
+
+        let y_relative = transform_value(plot_point.y - data.y_min, scale_y)
+            / transform_value(data.y_max - data.y_min, scale_y);
 
         let pt = Point { x: x_relative * w, y: (ONE - y_relative) * h };
-        if first {
-            pb = pb.move_to(pt);
-            first = false;
-        } else {
-            pb = pb.line_to(pt);
+
+        match first {
+            true => {
+                pb = pb.move_to(pt);
+                first = false;
+            }
+            false => pb = pb.line_to(pt),
         }
     }
     pb
 }
 
-fn calc_ticks(
-    tick_count: usize,
-    scale: &AxisScaleType,
-    data_type: &PlotDataType,
-    max: Float,
-) -> Vec<Tick> {
-    let mut ticks: Vec<Tick> = Vec::new();
-    let max_transformed = transform_value(max, scale);
-    let mut tt1: Float = max_transformed * ONE / (tick_count) as Float;
-    if *scale != AxisScaleType::Linear {
-        tt1 = tt1.floor().max(ONE);
-    } else if tt1 > TEN {
-        tt1 = (tt1 / TEN).floor() * TEN;
-    } else if tt1 > TWO {
-        tt1 = tt1.floor();
-    } else {
-        tt1 = (tt1 * 2e1).floor() / 2e1;
-    }
-
-    for i in 0..=tick_count - 1 {
-        let i_float = i as Float;
-        let tick = match scale {
-            AxisScaleType::Linear => tt1 + i_float * tt1,
-            AxisScaleType::LogTwo => TWO.powf(tt1 + i_float * tt1),
-            AxisScaleType::LogNat => E.powf(tt1 + i_float * tt1),
-            AxisScaleType::LogTen => TEN.powf(tt1 + i_float * tt1),
-        };
-
-        ticks.push(Tick {
-            relative_position: transform_value(tick, scale)
-                / transform_value(max, scale),
-            label: match data_type {
-                PlotDataType::Continuous => format!("{tick:.2}"),
-                PlotDataType::Discrete => format!("{tick:.2}",),
-            },
-        });
-    }
-
-    ticks
-}
-
 fn path_builder_axes(
-    data: &PlotData,
-    scale_x: &AxisScaleType,
-    scale_y: &AxisScaleType,
+    ticks_x: &[Tick],
+    ticks_y: &[Tick],
     w: Float,
     h: Float,
+    tick_size: Float,
     lab_size: Float,
 ) -> (PathBuilder, Vec<Label>, Vec<Label>) {
-    let ticks_x = calc_ticks(6, scale_x, &data.x_data_type, data.x_max);
-    let ticks_y = calc_ticks(5, scale_y, &data.y_data_type, data.y_max);
-
-    let tick_size = SF * 5e0;
-    let y_for_ticks_x = h;
-    let x_for_ticks_y = ZRO;
+    let y_for_x_axis = h;
+    let x_for_y_axis = ZRO;
 
     let mut pb: PathBuilder = PathBuilder::new();
     let mut labs_x: Vec<Label> = Vec::with_capacity(ticks_x.len());
     let mut labs_y: Vec<Label> = Vec::with_capacity(ticks_y.len());
 
-    // x-axis ticks ------------------------------------------------------------
-    let pt_min = Point { x: ZRO, y: y_for_ticks_x };
-    let pt_max = Point { x: w, y: y_for_ticks_x };
+    // x-axis line -------------------------------------------------------------
+    let pt_min = Point { x: ZRO, y: y_for_x_axis };
+    let pt_max = Point { x: w, y: y_for_x_axis };
     pb = pb.move_to(pt_min);
     pb = pb.line_to(pt_max);
+    // x-axis ticks ------------------------------------------------------------
     for Tick { relative_position, label } in ticks_x {
         let x = relative_position * w;
-        let pt0 = Point { x, y: y_for_ticks_x };
-        let pt1 = Point { x, y: y_for_ticks_x + tick_size };
-        pb = pb.move_to(pt0);
-        pb = pb.line_to(pt1);
+        let tick_pt1 = Point { x, y: y_for_x_axis };
+        let tick_pt2 = Point { x, y: y_for_x_axis + tick_size };
+        pb = pb.move_to(tick_pt1);
+        pb = pb.line_to(tick_pt2);
 
         let text = lab_text(
             label.to_string(),
-            pt1,
+            tick_pt2,
             lab_size,
             TEMPLATE_TXT_LAB_PLOT_AXIS_X,
             false,
@@ -154,21 +111,22 @@ fn path_builder_axes(
         labs_x.push(label);
     } // -----------------------------------------------------------------------
 
-    // y-axis ticks ------------------------------------------------------------
-    let pt_min = Point { x: x_for_ticks_y, y: ZRO };
-    let pt_max = Point { x: x_for_ticks_y, y: h };
+    // y-axis line -------------------------------------------------------------
+    let pt_min = Point { x: x_for_y_axis, y: ZRO };
+    let pt_max = Point { x: x_for_y_axis, y: h };
     pb = pb.move_to(pt_min);
     pb = pb.line_to(pt_max);
+    // y-axis ticks ------------------------------------------------------------
     for Tick { relative_position, label } in ticks_y {
         let y = (ONE - relative_position) * h;
-        let pt0 = Point { x: x_for_ticks_y, y };
-        let pt1 = Point { x: x_for_ticks_y + tick_size, y };
-        pb = pb.move_to(pt0);
-        pb = pb.line_to(pt1);
+        let tick_pt1 = Point { x: x_for_y_axis, y };
+        let tick_pt2 = Point { x: x_for_y_axis - tick_size, y };
+        pb = pb.move_to(tick_pt1);
+        pb = pb.line_to(tick_pt2);
 
         let text = lab_text(
             label.to_string(),
-            pt1,
+            tick_pt2,
             lab_size,
             TEMPLATE_TXT_LAB_PLOT_AXIS_Y,
             false,
@@ -196,15 +154,16 @@ pub(super) fn draw_cursor_line(
     plt: &PlotCnv,
     st: &St,
     rndr: &Renderer,
-    sz: Size,
+    size: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(plt.cache_cnv_cursor_line.draw(rndr, sz, |f| {
+    g.push(plt.cache_cnv_cursor_line.draw(rndr, size, |f| {
         if let Some(p) = st.cursor_tracking_point
             && plt.draw_cursor_line
         {
+            // line ------------------------------------------------------------
             f.push_transform();
-            f.translate(st.translation);
+            f.translate(st.plt_vs.trans);
             let p0 = Point { x: p.x, y: ZRO };
             let p1 = Point { x: p.x, y: st.plt_vs.h };
             f.stroke(
@@ -213,16 +172,18 @@ pub(super) fn draw_cursor_line(
             );
             f.pop_transform();
 
+            // label -----------------------------------------------------------
             let mut txt_template = TEMPLATE_TXT_CURSOR_TEXT;
             let mut y_offset = -PADDING;
+            let x_val_range = plt.plot_data.x_max - plt.plot_data.x_min;
             let tree_height_at_x = if let Some(crsr_x_rel) = plt.crsr_x_rel {
                 y_offset = st.plt_padd_t;
                 txt_template.align_y = Vertical::Top;
-                plt.plot_data.x_max * crsr_x_rel
+                plt.plot_data.x_min + x_val_range * crsr_x_rel
             } else {
-                plt.plot_data.x_max * p.x / st.plt_vs.w
+                let crsr_x_rel = p.x / st.plt_vs.w;
+                plt.plot_data.x_min + x_val_range * crsr_x_rel
             };
-
             let name = format!("{tree_height_at_x:.3}");
             let text = lab_text(name, p, st.text_size, txt_template, false);
             let label =
@@ -230,7 +191,7 @@ pub(super) fn draw_cursor_line(
             draw_labels(
                 &[label],
                 Vector { x: PADDING, y: y_offset },
-                Some(st.translation),
+                Some(st.plt_vs.trans),
                 ZRO,
                 f,
             );

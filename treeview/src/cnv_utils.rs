@@ -1,14 +1,5 @@
 use crate::*;
 
-pub(crate) fn transform_value(raw: Float, scale: &AxisScaleType) -> Float {
-    match scale {
-        AxisScaleType::Linear => raw,
-        AxisScaleType::LogTwo => raw.log2(),
-        AxisScaleType::LogNat => raw.ln(),
-        AxisScaleType::LogTen => raw.log10(),
-    }
-}
-
 pub(crate) fn lab_text(
     txt: String,
     pt: Point,

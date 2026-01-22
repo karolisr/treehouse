@@ -378,7 +378,7 @@ fn stats(ts: Rc<TreeState>) -> Row<'static, TvMsg> {
                     match ts.has_brlen() {
                         true => txt_float(
                             ts.max_first_node_to_tip_distance_for_subtree_view()
-                                .unwrap() as Float
+                                .unwrap() as Float, 2
                         ),
                         false => txt_usize(
                             ts.max_first_node_to_tip_distance_for_subtree_view()
@@ -394,7 +394,8 @@ fn stats(ts: Rc<TreeState>) -> Row<'static, TvMsg> {
                 },
                 match ts.has_brlen() {
                     true => txt_float(
-                        ts.max_first_node_to_tip_distance_tree() as Float
+                        ts.max_first_node_to_tip_distance_tree() as Float,
+                        2
                     ),
                     false => txt_usize(
                         ts.max_first_node_to_tip_distance_tree() as usize
@@ -515,7 +516,7 @@ fn side_bar_main<'a>(
     sb = sb.push(toggler_selection_lock(true, tv.tre_cnv.selection_lock));
 
     if tv.show_ltt_plot {
-        sb = sb.push(pick_list_ltt_y_axis_scale_type(&tv.ltt_cnv.scale_y));
+        sb = sb.push(pick_list_ltt_y_axis_scale_type(tv.ltt_cnv.scale_y));
     }
 
     container(sb.clip(true))
@@ -742,7 +743,7 @@ pub(crate) fn btn_clear_subtree_view<'a>(
 }
 
 pub(crate) fn pick_list_ltt_y_axis_scale_type<'a>(
-    axis_scale_type: &AxisScaleType,
+    axis_scale_type: AxisScaleType,
 ) -> Row<'a, TvMsg> {
     let mut pl: PickList<
         AxisScaleType,
@@ -751,7 +752,7 @@ pub(crate) fn pick_list_ltt_y_axis_scale_type<'a>(
         TvMsg,
     > = PickList::new(
         &AXIS_SCALE_TYPE_OPTS,
-        Some(axis_scale_type.clone()),
+        Some(axis_scale_type),
         TvMsg::LttYAxisScaleTypeChanged,
     );
     pl = pick_list_common(pl);

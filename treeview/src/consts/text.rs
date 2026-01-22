@@ -94,7 +94,7 @@ pub(crate) const TEMPLATE_TXT_LAB_PLOT_AXIS_Y: CnvText = CnvText {
     color: Clr::BLK,
     size: Pixels(SF),
     line_height: LineHeight::Absolute(Pixels(SF)),
-    align_x: TextAlignment::Left,
+    align_x: TextAlignment::Right,
     align_y: Vertical::Center,
     content: String::new(),
     max_width: Float::INFINITY,

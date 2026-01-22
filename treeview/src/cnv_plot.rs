@@ -25,104 +25,48 @@ pub(super) struct PlotCnv {
     pub(super) vis_y0: Float,
 }
 
-#[derive(Debug, Default, Clone, PartialEq)]
-pub enum AxisScaleType {
-    #[default]
-    Linear,
-    LogTwo,
-    LogNat,
-    LogTen,
-}
+pub(super) const AXIS_SCALE_TYPE_OPTS: [AxisScaleType; 3] =
+    [AxisScaleType::Linear, AxisScaleType::LogTwo, AxisScaleType::LogTen];
 
-pub(super) const AXIS_SCALE_TYPE_OPTS: [AxisScaleType; 4] = [
-    AxisScaleType::Linear,
-    AxisScaleType::LogTwo,
-    AxisScaleType::LogNat,
-    AxisScaleType::LogTen,
-];
+pub fn plot_data_from_ltt_points(
+    ltt_points: &[LttPoint],
+    x_offset: Float,
+) -> PlotData {
+    let x_min: Float = x_offset;
+    let mut x_max: Float = Float::MIN;
+    let y_min: Float = 0.0;
+    let mut y_max: Float = Float::MIN;
 
-impl Display for AxisScaleType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        f.write_str(match self {
-            AxisScaleType::Linear => "Linear",
-            AxisScaleType::LogTwo => "Log Base 2",
-            AxisScaleType::LogNat => "Natural Log",
-            AxisScaleType::LogTen => "Log Base 10",
-        })
+    for LttPoint { time, count } in ltt_points {
+        x_max = x_max.max(x_offset + *time as Float);
+        y_max = y_max.max(*count as Float);
     }
-}
 
-#[derive(Debug, Default, Clone)]
-pub enum PlotDataType {
-    #[default]
-    Continuous,
-    Discrete,
-}
+    let mut plot_points = Vec::with_capacity(ltt_points.len());
 
-#[derive(Debug, Default, Clone)]
-pub struct PlotPoint {
-    x: Float,
-    y: Float,
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct PlotData {
-    x_data_type: PlotDataType,
-    y_data_type: PlotDataType,
-    // x_min: Float,
-    // y_min: Float,
-    x_max: Float,
-    y_max: Float,
-    plot_points: Vec<PlotPoint>,
-}
-
-pub struct Tick {
-    relative_position: Float,
-    label: String,
-}
-
-impl Display for Tick {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "(pos: {:.2}, lab: {})", self.relative_position, self.label)
+    for LttPoint { time, count } in ltt_points {
+        plot_points.push(PlotPoint {
+            x: x_offset + *time as Float,
+            y: *count as Float,
+        });
     }
-}
 
-impl Debug for Tick {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{self}")
-    }
-}
-
-impl From<&Vec<LttPoint>> for PlotData {
-    fn from(ltt_points: &Vec<LttPoint>) -> Self {
-        // let mut x_min: Float = Float::MAX;
-        let mut x_max: Float = Float::MIN;
-        // let mut y_min: Float = Float::MAX;
-        let mut y_max: Float = Float::MIN;
-        for LttPoint { height, count } in ltt_points {
-            // x_min = x_min.min(*height as Float);
-            x_max = x_max.max(*height as Float);
-            // y_min = y_min.min(*count as Float);
-            y_max = y_max.max(*count as Float);
-        }
-        let mut plot_points = Vec::with_capacity(ltt_points.len());
-        for LttPoint { height, count } in ltt_points {
-            plot_points
-                .push(PlotPoint { x: *height as Float, y: *count as Float });
-        }
-        PlotData {
-            x_data_type: PlotDataType::Continuous,
-            y_data_type: PlotDataType::Discrete,
-            // x_min,
-            x_max,
-            // y_min,
-            y_max,
-            plot_points,
-        }
+    PlotData {
+        x_data_type: AxisDataType::Continuous,
+        y_data_type: AxisDataType::Discrete,
+        x_min,
+        x_max,
+        y_min,
+        y_max,
+        plot_points,
     }
 }
 
 impl PlotCnv {
+    pub(super) fn new(draw_debug: bool) -> Self {
+        Self { draw_debug, ..Default::default() }
+    }
+
     pub(super) fn clear_cache_cnv_bnds(&self) {
         self.cache_cnv_bnds.clear();
     }
@@ -141,9 +85,9 @@ impl PlotCnv {
         self.clear_cache_cnv_plot();
     }
 
-    pub(super) fn set_plot_data(&mut self, data: impl Into<PlotData>) {
+    pub(super) fn set_plot_data(&mut self, data: PlotData) {
         self.clear_cache_cnv_plot();
-        self.plot_data = data.into();
+        self.plot_data = data;
     }
 }
 
@@ -166,9 +110,30 @@ impl Program<TvMsg> for PlotCnv {
         bnds: Rectangle,
         crsr: Cursor,
     ) -> Option<Action<TvMsg>> {
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         let mut action: Option<Action<TvMsg>> = None;
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
+
+        let n_ticks_x = 13;
+        let n_ticks_y = 19;
+
+        let (ticks_x, x_max, x_max_lab_nchar) = calc_ticks(
+            n_ticks_x, self.scale_x, self.plot_data.x_data_type,
+            self.plot_data.x_min, self.plot_data.x_max, false,
+        );
+
+        let (ticks_y, y_max, y_max_lab_nchar) = calc_ticks(
+            n_ticks_y, self.scale_y, self.plot_data.y_data_type,
+            self.plot_data.y_min, self.plot_data.y_max, false,
+        );
+
+        st.ticks_x = ticks_x;
+        st.ticks_y = ticks_y;
+
+        st.plot_data = self.plot_data.clone();
+        st.plot_data.x_max = x_max;
+        st.plot_data.y_max = y_max;
+
         if bnds != st.bnds
             || st.plt_padd_l != self.padd_l
             || st.plt_padd_r != self.padd_r
@@ -178,22 +143,36 @@ impl Program<TvMsg> for PlotCnv {
             self.clear_cache_cnv_bnds();
             self.clear_cache_cnv_plot();
             st.bnds = bnds;
-            st.text_size = SF * 10.0;
-            let extra_padding = SF * TEN;
+
+            st.text_size = SF * 8.0;
+            let char_width = st.text_size * 0.6;
+            st.tick_size = char_width;
+            st.lab_offset = char_width * 0.5;
+
+            let extra_padding = ZRO;
+
             st.plt_vs = RectVals::cnv(bnds).padded(
-                self.padd_l + extra_padding * ZRO,
-                self.padd_r + extra_padding * ZRO,
-                self.padd_t + extra_padding * ONE,
-                self.padd_b + extra_padding * TWO,
+                self.padd_l
+                    + st.tick_size
+                    + st.lab_offset
+                    + char_width * y_max_lab_nchar as Float
+                    + extra_padding * ONE,
+                self.padd_r
+                    + 0.5 * char_width * x_max_lab_nchar as Float
+                    + extra_padding * ONE,
+                self.padd_t + st.text_size / TWO + extra_padding * ONE,
+                self.padd_b
+                    + st.tick_size
+                    + st.lab_offset
+                    + st.text_size
+                    + extra_padding * ONE,
             );
             st.plt_rect = st.plt_vs.clone().into();
-            st.plt_padd_l = self.padd_l;
-            st.plt_padd_r = self.padd_r;
-            st.plt_padd_t = self.padd_t;
-            st.plt_padd_b = self.padd_b;
+            // st.plt_padd_l = self.padd_l;
+            // st.plt_padd_r = self.padd_r;
+            // st.plt_padd_t = self.padd_t;
+            // st.plt_padd_b = self.padd_b;
         }
-
-        st.translation = st.plt_vs.trans;
 
         if let Event::Mouse(mouse_ev) = ev {
             match mouse_ev {
@@ -212,12 +191,12 @@ impl Program<TvMsg> for PlotCnv {
                 _ => {}
             }
         }
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         if let Some(crsr_x_rel) = self.crsr_x_rel {
             st.cursor_tracking_point =
                 Some(Point { x: crsr_x_rel * st.plt_vs.w, y: ZRO });
         }
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         action
     }
 
@@ -230,14 +209,15 @@ impl Program<TvMsg> for PlotCnv {
         _crsr: Cursor,
     ) -> Vec<Geometry> {
         let mut geoms: Vec<Geometry> = Vec::new();
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         let size = bnds.size();
         if self.draw_debug {
             draw_bounds(self, st, rndr, bnds, &mut geoms);
         }
+
         draw_plot(self, st, rndr, size, &mut geoms);
         draw_cursor_line(self, st, rndr, size, &mut geoms);
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
         geoms
     }
 }

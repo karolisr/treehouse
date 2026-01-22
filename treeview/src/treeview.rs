@@ -1,3 +1,4 @@
+use crate::cnv_plot::plot_data_from_ltt_points;
 use crate::edge_utils::*;
 use crate::pdf::tree_to_pdf;
 use crate::*;
@@ -153,6 +154,7 @@ pub enum TvMsg {
 
 impl Default for TreeView {
     fn default() -> Self {
+        let draw_debug: bool = false;
         Self {
             show_tool_bar: true,
             show_side_bar: true,
@@ -205,8 +207,8 @@ impl Default for TreeView {
             tre_pane_id: None,
             ltt_pane_id: None,
             nodes_table_pane_id: None,
-            ltt_cnv: PlotCnv::default(),
-            tre_cnv: TreeCnv::new(),
+            ltt_cnv: PlotCnv::new(draw_debug),
+            tre_cnv: TreeCnv::new(draw_debug),
             keep_scroll_position_requested: false,
             ltt_cnv_needs_to_be_scrolled: false,
             ltt_cnv_scrolled: false,
@@ -949,15 +951,23 @@ impl TreeView {
             && let Some(edges) = ts.edges()
         {
             let mut tree_height = ts.max_first_node_to_tip_distance();
+            let mut x_offset: Float = 0.0;
 
             if ts.is_subtree_view_active()
+                && let Some(subtree_view_node_id) = ts.subtree_view_node_id()
                 && let Some(subtree_view_node_branch_length) =
                     ts.subtree_view_node_branch_length()
             {
                 tree_height += subtree_view_node_branch_length;
+                x_offset =
+                    ts.tree().first_node_to_node_distance(subtree_view_node_id)
+                        - subtree_view_node_branch_length;
             }
 
-            let plot_data = &ltt(tree_height, edges, 503);
+            let plot_data = plot_data_from_ltt_points(
+                &ltt(tree_height, edges, 1000),
+                x_offset,
+            );
             self.ltt_cnv.set_plot_data(plot_data);
         }
     }
@@ -1467,7 +1477,7 @@ impl TreeView {
 
     pub fn toggle_draw_debug(&mut self) {
         self.tre_cnv.draw_debug = !self.tre_cnv.draw_debug;
-        self.ltt_cnv.draw_debug = !self.ltt_cnv.draw_debug;
+        self.ltt_cnv.draw_debug = self.tre_cnv.draw_debug;
     }
 }
 
