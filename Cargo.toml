@@ -33,7 +33,7 @@
         objc2-foundation="0.3.2"
         rayon="1.11.0"
         riced={path="riced", features=["crisp"]}
-        thiserror="2.0.17"
+        thiserror="2.0.18"
         treeview={path="treeview"}
         windows="0.62.2"
         winreg="0.55.0"
