@@ -538,8 +538,8 @@ impl Program<TvMsg> for TreeCnv {
             draw_hovered_node(self, st, tst, rndr, size, &mut geoms);
             // t.finish();
 
-            // let t = timer("legend");
-            draw_legend(self, st, tst, rndr, size, &mut geoms);
+            // let t = timer("scale_bar");
+            draw_scale_bar(self, st, tst, rndr, size, &mut geoms);
             // t.finish();
 
             // let t = timer("cursor_line");

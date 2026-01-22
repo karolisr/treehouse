@@ -98,7 +98,7 @@ pub enum TvMsg {
     TipLabVisChanged(bool),
     IntLabVisChanged(bool),
     BrnchLabVisChanged(bool),
-    LegendVisChanged(bool),
+    ScaleBarVisChanged(bool),
     TipLabSizeChanged(u16),
     IntLabSizeChanged(u16),
     BrnchLabSizeChanged(u16),
@@ -310,7 +310,7 @@ impl TreeView {
                         self.tre_cnv.trim_tip_labs_to_nchar, draw_labs_tip,
                         draw_labs_int, draw_labs_brnch,
                         self.tre_cnv.draw_clade_highlights,
-                        self.tre_cnv.draw_legend, self.tre_cnv.draw_debug,
+                        self.tre_cnv.draw_scale_bar, self.tre_cnv.draw_debug,
                     );
                 }
             }
@@ -527,7 +527,7 @@ impl TreeView {
                 self.set_ltt_plot_data();
                 self.update_draw_labs_allowed();
                 task = self.scroll_to_current_found_edge();
-                self.tre_cnv.clear_cache_cnv_legend();
+                self.tre_cnv.clear_cache_cnv_scale_bar();
                 self.tre_cnv.stale_tre_rect = true;
                 self.populate_cache_of_edges_sorted_by_field();
             }
@@ -540,7 +540,7 @@ impl TreeView {
                 self.set_ltt_plot_data();
                 self.update_draw_labs_allowed();
                 task = self.scroll_to_current_found_edge();
-                self.tre_cnv.clear_cache_cnv_legend();
+                self.tre_cnv.clear_cache_cnv_scale_bar();
                 self.tre_cnv.stale_tre_rect = true;
                 self.populate_cache_of_edges_sorted_by_field();
             }
@@ -795,8 +795,8 @@ impl TreeView {
                 self.clear_caches_cnv_all();
             }
 
-            TvMsg::LegendVisChanged(state) => {
-                self.tre_cnv.draw_legend = state;
+            TvMsg::ScaleBarVisChanged(state) => {
+                self.tre_cnv.draw_scale_bar = state;
             }
 
             TvMsg::SelectDeselectNode(node_id) => {

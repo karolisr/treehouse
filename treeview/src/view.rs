@@ -504,9 +504,9 @@ fn side_bar_main<'a>(
         ));
     }
 
-    sb = sb.push(iced_col![toggler_legend(
+    sb = sb.push(iced_col![toggler_scale_bar(
         ts.has_brlen(),
-        tv.tre_cnv.draw_legend
+        tv.tre_cnv.draw_scale_bar
     )]);
     sb = sb.push(iced_col![toggler_cursor_line(
         true, tv.tre_cnv.draw_cursor_line, tv.tre_cnv.tre_sty
@@ -902,13 +902,13 @@ pub(crate) fn toggler_label_tip_trim<'a>(
     tglr
 }
 
-pub(crate) fn toggler_legend<'a>(
+pub(crate) fn toggler_scale_bar<'a>(
     enabled: bool,
-    draw_legend: bool,
+    draw_scale_bar: bool,
 ) -> Toggler<'a, TvMsg> {
-    let mut tglr = toggler("Legend", draw_legend);
+    let mut tglr = toggler("Scale Bar", draw_scale_bar);
     if enabled {
-        tglr = tglr.on_toggle(TvMsg::LegendVisChanged);
+        tglr = tglr.on_toggle(TvMsg::ScaleBarVisChanged);
     }
     tglr
 }

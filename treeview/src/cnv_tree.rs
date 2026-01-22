@@ -11,7 +11,7 @@ pub(super) struct TreeCnv {
     // -------------------------------------------------------------------------
     cache_cnv_bnds: CnvCache,
     cache_cnv_tip_lab_w_resize_area: CnvCache,
-    cache_cnv_legend: CnvCache,
+    cache_cnv_scale_bar: CnvCache,
     cache_cnv_hovered_node: CnvCache,
     cache_cnv_cursor_line: CnvCache,
     cache_cnv_palette: CnvCache,
@@ -39,7 +39,7 @@ pub(super) struct TreeCnv {
     pub(super) draw_labs_int: bool,
     pub(super) draw_labs_tip: bool,
     pub(super) draw_clade_highlights: bool,
-    pub(super) draw_legend: bool,
+    pub(super) draw_scale_bar: bool,
     pub(super) draw_root: bool,
     pub(super) drawing_enabled: bool,
     // -------------------------------------------------------------------------
@@ -93,7 +93,7 @@ impl TreeCnv {
             draw_clade_highlights: true,
             draw_labs_int: false,
             draw_labs_brnch: false,
-            draw_legend: false,
+            draw_scale_bar: false,
             draw_cursor_line: false,
             // -----------------------------------------------------------------
             tip_labs_vis_max: 1000,
@@ -116,7 +116,7 @@ impl TreeCnv {
             // -----------------------------------------------------------------
             cache_cnv_bnds: Default::default(),
             cache_cnv_tip_lab_w_resize_area: Default::default(),
-            cache_cnv_legend: Default::default(),
+            cache_cnv_scale_bar: Default::default(),
             cache_cnv_hovered_node: Default::default(),
             cache_cnv_cursor_line: Default::default(),
             cache_cnv_palette: Default::default(),
@@ -167,8 +167,8 @@ impl TreeCnv {
         self.cache_cnv_hovered_node.clear();
     }
 
-    pub(super) fn clear_cache_cnv_legend(&self) {
-        self.cache_cnv_legend.clear();
+    pub(super) fn clear_cache_cnv_scale_bar(&self) {
+        self.cache_cnv_scale_bar.clear();
     }
 
     pub(super) fn clear_caches_cnv_all(&self) {
@@ -177,7 +177,7 @@ impl TreeCnv {
         self.clear_cache_cnv_palette();
         self.clear_cache_cnv_cursor_line();
         self.clear_cache_cnv_hovered_node();
-        self.clear_cache_cnv_legend();
+        self.clear_cache_cnv_scale_bar();
     }
 
     pub(super) fn calc_tre_vs(

@@ -48,7 +48,7 @@ pub fn tree_to_pdf(
     draw_labs_int: bool,
     draw_labs_brnch: bool,
     draw_clade_highlights: bool,
-    _draw_legend: bool,
+    _draw_scale_bar: bool,
     draw_debug: bool,
     // --------------------------------
 ) -> Result<(), PdfError> {

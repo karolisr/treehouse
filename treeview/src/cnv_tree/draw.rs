@@ -102,7 +102,64 @@ pub(super) fn draw_tip_lab_w_resize_area(
     }));
 }
 
-pub(super) fn draw_legend(
+fn normalize_scale_bar_length(value: Float) -> Float {
+    if value <= 0.0 {
+        return value;
+    }
+    let magnitude = value.log10().floor();
+    let norm_factor = 10.0_f32.powf(magnitude);
+    let normalized = value / norm_factor;
+    normalized.ceil() * norm_factor
+}
+
+fn draw_scale_bar_internal(
+    tre_sty: TreSty,
+    tre_vs: &RectVals<Float>,
+    cnv_vs: &RectVals<Float>,
+    lab_size: Float,
+    lab_y_offset: Float,
+    root_len: Float,
+    subtree_node_len: Float,
+    tre_height: Float,
+    f: &mut Frame,
+) {
+    let stroke = STRK_2_BLK;
+    let w = match tre_sty {
+        TreSty::PhyGrm => tre_vs.w,
+        TreSty::Fan => tre_vs.radius_min - root_len,
+    };
+
+    let tre_height = tre_height + subtree_node_len;
+    let sb_len = normalize_scale_bar_length(tre_height / 4.0);
+    let sb_frac = sb_len / tre_height;
+    let sb_len_on_screen = sb_frac * w;
+
+    let x = tre_vs.x0;
+    let y = cnv_vs.y1 - stroke.width / TWO - lab_size - lab_y_offset - PADDING;
+    let p0 = Point { x, y };
+    let p1 = Point { x: x + sb_len_on_screen, y };
+    let p_lab = Point { x: x.midpoint(p1.x), y };
+
+    f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), stroke);
+    let text = lab_text(
+        if sb_len < 0.01 {
+            format!("{sb_len:.2E}")
+        } else if sb_len <= 1.0 {
+            format!("{sb_len:0.3}")
+        } else {
+            format!("{sb_len:0.0}")
+        },
+        p_lab,
+        lab_size,
+        TEMPLATE_TXT_LAB_SCALEBAR,
+        false,
+    );
+    let lab =
+        Label { text, width: sb_len_on_screen, angle: 0.0, aligned_from: None };
+    draw_labels(&[lab], Vector { x: ZRO, y: lab_y_offset }, None, ZRO, f);
+}
+
+pub(super) fn draw_scale_bar(
     tc: &TreeCnv,
     st: &St,
     tst: &TreeState,
@@ -110,9 +167,9 @@ pub(super) fn draw_legend(
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    if tst.has_brlen() && tc.draw_legend {
-        g.push(tc.cache_cnv_legend.draw(rndr, sz, |f| {
-            draw_scale_bar(
+    if tst.has_brlen() && tc.draw_scale_bar {
+        g.push(tc.cache_cnv_scale_bar.draw(rndr, sz, |f| {
+            draw_scale_bar_internal(
                 tc.tre_sty,
                 &st.tre_vs,
                 &st.cnv_vs,
@@ -325,63 +382,6 @@ pub(super) fn draw_filtered_nodes(
             );
         }
     }));
-}
-
-fn normalize_scale_bar_length(value: Float) -> Float {
-    if value <= 0.0 {
-        return value;
-    }
-    let magnitude = value.log10().floor();
-    let norm_factor = 10.0_f32.powf(magnitude);
-    let normalized = value / norm_factor;
-    normalized.ceil() * norm_factor
-}
-
-fn draw_scale_bar(
-    tre_sty: TreSty,
-    tre_vs: &RectVals<Float>,
-    cnv_vs: &RectVals<Float>,
-    lab_size: Float,
-    lab_y_offset: Float,
-    root_len: Float,
-    subtree_node_len: Float,
-    tre_height: Float,
-    f: &mut Frame,
-) {
-    let stroke = STRK_2_BLK;
-    let w = match tre_sty {
-        TreSty::PhyGrm => tre_vs.w,
-        TreSty::Fan => tre_vs.radius_min - root_len,
-    };
-
-    let tre_height = tre_height + subtree_node_len;
-    let sb_len = normalize_scale_bar_length(tre_height / 4.0);
-    let sb_frac = sb_len / tre_height;
-    let sb_len_on_screen = sb_frac * w;
-
-    let x = tre_vs.x0;
-    let y = cnv_vs.y1 - stroke.width / TWO - lab_size - lab_y_offset - PADDING;
-    let p0 = Point { x, y };
-    let p1 = Point { x: x + sb_len_on_screen, y };
-    let p_lab = Point { x: x.midpoint(p1.x), y };
-
-    f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), stroke);
-    let text = lab_text(
-        if sb_len < 0.01 {
-            format!("{sb_len:.2E}")
-        } else if sb_len <= 1.0 {
-            format!("{sb_len:0.3}")
-        } else {
-            format!("{sb_len:0.0}")
-        },
-        p_lab,
-        lab_size,
-        TEMPLATE_TXT_LAB_SCALEBAR,
-        false,
-    );
-    let lab =
-        Label { text, width: sb_len_on_screen, angle: 0.0, aligned_from: None };
-    draw_labels(&[lab], Vector { x: ZRO, y: lab_y_offset }, None, ZRO, f);
 }
 
 fn draw_nodes(
