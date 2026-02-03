@@ -10,7 +10,7 @@
     version.workspace=true
 
 [build-dependencies]
-    convert_case="0.8.0"
+    convert_case={workspace=true}
 
 [dependencies]
     num-traits={workspace=true}

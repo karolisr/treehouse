@@ -23,9 +23,11 @@
         readme="README.md"
         repository="https://github.com/karolisr/treehouse"
         rust-version="1.88"
-        version="0.27.4"
+        version="0.28.0"
 
     [workspace.dependencies] # -------------------------------------------------
+        convert_case="0.8.0"
+        csv="1.4.0"
         num-traits="0.2.19"
         numfmt="1.2.0"
         objc2="0.6.3"
@@ -33,6 +35,8 @@
         objc2-foundation="0.3.2"
         rayon="1.11.0"
         riced={path="riced", features=["crisp"]}
+        serde="1.0.228"
+        serde_json="1.0.149"
         thiserror="2.0.18"
         treeview={path="treeview"}
         windows="0.62.2"

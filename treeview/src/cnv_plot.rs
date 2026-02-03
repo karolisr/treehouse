@@ -13,10 +13,13 @@ pub(super) struct PlotCnv {
     pub(super) scale_y: AxisScaleType,
     pub(super) draw_debug: bool,
     pub(super) draw_cursor_line: bool,
+    pub(super) time_axis_reversed: bool,
     pub(super) crsr_x_rel: Option<Float>,
-    pub(super) cache_cnv_bnds: CnvCache,
+    pub(super) cache_cnv_gts: CnvCache,
+    pub(super) cache_cnv_ltt: CnvCache,
+    pub(super) cache_cnv_axes: CnvCache,
     pub(super) cache_cnv_cursor_line: CnvCache,
-    pub(super) cache_cnv_plot: CnvCache,
+    pub(super) cache_cnv_bnds: CnvCache,
     pub(super) padd_l: Float,
     pub(super) padd_r: Float,
     pub(super) padd_t: Float,
@@ -67,26 +70,36 @@ impl PlotCnv {
         Self { draw_debug, ..Default::default() }
     }
 
-    pub(super) fn clear_cache_cnv_bnds(&self) {
-        self.cache_cnv_bnds.clear();
+    pub(super) fn clear_cache_cnv_gts(&self) {
+        self.cache_cnv_gts.clear();
+    }
+
+    pub(super) fn clear_cache_cnv_ltt(&self) {
+        self.cache_cnv_ltt.clear();
     }
 
     pub(super) fn clear_cache_cnv_cursor_line(&self) {
         self.cache_cnv_cursor_line.clear();
     }
 
-    pub(super) fn clear_cache_cnv_plot(&self) {
-        self.cache_cnv_plot.clear();
+    pub(super) fn clear_cache_cnv_axes(&self) {
+        self.cache_cnv_axes.clear();
+    }
+
+    pub(super) fn clear_cache_cnv_bnds(&self) {
+        self.cache_cnv_bnds.clear();
     }
 
     pub(super) fn clear_caches_cnv_all(&self) {
-        self.clear_cache_cnv_bnds();
+        self.clear_cache_cnv_gts();
+        self.clear_cache_cnv_ltt();
+        self.clear_cache_cnv_axes();
         self.clear_cache_cnv_cursor_line();
-        self.clear_cache_cnv_plot();
+        self.clear_cache_cnv_bnds();
     }
 
-    pub(super) fn set_plot_data(&mut self, data: PlotData) {
-        self.clear_cache_cnv_plot();
+    pub(super) fn set_ltt_plot_data(&mut self, data: PlotData) {
+        self.clear_cache_cnv_ltt();
         self.plot_data = data;
     }
 }
@@ -117,12 +130,13 @@ impl Program<TvMsg> for PlotCnv {
         let n_ticks_x = 13;
         let n_ticks_y = 19;
 
-        let (ticks_x, x_max, x_max_lab_nchar) = calc_ticks(
+        let (ticks_x, x_max_lab_nchar) = calc_ticks(
             n_ticks_x, self.scale_x, self.plot_data.x_data_type,
-            self.plot_data.x_min, self.plot_data.x_max, false,
+            self.plot_data.x_min, self.plot_data.x_max,
+            self.time_axis_reversed,
         );
 
-        let (ticks_y, y_max, y_max_lab_nchar) = calc_ticks(
+        let (ticks_y, y_max_lab_nchar) = calc_ticks(
             n_ticks_y, self.scale_y, self.plot_data.y_data_type,
             self.plot_data.y_min, self.plot_data.y_max, false,
         );
@@ -130,9 +144,7 @@ impl Program<TvMsg> for PlotCnv {
         st.ticks_x = ticks_x;
         st.ticks_y = ticks_y;
 
-        st.plot_data = self.plot_data.clone();
-        st.plot_data.x_max = x_max;
-        st.plot_data.y_max = y_max;
+        st.ltt_plot_data = self.plot_data.clone();
 
         if bnds != st.bnds
             || st.plt_padd_l != self.padd_l
@@ -141,10 +153,10 @@ impl Program<TvMsg> for PlotCnv {
             || st.plt_padd_b != self.padd_b
         {
             self.clear_cache_cnv_bnds();
-            self.clear_cache_cnv_plot();
+            self.clear_cache_cnv_ltt();
             st.bnds = bnds;
 
-            st.text_size = SF * 8.0;
+            st.text_size = SF * 11.0;
             let char_width = st.text_size * 0.6;
             st.tick_size = char_width;
             st.lab_offset = char_width * 0.5;
@@ -215,7 +227,10 @@ impl Program<TvMsg> for PlotCnv {
             draw_bounds(self, st, rndr, bnds, &mut geoms);
         }
 
-        draw_plot(self, st, rndr, size, &mut geoms);
+        draw_gts(self, st, rndr, size, &mut geoms);
+        draw_ltt(self, st, rndr, size, &mut geoms);
+        draw_axes(self, st, rndr, size, &mut geoms);
+
         draw_cursor_line(self, st, rndr, size, &mut geoms);
         // ---------------------------------------------------------------------
         geoms

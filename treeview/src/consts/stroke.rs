@@ -92,6 +92,7 @@ pub(crate) const STRK_1_CYA_75: Strk =
 pub(crate) const STRK_1_MAG_75: Strk =
     Strk { style: Solid(Clr::MAG_75), ..STRK_1 };
 
+pub(crate) const STRK_2_WHT: Strk = Strk { style: Solid(Clr::WHT), ..STRK_2 };
 pub(crate) const STRK_2_BLK: Strk = Strk { style: Solid(Clr::BLK), ..STRK_2 };
 pub(crate) const STRK_2_RED: Strk = Strk { style: Solid(Clr::RED), ..STRK_2 };
 pub(crate) const STRK_2_GRN: Strk = Strk { style: Solid(Clr::GRN), ..STRK_2 };
@@ -145,6 +146,7 @@ pub(crate) const STRK_2_CYA_75: Strk =
 pub(crate) const STRK_2_MAG_75: Strk =
     Strk { style: Solid(Clr::MAG_75), ..STRK_2 };
 
+pub(crate) const STRK_3_WHT: Strk = Strk { style: Solid(Clr::WHT), ..STRK_3 };
 pub(crate) const STRK_3_BLK: Strk = Strk { style: Solid(Clr::BLK), ..STRK_3 };
 pub(crate) const STRK_3_RED: Strk = Strk { style: Solid(Clr::RED), ..STRK_3 };
 pub(crate) const STRK_3_GRN: Strk = Strk { style: Solid(Clr::GRN), ..STRK_3 };
@@ -198,6 +200,7 @@ pub(crate) const STRK_3_CYA_75: Strk =
 pub(crate) const STRK_3_MAG_75: Strk =
     Strk { style: Solid(Clr::MAG_75), ..STRK_3 };
 
+pub(crate) const STRK_4_WHT: Strk = Strk { style: Solid(Clr::WHT), ..STRK_4 };
 pub(crate) const STRK_4_BLK: Strk = Strk { style: Solid(Clr::BLK), ..STRK_4 };
 pub(crate) const STRK_4_RED: Strk = Strk { style: Solid(Clr::RED), ..STRK_4 };
 pub(crate) const STRK_4_GRN: Strk = Strk { style: Solid(Clr::GRN), ..STRK_4 };
@@ -236,6 +239,7 @@ pub(crate) const STRK_4_CYA_50: Strk =
 pub(crate) const STRK_4_MAG_50: Strk =
     Strk { style: Solid(Clr::MAG_50), ..STRK_4 };
 
+pub(crate) const STRK_5_WHT: Strk = Strk { style: Solid(Clr::WHT), ..STRK_5 };
 pub(crate) const STRK_5_BLK: Strk = Strk { style: Solid(Clr::BLK), ..STRK_5 };
 pub(crate) const STRK_5_RED: Strk = Strk { style: Solid(Clr::RED), ..STRK_5 };
 pub(crate) const STRK_5_GRN: Strk = Strk { style: Solid(Clr::GRN), ..STRK_5 };

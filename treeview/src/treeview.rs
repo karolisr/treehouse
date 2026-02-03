@@ -159,7 +159,7 @@ impl Default for TreeView {
             show_tool_bar: true,
             show_side_bar: true,
             show_search_bar: false,
-            show_ltt_plot: false,
+            show_ltt_plot: true,
             show_nodes_table: false,
             // -----------------------------------------------------------------
             node_ord_opt: TreNodeOrd::Ascending,
@@ -603,6 +603,8 @@ impl TreeView {
 
                     self.ltt_cnv.scale_x = AxisScaleType::Linear;
                     self.ltt_cnv.scale_y = AxisScaleType::LogTwo;
+
+                    self.ltt_cnv.time_axis_reversed = true;
                 }
 
                 self.update_draw_labs_allowed();
@@ -965,10 +967,11 @@ impl TreeView {
             }
 
             let plot_data = plot_data_from_ltt_points(
-                &ltt(tree_height, edges, 1000),
+                &ltt(tree_height, edges, 503),
                 x_offset,
             );
-            self.ltt_cnv.set_plot_data(plot_data);
+
+            self.ltt_cnv.set_ltt_plot_data(plot_data);
         }
     }
 

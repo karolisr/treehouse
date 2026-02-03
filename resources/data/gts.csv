@@ -1,0 +1,158 @@
+broader,name,rank,color,beg,beg_margin_of_error,end,end_margin_of_error
+,Phanerozoic,Eon,#9AD9DD,538.8,0.2,0,
+Phanerozoic,Cenozoic,Era,#F2F91D,66.0,,0,
+Cenozoic,Neogene,Period,#FFE619,23.03,,2.58,
+Neogene,Miocene,Epoch,#FFFF00,23.03,,5.333,
+Miocene,Aquitanian,Age,#FFFF33,23.03,,20.44,
+Miocene,Burdigalian,Age,#FFFF41,20.44,,15.98,
+Miocene,Langhian,Age,#FFFF4D,15.98,,13.82,
+Miocene,Messinian,Age,#FFFF73,7.246,,5.333,
+Miocene,Serravallian,Age,#FFFF59,13.82,,11.63,
+Miocene,Tortonian,Age,#FFFF66,11.63,,7.246,
+Neogene,Pliocene,Epoch,#FFFF99,5.333,,2.58,
+Pliocene,Piacenzian,Age,#FFFFBF,3.6,,2.58,
+Pliocene,Zanclean,Age,#FFFFB3,5.333,,3.6,
+Cenozoic,Paleogene,Period,#FD9A52,66.0,,23.03,
+Paleogene,Eocene,Epoch,#FDB46C,56.0,,33.9,
+Eocene,Bartonian,Age,#FDC091,41.2,,37.71,
+Eocene,Lutetian,Age,#FDB482,47.8,,41.2,
+Eocene,Priabonian,Age,#FDCDA1,37.71,,33.9,
+Eocene,Ypresian,Age,#FCA773,56.0,,47.8,
+Paleogene,Oligocene,Epoch,#FEC07A,33.9,,23.03,
+Oligocene,Chattian,Age,#FEE6AA,27.82,,23.03,
+Oligocene,Rupelian,Age,#FED99A,33.9,,27.82,
+Paleogene,Paleocene,Epoch,#FDA75F,66.0,,56.0,
+Paleocene,Danian,Age,#FDB462,66.0,,61.6,
+Paleocene,Selandian,Age,#FEBF65,61.6,,59.2,
+Paleocene,Thanetian,Age,#FDBF6F,59.2,,56.0,
+Cenozoic,Quaternary,Period,#F9F97F,2.58,,0,
+Quaternary,Holocene,Epoch,#FEEBD2,0.0117,,0,
+Holocene,Greenlandian,Age,#FEECDB,0.0117,,0.0082,
+Holocene,Meghalayan,Age,#FDEDEC,0.0042,,0,
+Holocene,Northgrippian,Age,#FDECE4,0.0082,,0.0042,
+Quaternary,Pleistocene,Epoch,#FFEFAF,2.58,,0.0117,
+Pleistocene,Calabrian,Age,#FFF2BA,1.8,,0.774,
+Pleistocene,Chibanian,Age,#FFF2C7,0.774,,0.129,
+Pleistocene,Gelasian,Age,#FFEDB3,2.58,,1.8,
+Pleistocene,Upper Pleistocene,Age,#FFF2D3,0.129,,0.0117,
+Phanerozoic,Mesozoic,Era,#67C5CA,251.902,0.024,66.0,
+Mesozoic,Cretaceous,Period,#7FC64E,145.0,,66.0,
+Cretaceous,Lower Cretaceous,Epoch,#8CCD57,145.0,,100.5,
+Lower Cretaceous,Albian,Age,#CCEA97,113.0,,100.5,
+Lower Cretaceous,Aptian,Age,#BFE48A,121.4,,113.0,
+Lower Cretaceous,Barremian,Age,#B3DF7F,125.77,,121.4,
+Lower Cretaceous,Berriasian,Age,#8CCD60,145.0,,139.8,
+Lower Cretaceous,Hauterivian,Age,#A6D975,132.6,,125.77,
+Lower Cretaceous,Valanginian,Age,#99D36A,132.6,,139.8,
+Cretaceous,Upper Cretaceous,Epoch,#A6D84A,100.5,,66.0,
+Upper Cretaceous,Campanian,Age,#E6F47F,83.6,0.2,72.1,0.2
+Upper Cretaceous,Cenomanian,Age,#B3DE53,100.5,,93.9,
+Upper Cretaceous,Coniacian,Age,#CCE968,89.8,0.3,86.3,0.5
+Upper Cretaceous,Maastrichtian,Age,#F2FA8C,72.1,0.2,66.0,
+Upper Cretaceous,Santonian,Age,#D9EF74,86.3,0.5,83.6,0.2
+Upper Cretaceous,Turonian,Age,#BFE35D,93.9,,89.8,0.3
+Mesozoic,Jurassic,Period,#34B2C9,201.4,0.2,145.0,
+Jurassic,Lower Jurassic,Epoch,#42AED0,201.4,0.2,174.7,0.8
+Lower Jurassic,Hettangian,Age,#4EB3D3,201.4,0.2,199.5,0.3
+Lower Jurassic,Pliensbachian,Age,#80C5DD,192.9,0.3,184.2,0.3
+Lower Jurassic,Sinemurian,Age,#67BCD8,199.5,0.3,192.9,0.3
+Lower Jurassic,Toarcian,Age,#99CEE3,184.2,0.3,174.7,0.8
+Jurassic,Middle Jurassic,Epoch,#80CFD8,174.7,0.8,161.5,1.0
+Middle Jurassic,Aalenian,Age,#9AD9DD,174.7,0.8,170.9,0.8
+Middle Jurassic,Bajocian,Age,#A6DDE0,170.9,0.8,168.2,1.2
+Middle Jurassic,Bathonian,Age,#B3E2E3,168.2,1.2,165.3,1.1
+Middle Jurassic,Callovian,Age,#BFE7E5,165.3,1.1,161.5,1.0
+Jurassic,Upper Jurassic,Epoch,#B3E3EE,161.5,1.0,145,
+Upper Jurassic,Kimmeridgian,Age,#CCECF4,154.8,0.8,149.2,0.7
+Upper Jurassic,Oxfordian,Age,#BFE7F1,161.5,1.0,154.8,0.8
+Upper Jurassic,Tithonian,Age,#D9F1F7,149.2,0.7,145,
+Mesozoic,Triassic,Period,#812B92,251.902,0.024,201.4,0.2
+Triassic,Lower Triassic,Epoch,#983999,251.902,0.024,247.2,
+Lower Triassic,Induan,Age,#A4469F,251.902,0.024,251.2,
+Lower Triassic,Olenekian,Age,#B051A5,247.2,,251.2,
+Triassic,Middle Triassic,Epoch,#B168B1,247.2,,237,
+Middle Triassic,Anisian,Age,#BC75B7,247.2,,242,
+Middle Triassic,Ladinian,Age,#C983BF,242,,237,
+Triassic,Upper Triassic,Epoch,#BD8CC3,237,,201.4,0.2
+Upper Triassic,Carnian,Age,#C99BCB,237,,227,
+Upper Triassic,Norian,Age,#D6AAD3,227,,208.5,
+Upper Triassic,Rhaetian,Age,#E3B9DB,208.5,,201.4,0.2
+Phanerozoic,Paleozoic,Era,#99C08D,538.8,0.024,251.902,0.2
+Paleozoic,Cambrian,Period,#7FA056,538.8,0.2,485.4,1.9
+Cambrian,Cambrian Series2,Epoch,#99C078,521,,509,
+Cambrian Series2,Cambrian Stage3,Age,#A6C583,521,,514,
+Cambrian Series2,Cambrian Stage4,Age,#B3CA8E,514,,509,
+Cambrian,Furongian,Epoch,#B3E095,497,,485.4,1.9
+Furongian,Cambrian Stage10,Age,#E6F5C9,489.5,,485.4,1.9
+Furongian,Jiangshanian,Age,#D9F0BB,494,,489.5,
+Furongian,Paibian,Age,#CCEBAE,497,,494,
+Cambrian,Miaolingian,Epoch,#A6CF86,509,,497,
+Miaolingian,Drumian,Age,#BFD99D,504.5,,500.5,
+Miaolingian,Guzhangian,Age,#CCDFAA,500.5,,497,
+Miaolingian,Wuliuan,Age,#B3D492,509,,504.5,
+Cambrian,Terreneuvian,Epoch,#8CB06C,538.8,0.2,521,
+Terreneuvian,Cambrian Stage2,Age,#A6BA80,521,,509,
+Terreneuvian,Fortunian,Age,#99B575,538.8,0.2,529,
+Paleozoic,Carboniferous,Period,#67A599,358.9,0.4,298.9,0.15
+Carboniferous,Mississippian,Sub-Period,#678F66,358.9,0.4,323.2,0.4
+Mississippian,Lower Mississippian,Epoch,#80AB6C,358.9,0.4,346.7,0.4
+Lower Mississippian,Tournaisian,Age,#8CB06C,358.9,0.4,346.7,0.4
+Mississippian,Middle Mississippian,Epoch,#99B46C,346.7,0.4,330.9,0.2
+Middle Mississippian,Visean,Age,#A6B96C,346.7,0.4,330.9,0.2
+Mississippian,Upper Mississippian,Epoch,#B3BE6C,330.9,0.2,323.2,0.4
+Upper Mississippian,Serpukhovian,Age,#BFC26B,330.9,0.2,323.2,0.4
+Carboniferous,Pennsylvanian,Sub-Period,#7EBCC6,323.2,0.4,298.9,0.15
+Pennsylvanian,Lower Pennsylvanian,Epoch,#8CBEB4,323.2,0.4,315.2,0.2
+Lower Pennsylvanian,Bashkirian,Age,#99C2B5,323.2,0.4,315.2,0.2
+Pennsylvanian,Middle Pennsylvanian,Epoch,#A6C7B7,315.2,0.2,307.0,0.1
+Middle Pennsylvanian,Moscovian,Age,#B3CBB9,315.2,0.2,307.0,0.1
+Pennsylvanian,Upper Pennsylvanian,Epoch,#BFD0BA,307.0,0.1,298.9,0.15
+Upper Pennsylvanian,Gzhelian,Age,#CCD4C7,303.7,0.1,298.9,0.15
+Upper Pennsylvanian,Kasimovian,Age,#BFD0C5,307.0,0.1,303.7,0.1
+Paleozoic,Devonian,Period,#CB8C37,419.2,3.2,358.9,0.4
+Devonian,Lower Devonian,Epoch,#E5AC4D,419.2,3.2,393.3,1.2
+Lower Devonian,Emsian,Age,#E5D075,407.6,2.6,393.3,1.2
+Lower Devonian,Lochkovian,Age,#E5B75A,419.2,3.2,410.8,2.8
+Lower Devonian,Pragian,Age,#E5C468,410.8,2.8,407.6,2.6
+Devonian,Middle Devonian,Epoch,#F1C868,393.3,1.2,382.7,1.6
+Middle Devonian,Eifelian,Age,#F1D576,393.3,1.2,387.7,0.8
+Middle Devonian,Givetian,Age,#F1E185,387.7,0.8,382.7,1.6
+Devonian,Upper Devonian,Epoch,#F1E19D,382.7,1.6,358.9,0.4
+Upper Devonian,Famennian,Age,#F2EDB3,372.2,1.6,358.9,0.4
+Upper Devonian,Frasnian,Age,#F2EDAD,382.7,1.6,372.2,1.6
+Paleozoic,Ordovician,Period,#009270,485.4,1.9,443.8,1.5
+Ordovician,Lower Ordovician,Epoch,#1A9D6F,485.4,1.9,470.0,1.4
+Lower Ordovician,Floian,Age,#41B087,477.7,1.4,470.0,1.4
+Lower Ordovician,Tremadocian,Age,#33A97E,485.4,1.9,477.7,1.4
+Ordovician,Middle Ordovician,Epoch,#4DB47E,470.0,1.4,458.4,0.9
+Middle Ordovician,Dapingian,Age,#66C092,470.0,1.4,467.3,1.1
+Middle Ordovician,Darriwilian,Age,#74C69C,467.3,1.1,458.4,0.9
+Ordovician,Upper Ordovician,Epoch,#7FCA93,458.4,0.9,443.8,1.5
+Upper Ordovician,Hirnantian,Age,#A6DBAB,445.2,1.4,443.8,1.5
+Upper Ordovician,Katian,Age,#99D69F,453.0,0.7,445.2,1.4
+Upper Ordovician,Sandbian,Age,#8CD094,458.4,0.9,453.0,0.7
+Paleozoic,Permian,Period,#F04028,298.9,0.15,251.902,0.024
+Permian,Cisuralian,Epoch,#EF5845,298.9,0.15,273.01,0.14
+Cisuralian,Artinskian,Age,#E37B68,290.1,0.26,283.5,0.6
+Cisuralian,Asselian,Age,#E36350,298.9,0.15,293.51,0.17
+Cisuralian,Kungurian,Age,#E38776,283.5,0.6,273.01,0.14
+Cisuralian,Sakmarian,Age,#E36F5C,293.51,0.17,290.1,0.26
+Permian,Guadalupian,Epoch,#FB745C,273.01,0.14,259.51,0.21
+Guadalupian,Capitanian,Age,#FB9A85,264.28,0.16,259.51,0.21
+Guadalupian,Roadian,Age,#FB8069,273.01,0.14,266.9,0.4
+Guadalupian,Wordian,Age,#FB8D76,266.9,0.4,264.28,0.16
+Permian,Lopingian,Epoch,#FBA794,259.51,0.21,251.902,0.024
+Lopingian,Changhsingian,Age,#FCC0B2,254.14,0.07,251.902,0.024
+Lopingian,Wuchiapingian,Age,#FCB4A2,259.51,0.21,254.14,0.07
+Paleozoic,Silurian,Period,#B3E1B6,443.8,1.5,419.2,3.2
+Silurian,Llandovery,Epoch,#99D7B3,443.8,1.5,433.4,0.8
+Llandovery,Aeronian,Age,#B3E1C2,440.8,1.2,438.5,1.1
+Llandovery,Rhuddanian,Age,#A6DCB5,443.8,1.5,440.8,1.2
+Llandovery,Telychian,Age,#BFE6CF,438.5,1.1,433.4,0.8
+Silurian,Ludlow,Epoch,#BFE6CF,427.4,0.5,419.2,3.2
+Ludlow,Gorstian,Age,#CCECDD,427.4,0.5,425.6,0.9
+Ludlow,Ludfordian,Age,#D9F0DF,425.6,0.9,423.0,2.3
+Silurian,Pridoli,Epoch,#E6F5E1,423.0,2.3,419.2,3.2
+Silurian,Wenlock,Epoch,#B3E1C2,433.4,0.8,427.4,0.5
+Wenlock,Homerian,Age,#CCEBD1,430.5,0.7,427.4,0.5
+Wenlock,Sheinwoodian,Age,#BFE6C3,433.4,0.8,430.5,0.7

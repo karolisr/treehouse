@@ -87,14 +87,14 @@ impl TreeCnv {
             // -----------------------------------------------------------------
             draw_debug,
             drawing_enabled: false,
-            draw_root: true,
+            draw_root: false,
             draw_labs_allowed: false,
-            draw_labs_tip: true,
+            draw_labs_tip: false,
             draw_clade_highlights: true,
             draw_labs_int: false,
             draw_labs_brnch: false,
-            draw_scale_bar: false,
-            draw_cursor_line: false,
+            draw_scale_bar: true,
+            draw_cursor_line: true,
             // -----------------------------------------------------------------
             tip_labs_vis_max: 1000,
             // node_labs_vis_max: 900,

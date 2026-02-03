@@ -9,6 +9,12 @@
     rust-version.workspace=true
     version.workspace=true
 
+[build-dependencies]
+    csv={workspace=true}
+    riced={workspace=true}
+    serde={workspace=true, features=["derive"]}
+    serde_json={workspace=true}
+
 [dependencies]
     dendros={workspace=true}
     oxidize-pdf={workspace=true}

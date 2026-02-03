@@ -13,7 +13,7 @@ pub struct St {
     pub(super) text_size: Float,
     pub(super) tick_size: Float,
     pub(super) lab_offset: Float,
-    pub(super) plot_data: PlotData,
+    pub(super) ltt_plot_data: PlotData,
     pub(super) ticks_x: Vec<Tick>,
     pub(super) ticks_y: Vec<Tick>,
 }

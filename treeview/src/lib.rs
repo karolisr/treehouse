@@ -20,6 +20,7 @@ mod cnv_utils;
 mod consts;
 mod context_menu;
 mod edge_utils;
+mod gts;
 mod path_builders;
 mod pdf;
 mod tables;
@@ -44,6 +45,7 @@ use cnv_plot::PlotCnv;
 use cnv_tree::TreeCnv;
 use consts::*;
 use dendros::{Edge, LttPoint, Node, NodeId, Tree, ltt, write_newick};
+use gts::*;
 use rayon::prelude::*;
 use riced::*;
 use tables::nodes_table;
@@ -175,11 +177,11 @@ pub fn calc_ticks(
     data_type: AxisDataType,
     min: Float,
     max: Float,
-    adjust_max: bool,
-) -> (Vec<Tick>, Float, usize) {
+    axis_reversed: bool,
+) -> (Vec<Tick>, usize) {
     let mut ticks: Vec<Tick> = Vec::with_capacity(tick_count);
     let base: Float = scale_type.into();
-    let (_, _, mut linear_delta, mut max_val) = normalize_value(max, base);
+    let (_, _, mut linear_delta, _) = normalize_value(max, base);
 
     let z = (max - min) / linear_delta;
     if z < 1.5 {
@@ -194,16 +196,7 @@ pub fn calc_ticks(
         linear_delta = 1e0;
     }
 
-    if !adjust_max {
-        max_val = max;
-    } else if linear_delta > 0e0 && scale_type == AxisScaleType::Linear {
-        while max_val - linear_delta > max {
-            max_val -= linear_delta;
-        }
-    }
-
     let mut decimals: usize = 0;
-
     if scale_type == AxisScaleType::Linear {
         let mut n_ticks_calc = ((max - min) / linear_delta).ceil() as usize;
 
@@ -211,7 +204,7 @@ pub fn calc_ticks(
             if n_ticks_calc == 0 {
                 linear_delta /= 1e1;
             } else if n_ticks_calc == 1 {
-                linear_delta /= 5e0;
+                linear_delta /= 4e0;
             } else {
                 linear_delta /= 2e0;
             }
@@ -229,9 +222,9 @@ pub fn calc_ticks(
         }
     }
 
-    let min_val = min;
     let mut i: usize = 1;
     let mut n: usize = 1;
+    let mut min_val_diff = 0e0;
     while n < tick_count {
         let val = match scale_type {
             AxisScaleType::Linear => linear_delta * i as Float,
@@ -241,16 +234,34 @@ pub fn calc_ticks(
 
         if val < min {
             i += 1;
+            if axis_reversed {
+                min_val_diff = min - val;
+            }
             continue;
         }
 
-        if val < max_val {
-            let lab_val = val;
+        if val < max {
+            let lab_val = match axis_reversed {
+                true => val - min,
+                false => val,
+            };
+
             let nchar = 1 + lab_val.log10().floor() as usize + decimals;
+
+            let mut relative_position = transformed_relative_value(
+                val + min_val_diff,
+                min,
+                max,
+                scale_type,
+            );
+
+            relative_position = match axis_reversed {
+                true => 1.0 - relative_position,
+                false => relative_position,
+            };
+
             ticks.push(Tick {
-                relative_position: transformed_relative_value(
-                    val, min_val, max_val, scale_type,
-                ),
+                relative_position,
                 label: format!(
                     "{:width$.decimals$}",
                     lab_val,
@@ -267,12 +278,15 @@ pub fn calc_ticks(
         i += 1;
     }
 
-    let lab_val_max = max_val;
-    let nchar = 1 + lab_val_max.log10().floor() as usize;
+    let nchar = match axis_reversed {
+        true => 1 + min.log10().floor() as usize,
+        false => 1 + max.log10().floor() as usize,
+    };
+
     let max_lab_nchar: usize =
         if decimals == 0 { nchar } else { nchar + decimals + 1 };
 
-    (ticks, max_val, max_lab_nchar)
+    (ticks, max_lab_nchar)
 }
 
 #[derive(Debug, Clone, Copy)]
