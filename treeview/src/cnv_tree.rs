@@ -73,6 +73,8 @@ pub(super) struct TreeCnv {
     // -------------------------------------------------------------------------
     pub(crate) tip_w_set_by_user: Option<Float>,
     pub(crate) selection_lock: bool,
+    // -------------------------------------------------------------------------
+    pub(crate) tre_unit: TreUnit,
 }
 
 impl TreeCnv {
@@ -87,9 +89,9 @@ impl TreeCnv {
             // -----------------------------------------------------------------
             draw_debug,
             drawing_enabled: false,
-            draw_root: false,
+            draw_root: true,
             draw_labs_allowed: false,
-            draw_labs_tip: false,
+            draw_labs_tip: true,
             draw_clade_highlights: true,
             draw_labs_int: false,
             draw_labs_brnch: false,
@@ -144,6 +146,8 @@ impl TreeCnv {
             // -----------------------------------------------------------------
             tip_w_set_by_user: None,
             selection_lock: false,
+            // -----------------------------------------------------------------
+            tre_unit: TreUnit::default(),
         }
     }
 

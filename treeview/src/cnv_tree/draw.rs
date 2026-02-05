@@ -102,16 +102,6 @@ pub(super) fn draw_tip_lab_w_resize_area(
     }));
 }
 
-fn normalize_scale_bar_length(value: Float) -> Float {
-    if value <= 0.0 {
-        return value;
-    }
-    let magnitude = value.log10().floor();
-    let norm_factor = 10.0_f32.powf(magnitude);
-    let normalized = value / norm_factor;
-    normalized.ceil() * norm_factor
-}
-
 fn draw_scale_bar_internal(
     tre_sty: TreSty,
     tre_vs: &RectVals<Float>,
@@ -121,6 +111,7 @@ fn draw_scale_bar_internal(
     root_len: Float,
     subtree_node_len: Float,
     tre_height: Float,
+    tre_unit: TreUnit,
     f: &mut Frame,
 ) {
     let stroke = STRK_2_BLK;
@@ -130,7 +121,7 @@ fn draw_scale_bar_internal(
     };
 
     let tre_height = tre_height + subtree_node_len;
-    let sb_len = normalize_scale_bar_length(tre_height / 4.0);
+    let sb_len = normalize_scale_value(tre_height / 4.0, AxisScaleType::LogTen);
     let sb_frac = sb_len / tre_height;
     let sb_len_on_screen = sb_frac * w;
 
@@ -148,7 +139,13 @@ fn draw_scale_bar_internal(
             format!("{sb_len:0.3}")
         } else {
             format!("{sb_len:0.0}")
-        },
+        } + " "
+            + match tre_unit {
+                TreUnit::Unitless => "",
+                TreUnit::Substitutions => "Substitutions/Site",
+                TreUnit::My => "Million Years",
+                TreUnit::Coalescent => "Coalescent",
+            },
         p_lab,
         lab_size,
         TEMPLATE_TXT_LAB_SCALEBAR,
@@ -183,6 +180,7 @@ pub(super) fn draw_scale_bar(
                     false => 0.0,
                 },
                 tst.max_first_node_to_tip_distance() as Float,
+                tc.tre_unit,
                 f,
             );
         }));

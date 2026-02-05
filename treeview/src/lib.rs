@@ -41,7 +41,13 @@ use std::fmt::{Debug, Display, Formatter, Result};
 use std::rc::Rc;
 
 use cnv_plot::AXIS_SCALE_TYPE_OPTS;
+use cnv_plot::AxisScaleType;
 use cnv_plot::PlotCnv;
+use cnv_plot::PlotData;
+use cnv_plot::Tick;
+use cnv_plot::plot_data_from_ltt_points;
+use cnv_plot::transformed_relative_value;
+
 use cnv_tree::TreeCnv;
 use consts::*;
 use dendros::{Edge, LttPoint, Node, NodeId, Tree, ltt, write_newick};
@@ -51,243 +57,9 @@ use riced::*;
 use tables::nodes_table;
 use treestate::{EdgeSortField, TreeState};
 use treeview::{
-    TRE_NODE_ORD_OPTS, TRE_STY_OPTS, TreNodeOrd, TreSty, TreeViewPane,
+    TRE_NODE_ORD_OPTS, TRE_STY_OPTS, TRE_UNIT_OPTS, TreNodeOrd, TreSty,
+    TreUnit, TreeViewPane,
 };
-
-#[derive(Debug, Default, Clone, Copy, PartialEq)]
-pub enum AxisScaleType {
-    #[default]
-    Linear,
-    LogTwo,
-    LogTen,
-}
-
-impl From<AxisScaleType> for Float {
-    fn from(value: AxisScaleType) -> Self {
-        match value {
-            AxisScaleType::Linear => 1e1,
-            AxisScaleType::LogTwo => 2e0,
-            AxisScaleType::LogTen => 1e1,
-        }
-    }
-}
-
-impl Display for AxisScaleType {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        f.write_str(match self {
-            AxisScaleType::Linear => "Linear",
-            AxisScaleType::LogTwo => "Log Base 2",
-            AxisScaleType::LogTen => "Log Base 10",
-        })
-    }
-}
-
-#[derive(Debug, Default, Clone, Copy, PartialEq)]
-pub enum AxisDataType {
-    #[default]
-    Continuous,
-    Discrete,
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct PlotPoint {
-    x: Float,
-    y: Float,
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct PlotData {
-    x_data_type: AxisDataType,
-    y_data_type: AxisDataType,
-    x_min: Float,
-    x_max: Float,
-    y_min: Float,
-    y_max: Float,
-    plot_points: Vec<PlotPoint>,
-}
-
-pub struct Tick {
-    pub relative_position: Float,
-    pub label: String,
-}
-
-impl Display for Tick {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "(pos: {:.2}, lab: {})", self.relative_position, self.label)
-    }
-}
-
-impl Debug for Tick {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{self}")
-    }
-}
-
-pub fn transform_value(raw: Float, scale: AxisScaleType) -> Float {
-    match scale {
-        AxisScaleType::Linear => raw,
-        AxisScaleType::LogTwo => raw.log2(),
-        AxisScaleType::LogTen => raw.log10(),
-    }
-}
-
-pub fn transformed_relative_value(
-    value: Float,
-    min_value: Float,
-    max_value: Float,
-    scale: AxisScaleType,
-) -> Float {
-    let value_after_offset = value - min_value;
-    let max_value_after_offset = max_value - min_value;
-
-    if value_after_offset <= 0e0 {
-        0e0
-    } else {
-        transform_value(value_after_offset, scale)
-            / transform_value(max_value_after_offset, scale)
-    }
-}
-
-pub fn normalize_value(
-    value: Float,
-    base: Float,
-) -> (usize, usize, Float, Float) {
-    if value <= 0e0 {
-        return (0, 0, 0e0, 0e0);
-    }
-
-    let mag = value.log(base);
-    let mut min_mag = mag.floor() as usize;
-    let mut max_mag = mag.ceil() as usize;
-
-    if min_mag == max_mag {
-        min_mag = min_mag.saturating_sub(1);
-        max_mag += 1;
-    }
-
-    let min_val = base.powi(min_mag as Integer);
-    let max_val = base.powi(max_mag as Integer);
-
-    (min_mag, max_mag, min_val, max_val)
-}
-
-pub fn calc_ticks(
-    tick_count: usize,
-    scale_type: AxisScaleType,
-    data_type: AxisDataType,
-    min: Float,
-    max: Float,
-    axis_reversed: bool,
-) -> (Vec<Tick>, usize) {
-    let mut ticks: Vec<Tick> = Vec::with_capacity(tick_count);
-    let base: Float = scale_type.into();
-    let (_, _, mut linear_delta, _) = normalize_value(max, base);
-
-    let z = (max - min) / linear_delta;
-    if z < 1.5 {
-        linear_delta = linear_delta / 1e1 * 1e0;
-    } else if z < 2.0 {
-        linear_delta = linear_delta / 1e1 * 2.5;
-    } else if z < 4.0 {
-        linear_delta = linear_delta / 1e1 * 5e0;
-    }
-
-    if data_type == AxisDataType::Discrete && linear_delta < 1e0 {
-        linear_delta = 1e0;
-    }
-
-    let mut decimals: usize = 0;
-    if scale_type == AxisScaleType::Linear {
-        let mut n_ticks_calc = ((max - min) / linear_delta).ceil() as usize;
-
-        while n_ticks_calc < tick_count {
-            if n_ticks_calc == 0 {
-                linear_delta /= 1e1;
-            } else if n_ticks_calc == 1 {
-                linear_delta /= 4e0;
-            } else {
-                linear_delta /= 2e0;
-            }
-
-            n_ticks_calc = ((max - min) / linear_delta).ceil() as usize;
-        }
-
-        if n_ticks_calc > tick_count {
-            linear_delta *= 2e0;
-        }
-
-        let ldfrac = linear_delta.fract();
-        if ldfrac > 0e0 {
-            decimals = format!("{ldfrac}").len() - 2;
-        }
-    }
-
-    let mut i: usize = 1;
-    let mut n: usize = 1;
-    let mut min_val_diff = 0e0;
-    while n < tick_count {
-        let val = match scale_type {
-            AxisScaleType::Linear => linear_delta * i as Float,
-            AxisScaleType::LogTwo => (2e0 as Float).powi(i as Integer),
-            AxisScaleType::LogTen => (1e1 as Float).powi(i as Integer),
-        };
-
-        if val < min {
-            i += 1;
-            if axis_reversed {
-                min_val_diff = min - val;
-            }
-            continue;
-        }
-
-        if val < max {
-            let lab_val = match axis_reversed {
-                true => val - min,
-                false => val,
-            };
-
-            let nchar = 1 + lab_val.log10().floor() as usize + decimals;
-
-            let mut relative_position = transformed_relative_value(
-                val + min_val_diff,
-                min,
-                max,
-                scale_type,
-            );
-
-            relative_position = match axis_reversed {
-                true => 1.0 - relative_position,
-                false => relative_position,
-            };
-
-            ticks.push(Tick {
-                relative_position,
-                label: format!(
-                    "{:width$.decimals$}",
-                    lab_val,
-                    width = nchar,
-                    decimals = decimals
-                ),
-            });
-
-            n += 1;
-        } else {
-            break;
-        }
-
-        i += 1;
-    }
-
-    let nchar = match axis_reversed {
-        true => 1 + min.log10().floor() as usize,
-        false => 1 + max.log10().floor() as usize,
-    };
-
-    let max_lab_nchar: usize =
-        if decimals == 0 { nchar } else { nchar + decimals + 1 };
-
-    (ticks, max_lab_nchar)
-}
 
 #[derive(Debug, Clone, Copy)]
 pub enum SortOrd {
@@ -513,4 +285,34 @@ fn ellipsize_unicode(name: impl Into<String>, width: usize) -> String {
         rv.push('\u{2026}'); // ellipsis
     }
     rv
+}
+
+fn transform_value(value: Float, scale: AxisScaleType) -> Float {
+    match scale {
+        AxisScaleType::Linear => value,
+        AxisScaleType::LogTwo => value.log2(),
+        AxisScaleType::LogTen => value.log10(),
+    }
+}
+
+fn normalize_scale_value(value: Float, scale: AxisScaleType) -> Float {
+    if value <= 0e0 {
+        return 0e0;
+    }
+
+    let base: Float = match scale {
+        AxisScaleType::Linear => 1e1,
+        AxisScaleType::LogTwo => 2e0,
+        AxisScaleType::LogTen => 1e1,
+    };
+
+    let magnitude = if scale == AxisScaleType::Linear {
+        transform_value(value, AxisScaleType::LogTen).floor()
+    } else {
+        transform_value(value, scale).floor()
+    };
+
+    let norm_factor = base.powf(magnitude);
+    let normalized = value / norm_factor;
+    normalized.ceil() * norm_factor
 }

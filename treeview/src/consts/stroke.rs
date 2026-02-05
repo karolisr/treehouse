@@ -39,6 +39,7 @@ pub(crate) const STRK_4: Strk = Strk { width: SF * 4e0, ..TEMPLATE_STRK };
 pub(crate) const STRK_5: Strk = Strk { width: SF * 5e0, ..TEMPLATE_STRK };
 
 pub(crate) const STRK_H_BLK: Strk = Strk { style: Solid(Clr::BLK), ..STRK_H };
+pub(crate) const STRK_1_WHT: Strk = Strk { style: Solid(Clr::WHT), ..STRK_1 };
 pub(crate) const STRK_1_BLK: Strk = Strk { style: Solid(Clr::BLK), ..STRK_1 };
 pub(crate) const STRK_1_RED: Strk = Strk { style: Solid(Clr::RED), ..STRK_1 };
 pub(crate) const STRK_1_GRN: Strk = Strk { style: Solid(Clr::GRN), ..STRK_1 };
@@ -209,6 +210,8 @@ pub(crate) const STRK_4_YEL: Strk = Strk { style: Solid(Clr::YEL), ..STRK_4 };
 pub(crate) const STRK_4_CYA: Strk = Strk { style: Solid(Clr::CYA), ..STRK_4 };
 pub(crate) const STRK_4_MAG: Strk = Strk { style: Solid(Clr::MAG), ..STRK_4 };
 
+pub(crate) const STRK_4_WHT_25: Strk =
+    Strk { style: Solid(Clr::WHT_25), ..STRK_4 };
 pub(crate) const STRK_4_BLK_25: Strk =
     Strk { style: Solid(Clr::BLK_25), ..STRK_4 };
 pub(crate) const STRK_4_RED_25: Strk =
@@ -224,6 +227,8 @@ pub(crate) const STRK_4_CYA_25: Strk =
 pub(crate) const STRK_4_MAG_25: Strk =
     Strk { style: Solid(Clr::MAG_25), ..STRK_4 };
 
+pub(crate) const STRK_4_WHT_50: Strk =
+    Strk { style: Solid(Clr::WHT_50), ..STRK_4 };
 pub(crate) const STRK_4_BLK_50: Strk =
     Strk { style: Solid(Clr::BLK_50), ..STRK_4 };
 pub(crate) const STRK_4_RED_50: Strk =
@@ -238,6 +243,23 @@ pub(crate) const STRK_4_CYA_50: Strk =
     Strk { style: Solid(Clr::CYA_50), ..STRK_4 };
 pub(crate) const STRK_4_MAG_50: Strk =
     Strk { style: Solid(Clr::MAG_50), ..STRK_4 };
+
+pub(crate) const STRK_4_WHT_75: Strk =
+    Strk { style: Solid(Clr::WHT_75), ..STRK_4 };
+pub(crate) const STRK_4_BLK_75: Strk =
+    Strk { style: Solid(Clr::BLK_75), ..STRK_4 };
+pub(crate) const STRK_4_RED_75: Strk =
+    Strk { style: Solid(Clr::RED_75), ..STRK_4 };
+pub(crate) const STRK_4_GRN_75: Strk =
+    Strk { style: Solid(Clr::GRN_75), ..STRK_4 };
+pub(crate) const STRK_4_BLU_75: Strk =
+    Strk { style: Solid(Clr::BLU_75), ..STRK_4 };
+pub(crate) const STRK_4_YEL_75: Strk =
+    Strk { style: Solid(Clr::YEL_75), ..STRK_4 };
+pub(crate) const STRK_4_CYA_75: Strk =
+    Strk { style: Solid(Clr::CYA_75), ..STRK_4 };
+pub(crate) const STRK_4_MAG_75: Strk =
+    Strk { style: Solid(Clr::MAG_75), ..STRK_4 };
 
 pub(crate) const STRK_5_WHT: Strk = Strk { style: Solid(Clr::WHT), ..STRK_5 };
 pub(crate) const STRK_5_BLK: Strk = Strk { style: Solid(Clr::BLK), ..STRK_5 };

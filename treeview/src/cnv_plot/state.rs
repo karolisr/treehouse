@@ -4,18 +4,22 @@ use crate::*;
 pub struct St {
     pub(super) bnds: Rectangle<Float>,
     pub(super) cursor_tracking_point: Option<Point>,
+    pub(super) x_max_lab_nchar: usize,
+    pub(super) y_max_lab_nchar: usize,
     pub(super) plt_vs: RectVals<Float>,
     pub(super) plt_rect: Rectangle<Float>,
     pub(super) plt_padd_l: Float,
     pub(super) plt_padd_r: Float,
     pub(super) plt_padd_t: Float,
     pub(super) plt_padd_b: Float,
+    pub(super) axes_padd: Float,
     pub(super) text_size: Float,
+    pub(super) char_width: Float,
     pub(super) tick_size: Float,
     pub(super) lab_offset: Float,
-    pub(super) ltt_plot_data: PlotData,
     pub(super) ticks_x: Vec<Tick>,
     pub(super) ticks_y: Vec<Tick>,
+    pub(super) ltt_plot_data: PlotData,
 }
 
 impl St {

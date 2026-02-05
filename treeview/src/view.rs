@@ -110,7 +110,7 @@ fn pane_content<'a>(
             let cnv = Cnv::new(&tv.tre_cnv).width(cnv_w).height(cnv_h);
             scrollable_cnv_tre(tv.tre_scrollable_id, cnv, w, h).into()
         }
-        TreeViewPane::LttPlot => {
+        TreeViewPane::Plot => {
             let mut cnv_w = cnv_w;
             if tv.tre_cnv.tre_sty == TreSty::Fan {
                 cnv_w = w;
@@ -168,12 +168,12 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
                     Some(TvMsg::ToggleSearchBar),
                     tv.show_search_bar,
                 ),
-                btn_svg_stateful(
-                    Icon::Plot,
-                    Icon::Plot,
-                    Some(TvMsg::ToggleLttPlot),
-                    tv.show_ltt_plot,
-                ),
+                // btn_svg_stateful(
+                //     Icon::Plot,
+                //     Icon::Plot,
+                //     Some(TvMsg::ToggleLttPlot),
+                //     tv.show_ltt_plot,
+                // ),
                 btn_svg_stateful(
                     Icon::DataTable,
                     Icon::DataTable,
@@ -423,6 +423,8 @@ fn side_bar_main<'a>(
 
     sb = sb.push(stats(ts.clone()));
     sb = sb.push(rule_h(SF));
+    sb = sb.push(pick_list_tree_unit(tv.tre_unit));
+    sb = sb.push(rule_h(SF));
     sb = sb.push(pick_list_tre_sty(tv.tre_cnv.tre_sty));
     sb = sb.push(pick_list_node_ordering(tv.node_ord_opt));
     sb = sb.push(rule_h(SF));
@@ -513,11 +515,26 @@ fn side_bar_main<'a>(
     )]);
     sb = sb.push(rule_h(SF));
 
-    sb = sb.push(toggler_selection_lock(true, tv.tre_cnv.selection_lock));
+    sb = sb.push(toggler_plot(true, tv.show_plot));
 
-    if tv.show_ltt_plot {
+    if tv.show_plot {
+        sb = sb.push(toggler_show_ltt(true, tv.ltt_cnv.draw_ltt));
+    }
+
+    if tv.show_plot && tv.ltt_cnv.draw_ltt {
         sb = sb.push(pick_list_ltt_y_axis_scale_type(tv.ltt_cnv.scale_y));
     }
+
+    if tv.show_plot {
+        sb = sb.push(toggler_show_gts(
+            tv.tre_unit == TreUnit::My,
+            tv.ltt_cnv.draw_gts,
+        ));
+    }
+
+    sb = sb.push(rule_h(SF));
+
+    sb = sb.push(toggler_selection_lock(true, tv.tre_cnv.selection_lock));
 
     container(sb.clip(true))
         .style(sty_cont_bottom_left)
@@ -782,6 +799,14 @@ pub(crate) fn pick_list_tre_sty<'a>(tre_sty: TreSty) -> Row<'a, TvMsg> {
         .align_y(Vertical::Center)
 }
 
+pub(crate) fn pick_list_tree_unit<'a>(tre_units: TreUnit) -> Row<'a, TvMsg> {
+    let mut pl: PickList<TreUnit, &[TreUnit], TreUnit, TvMsg> =
+        PickList::new(&TRE_UNIT_OPTS, Some(tre_units), TvMsg::TreUnitChanged);
+    pl = pick_list_common(pl);
+    iced_row![txt("Distance Unit").width(Length::FillPortion(9)), pl]
+        .align_y(Vertical::Center)
+}
+
 pub(crate) fn scrollable_cnv_ltt<'a>(
     scrollable_id: &'static str,
     cnv: Cnv<&'a PlotCnv, TvMsg>,
@@ -931,6 +956,39 @@ pub(crate) fn toggler_selection_lock<'a>(
     let mut tglr = toggler("Selection Lock", selection_lock);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::SelectionLockChanged);
+    }
+    tglr
+}
+
+pub(crate) fn toggler_plot<'a>(
+    enabled: bool,
+    show_plot: bool,
+) -> Toggler<'a, TvMsg> {
+    let mut tglr = toggler("Show Plot", show_plot);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::TogglePlot);
+    }
+    tglr
+}
+
+pub(crate) fn toggler_show_ltt<'a>(
+    enabled: bool,
+    show_ltt: bool,
+) -> Toggler<'a, TvMsg> {
+    let mut tglr = toggler("LTT", show_ltt);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::ToggleLtt);
+    }
+    tglr
+}
+
+pub(crate) fn toggler_show_gts<'a>(
+    enabled: bool,
+    show_gts: bool,
+) -> Toggler<'a, TvMsg> {
+    let mut tglr = toggler("Geological Time Scale", show_gts);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::ToggleGts);
     }
     tglr
 }
