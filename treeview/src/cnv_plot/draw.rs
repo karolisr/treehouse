@@ -16,7 +16,7 @@ pub(super) fn draw_gts(
         let h = st.plt_vs.h;
 
         let x_min = 0e0;
-        let x_max = plt.plot_data.x_max - plt.plot_data.x_min;
+        let x_max = plt.ltt_plot_data.x_max - plt.ltt_plot_data.x_min;
 
         let gts_data = gts_data();
 
@@ -29,10 +29,11 @@ pub(super) fn draw_gts(
             // GtsRank::Age,
         ];
 
-        let mut rank_indexes = HashMap::with_capacity(ranks_to_draw.len());
+        let mut rank_indexes: HashMap<&GtsRank, usize> =
+            HashMap::with_capacity(ranks_to_draw.len());
 
-        for (i, r) in ranks_to_draw.iter().enumerate() {
-            _ = rank_indexes.insert(r, i);
+        for (i, rank) in ranks_to_draw.iter().enumerate() {
+            _ = rank_indexes.insert(rank, i);
         }
 
         f.push_transform();
@@ -40,8 +41,6 @@ pub(super) fn draw_gts(
 
         let gts_label_font_size = st.text_size;
         let h_unit = h / ranks_to_draw.len() as Float;
-
-        let ast = AxisScaleType::Linear;
 
         for gts in gts_data {
             let beg = gts.beg;
@@ -60,13 +59,18 @@ pub(super) fn draw_gts(
                     let y1 = *rank_index as Float * h_unit;
                     let y2 = (*rank_index + 1) as Float * h_unit;
 
-                    let beg_rel = (1.0
-                        - transformed_relative_value(beg, x_min, x_max, ast))
-                    .max(0e0);
+                    let br = transformed_relative_value(
+                        beg, x_min, x_max, plt.x_axis_scale_type,
+                    )
+                    .unwrap_or(0e0);
 
-                    let end_rel = (1.0
-                        - transformed_relative_value(end, x_min, x_max, ast))
-                    .min(1e0);
+                    let er = transformed_relative_value(
+                        end, x_min, x_max, plt.x_axis_scale_type,
+                    )
+                    .unwrap_or(0e0);
+
+                    let beg_rel = (1.0 - br).max(0e0);
+                    let end_rel = (1.0 - er).min(1e0);
 
                     let mut pb: PathBuilder = PathBuilder::new();
 
@@ -143,8 +147,8 @@ pub(super) fn draw_ltt(
 ) {
     g.push(plt.cache_cnv_ltt.draw(rndr, size, |f| {
         let pb_ltt = path_builder_ltt(
-            &st.ltt_plot_data, plt.scale_x, plt.scale_y, st.plt_vs.w,
-            st.plt_vs.h,
+            &st.ltt_plot_data, plt.x_axis_scale_type, plt.y_axis_scale_type,
+            st.plt_vs.w, st.plt_vs.h,
         );
 
         let path_ltt = pb_ltt.build();
@@ -157,22 +161,45 @@ pub(super) fn draw_ltt(
     }));
 }
 
-pub(super) fn draw_axes(
-    plt: &PlotCnv,
-    st: &St,
-    rndr: &Renderer,
-    size: Size,
-    g: &mut Vec<Geometry>,
-) {
-    g.push(plt.cache_cnv_axes.draw(rndr, size, |f| {
-        f.push_transform();
-        f.translate(st.plt_vs.trans);
-        f.stroke(
-            &path_builder_axes(st.plt_vs.w, st.plt_vs.h, st.axes_padd).build(),
-            STRK_1_BLK,
-        );
-        f.pop_transform();
-    }));
+fn path_builder_ltt(
+    data: &PlotData,
+    x_axis_scale_type: AxisScaleType,
+    y_axis_scale_type: AxisScaleType,
+    w: Float,
+    h: Float,
+) -> PathBuilder {
+    let mut first = true;
+    let mut pb: PathBuilder = PathBuilder::new();
+
+    let x_min = data.x_min;
+    let x_max = data.x_max;
+    let y_min = data.y_min;
+    let y_max = data.y_max;
+
+    for plot_point in &data.plot_points {
+        let x_rel = transformed_relative_value(
+            plot_point.x, x_min, x_max, x_axis_scale_type,
+        )
+        .unwrap_or(0e0)
+        .clamp(ZRO, ONE);
+
+        let y_rel = transformed_relative_value(
+            plot_point.y, y_min, y_max, y_axis_scale_type,
+        )
+        .unwrap_or(0e0)
+        .clamp(ZRO, ONE);
+
+        let pt = Point { x: x_rel * w, y: (1e0 - y_rel) * h };
+
+        match first {
+            true => {
+                pb = pb.move_to(pt);
+                first = false;
+            }
+            false => pb = pb.line_to(pt),
+        }
+    }
+    pb
 }
 
 pub(super) fn draw_ticks(
@@ -209,41 +236,6 @@ pub(super) fn draw_ticks(
             f,
         );
     }));
-}
-
-fn path_builder_ltt(
-    data: &PlotData,
-    scale_x: AxisScaleType,
-    scale_y: AxisScaleType,
-    w: Float,
-    h: Float,
-) -> PathBuilder {
-    let mut first = true;
-    let mut pb: PathBuilder = PathBuilder::new();
-
-    let x_min = data.x_min;
-    let x_max = data.x_max;
-    let y_min = data.y_min;
-    let y_max = data.y_max;
-
-    for plot_point in &data.plot_points {
-        let x_rel =
-            transformed_relative_value(plot_point.x, x_min, x_max, scale_x);
-
-        let y_rel =
-            transformed_relative_value(plot_point.y, y_min, y_max, scale_y);
-
-        let pt = Point { x: x_rel * w, y: (1e0 - y_rel) * h };
-
-        match first {
-            true => {
-                pb = pb.move_to(pt);
-                first = false;
-            }
-            false => pb = pb.line_to(pt),
-        }
-    }
-    pb
 }
 
 fn path_builder_ticks(
@@ -304,6 +296,24 @@ fn path_builder_ticks(
     (pb, labs_x, labs_y)
 }
 
+pub(super) fn draw_axes(
+    plt: &PlotCnv,
+    st: &St,
+    rndr: &Renderer,
+    size: Size,
+    g: &mut Vec<Geometry>,
+) {
+    g.push(plt.cache_cnv_axes.draw(rndr, size, |f| {
+        f.push_transform();
+        f.translate(st.plt_vs.trans);
+        f.stroke(
+            &path_builder_axes(st.plt_vs.w, st.plt_vs.h, st.axes_padd).build(),
+            STRK_1_BLK,
+        );
+        f.pop_transform();
+    }));
+}
+
 fn path_builder_axes(w: Float, h: Float, axes_padd: Float) -> PathBuilder {
     let mut pb: PathBuilder = PathBuilder::new();
 
@@ -357,28 +367,46 @@ pub(super) fn draw_cursor_line(
             let mut txt_template = TEMPLATE_TXT_CURSOR_TEXT;
             let x_offset;
             let y_offset;
-            let x_val_range = plt.plot_data.x_max - plt.plot_data.x_min;
+            let x_val_range = plt.ltt_plot_data.x_max - plt.ltt_plot_data.x_min;
+
             let tree_height_at_x = if let Some(crsr_x_rel) = plt.crsr_x_rel {
                 x_offset = PADDING;
                 y_offset = PADDING;
                 txt_template.align_y = Vertical::Top;
-                match plt.time_axis_reversed {
+                match plt.x_axis_is_reversed {
                     true => x_val_range * (1.0 - crsr_x_rel),
-                    false => plt.plot_data.x_min + x_val_range * crsr_x_rel,
+                    false => plt.ltt_plot_data.x_min + x_val_range * crsr_x_rel,
                 }
             } else {
                 x_offset = PADDING * 2e0;
                 y_offset = PADDING * 2e0;
                 let crsr_x_rel = p.x / st.plt_vs.w;
-                match plt.time_axis_reversed {
+                match plt.x_axis_is_reversed {
                     true => x_val_range * (1.0 - crsr_x_rel),
-                    false => plt.plot_data.x_min + x_val_range * crsr_x_rel,
+                    false => plt.ltt_plot_data.x_min + x_val_range * crsr_x_rel,
                 }
             };
-            let name = format!("{tree_height_at_x:.3}");
+
+            let units = match plt.x_axis_is_reversed {
+                true => match plt.tre_unit {
+                    TreUnit::Unitless => "",
+                    TreUnit::Substitutions => "",
+                    TreUnit::MillionYears => " MYA",
+                    TreUnit::CoalescentUnits => "",
+                },
+                false => match plt.tre_unit {
+                    TreUnit::Unitless => "",
+                    TreUnit::Substitutions => " Subs./site",
+                    TreUnit::MillionYears => " MY",
+                    TreUnit::CoalescentUnits => "Coales. units",
+                },
+            };
+
+            let name = format!("{tree_height_at_x:.3}{units}");
             let text = lab_text(name, p, st.text_size, txt_template, false);
             let label =
                 Label { text, width: ZRO, angle: 0.0, aligned_from: None };
+
             draw_labels(
                 &[label],
                 Vector { x: x_offset, y: y_offset },

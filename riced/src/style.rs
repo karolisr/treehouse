@@ -452,18 +452,23 @@ pub(crate) fn sty_pick_lst(
 }
 
 pub(crate) fn sty_menu(theme: &Theme) -> IcedMenuStyle {
-    let palette = theme.extended_palette();
+    let ep = theme.extended_palette();
 
     IcedMenuStyle {
-        text_color: palette.primary.weak.text,
-        background: palette.background.weak.color.into(),
+        text_color: ep.primary.weak.text,
+        background: ep.background.weak.color.into(),
         border: Border {
             radius: WIDGET_RADIUS.into(),
             width: BORDER_W,
-            color: palette.background.strong.color,
+            color: ep.background.strong.color,
         },
-        selected_text_color: palette.primary.base.text,
-        selected_background: palette.primary.strong.color.into(),
+        selected_text_color: ep.primary.base.text,
+        selected_background: ep.primary.strong.color.into(),
+        shadow: Shadow {
+            color: ep.background.strong.color.scale_alpha(0.77),
+            offset: Vector { x: ZERO, y: ZERO },
+            blur_radius: PADDING - PADDING / THREE,
+        },
     }
 }
 
@@ -491,7 +496,7 @@ pub(crate) fn sty_scrlbl(
             color: Clr::TRN,
         },
         scroller: Scroller {
-            color: ep.background.strong.color,
+            background: ep.background.strong.color.into(),
             border: Border {
                 radius: WIDGET_RADIUS.into(),
                 width: ZERO,
@@ -506,6 +511,20 @@ pub(crate) fn sty_scrlbl(
             vertical_rail: scrollbar,
             horizontal_rail: scrollbar,
             gap: None,
+            auto_scroll: AutoScroll {
+                background: ep.background.strong.color.into(),
+                border: Border {
+                    radius: WIDGET_RADIUS.into(),
+                    width: ZERO,
+                    color: Clr::TRN,
+                },
+                shadow: Shadow {
+                    color: ep.background.strong.color.scale_alpha(0.77),
+                    offset: Vector { x: ZERO, y: ZERO },
+                    blur_radius: PADDING - PADDING / THREE,
+                },
+                icon: Clr::GRN,
+            },
         },
 
         ScrollableStatus::Hovered {
@@ -515,7 +534,7 @@ pub(crate) fn sty_scrlbl(
         } => {
             let hovered_scrollbar = ScrollBarRail {
                 scroller: Scroller {
-                    color: ep.primary.strong.color,
+                    background: ep.primary.strong.color.into(),
                     ..scrollbar.scroller
                 },
                 ..scrollbar
@@ -534,6 +553,20 @@ pub(crate) fn sty_scrlbl(
                     scrollbar
                 },
                 gap: None,
+                auto_scroll: AutoScroll {
+                    background: ep.background.strong.color.into(),
+                    border: Border {
+                        radius: WIDGET_RADIUS.into(),
+                        width: ZERO,
+                        color: Clr::TRN,
+                    },
+                    shadow: Shadow {
+                        color: ep.background.strong.color.scale_alpha(0.77),
+                        offset: Vector { x: ZERO, y: ZERO },
+                        blur_radius: PADDING - PADDING / THREE,
+                    },
+                    icon: Clr::GRN,
+                },
             }
         }
 
@@ -544,7 +577,7 @@ pub(crate) fn sty_scrlbl(
         } => {
             let dragged_scrollbar = ScrollBarRail {
                 scroller: Scroller {
-                    color: ep.primary.base.color,
+                    background: ep.primary.base.color.into(),
                     ..scrollbar.scroller
                 },
                 ..scrollbar
@@ -563,6 +596,20 @@ pub(crate) fn sty_scrlbl(
                     scrollbar
                 },
                 gap: None,
+                auto_scroll: AutoScroll {
+                    background: ep.background.strong.color.into(),
+                    border: Border {
+                        radius: WIDGET_RADIUS.into(),
+                        width: ZERO,
+                        color: Clr::TRN,
+                    },
+                    shadow: Shadow {
+                        color: ep.background.strong.color.scale_alpha(0.77),
+                        offset: Vector { x: ZERO, y: ZERO },
+                        blur_radius: PADDING - PADDING / THREE,
+                    },
+                    icon: Clr::GRN,
+                },
             }
         }
     }
@@ -615,7 +662,7 @@ pub(crate) fn sty_toggler(
                 ep.background.strong.color
             }
         }
-        TogglerStatus::Disabled => ep.background.weak.color,
+        TogglerStatus::Disabled { is_toggled: _ } => ep.background.weak.color,
     };
 
     let foreground = match status {
@@ -627,17 +674,18 @@ pub(crate) fn sty_toggler(
                 ep.background.weak.color
             }
         }
-        TogglerStatus::Disabled => ep.background.base.color,
+        TogglerStatus::Disabled { is_toggled: _ } => ep.background.base.color,
     };
 
     TogglerStyle {
-        foreground,
-        background,
+        foreground: foreground.into(),
+        background: background.into(),
         foreground_border_width: SF * TWO,
         background_border_width: ZERO,
         foreground_border_color: Clr::TRN,
         background_border_color: Clr::TRN,
-        border_radius: WIDGET_RADIUS,
+        border_radius: Some(WIDGET_RADIUS.into()),
         text_color: None,
+        padding_ratio: ZERO,
     }
 }

@@ -32,7 +32,7 @@
         # "menu-custom",
         "menu-muda"
     ]
-    menu-custom=["dep:iced_aw", "dep:iced_fonts"]
+    menu-custom=["dep:iced_aw"]
     menu-muda=["dep:muda"]
 
 [dependencies.iced_aw]
@@ -42,11 +42,11 @@
     git="https://github.com/karolisr/iced_aw.git"
     optional=true
 
-[dependencies.iced_fonts]
+[dependencies.muda]
     branch="custom"
     default-features=false
     features=[]
-    git="https://github.com/karolisr/iced_fonts.git"
+    git="https://github.com/karolisr/muda.git"
     optional=true
 
 [dependencies]
@@ -60,14 +60,12 @@
     rfd={workspace=true, features=["gtk3"]}
 
 [target.'cfg(target_os = "macos")'.dependencies]
-    muda={workspace=true, optional=true}
     objc2={workspace=true}
     objc2-app-kit={workspace=true}
     objc2-foundation={workspace=true}
     rfd={workspace=true}
 
 [target.'cfg(target_os = "windows")'.dependencies]
-    muda={workspace=true, optional=true}
     rfd={workspace=true}
     windows={workspace=true, features=[
         "Win32_Foundation",

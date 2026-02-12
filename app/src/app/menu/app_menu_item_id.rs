@@ -10,7 +10,7 @@ pub enum AppMenuItemId {
     SaveAs,
     Quit,
     CloseWindow,
-    ToggleSearchBar,
+    Find,
     ExportPdf,
     ExportSubtree,
     #[cfg(target_os = "windows")]
@@ -30,7 +30,7 @@ impl From<String> for AppMenuItemId {
             "SaveAs" => AppMenuItemId::SaveAs,
             "CloseWindow" => AppMenuItemId::CloseWindow,
             "Quit" => AppMenuItemId::Quit,
-            "ToggleSearchBar" => AppMenuItemId::ToggleSearchBar,
+            "Find" => AppMenuItemId::Find,
             "ExportPdf" => AppMenuItemId::ExportPdf,
             "ExportSubtree" => AppMenuItemId::ExportSubtree,
             "Submenu" => AppMenuItemId::Submenu,
@@ -67,9 +67,7 @@ impl From<&AppMenuItemId> for AppMsg {
             AppMenuItemId::SaveAs => AppMsg::SaveAs,
             AppMenuItemId::Quit => AppMsg::Quit,
             AppMenuItemId::CloseWindow => AppMsg::WinCloseRequested,
-            AppMenuItemId::ToggleSearchBar => {
-                AppMsg::TvMsg(TvMsg::ToggleSearchBar)
-            }
+            AppMenuItemId::Find => AppMsg::TvMsg(TvMsg::ShowSearchBar),
             AppMenuItemId::ContextMenuIndex(idx) => {
                 AppMsg::TvMsg(TvMsg::ContextMenuChosenIdx(*idx))
             }

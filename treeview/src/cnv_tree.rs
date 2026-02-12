@@ -8,6 +8,7 @@ use state::St;
 #[derive(Debug)]
 pub(super) struct TreeCnv {
     pub(super) tre_sty: TreSty,
+    pub(super) search_is_active: bool,
     // -------------------------------------------------------------------------
     cache_cnv_bnds: CnvCache,
     cache_cnv_tip_lab_w_resize_area: CnvCache,
@@ -81,11 +82,12 @@ impl TreeCnv {
     pub fn new(draw_debug: bool) -> Self {
         Self {
             tre_sty: TreSty::PhyGrm,
+            search_is_active: false,
             // -----------------------------------------------------------------
-            padd_l: TREE_PADDING,
-            padd_r: TREE_PADDING,
-            padd_t: TREE_PADDING,
-            padd_b: TREE_PADDING,
+            padd_l: PLOT_PADDING,
+            padd_r: PLOT_PADDING,
+            padd_t: PLOT_PADDING,
+            padd_b: PLOT_PADDING,
             // -----------------------------------------------------------------
             draw_debug,
             drawing_enabled: false,

@@ -31,7 +31,7 @@
             "svg",                   # "svg" widget
             "tokio",                 # "tokio" as the "executor::Default" on native platforms
             "wgpu",                  # "wgpu" GPU-accelerated renderer backend
-            "debug",                 # debug view in native platforms (press F12)
+            # "debug",               # debug view in native platforms (press F12)
             # ----------------------------------------------------------------------------------------------
             # "advanced-shaping",        # advanced text shaping by default
             # "fira-sans",               # embeds Fira Sans into the final application; useful for testing and Wasm builds

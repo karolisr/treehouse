@@ -313,6 +313,19 @@ fn normalize_scale_value(value: Float, scale: AxisScaleType) -> Float {
     };
 
     let norm_factor = base.powf(magnitude);
-    let normalized = value / norm_factor;
+    let mut normalized = value / norm_factor;
+
+    if normalized > 1e0 {
+        if normalized < 2e0 {
+            normalized = 1e0;
+        } else if normalized < 4e0 {
+            normalized = 2e0;
+        } else if normalized < 5e0 {
+            normalized = 5e0;
+        } else if normalized < 1e1 {
+            normalized = 1e1;
+        }
+    }
+
     normalized.ceil() * norm_factor
 }

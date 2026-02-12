@@ -41,8 +41,8 @@ impl Program<TvMsg> for TreeCnv {
         st.stale_vis_rect = false;
         let vis_x0 = self.vis_x0;
         let vis_y0 = self.vis_y0;
-        let vis_x1 = self.vis_x1 - self.padd_r + TREE_PADDING;
-        let vis_y1 = self.vis_y1 - self.padd_b + TREE_PADDING;
+        let vis_x1 = self.vis_x1 - self.padd_r + PLOT_PADDING;
+        let vis_y1 = self.vis_y1 - self.padd_b + PLOT_PADDING;
         if vis_x0 != st.vis_vs.x0
             || vis_y0 != st.vis_vs.y0
             || vis_x1 != st.vis_vs.x1
@@ -132,10 +132,11 @@ impl Program<TvMsg> for TreeCnv {
         st.labs_brnch.clear();
         // ---------------------------------------------------------------------
 
-        let highlighted_node_ids = match tst.is_search_active() {
-            true => Some(tst.found_node_ids()),
-            false => None,
-        };
+        let highlighted_node_ids =
+            match tst.is_search_active() && self.search_is_active {
+                true => Some(tst.found_node_ids()),
+                false => None,
+            };
 
         if tst.has_tip_labels() && self.draw_labs_tip && self.draw_labs_allowed
         {
@@ -360,6 +361,7 @@ impl Program<TvMsg> for TreeCnv {
                     location: _,
                     modifiers: _,
                     text: _,
+                    repeat: _,
                 } => {
                     if let Some((node_id, _)) = &st.hovered_node
                         && let Key::Character(k) = key

@@ -72,7 +72,7 @@ pub(crate) fn app_menu_bar() -> Menu {
     let mi_toggle_search_bar = MenuItem::item(
         "Find",
         false,
-        AppMenuItemId::ToggleSearchBar,
+        AppMenuItemId::Find,
         Some(Accelerator { modifier, key: KeyCode::KeyF }),
     );
 

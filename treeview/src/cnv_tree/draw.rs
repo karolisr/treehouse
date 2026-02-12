@@ -104,8 +104,8 @@ pub(super) fn draw_tip_lab_w_resize_area(
 
 fn draw_scale_bar_internal(
     tre_sty: TreSty,
+    vis_vs: &RectVals<Float>,
     tre_vs: &RectVals<Float>,
-    cnv_vs: &RectVals<Float>,
     lab_size: Float,
     lab_y_offset: Float,
     root_len: Float,
@@ -123,36 +123,55 @@ fn draw_scale_bar_internal(
     let tre_height = tre_height + subtree_node_len;
     let sb_len = normalize_scale_value(tre_height / 4.0, AxisScaleType::LogTen);
     let sb_frac = sb_len / tre_height;
-    let sb_len_on_screen = sb_frac * w;
+    let scale_bar_width = sb_frac * w;
 
-    let x = tre_vs.x0;
-    let y = cnv_vs.y1 - stroke.width / TWO - lab_size - lab_y_offset - PADDING;
+    let number = if sb_len < 0.01 {
+        format!("{sb_len:.2E}")
+    } else if sb_len <= 1.0 {
+        format!("{sb_len:0.3}")
+    } else {
+        format!("{sb_len:0.0}")
+    };
+    let units = match tre_unit {
+        TreUnit::Unitless => "",
+        TreUnit::Substitutions => " Substitutions per site",
+        TreUnit::MillionYears => " Million years",
+        TreUnit::CoalescentUnits => " Coalescent units",
+    };
+    let label = number + units;
+    let char_width = lab_size * 6e-1;
+    let lab_width = char_width * label.len() as Float;
+    let total_width = lab_width.max(scale_bar_width);
+
+    // let x = tre_vs.x0 + total_width / TWO;
+    // let y = cnv_vs.y1
+    //     - stroke.width / TWO
+    //     - lab_size
+    //     - lab_y_offset
+    //     - PADDING * TWO;
+
+    let lab_sb_width_diff = lab_width - scale_bar_width;
+    let left_offset_due_to_label =
+        if lab_sb_width_diff > ZRO { lab_sb_width_diff / TWO } else { 0e0 };
+
+    let x = vis_vs.x0 + PADDING * TWO + left_offset_due_to_label;
+    let y = vis_vs.y0 + vis_vs.h
+        - stroke.width / TWO
+        - lab_size
+        - lab_y_offset
+        - PADDING * TWO;
+
     let p0 = Point { x, y };
-    let p1 = Point { x: x + sb_len_on_screen, y };
+    let p1 = Point { x: x + scale_bar_width, y };
     let p_lab = Point { x: x.midpoint(p1.x), y };
 
     f.stroke(&PathBuilder::new().move_to(p0).line_to(p1).build(), stroke);
-    let text = lab_text(
-        if sb_len < 0.01 {
-            format!("{sb_len:.2E}")
-        } else if sb_len <= 1.0 {
-            format!("{sb_len:0.3}")
-        } else {
-            format!("{sb_len:0.0}")
-        } + " "
-            + match tre_unit {
-                TreUnit::Unitless => "",
-                TreUnit::Substitutions => "Substitutions/Site",
-                TreUnit::My => "Million Years",
-                TreUnit::Coalescent => "Coalescent",
-            },
-        p_lab,
-        lab_size,
-        TEMPLATE_TXT_LAB_SCALEBAR,
-        false,
-    );
+    let text =
+        lab_text(label, p_lab, lab_size, TEMPLATE_TXT_LAB_SCALEBAR, false);
+
     let lab =
-        Label { text, width: sb_len_on_screen, angle: 0.0, aligned_from: None };
+        Label { text, width: total_width, angle: 0.0, aligned_from: None };
+
     draw_labels(&[lab], Vector { x: ZRO, y: lab_y_offset }, None, ZRO, f);
 }
 
@@ -168,10 +187,10 @@ pub(super) fn draw_scale_bar(
         g.push(tc.cache_cnv_scale_bar.draw(rndr, sz, |f| {
             draw_scale_bar_internal(
                 tc.tre_sty,
+                &st.vis_vs,
                 &st.tre_vs,
-                &st.cnv_vs,
                 SF * 12e0,
-                SF * 6e0,
+                SF * 10e0,
                 st.root_len,
                 match tst.is_subtree_view_active() {
                     true => {

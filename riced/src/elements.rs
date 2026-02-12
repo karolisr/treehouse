@@ -119,11 +119,12 @@ pub fn btn_txt<Msg>(lab: &'_ str, msg: Option<Msg>) -> Button<'_, Msg> {
 }
 
 pub fn checkbox<'a, Msg>(
-    lab: &str,
+    lab: &'a str,
     is_checked: bool,
     msg: impl Fn(bool) -> Msg + 'a,
 ) -> Checkbox<'a, Msg> {
-    Checkbox::new(lab, is_checked)
+    Checkbox::new(is_checked)
+        .label(lab)
         .on_toggle(msg)
         .size(CHECKBOX_H)
         .spacing(PADDING)

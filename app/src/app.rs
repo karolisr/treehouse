@@ -9,10 +9,10 @@ use dendros::parse_trees;
 
 use menu::*;
 use riced::{
-    Clr, Element, Font, IcedAppSettings, Key, Modifiers, Pixels, Subscription,
-    Task, Theme, ThemeStyle, WindowEvent, WindowId, close_window,
-    error_container, exit, modal_element, on_key_press, open_window,
-    window_events,
+    Clr, Element, Font, IcedAppSettings, Key, KeyboardEvent, Modifiers, Pixels,
+    Subscription, Task, Theme, ThemeStyle, WindowEvent, WindowId,
+    allow_automatic_tabbing, close_window, error_container, exit,
+    keyboard_events, modal_element, open_window, window_events,
 };
 use std::path::PathBuf;
 use treeview::{TreeView, TvContextMenuSpecification, TvMsg};
@@ -110,7 +110,8 @@ impl App {
                 #[cfg(feature = "menu-custom")]
                 active_context_menu: None,
             },
-            Task::done(AppMsg::AppInitialized),
+            allow_automatic_tabbing(false)
+                .chain(Task::done(AppMsg::AppInitialized)),
         )
     }
 
@@ -159,6 +160,8 @@ impl App {
 
     pub fn update(&mut self, app_msg: AppMsg) -> Task<AppMsg> {
         let mut task: Option<Task<AppMsg>> = None;
+        #[allow(unused_mut)]
+        let mut prefix_task: Option<Task<AppMsg>> = None;
         match app_msg {
             AppMsg::ErrorSet(s) => {
                 self.error = Some(s);
@@ -209,6 +212,12 @@ impl App {
                             }
                         }
                         Modifiers::COMMAND => {
+                            // if let Some(treeview) = &self.treeview {
+                            //     let widget_id = treeview.tre_scrollable_id;
+                            //     prefix_task = Some(focus(widget_id));
+                            //     prefix_task = Some(unfocus());
+                            // }
+
                             #[cfg(any(
                                 target_os = "macos",
                                 target_os = "linux"
@@ -221,6 +230,7 @@ impl App {
                                 }
                                 _ => {}
                             }
+
                             #[cfg(target_os = "linux")]
                             match k {
                                 "q" => {
@@ -230,6 +240,7 @@ impl App {
                                 }
                                 _ => {}
                             }
+
                             match k {
                                 "=" => {
                                     task = Some(Task::done(AppMsg::TvMsg(
@@ -372,9 +383,7 @@ impl App {
                                     if let Some(menu) = &mut self.menu {
                                         menu.enable(AppMenuItemId::SaveAs);
                                         menu.enable(AppMenuItemId::ExportPdf);
-                                        menu.enable(
-                                            AppMenuItemId::ToggleSearchBar,
-                                        );
+                                        menu.enable(AppMenuItemId::Find);
                                         menu.disable(
                                             AppMenuItemId::ExportSubtree,
                                         );
@@ -600,7 +609,7 @@ impl App {
                     menu.disable(AppMenuItemId::SaveAs);
                     menu.disable(AppMenuItemId::ExportPdf);
                     menu.disable(AppMenuItemId::ExportSubtree);
-                    menu.disable(AppMenuItemId::ToggleSearchBar);
+                    menu.disable(AppMenuItemId::Find);
                 }
                 task = Some(Task::done(AppMsg::Quit));
             }
@@ -640,7 +649,10 @@ impl App {
         }
 
         match task {
-            Some(task) => task,
+            Some(task) => match prefix_task {
+                Some(prefix_task) => prefix_task.chain(task),
+                None => task,
+            },
             None => Task::none(),
         }
     }
@@ -654,8 +666,12 @@ impl App {
         #[cfg(feature = "menu-muda")]
         subs.push(menu::menu_events());
         subs.push(window_events().map(|(_, e)| AppMsg::WinEvent(e)));
-        subs.push(on_key_press(|key, modifiers| {
-            Some(AppMsg::KeysPressed(key, modifiers))
+        subs.push(keyboard_events().map(|e| match e {
+            KeyboardEvent::KeyPressed { key, modifiers, .. } => {
+                AppMsg::KeysPressed(key, modifiers)
+            }
+
+            _ => AppMsg::Other(None),
         }));
         Subscription::batch(subs)
     }
@@ -691,8 +707,6 @@ impl App {
             default_text_size: Pixels(TXT_SIZE),
             antialiasing: true,
             vsync: true,
-            #[cfg(target_os = "macos")]
-            allows_automatic_window_tabbing: false,
         }
     }
 }

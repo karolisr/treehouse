@@ -53,7 +53,7 @@ impl TvContextMenuSpecification {
     }
 
     pub fn set_position_offset(mut self, offset: Vector) -> Self {
-        self.position = self.position + offset;
+        self.position += offset;
         self
     }
 

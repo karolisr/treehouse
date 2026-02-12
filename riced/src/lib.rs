@@ -51,7 +51,7 @@ pub use i::futures::{
 };
 pub use i::keyboard::{
     Event as KeyboardEvent, Key, Location as KeyLocation, Modifiers,
-    key::Named as KeyName, on_key_press,
+    key::Named as KeyName, listen as keyboard_events,
 };
 pub use i::mouse::{
     Button as MouseButton, Cursor, Event as MouseEvent,
@@ -62,8 +62,8 @@ pub use i::theme::{Style as ThemeStyle, Theme, palette::Pair as PalettePair};
 pub use i::window::{
     Event as WindowEvent, Id as WindowId, Level as WindowLevel,
     Position as WindowPosition, Settings as WindowSettings,
-    close as close_window, events as window_events, open as open_window,
-    raw_id,
+    allow_automatic_tabbing, close as close_window, events as window_events,
+    open as open_window, raw_id,
     raw_window_handle::{HasWindowHandle, RawWindowHandle},
     run,
     settings::PlatformSpecific as PlatformSpecificWindowSettings,
@@ -96,7 +96,11 @@ pub use w::container;
 pub use w::container::{Container, Style as ContainerStyle};
 pub use w::float;
 pub use w::mouse_area;
-pub use w::operation::{focus, scroll_to};
+pub use w::operation::{
+    focus, focus_next, focus_previous, is_focused, move_cursor_to,
+    move_cursor_to_end, move_cursor_to_front, scroll_by, scroll_to, select_all,
+    snap_to, snap_to_end,
+};
 pub use w::overlay::menu::Style as IcedMenuStyle;
 pub use w::pane_grid::{
     Axis as PgAxis, Content as PgContent, Highlight as PgHighlight,
@@ -114,9 +118,9 @@ pub use w::rule::{
     horizontal as horizontal_rule, vertical as vertical_rule,
 };
 pub use w::scrollable::{
-    AbsoluteOffset, Direction as ScrollableDirection, Rail as ScrollBarRail,
-    Scrollable, Scrollbar, Scroller, Status as ScrollableStatus,
-    Style as ScrollableStyle, Viewport,
+    AbsoluteOffset, AutoScroll, Direction as ScrollableDirection,
+    Rail as ScrollBarRail, Scrollable, Scrollbar, Scroller,
+    Status as ScrollableStatus, Style as ScrollableStyle, Viewport,
 };
 pub use w::slider::{
     Handle as SliderHandle, HandleShape as SliderHandleShape,
@@ -140,3 +144,9 @@ pub use w::toggler::{Status as TogglerStatus, Style as TogglerStyle, Toggler};
 pub use w::tooltip;
 pub use w::tooltip::Position as TooltipPosition;
 pub use w::{Column, Row, opaque, stack};
+
+/// Unfocus the focused widget.
+pub fn unfocus<T: Send + 'static>() -> Task<T> {
+    let operation = i::advanced::widget::operation::focusable::unfocus();
+    i::advanced::widget::operate(operation)
+}

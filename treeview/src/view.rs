@@ -115,8 +115,8 @@ fn pane_content<'a>(
             if tv.tre_cnv.tre_sty == TreSty::Fan {
                 cnv_w = w;
             }
-            let cnv = Cnv::new(&tv.ltt_cnv).width(cnv_w).height(h);
-            scrollable_cnv_ltt(tv.ltt_scrollable_id, cnv, w, h).into()
+            let cnv = Cnv::new(&tv.plot_cnv).width(cnv_w).height(h);
+            scrollable_cnv_plot(tv.plot_scrollable_id, cnv, w, h).into()
         }
         TreeViewPane::NodesTable => {
             data_table_element(tv, tv.nodes_table_scrollable_id, w, h)
@@ -154,7 +154,7 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
 
     if tv.tre_states.len() > 1 {
-        tb_row = tb_row.push(tree_switcher(tv, ts));
+        tb_row = tb_row.push(tree_switcher(tv, ts.clone()));
     }
 
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
@@ -168,12 +168,15 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
                     Some(TvMsg::ToggleSearchBar),
                     tv.show_search_bar,
                 ),
-                // btn_svg_stateful(
-                //     Icon::Plot,
-                //     Icon::Plot,
-                //     Some(TvMsg::ToggleLttPlot),
-                //     tv.show_ltt_plot,
-                // ),
+                btn_svg_stateful(
+                    Icon::Plot,
+                    Icon::Plot,
+                    match ts.has_brlen() {
+                        true => Some(TvMsg::TogglePlot(!tv.show_plot)),
+                        false => None,
+                    },
+                    tv.show_plot,
+                ),
                 btn_svg_stateful(
                     Icon::DataTable,
                     Icon::DataTable,
@@ -423,8 +426,10 @@ fn side_bar_main<'a>(
 
     sb = sb.push(stats(ts.clone()));
     sb = sb.push(rule_h(SF));
-    sb = sb.push(pick_list_tree_unit(tv.tre_unit));
-    sb = sb.push(rule_h(SF));
+    if ts.has_brlen() {
+        sb = sb.push(pick_list_tree_unit(tv.tre_unit));
+        sb = sb.push(rule_h(SF));
+    }
     sb = sb.push(pick_list_tre_sty(tv.tre_cnv.tre_sty));
     sb = sb.push(pick_list_node_ordering(tv.node_ord_opt));
     sb = sb.push(rule_h(SF));
@@ -506,35 +511,41 @@ fn side_bar_main<'a>(
         ));
     }
 
+    sb = sb.push(toggler_selection_lock(true, tv.tre_cnv.selection_lock));
+
     sb = sb.push(iced_col![toggler_scale_bar(
         ts.has_brlen(),
         tv.tre_cnv.draw_scale_bar
     )]);
+
     sb = sb.push(iced_col![toggler_cursor_line(
         true, tv.tre_cnv.draw_cursor_line, tv.tre_cnv.tre_sty
     )]);
+
     sb = sb.push(rule_h(SF));
 
-    sb = sb.push(toggler_plot(true, tv.show_plot));
+    // if ts.has_brlen() {
+    //     sb = sb.push(toggler_plot(true, tv.show_plot));
+    // }
 
-    if tv.show_plot {
-        sb = sb.push(toggler_show_ltt(true, tv.ltt_cnv.draw_ltt));
-    }
+    if tv.show_plot && ts.has_brlen() {
+        sb = sb.push(toggler_ltt(true, tv.plot_cnv.draw_ltt));
 
-    if tv.show_plot && tv.ltt_cnv.draw_ltt {
-        sb = sb.push(pick_list_ltt_y_axis_scale_type(tv.ltt_cnv.scale_y));
-    }
+        // sb = sb.push(pick_list_plot_x_axis_scale_type(
+        //     tv.plot_cnv.x_axis_scale_type,
+        // ));
 
-    if tv.show_plot {
-        sb = sb.push(toggler_show_gts(
-            tv.tre_unit == TreUnit::My,
-            tv.ltt_cnv.draw_gts,
+        if tv.plot_cnv.draw_ltt {
+            sb = sb.push(pick_list_plot_y_axis_scale_type(
+                tv.plot_cnv.y_axis_scale_type,
+            ));
+        }
+
+        sb = sb.push(toggler_gts(
+            tv.tre_unit == TreUnit::MillionYears,
+            tv.plot_cnv.draw_gts,
         ));
     }
-
-    sb = sb.push(rule_h(SF));
-
-    sb = sb.push(toggler_selection_lock(true, tv.tre_cnv.selection_lock));
 
     container(sb.clip(true))
         .style(sty_cont_bottom_left)
@@ -759,7 +770,8 @@ pub(crate) fn btn_clear_subtree_view<'a>(
     .width(BTN_H1 * 3.0)
 }
 
-pub(crate) fn pick_list_ltt_y_axis_scale_type<'a>(
+#[allow(dead_code)]
+pub(crate) fn pick_list_plot_x_axis_scale_type<'a>(
     axis_scale_type: AxisScaleType,
 ) -> Row<'a, TvMsg> {
     let mut pl: PickList<
@@ -770,7 +782,25 @@ pub(crate) fn pick_list_ltt_y_axis_scale_type<'a>(
     > = PickList::new(
         &AXIS_SCALE_TYPE_OPTS,
         Some(axis_scale_type),
-        TvMsg::LttYAxisScaleTypeChanged,
+        TvMsg::PlotXAxisScaleTypeChanged,
+    );
+    pl = pick_list_common(pl);
+    iced_row![txt("X-Axis Scale").width(Length::FillPortion(9)), pl]
+        .align_y(Vertical::Center)
+}
+
+pub(crate) fn pick_list_plot_y_axis_scale_type<'a>(
+    axis_scale_type: AxisScaleType,
+) -> Row<'a, TvMsg> {
+    let mut pl: PickList<
+        AxisScaleType,
+        &[AxisScaleType],
+        AxisScaleType,
+        TvMsg,
+    > = PickList::new(
+        &AXIS_SCALE_TYPE_OPTS,
+        Some(axis_scale_type),
+        TvMsg::PlotYAxisScaleTypeChanged,
     );
     pl = pick_list_common(pl);
     iced_row![txt("Y-Axis Scale").width(Length::FillPortion(9)), pl]
@@ -807,7 +837,7 @@ pub(crate) fn pick_list_tree_unit<'a>(tre_units: TreUnit) -> Row<'a, TvMsg> {
         .align_y(Vertical::Center)
 }
 
-pub(crate) fn scrollable_cnv_ltt<'a>(
+pub(crate) fn scrollable_cnv_plot<'a>(
     scrollable_id: &'static str,
     cnv: Cnv<&'a PlotCnv, TvMsg>,
     w: impl Into<Length>,
@@ -816,7 +846,7 @@ pub(crate) fn scrollable_cnv_ltt<'a>(
     let mut s: Scrollable<TvMsg> = Scrollable::new(cnv);
     s = s.direction(ScrollableDirection::Horizontal(scroll_bar()));
     s = s.id(scrollable_id);
-    s = s.on_scroll(TvMsg::LttCnvScrolledOrResized);
+    s = s.on_scroll(TvMsg::PlotCnvScrolledOrResized);
     scrollable_common(s, w, h)
 }
 
@@ -960,18 +990,18 @@ pub(crate) fn toggler_selection_lock<'a>(
     tglr
 }
 
-pub(crate) fn toggler_plot<'a>(
-    enabled: bool,
-    show_plot: bool,
-) -> Toggler<'a, TvMsg> {
-    let mut tglr = toggler("Show Plot", show_plot);
-    if enabled {
-        tglr = tglr.on_toggle(TvMsg::TogglePlot);
-    }
-    tglr
-}
+// pub(crate) fn toggler_plot<'a>(
+//     enabled: bool,
+//     show_plot: bool,
+// ) -> Toggler<'a, TvMsg> {
+//     let mut tglr = toggler("Show Plot", show_plot);
+//     if enabled {
+//         tglr = tglr.on_toggle(TvMsg::TogglePlot);
+//     }
+//     tglr
+// }
 
-pub(crate) fn toggler_show_ltt<'a>(
+pub(crate) fn toggler_ltt<'a>(
     enabled: bool,
     show_ltt: bool,
 ) -> Toggler<'a, TvMsg> {
@@ -982,7 +1012,7 @@ pub(crate) fn toggler_show_ltt<'a>(
     tglr
 }
 
-pub(crate) fn toggler_show_gts<'a>(
+pub(crate) fn toggler_gts<'a>(
     enabled: bool,
     show_gts: bool,
 ) -> Toggler<'a, TvMsg> {

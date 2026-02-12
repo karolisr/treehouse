@@ -21,13 +21,13 @@ pub(crate) const BRANCH_LAB_SIZE_IDX: u16 = 12;
 pub(crate) const SIDE_BAR_W: Float = TXT_SIZE * 14.0;
 pub(crate) const TREE_CNV_SIZE_DELTA: Float = SF * 5e2;
 
-pub(crate) const TREE_PADDING: Float = SF;
+pub(crate) const PLOT_PADDING: Float = SF;
 
 pub(crate) const STRK_EDGE: Strk = STRK_1_BLK;
 pub(crate) const STRK_EDGE_LAB_ALN: Strk =
     Strk { line_dash: DASH_001, ..STRK_H_BLK };
 pub(crate) const STRK_ROOT: Strk = Strk { line_dash: DASH_002, ..STRK_EDGE };
-pub(crate) const STRK_CRSR_LINE: Strk = STRK_1_BLU_75;
+pub(crate) const STRK_CRSR_LINE: Strk = STRK_1_RED;
 
 pub(crate) const STRK_NODE_HOVER: Strk = STRK_1_BLU;
 pub(crate) const STRK_NODE_SELECTED: Strk = STRK_1_RED;

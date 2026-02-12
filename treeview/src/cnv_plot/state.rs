@@ -4,8 +4,6 @@ use crate::*;
 pub struct St {
     pub(super) bnds: Rectangle<Float>,
     pub(super) cursor_tracking_point: Option<Point>,
-    pub(super) x_max_lab_nchar: usize,
-    pub(super) y_max_lab_nchar: usize,
     pub(super) plt_vs: RectVals<Float>,
     pub(super) plt_rect: Rectangle<Float>,
     pub(super) plt_padd_l: Float,
@@ -20,6 +18,9 @@ pub struct St {
     pub(super) ticks_x: Vec<Tick>,
     pub(super) ticks_y: Vec<Tick>,
     pub(super) ltt_plot_data: PlotData,
+    pub(super) x_axis_scale_type: AxisScaleType,
+    pub(super) y_axis_scale_type: AxisScaleType,
+    pub(super) tre_unit: TreUnit,
 }
 
 impl St {
@@ -34,12 +35,12 @@ impl St {
                 && (ZRO - EPSILON..=self.plt_vs.h + EPSILON).contains(&adj.y)
             {
                 self.cursor_tracking_point = Some(adj);
-                Some(Action::publish(TvMsg::CursorOnLttCnv {
+                Some(Action::publish(TvMsg::CursorOnPlotCnv {
                     x: Some(crsr_x_rel),
                 }))
             } else {
                 self.cursor_tracking_point = None;
-                Some(Action::publish(TvMsg::CursorOnLttCnv { x: None }))
+                Some(Action::publish(TvMsg::CursorOnPlotCnv { x: None }))
             }
         } else {
             self.cursor_tracking_point = None;

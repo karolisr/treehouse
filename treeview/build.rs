@@ -5,6 +5,7 @@ use std::fs;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
+use std::str::FromStr;
 
 use serde::Deserialize;
 use serde::Deserializer;
@@ -263,8 +264,8 @@ where
     D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
-    match Color::parse(&s) {
-        Some(color) => Ok(color),
-        None => Err(de::Error::custom("Color parsing error")),
+    match Color::from_str(&s) {
+        Ok(color) => Ok(color),
+        Err(_) => Err(de::Error::custom("Color parsing error")),
     }
 }

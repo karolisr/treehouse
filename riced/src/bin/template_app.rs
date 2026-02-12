@@ -1,7 +1,8 @@
 use riced::{
-    Alignment, BTN_H1, Clr, Element, Horizontal, IcedResult, Key, Length,
-    Modifiers, SF, Size, Subscription, Theme, Vertical, WindowSettings,
-    btn_txt, center, iced_col, iced_row, on_key_press, txt_i64, txt_input,
+    Alignment, BTN_H1, Clr, Element, Horizontal, IcedResult, Key,
+    KeyboardEvent, Length, Modifiers, SF, Size, Subscription, Theme, Vertical,
+    WindowSettings, btn_txt, center, iced_col, iced_row, keyboard_events,
+    txt_i64, txt_input,
 };
 
 const PADDING: f32 = 3e1 * SF;
@@ -22,6 +23,7 @@ enum Msg {
     Decrement,
     Increment,
     OnKeyPress(Key, Modifiers),
+    Other(Option<String>),
 }
 
 impl App {
@@ -39,6 +41,11 @@ impl App {
             Msg::Increment => self.counter += 1,
             Msg::OnKeyPress(key, modifiers) => {
                 handle_keyboard_press_events(self, key, modifiers);
+            }
+            Msg::Other(opt_msg) => {
+                if let Some(msg) = opt_msg {
+                    println!("Msg::Other({msg})");
+                }
             }
         }
     }
@@ -66,7 +73,12 @@ impl App {
 
     fn subscription(&self) -> Subscription<Msg> {
         let mut subs: Vec<Subscription<Msg>> = Vec::with_capacity(4);
-        subs.push(on_key_press(|key, mods| Some(Msg::OnKeyPress(key, mods))));
+        subs.push(keyboard_events().map(|e| match e {
+            KeyboardEvent::KeyPressed { key, modifiers, .. } => {
+                Msg::OnKeyPress(key, modifiers)
+            }
+            _ => Msg::Other(None),
+        }));
         Subscription::batch(subs)
     }
 }
