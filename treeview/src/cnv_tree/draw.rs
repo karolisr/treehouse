@@ -121,7 +121,11 @@ fn draw_scale_bar_internal(
     };
 
     let tre_height = tre_height + subtree_node_len;
-    let sb_len = normalize_scale_value(tre_height / 4.0, AxisScaleType::LogTen);
+
+    let prelim_w_for_sb = vis_vs.w / 4.0;
+    let prelim_sb_tre_height_frac = prelim_w_for_sb / w;
+    let prelim_sb_len = prelim_sb_tre_height_frac * tre_height;
+    let sb_len = normalize_scale_value(prelim_sb_len, AxisScaleType::LogTen);
     let sb_frac = sb_len / tre_height;
     let scale_bar_width = sb_frac * w;
 
@@ -142,13 +146,6 @@ fn draw_scale_bar_internal(
     let char_width = lab_size * 6e-1;
     let lab_width = char_width * label.len() as Float;
     let total_width = lab_width.max(scale_bar_width);
-
-    // let x = tre_vs.x0 + total_width / TWO;
-    // let y = cnv_vs.y1
-    //     - stroke.width / TWO
-    //     - lab_size
-    //     - lab_y_offset
-    //     - PADDING * TWO;
 
     let lab_sb_width_diff = lab_width - scale_bar_width;
     let left_offset_due_to_label =

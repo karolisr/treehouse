@@ -93,11 +93,11 @@ impl Program<TvMsg> for PlotCnv {
                 + st.text_size;
 
             let n_ticks_x = ((st.bnds.width - padd_t - padd_b)
-                / (st.char_width * 8e0))
+                / (st.char_width * 20.0))
                 .floor() as usize;
 
             let n_ticks_y = ((st.bnds.height - padd_t - padd_b)
-                / (st.text_size * 3e0))
+                / (st.text_size * 3.0))
                 .floor() as usize;
 
             let (ticks_x, x_max_lab_nchar) = calc_ticks(
