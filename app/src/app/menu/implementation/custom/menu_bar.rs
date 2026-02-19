@@ -110,7 +110,7 @@ pub fn menu_bar<'a, Msg: 'a + Clone + From<MenuItemId>>(
         container(container(mb).style(sty_cont_menu_bar)).padding(Padding {
             top: 0.0,
             right: PADDING,
-            bottom: 0.0,
+            bottom: PADDING,
             left: PADDING
         }),
         base

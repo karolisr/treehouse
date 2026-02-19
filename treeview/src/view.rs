@@ -14,7 +14,7 @@ impl TreeView {
         let mut tool_bar_and_content_col: Column<TvMsg> = Column::new();
 
         main_row = main_row.padding(Padding {
-            top: PADDING,
+            top: 0e0,
             right: PADDING,
             bottom: PADDING,
             left: PADDING,
