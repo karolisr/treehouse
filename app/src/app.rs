@@ -12,7 +12,8 @@ use riced::{
     Clr, Element, Font, IcedAppSettings, Key, KeyboardEvent, Modifiers, Pixels,
     Subscription, Task, Theme, ThemeStyle, WindowEvent, WindowId,
     allow_automatic_tabbing, close_window, error_container, exit,
-    keyboard_events, modal_element, open_window, window_events,
+    keyboard_events, modal_element, open_window, settings_container,
+    window_events,
 };
 use std::path::PathBuf;
 use treeview::{TreeView, TvContextMenuSpecification, TvMsg};
@@ -26,6 +27,7 @@ pub struct App {
     active_context_menu: Option<ContextMenu>,
     title: Option<String>,
     error: Option<String>,
+    settings_visible: bool,
     explain: bool,
 }
 
@@ -33,6 +35,9 @@ pub struct App {
 pub enum AppMsg {
     Other(Option<String>),
     MenuEvent(AppMenuItemId),
+    // -------------------------------------------------------------------------
+    ShowSettings,
+    HideSettings,
     // -------------------------------------------------------------------------
     ErrorSet(String),
     ErrorClear,
@@ -106,6 +111,7 @@ impl App {
                 menu: None,
                 title: None,
                 error: None,
+                settings_visible: false,
                 explain: false,
                 #[cfg(feature = "menu-custom")]
                 active_context_menu: None,
@@ -150,6 +156,10 @@ impl App {
             v = modal_element(v, error_container(error, AppMsg::ErrorClear));
         }
 
+        if self.settings_visible {
+            v = modal_element(v, settings_container(AppMsg::HideSettings));
+        }
+
         #[cfg(feature = "menu-custom")]
         if let Some(menu) = &self.menu {
             v = menu.menu_bar(v);
@@ -163,6 +173,14 @@ impl App {
         #[allow(unused_mut)]
         let mut prefix_task: Option<Task<AppMsg>> = None;
         match app_msg {
+            AppMsg::ShowSettings => {
+                self.settings_visible = true;
+            }
+
+            AppMsg::HideSettings => {
+                self.settings_visible = false;
+            }
+
             AppMsg::ErrorSet(s) => {
                 self.error = Some(s);
             }

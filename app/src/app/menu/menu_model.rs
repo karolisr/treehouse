@@ -14,6 +14,7 @@ impl From<RicedKey> for KeyCode {
                 "p" => KeyCode::KeyP,
                 "q" => KeyCode::KeyQ,
                 "s" => KeyCode::KeyS,
+                "," => KeyCode::Comma,
                 _ => KeyCode::Other,
             }
         } else if let RicedKey::Named(named) = riced_key {
@@ -60,6 +61,7 @@ pub enum KeyCode {
     KeyQ,
     KeyS,
     F4,
+    Comma,
     Other,
 }
 
@@ -100,6 +102,7 @@ impl Display for KeyCode {
             KeyCode::KeyQ => "Q",
             KeyCode::KeyS => "S",
             KeyCode::F4 => "F4",
+            KeyCode::Comma => ",",
             KeyCode::Other => "Other",
         };
 

@@ -177,6 +177,7 @@ impl From<MenuItem> for muda::MenuItemKind {
                             KeyCode::KeyQ => muda::accelerator::Code::KeyQ,
                             KeyCode::KeyS => muda::accelerator::Code::KeyS,
                             KeyCode::F4 => muda::accelerator::Code::F4,
+                            KeyCode::Comma => muda::accelerator::Code::Comma,
                             KeyCode::Other => {
                                 muda::accelerator::Code::Unidentified
                             }

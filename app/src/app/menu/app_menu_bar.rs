@@ -17,6 +17,13 @@ pub(crate) fn app_menu_bar() -> Menu {
         let mi_about =
             MenuItem::item("About", true, AppMenuItemId::About, None);
 
+        let mi_settings = MenuItem::item(
+            "Settings",
+            true,
+            AppMenuItemId::Settings,
+            Some(Accelerator { modifier, key: KeyCode::Comma }),
+        );
+
         let mi_quit = MenuItem::item(
             "Quit",
             true,
@@ -25,6 +32,7 @@ pub(crate) fn app_menu_bar() -> Menu {
         );
 
         subm_app_items.push(mi_about);
+        subm_app_items.push(mi_settings);
         subm_app_items.push(MenuItem::separator());
         subm_app_items.push(mi_quit);
 

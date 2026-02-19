@@ -6,6 +6,7 @@ use treeview::TvMsg;
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum AppMenuItemId {
     About,
+    Settings,
     OpenFile,
     SaveAs,
     Quit,
@@ -25,6 +26,7 @@ pub enum AppMenuItemId {
 impl From<String> for AppMenuItemId {
     fn from(s: String) -> Self {
         match s.as_str() {
+            "Settings" => AppMenuItemId::Settings,
             "About" => AppMenuItemId::About,
             "OpenFile" => AppMenuItemId::OpenFile,
             "SaveAs" => AppMenuItemId::SaveAs,
@@ -63,6 +65,7 @@ impl From<AppMenuItemId> for AppMsg {
 impl From<&AppMenuItemId> for AppMsg {
     fn from(app_menu_item_id: &AppMenuItemId) -> Self {
         match app_menu_item_id {
+            AppMenuItemId::Settings => AppMsg::ShowSettings,
             AppMenuItemId::OpenFile => AppMsg::OpenFile,
             AppMenuItemId::SaveAs => AppMsg::SaveAs,
             AppMenuItemId::Quit => AppMsg::Quit,

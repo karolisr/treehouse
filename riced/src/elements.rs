@@ -67,6 +67,28 @@ pub fn error_container<'a, Msg: Clone + 'a>(
     c.into()
 }
 
+pub fn settings_container<'a, Msg: Clone + 'a>(
+    on_blur: Msg,
+) -> Element<'a, Msg> {
+    let mut c = center(
+        iced_col![
+            center(txt("Settings")).height(Length::Fill),
+            space_v(Length::Shrink, BTN_H1),
+            iced_row![
+                space_h(Length::Fill, Length::Shrink),
+                btn_txt("Close", Some(on_blur)).width(BTN_H1 * 3e0)
+            ],
+        ]
+        .width(Length::Fill)
+        .height(Length::Fill),
+    );
+    c = c.width(6e2 * SF);
+    c = c.height(5e2 * SF);
+    c = c.padding(PADDING * 3e0);
+    c = c.style(sty_cont_message);
+    c.into()
+}
+
 fn btn_common<Msg>(btn: Button<'_, Msg>, msg: Option<Msg>) -> Button<'_, Msg> {
     let mut btn = btn;
     btn = btn.on_press_maybe(msg);
