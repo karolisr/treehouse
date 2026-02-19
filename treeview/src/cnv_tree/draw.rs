@@ -1,4 +1,5 @@
 use super::St;
+use crate::cnv_plot::AxisDataType;
 use crate::cnv_utils::*;
 use crate::edge_utils::*;
 use crate::path_builders::*;
@@ -122,7 +123,7 @@ fn draw_scale_bar_internal(
 
     let tre_height = tre_height + subtree_node_len;
 
-    let prelim_w_for_sb = vis_vs.w / 4.0;
+    let prelim_w_for_sb = w / 4.0;
     let prelim_sb_tre_height_frac = prelim_w_for_sb / w;
     let prelim_sb_len = prelim_sb_tre_height_frac * tre_height;
     let sb_len = normalize_scale_value(prelim_sb_len, AxisScaleType::LogTen);
@@ -180,27 +181,84 @@ pub(super) fn draw_scale_bar(
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    if tst.has_brlen() && tc.draw_scale_bar {
-        g.push(tc.cache_cnv_scale_bar.draw(rndr, sz, |f| {
-            draw_scale_bar_internal(
-                tc.tre_sty,
-                &st.vis_vs,
-                &st.tre_vs,
-                SF * 12e0,
-                SF * 10e0,
-                st.root_len,
-                match tst.is_subtree_view_active() {
-                    true => {
-                        tst.subtree_view_node_branch_length().unwrap_or(0.0)
-                    }
-                    false => 0.0,
-                },
-                tst.max_first_node_to_tip_distance() as Float,
-                tc.tre_unit,
+    g.push(tc.cache_cnv_scale_bar.draw(rndr, sz, |f| {
+        draw_scale_bar_internal(
+            tc.tre_sty,
+            &st.vis_vs,
+            &st.tre_vs,
+            SF * 12e0,
+            SF * 10e0,
+            st.root_len,
+            match tst.is_subtree_view_active() {
+                true => tst.subtree_view_node_branch_length().unwrap_or(0.0),
+                false => 0.0,
+            },
+            tst.max_first_node_to_tip_distance() as Float,
+            tc.tre_unit,
+            f,
+        );
+    }));
+}
+
+pub(super) fn draw_height_axis(
+    tc: &TreeCnv,
+    st: &St,
+    _tst: &TreeState,
+    rndr: &Renderer,
+    sz: Size,
+    g: &mut Vec<Geometry>,
+) {
+    g.push(tc.cache_cnv_height_axis.draw(rndr, sz, |f| match tc.tre_sty {
+        TreSty::PhyGrm => {
+            let n_ticks_x = (st.tre_vs.w / (tc.height_axis_char_width * 10.0))
+                .floor()
+                .max(3e0) as usize;
+
+            let (ticks_x, _x_max_lab_nchar) = calc_ticks(
+                n_ticks_x,
+                tc.height_axis_scale_type,
+                AxisDataType::Continuous,
+                tc.height_axis_min,
+                tc.height_axis_max,
+                tc.height_axis_is_reversed,
+            );
+
+            let bottom = st.vis_vs.y1
+                + PADDING * TWO
+                + match tc.draw_labs_tip {
+                    true => -tc.lab_size_tip / TWO,
+                    false => ZRO,
+                };
+
+            let (pb_ticks_x, labs_x) = path_builder_ticks_x(
+                st.tre_vs.w, bottom, ZRO, &ticks_x, tc.height_axis_tick_size,
+                tc.height_axis_text_size,
+            );
+
+            let mut pb_axis_x: PathBuilder = PathBuilder::new();
+
+            pb_axis_x = pb_axis_x.move_to(Point { x: ZRO, y: bottom });
+            pb_axis_x = pb_axis_x.line_to(Point { x: st.tre_vs.w, y: bottom });
+
+            let trans = Vector { x: st.tre_vs.trans.x, y: ZRO };
+
+            f.with_save(|f| {
+                f.translate(trans);
+                f.stroke(&pb_ticks_x.build(), STRK_1_BLK);
+                f.stroke(&pb_axis_x.build(), STRK_2_BLK);
+            });
+
+            draw_labels(
+                &labs_x,
+                Vector { x: ZRO, y: tc.height_axis_lab_offset },
+                Some(trans),
+                ZRO,
                 f,
             );
-        }));
-    }
+        }
+
+        TreSty::Fan => {}
+    }));
 }
 
 pub(super) fn draw_cursor_line(
@@ -218,8 +276,17 @@ pub(super) fn draw_cursor_line(
             f.translate(st.translation);
             match tc.tre_sty {
                 TreSty::PhyGrm => {
-                    let p0 = Point { x: p.x, y: ZRO };
-                    let p1 = Point { x: p.x, y: st.tre_vs.h };
+                    let bottom = st.vis_vs.y1 - PLOT_PADDING * TWO
+                        + match tc.draw_labs_tip {
+                            true => -tc.lab_size_tip,
+                            false => ZRO,
+                        }
+                        + match tc.draw_scale_bar && tc.draw_height_axis {
+                            true => PADDING * TWO,
+                            false => ZRO,
+                        };
+                    let p0 = Point { x: p.x, y: st.vis_vs.y0 };
+                    let p1 = Point { x: p.x, y: bottom };
                     f.stroke(
                         &PathBuilder::new().move_to(p0).line_to(p1).build(),
                         STRK_CRSR_LINE,

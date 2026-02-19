@@ -13,6 +13,7 @@ pub(super) struct TreeCnv {
     cache_cnv_bnds: CnvCache,
     cache_cnv_tip_lab_w_resize_area: CnvCache,
     cache_cnv_scale_bar: CnvCache,
+    cache_cnv_height_axis: CnvCache,
     cache_cnv_hovered_node: CnvCache,
     cache_cnv_cursor_line: CnvCache,
     cache_cnv_palette: CnvCache,
@@ -41,6 +42,7 @@ pub(super) struct TreeCnv {
     pub(super) draw_labs_tip: bool,
     pub(super) draw_clade_highlights: bool,
     pub(super) draw_scale_bar: bool,
+    pub(super) draw_height_axis: bool,
     pub(super) draw_root: bool,
     pub(super) drawing_enabled: bool,
     // -------------------------------------------------------------------------
@@ -76,10 +78,25 @@ pub(super) struct TreeCnv {
     pub(crate) selection_lock: bool,
     // -------------------------------------------------------------------------
     pub(crate) tre_unit: TreUnit,
+    // -------------------------------------------------------------------------
+    pub(super) height_axis_is_reversed: bool,
+    pub(super) height_axis_scale_type: AxisScaleType,
+    pub(super) height_axis_min: Float,
+    pub(super) height_axis_max: Float,
+    pub(crate) height_axis_text_size: Float,
+    pub(crate) height_axis_char_width: Float,
+    pub(crate) height_axis_tick_size: Float,
+    pub(crate) height_axis_lab_offset: Float,
+    // pub(crate) height_axis_padding_bottom: Float,
 }
 
 impl TreeCnv {
     pub fn new(draw_debug: bool) -> Self {
+        let height_axis_text_size = SF * 1e1;
+        let height_axis_char_width = height_axis_text_size * 6e-1;
+        let height_axis_tick_size = height_axis_char_width;
+        let height_axis_lab_offset = height_axis_char_width / TWO;
+
         Self {
             tre_sty: TreSty::PhyGrm,
             search_is_active: false,
@@ -98,6 +115,7 @@ impl TreeCnv {
             draw_labs_int: false,
             draw_labs_brnch: false,
             draw_scale_bar: true,
+            draw_height_axis: true,
             draw_cursor_line: true,
             // -----------------------------------------------------------------
             tip_labs_vis_max: 1000,
@@ -121,6 +139,7 @@ impl TreeCnv {
             cache_cnv_bnds: Default::default(),
             cache_cnv_tip_lab_w_resize_area: Default::default(),
             cache_cnv_scale_bar: Default::default(),
+            cache_cnv_height_axis: Default::default(),
             cache_cnv_hovered_node: Default::default(),
             cache_cnv_cursor_line: Default::default(),
             cache_cnv_palette: Default::default(),
@@ -150,6 +169,16 @@ impl TreeCnv {
             selection_lock: false,
             // -----------------------------------------------------------------
             tre_unit: TreUnit::default(),
+            // -----------------------------------------------------------------
+            height_axis_is_reversed: false,
+            height_axis_scale_type: AxisScaleType::default(),
+            height_axis_min: Float::default(),
+            height_axis_max: Float::default(),
+            height_axis_text_size,
+            height_axis_char_width,
+            height_axis_tick_size,
+            height_axis_lab_offset,
+            // height_axis_padding_bottom: Float::default(),
         }
     }
 
@@ -177,6 +206,10 @@ impl TreeCnv {
         self.cache_cnv_scale_bar.clear();
     }
 
+    pub(super) fn clear_cache_cnv_height_axis(&self) {
+        self.cache_cnv_height_axis.clear();
+    }
+
     pub(super) fn clear_caches_cnv_all(&self) {
         self.clear_cache_cnv_bnds();
         self.clear_cache_cnv_tip_lab_w_resize_area();
@@ -184,6 +217,7 @@ impl TreeCnv {
         self.clear_cache_cnv_cursor_line();
         self.clear_cache_cnv_hovered_node();
         self.clear_cache_cnv_scale_bar();
+        self.clear_cache_cnv_height_axis();
     }
 
     pub(super) fn calc_tre_vs(

@@ -100,6 +100,7 @@ pub enum TvMsg {
     IntLabVisChanged(bool),
     BrnchLabVisChanged(bool),
     ScaleBarVisChanged(bool),
+    FullWidthScaleBarSelected(bool),
     TipLabSizeChanged(u16),
     IntLabSizeChanged(u16),
     BrnchLabSizeChanged(u16),
@@ -457,6 +458,7 @@ impl TreeView {
                 self.clear_cache_cnv_ts_sel_nodes();
                 self.clear_cache_cnv_ts_filtered_nodes();
                 self.tre_cnv.clear_cache_cnv_scale_bar();
+                self.tre_cnv.clear_cache_cnv_height_axis();
             }
 
             TvMsg::PlotCnvScrolledOrResized(vp) => {
@@ -510,19 +512,24 @@ impl TreeView {
                 match unit {
                     TreUnit::Unitless => {
                         self.plot_cnv.x_axis_is_reversed = false;
+                        self.tre_cnv.height_axis_is_reversed = false;
                     }
                     TreUnit::Substitutions => {
                         self.plot_cnv.x_axis_is_reversed = false;
+                        self.tre_cnv.height_axis_is_reversed = false;
                     }
                     TreUnit::MillionYears => {
                         self.plot_cnv.x_axis_is_reversed = true;
+                        self.tre_cnv.height_axis_is_reversed = true;
                     }
                     TreUnit::CoalescentUnits => {
                         self.plot_cnv.x_axis_is_reversed = false;
+                        self.tre_cnv.height_axis_is_reversed = false;
                     }
                 }
 
                 self.tre_cnv.clear_cache_cnv_scale_bar();
+                self.tre_cnv.clear_cache_cnv_height_axis();
                 self.plot_cnv.clear_caches_cnv_all();
             }
 
@@ -583,6 +590,7 @@ impl TreeView {
                 self.update_draw_labs_allowed();
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.clear_cache_cnv_scale_bar();
+                self.tre_cnv.clear_cache_cnv_height_axis();
                 self.tre_cnv.stale_tre_rect = true;
                 self.populate_cache_of_edges_sorted_by_field();
             }
@@ -596,6 +604,7 @@ impl TreeView {
                 self.update_draw_labs_allowed();
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.clear_cache_cnv_scale_bar();
+                self.tre_cnv.clear_cache_cnv_height_axis();
                 self.tre_cnv.stale_tre_rect = true;
                 self.populate_cache_of_edges_sorted_by_field();
             }
@@ -693,6 +702,7 @@ impl TreeView {
                     self.tre_cnv.stale_tre_rect = true;
                     self.clear_cache_cnv_ts_edge();
                     self.tre_cnv.clear_cache_cnv_scale_bar();
+                    self.tre_cnv.clear_cache_cnv_height_axis();
                 }
             }
 
@@ -710,6 +720,7 @@ impl TreeView {
                     self.tre_cnv.stale_tre_rect = true;
                     self.clear_cache_cnv_ts_edge();
                     self.tre_cnv.clear_cache_cnv_scale_bar();
+                    self.tre_cnv.clear_cache_cnv_height_axis();
                 }
             }
 
@@ -754,6 +765,7 @@ impl TreeView {
                     self.tre_cnv.stale_tre_rect = true;
                     self.clear_cache_cnv_ts_edge();
                     self.tre_cnv.clear_cache_cnv_scale_bar();
+                    self.tre_cnv.clear_cache_cnv_height_axis();
                 }
             }
 
@@ -788,6 +800,7 @@ impl TreeView {
 
             TvMsg::TipLabVisChanged(state) => {
                 self.tre_cnv.draw_labs_tip = state;
+                self.update_tree_rect_padding();
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_cnv_ts_all();
@@ -805,6 +818,7 @@ impl TreeView {
                     text_w_tip.set_font_size(self.tre_cnv.lab_size_tip);
                 };
                 // -------------------------------------------------------------
+                self.update_tree_rect_padding();
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_cnv_ts_all();
@@ -865,6 +879,23 @@ impl TreeView {
 
             TvMsg::ScaleBarVisChanged(state) => {
                 self.tre_cnv.draw_scale_bar = state;
+                match self.tre_cnv.draw_height_axis {
+                    true => {
+                        self.update_tree_rect_padding();
+                        self.tre_cnv.stale_tre_rect = true;
+                        self.clear_caches_cnv_ts_all();
+                        self.tre_cnv.clear_caches_cnv_all();
+                    }
+                    false => {}
+                }
+            }
+
+            TvMsg::FullWidthScaleBarSelected(state) => {
+                self.tre_cnv.draw_height_axis = state;
+                self.update_tree_rect_padding();
+                self.tre_cnv.stale_tre_rect = true;
+                self.clear_caches_cnv_ts_all();
+                self.tre_cnv.clear_caches_cnv_all();
             }
 
             TvMsg::SelectDeselectNode(node_id) => {
@@ -1055,6 +1086,9 @@ impl TreeView {
                 x_offset,
             );
 
+            self.tre_cnv.height_axis_min = plot_data.x_min;
+            self.tre_cnv.height_axis_max = plot_data.x_max;
+
             self.plot_cnv.set_ltt_plot_data(plot_data);
         }
     }
@@ -1217,26 +1251,49 @@ impl TreeView {
     }
 
     fn update_tree_rect_padding(&mut self) {
+        let base = PLOT_PADDING;
+        let height_axis_size = match self.tre_cnv.draw_scale_bar
+            && self.tre_cnv.draw_height_axis
+        {
+            true => match self.tre_cnv.tre_sty {
+                TreSty::PhyGrm => {
+                    ZRO + PADDING * TWO
+                        + self.tre_cnv.height_axis_tick_size
+                        + self.tre_cnv.height_axis_lab_offset
+                        + self.tre_cnv.height_axis_text_size
+                        - match self.tre_cnv.draw_labs_tip {
+                            true => self.tre_cnv.lab_size_tip / TWO,
+                            false => ZRO,
+                        }
+                }
+                TreSty::Fan => ZRO,
+            },
+            false => ZRO,
+        };
+
         if self.calc_tre_cnv_w(self.tre_scr_w) <= self.tre_scr_w {
-            self.tre_cnv.padd_b = PLOT_PADDING;
+            self.tre_cnv.padd_b = base + height_axis_size;
         } else {
-            self.tre_cnv.padd_b = PLOT_PADDING + SCROLLBAR_W;
+            self.tre_cnv.padd_b = base + SCROLLBAR_W + height_axis_size;
         }
 
         if self.calc_tre_cnv_h(self.tre_scr_h) <= self.tre_scr_h {
-            self.tre_cnv.padd_r = PLOT_PADDING;
+            self.tre_cnv.padd_r = base;
         } else {
-            self.tre_cnv.padd_r = PLOT_PADDING + SCROLLBAR_W;
+            self.tre_cnv.padd_r = base + SCROLLBAR_W;
         }
 
-        self.plot_cnv.padd_l = PLOT_PADDING;
-        self.plot_cnv.padd_r = PLOT_PADDING;
-        self.plot_cnv.padd_t = PLOT_PADDING;
+        self.plot_cnv.padd_l = base;
+        self.plot_cnv.padd_r = base;
+        self.plot_cnv.padd_t = base;
 
-        if self.tre_cnv.tre_sty == TreSty::PhyGrm {
-            self.plot_cnv.padd_b = self.tre_cnv.padd_b;
-        } else {
-            self.plot_cnv.padd_b = PLOT_PADDING;
+        match self.tre_cnv.tre_sty {
+            TreSty::PhyGrm => {
+                self.plot_cnv.padd_b = self.tre_cnv.padd_b - height_axis_size;
+            }
+            TreSty::Fan => {
+                self.plot_cnv.padd_b = base;
+            }
         }
     }
 

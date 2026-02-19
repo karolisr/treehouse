@@ -1,4 +1,4 @@
-use crate::*;
+use crate::{cnv_plot::AxisDataType, *};
 
 pub(crate) fn lab_text(
     txt: String,
@@ -114,4 +114,105 @@ pub(crate) fn draw_labels(
         }
     }
     f.pop_transform();
+}
+
+pub fn calc_ticks(
+    tick_count: usize,
+    scale_type: AxisScaleType,
+    data_type: AxisDataType,
+    min: Float,
+    max: Float,
+    axis_reversed: bool,
+) -> (Vec<Tick>, usize) {
+    let (min, max) = match axis_reversed {
+        true => (0e0, max - min),
+        false => (min, max),
+    };
+
+    let mut decimals: usize = 0;
+
+    let mut offset = normalize_scale_value(min, scale_type);
+    while offset > min {
+        offset /= 2e0;
+        if offset < 1e0 {
+            offset = 0e0;
+        }
+    }
+
+    let mut tick_value: Float = 0e0;
+    let mut max_lab_nchar: usize = 0;
+    let mut ticks: Vec<Tick> = Vec::with_capacity(tick_count);
+    let mut mult: usize = 0;
+    while tick_value < max {
+        max_lab_nchar = 0;
+        ticks.clear();
+        mult += 1;
+
+        let tick_count = tick_count * mult;
+
+        let mut linear_delta = 1e0;
+        if scale_type == AxisScaleType::Linear {
+            let range = normalize_scale_value(max - offset, scale_type);
+
+            linear_delta =
+                normalize_scale_value(range / tick_count as Float, scale_type);
+
+            if data_type == AxisDataType::Discrete && linear_delta < 1e0 {
+                linear_delta = 1e0;
+            }
+
+            let ldfrac = linear_delta.fract();
+            if ldfrac > 0e0 {
+                decimals = (format!("{ldfrac:.4}").trim_end_matches("0").len()
+                    - 2)
+                .min(4);
+            }
+        }
+
+        let calc_tick_value = |x: usize| {
+            offset
+                + match scale_type {
+                    AxisScaleType::Linear => linear_delta * x as Float,
+                    AxisScaleType::LogTwo => (2e0 as Float).powi(x as Integer),
+                    AxisScaleType::LogTen => (1e1 as Float).powi(x as Integer),
+                }
+        };
+
+        for i in 1..=tick_count {
+            tick_value = calc_tick_value(i * mult);
+
+            let rp_opt =
+                transformed_relative_value(tick_value, min, max, scale_type);
+
+            let Some(mut relative_position) = rp_opt else {
+                continue;
+            };
+
+            relative_position = match axis_reversed {
+                true => 1.0 - relative_position,
+                false => relative_position,
+            };
+
+            if !(0e0..=1e0).contains(&relative_position) {
+                continue;
+            }
+
+            let nchar = 1 + tick_value.log10().floor() as usize + decimals;
+            max_lab_nchar = max_lab_nchar.max(nchar);
+
+            let tick = Tick {
+                relative_position,
+                label: format!(
+                    "{:nchar$.decimals$}",
+                    tick_value,
+                    nchar = nchar,
+                    decimals = decimals
+                ),
+            };
+
+            ticks.push(tick);
+        }
+    }
+
+    (ticks, max_lab_nchar)
 }

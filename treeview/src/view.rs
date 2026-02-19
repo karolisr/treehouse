@@ -513,14 +513,23 @@ fn side_bar_main<'a>(
 
     sb = sb.push(toggler_selection_lock(true, tv.tre_cnv.selection_lock));
 
+    sb = sb.push(iced_col![toggler_cursor_line(
+        true, tv.tre_cnv.draw_cursor_line, tv.tre_cnv.tre_sty
+    )]);
+
+    sb = sb.push(rule_h(SF));
+
     sb = sb.push(iced_col![toggler_scale_bar(
         ts.has_brlen(),
         tv.tre_cnv.draw_scale_bar
     )]);
 
-    sb = sb.push(iced_col![toggler_cursor_line(
-        true, tv.tre_cnv.draw_cursor_line, tv.tre_cnv.tre_sty
-    )]);
+    if tv.tre_cnv.draw_scale_bar {
+        sb = sb.push(iced_col![toggler_height_axis(
+            ts.has_brlen(),
+            tv.tre_cnv.draw_height_axis
+        )]);
+    }
 
     sb = sb.push(rule_h(SF));
 
@@ -964,6 +973,17 @@ pub(crate) fn toggler_scale_bar<'a>(
     let mut tglr = toggler("Scale Bar", draw_scale_bar);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::ScaleBarVisChanged);
+    }
+    tglr
+}
+
+pub(crate) fn toggler_height_axis<'a>(
+    enabled: bool,
+    draw_height_axis: bool,
+) -> Toggler<'a, TvMsg> {
+    let mut tglr = toggler("Full Width Scale Bar", draw_height_axis);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::FullWidthScaleBarSelected);
     }
     tglr
 }

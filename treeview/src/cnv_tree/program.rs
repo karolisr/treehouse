@@ -187,6 +187,7 @@ impl Program<TvMsg> for TreeCnv {
                 &mut st.labs_brnch,
             );
         } // -------------------------------------------------------------------
+
         match ev {
             Event::Mouse(mouse_ev) => {
                 self.clear_cache_cnv_hovered_node();
@@ -541,7 +542,16 @@ impl Program<TvMsg> for TreeCnv {
             // t.finish();
 
             // let t = timer("scale_bar");
-            draw_scale_bar(self, st, tst, rndr, size, &mut geoms);
+            if tst.has_brlen() && self.draw_scale_bar && !self.draw_height_axis
+            {
+                draw_scale_bar(self, st, tst, rndr, size, &mut geoms);
+            }
+            // t.finish();
+
+            // let t = timer("height_axis");
+            if tst.has_brlen() && self.draw_scale_bar && self.draw_height_axis {
+                draw_height_axis(self, st, tst, rndr, size, &mut geoms);
+            }
             // t.finish();
 
             // let t = timer("cursor_line");

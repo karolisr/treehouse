@@ -1,3 +1,4 @@
+use crate::cnv_utils::*;
 use crate::edge_utils::*;
 use crate::*;
 
@@ -182,4 +183,156 @@ pub fn path_clade_highlight_fan(
         pb = pb.close();
         pb.build()
     }
+}
+
+pub fn path_builder_ticks_x(
+    w: Float,
+    h: Float,
+    padding_bottom: Float,
+    ticks_x: &[Tick],
+    tick_size: Float,
+    lab_size: Float,
+) -> (PathBuilder, Vec<Label>) {
+    let mut pb: PathBuilder = PathBuilder::new();
+    let bottom = h + padding_bottom;
+    let mut labs_x: Vec<Label> = Vec::with_capacity(ticks_x.len());
+
+    for Tick { relative_position, label } in ticks_x {
+        let x = relative_position * w;
+        let tick_pt1 = Point { x, y: bottom };
+        let tick_pt2 = Point { x, y: bottom + tick_size };
+        pb = pb.move_to(tick_pt1);
+        pb = pb.line_to(tick_pt2);
+
+        let text = lab_text(
+            label.to_string(),
+            tick_pt2,
+            lab_size,
+            TEMPLATE_TXT_LAB_PLOT_AXIS_X,
+            false,
+        );
+        let label = Label { text, width: ZRO, angle: 0.0, aligned_from: None };
+        labs_x.push(label);
+    }
+
+    (pb, labs_x)
+}
+
+pub fn path_builder_ticks_y(
+    h: Float,
+    padding_left: Float,
+    ticks_y: &[Tick],
+    tick_size: Float,
+    lab_size: Float,
+) -> (PathBuilder, Vec<Label>) {
+    let mut pb: PathBuilder = PathBuilder::new();
+    let left = -padding_left;
+    let mut labs_y: Vec<Label> = Vec::with_capacity(ticks_y.len());
+
+    for Tick { relative_position, label } in ticks_y {
+        let y = (ONE - relative_position) * h;
+        let tick_pt1 = Point { x: left, y };
+        let tick_pt2 = Point { x: left - tick_size, y };
+        pb = pb.move_to(tick_pt1);
+        pb = pb.line_to(tick_pt2);
+
+        let text = lab_text(
+            label.to_string(),
+            tick_pt2,
+            lab_size,
+            TEMPLATE_TXT_LAB_PLOT_AXIS_Y,
+            false,
+        );
+        let label = Label { text, width: ZRO, angle: 0.0, aligned_from: None };
+        labs_y.push(label);
+    }
+
+    (pb, labs_y)
+}
+
+pub fn path_builder_x_axis(
+    w: Float,
+    h: Float,
+    axes_padd: Float,
+) -> PathBuilder {
+    let mut pb: PathBuilder = PathBuilder::new();
+
+    let left = -axes_padd;
+    let right = w + axes_padd;
+    let top = -axes_padd;
+    let bottom = h + axes_padd;
+
+    // x-axis line bottom ------------------------------------------------------
+    pb = pb.move_to(Point { x: left, y: bottom });
+    pb = pb.line_to(Point { x: right, y: bottom });
+
+    // x-axis line top ---------------------------------------------------------
+    pb = pb.move_to(Point { x: left, y: top });
+    pb = pb.line_to(Point { x: right, y: top });
+
+    pb
+}
+
+pub fn path_builder_y_axis(
+    w: Float,
+    h: Float,
+    axes_padd: Float,
+) -> PathBuilder {
+    let mut pb: PathBuilder = PathBuilder::new();
+
+    let left = -axes_padd;
+    let right = w + axes_padd;
+    let top = -axes_padd;
+    let bottom = h + axes_padd;
+
+    // y-axis line left --------------------------------------------------------
+    pb = pb.move_to(Point { x: left, y: top });
+    pb = pb.line_to(Point { x: left, y: bottom });
+
+    // y-axis line right -------------------------------------------------------
+    pb = pb.move_to(Point { x: right, y: top });
+    pb = pb.line_to(Point { x: right, y: bottom });
+
+    pb
+}
+
+pub fn path_builder_ltt(
+    data: &PlotData,
+    x_axis_scale_type: AxisScaleType,
+    y_axis_scale_type: AxisScaleType,
+    w: Float,
+    h: Float,
+) -> PathBuilder {
+    let mut first = true;
+    let mut pb: PathBuilder = PathBuilder::new();
+
+    let x_min = data.x_min;
+    let x_max = data.x_max;
+    let y_min = data.y_min;
+    let y_max = data.y_max;
+
+    for plot_point in &data.plot_points {
+        let x_rel = transformed_relative_value(
+            plot_point.x, x_min, x_max, x_axis_scale_type,
+        )
+        .unwrap_or(0e0)
+        .clamp(ZRO, ONE);
+
+        let y_rel = transformed_relative_value(
+            plot_point.y, y_min, y_max, y_axis_scale_type,
+        )
+        .unwrap_or(0e0)
+        .clamp(ZRO, ONE);
+
+        let pt = Point { x: x_rel * w, y: (1e0 - y_rel) * h };
+
+        match first {
+            true => {
+                pb = pb.move_to(pt);
+                first = false;
+            }
+            false => pb = pb.line_to(pt),
+        }
+    }
+    pb
 }
