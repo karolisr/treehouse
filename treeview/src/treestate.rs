@@ -144,12 +144,12 @@ impl TreeState {
         self.cache_has_brlen = Some(self.has_brlen());
         self.cache_has_int_labs = Some(self.has_int_labs());
         self.cache_has_tip_labs = Some(self.has_tip_labels());
-        self.cache_is_rooted = Some(self.is_rooted());
         self.cache_is_ultrametric = Some(self.is_ultrametric());
-        self.cache_node_count = Some(self.node_count());
-        self.cache_tip_count = Some(self.tip_count());
+        self.cache_is_rooted = Some(self.is_rooted_tree());
+        self.cache_node_count = Some(self.node_count_tree());
+        self.cache_tip_count = Some(self.tip_count_tree());
         self.cache_max_first_node_to_tip_distance =
-            Some(self.max_first_node_to_tip_distance());
+            Some(self.max_first_node_to_tip_distance_tree());
 
         self.clear_caches_of_edges_sorted_by_field();
         self.clear_caches_cnv();
@@ -246,6 +246,7 @@ impl TreeState {
         }
     }
 
+    #[allow(dead_code)]
     pub(super) fn node_count(&self) -> usize {
         if self.is_subtree_view_active() {
             self.node_count_for_subtree_view().unwrap()

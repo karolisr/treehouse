@@ -5,6 +5,20 @@ use crate::cnv_utils::*;
 use crate::path_builders::*;
 use crate::*;
 
+pub(super) fn draw_plot_background(
+    plt: &PlotCnv,
+    st: &St,
+    rndr: &Renderer,
+    size: Size,
+    g: &mut Vec<Geometry>,
+) {
+    g.push(plt.cache_cnv_background.draw(rndr, size, |f| {
+        let mut pb: PathBuilder = PathBuilder::new();
+        pb = pb.rectangle(st.plt_rect);
+        f.fill(&pb.build(), FILL_WHT);
+    }));
+}
+
 pub(super) fn draw_gts(
     plt: &PlotCnv,
     st: &St,
@@ -48,7 +62,7 @@ pub(super) fn draw_gts(
             let end = gts.end;
             let rank = &gts.rank;
             let name = &gts.name;
-            let color = &gts.color.scale_alpha(0.75);
+            let color = &gts.color.scale_alpha(0.77);
 
             if (beg > x_max && end < x_max)
                 || (beg <= x_max && end >= x_min)
@@ -231,7 +245,7 @@ pub(super) fn draw_cursor_line(
 ) {
     g.push(plt.cache_cnv_cursor_line.draw(rndr, size, |f| {
         if let Some(p) = st.cursor_tracking_point
-            && plt.draw_cursor_line
+            && plt.cfg.draw_cursor_line
         {
             // line ------------------------------------------------------------
             f.with_save(|f| {
@@ -269,13 +283,13 @@ pub(super) fn draw_cursor_line(
             };
 
             let units = match plt.x_axis_is_reversed {
-                true => match plt.tre_unit {
+                true => match plt.cfg.tre_unit {
                     TreUnit::Unitless => "",
                     TreUnit::Substitutions => "",
                     TreUnit::MillionYears => " MYA",
                     TreUnit::CoalescentUnits => "",
                 },
-                false => match plt.tre_unit {
+                false => match plt.cfg.tre_unit {
                     TreUnit::Unitless => "",
                     TreUnit::Substitutions => " Subs./site",
                     TreUnit::MillionYears => " MY",

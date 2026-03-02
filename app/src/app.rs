@@ -1,3 +1,4 @@
+mod config;
 mod consts;
 mod menu;
 mod ops;
@@ -7,16 +8,21 @@ mod window;
 use consts::*;
 use dendros::parse_trees;
 
+use config::AppConfig;
+
 use menu::*;
 use riced::{
-    Clr, Element, Font, IcedAppSettings, Key, KeyboardEvent, Modifiers, Pixels,
-    Subscription, Task, Theme, ThemeStyle, WindowEvent, WindowId,
-    allow_automatic_tabbing, close_window, error_container, exit,
+    Clr, Element, Font, IcedAppSettings, Key, KeyboardEvent, Length, Modifiers,
+    PADDING, Pixels, Subscription, Task, Theme, ThemeStyle, WindowEvent,
+    WindowId, allow_automatic_tabbing, close_window, error_container, exit,
     keyboard_events, modal_element, open_window, settings_container,
     window_events,
 };
+
+use thiserror::Error;
+
 use std::path::PathBuf;
-use treeview::{TreeView, TvContextMenuSpecification, TvMsg};
+use treeview::{TreeView, TreeViewConfig, TvContextMenuSpecification, TvMsg};
 use window::window_settings;
 
 pub struct App {
@@ -26,9 +32,35 @@ pub struct App {
     #[cfg(feature = "menu-custom")]
     active_context_menu: Option<ContextMenu>,
     title: Option<String>,
-    error: Option<String>,
+    error: Option<AppError>,
     settings_visible: bool,
+    settings: AppConfig,
     explain: bool,
+}
+
+#[derive(Debug, Error, Clone)]
+pub enum AppError {
+    #[error("{file_read_error}")]
+    FileReadError { file_read_error: ops::FileReadError },
+
+    #[error("{}",
+        match file_path {
+            Some(file_path) => format!(
+                "{tree_parse_error}\n{}", file_path.as_os_str().to_string_lossy()
+            ),
+            None => format!("{tree_parse_error}"),
+        }
+    )]
+    TreeParseError {
+        tree_parse_error: dendros::TreeParseError,
+        file_path: Option<PathBuf>,
+    },
+}
+
+impl From<&AppError> for String {
+    fn from(e: &AppError) -> Self {
+        format!("{e}")
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -39,7 +71,7 @@ pub enum AppMsg {
     ShowSettings,
     HideSettings,
     // -------------------------------------------------------------------------
-    ErrorSet(String),
+    ErrorSet(AppError),
     ErrorClear,
     // -------------------------------------------------------------------------
     ShowTvContextMenu(TvContextMenuSpecification),
@@ -112,6 +144,7 @@ impl App {
                 title: None,
                 error: None,
                 settings_visible: false,
+                settings: AppConfig::load(),
                 explain: false,
                 #[cfg(feature = "menu-custom")]
                 active_context_menu: None,
@@ -129,9 +162,9 @@ impl App {
                     riced::btn_txt("Open a Tree File", Some(AppMsg::OpenFile))
                         .width(riced::BTN_H1 * 5e0),
                 )
-                .width(riced::Length::Fill)
-                .height(riced::Length::Fill)
-                .center(riced::Length::Fill)
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .center(Length::Fill)
                 .into();
             } else {
                 v = treeview.view().map(AppMsg::TvMsg);
@@ -142,28 +175,47 @@ impl App {
             }
         } else {
             v = riced::container(riced::txt("App::view"))
-                .width(riced::Length::Fill)
-                .height(riced::Length::Fill)
-                .center(riced::Length::Fill)
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .center(Length::Fill)
                 .into();
-        }
-
-        if self.explain {
-            v = v.explain(Clr::RED);
-        };
-
-        if let Some(error) = &self.error {
-            v = modal_element(v, error_container(error, AppMsg::ErrorClear));
-        }
-
-        if self.settings_visible {
-            v = modal_element(v, settings_container(AppMsg::HideSettings));
         }
 
         #[cfg(feature = "menu-custom")]
         if let Some(menu) = &self.menu {
             v = menu.menu_bar(v);
         }
+
+        if self.settings_visible {
+            v = modal_element(
+                v,
+                settings_container(
+                    Length::Fill,
+                    Length::Fill,
+                    PADDING * 3e0,
+                    PADDING * 8e0,
+                    AppMsg::HideSettings,
+                ),
+            );
+        }
+
+        if let Some(error) = &self.error {
+            v = modal_element(
+                v,
+                error_container(
+                    error,
+                    Length::Shrink,
+                    Length::Shrink,
+                    PADDING * 3e0,
+                    PADDING * 8e0,
+                    AppMsg::ErrorClear,
+                ),
+            );
+        }
+
+        if self.explain {
+            v = v.explain(Clr::RED);
+        };
 
         v
     }
@@ -181,8 +233,8 @@ impl App {
                 self.settings_visible = false;
             }
 
-            AppMsg::ErrorSet(s) => {
-                self.error = Some(s);
+            AppMsg::ErrorSet(app_error) => {
+                self.error = Some(app_error);
             }
 
             AppMsg::ErrorClear => {
@@ -410,14 +462,17 @@ impl App {
                                         TvMsg::TreesLoaded(trees),
                                     )));
                                 }
-                                Err(error) => {
+                                Err(tree_parse_error) => {
                                     if let Some(menu) = &mut self.menu {
                                         menu.disable(AppMenuItemId::OpenFile);
                                         menu.disable(AppMenuItemId::SaveAs);
                                         menu.disable(AppMenuItemId::ExportPdf);
                                     };
                                     task = Some(Task::done(AppMsg::ErrorSet(
-                                        error.to_string(),
+                                        AppError::TreeParseError {
+                                            tree_parse_error,
+                                            file_path: Some(path_buf),
+                                        },
                                     )));
                                 }
                             }
@@ -429,7 +484,7 @@ impl App {
                                 menu.disable(AppMenuItemId::ExportPdf);
                             };
                             task = Some(Task::done(AppMsg::ErrorSet(
-                                file_read_error.to_string(),
+                                AppError::FileReadError { file_read_error },
                             )));
                         }
                     }
@@ -532,7 +587,7 @@ impl App {
                     let (window_id, open_window_task) =
                         open_window(window_settings());
                     self.winid = Some(window_id);
-                    self.treeview = Some(TreeView::new());
+                    self.treeview = Some(TreeView::new(self.settings.into()));
                     task = Some(open_window_task.discard());
                 } else {
                     eprintln!("AppMsg::OpenWindow -> Window is already open.");
@@ -615,6 +670,11 @@ impl App {
 
             AppMsg::WinClose => {
                 if let Some(window_id) = self.winid {
+                    if let Some(tv) = &self.treeview {
+                        self.settings = tv.config().into();
+                        self.settings.store();
+                    }
+
                     self.winid = None;
                     self.treeview = None;
                     task = Some(close_window(window_id));

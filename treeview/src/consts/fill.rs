@@ -4,6 +4,8 @@ use crate::*;
 const TEMPLATE_FILL: CnvFill =
     CnvFill { style: Solid(Clr::BLK), rule: FillRule::EvenOdd };
 
+pub(crate) const FILL_WHT: CnvFill =
+    CnvFill { style: Solid(Clr::WHT), ..TEMPLATE_FILL };
 pub(crate) const FILL_BLK: CnvFill =
     CnvFill { style: Solid(Clr::BLK), ..TEMPLATE_FILL };
 pub(crate) const FILL_RED: CnvFill =

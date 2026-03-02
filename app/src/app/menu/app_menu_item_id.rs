@@ -68,7 +68,7 @@ impl From<&AppMenuItemId> for AppMsg {
             AppMenuItemId::Settings => AppMsg::ShowSettings,
             AppMenuItemId::OpenFile => AppMsg::OpenFile,
             AppMenuItemId::SaveAs => AppMsg::SaveAs,
-            AppMenuItemId::Quit => AppMsg::Quit,
+            AppMenuItemId::Quit => AppMsg::WinCloseRequested,
             AppMenuItemId::CloseWindow => AppMsg::WinCloseRequested,
             AppMenuItemId::Find => AppMsg::TvMsg(TvMsg::ShowSearchBar),
             AppMenuItemId::ContextMenuIndex(idx) => {

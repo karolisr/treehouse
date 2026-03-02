@@ -26,7 +26,7 @@ impl Program<TvMsg> for TreeCnv {
         let edges = tst.edges()?;
         let is_rooted = tst.is_rooted();
 
-        st.tre_sty = self.tre_sty;
+        st.tre_sty = self.cfg.tre_sty;
         st.opn_angle = self.opn_angle;
         // ---------------------------------------------------------------------
         if st.text_w_tip.as_mut()?.font_size() != self.lab_size_tip {
@@ -138,7 +138,9 @@ impl Program<TvMsg> for TreeCnv {
                 false => None,
             };
 
-        if tst.has_tip_labels() && self.draw_labs_tip && self.draw_labs_allowed
+        if tst.has_tip_labels()
+            && self.cfg.draw_labs_tip
+            && self.draw_labs_allowed
         {
             node_labs(
                 highlighted_node_ids,
@@ -147,11 +149,11 @@ impl Program<TvMsg> for TreeCnv {
                 self.lab_size_tip,
                 true,
                 false,
-                match self.align_tip_labs {
+                match self.cfg.align_tip_labs {
                     true => Some(align_tips_at),
                     false => None,
                 },
-                match self.trim_tip_labs {
+                match self.cfg.trim_tip_labs {
                     true => Some(self.trim_tip_labs_to_nchar as usize),
                     false => None,
                 },
@@ -159,7 +161,10 @@ impl Program<TvMsg> for TreeCnv {
                 &mut st.labs_tip,
             );
         } // -------------------------------------------------------------------
-        if tst.has_int_labs() && self.draw_labs_int && self.draw_labs_allowed {
+        if tst.has_int_labs()
+            && self.cfg.draw_labs_int
+            && self.draw_labs_allowed
+        {
             node_labs(
                 highlighted_node_ids,
                 &st.vis_nodes,
@@ -173,7 +178,8 @@ impl Program<TvMsg> for TreeCnv {
                 &mut st.labs_int,
             );
         } // -------------------------------------------------------------------
-        if tst.has_brlen() && self.draw_labs_brnch && self.draw_labs_allowed {
+        if tst.has_brlen() && self.cfg.draw_labs_brnch && self.draw_labs_allowed
+        {
             node_labs(
                 highlighted_node_ids,
                 &st.vis_nodes,
@@ -214,9 +220,10 @@ impl Program<TvMsg> for TreeCnv {
                         }
 
                         st.cursor_tracking_point = st.cursor_tracking_point();
-                        st.mouse_is_over_tip_w_resize_area = self.draw_labs_tip
-                            && self.draw_labs_allowed
-                            && st.is_mouse_over_tip_w_resize_area();
+                        st.mouse_is_over_tip_w_resize_area =
+                            self.cfg.draw_labs_tip
+                                && self.draw_labs_allowed
+                                && st.is_mouse_over_tip_w_resize_area();
 
                         if st.tip_lab_w_is_being_resized {
                             st.cursor_tracking_point = None;
@@ -225,7 +232,7 @@ impl Program<TvMsg> for TreeCnv {
                                     st.calc_tip_lab_w(),
                                 )),
                             ));
-                        } else if self.draw_cursor_line
+                        } else if self.cfg.draw_cursor_line
                             && let Some(pt) = st.cursor_tracking_point
                         {
                             let crsr_x_rel = match st.tre_sty {
@@ -293,7 +300,7 @@ impl Program<TvMsg> for TreeCnv {
                                     } else if let Some((node_id, _)) =
                                         &st.hovered_node
                                     {
-                                        match self.selection_lock {
+                                        match self.cfg.selection_lock {
                                         true => action = Some(Action::publish(
                                         TvMsg::SelectDeselectNode(*node_id),
                                     )),
@@ -342,16 +349,18 @@ impl Program<TvMsg> for TreeCnv {
                 KeyboardEvent::ModifiersChanged(modifs) => {
                     let shift = Modifiers::SHIFT;
                     if modifs.contains(shift) && !st.modifs.contains(shift) {
-                        action = Some(Action::publish(
-                            TvMsg::SelectionLockChanged(!self.selection_lock),
-                        ));
+                        action =
+                            Some(Action::publish(TvMsg::SelectionLockChanged(
+                                !self.cfg.selection_lock,
+                            )));
                         st.modifs.insert(shift);
                     } else if !modifs.contains(shift)
                         && st.modifs.contains(shift)
                     {
-                        action = Some(Action::publish(
-                            TvMsg::SelectionLockChanged(!self.selection_lock),
-                        ));
+                        action =
+                            Some(Action::publish(TvMsg::SelectionLockChanged(
+                                !self.cfg.selection_lock,
+                            )));
                         st.modifs.remove(shift);
                     }
                 }
@@ -542,14 +551,19 @@ impl Program<TvMsg> for TreeCnv {
             // t.finish();
 
             // let t = timer("scale_bar");
-            if tst.has_brlen() && self.draw_scale_bar && !self.draw_height_axis
+            if tst.has_brlen()
+                && self.cfg.show_scale_bar
+                && !self.cfg.full_width_scale_bar
             {
                 draw_scale_bar(self, st, tst, rndr, size, &mut geoms);
             }
             // t.finish();
 
             // let t = timer("height_axis");
-            if tst.has_brlen() && self.draw_scale_bar && self.draw_height_axis {
+            if tst.has_brlen()
+                && self.cfg.show_scale_bar
+                && self.cfg.full_width_scale_bar
+            {
                 draw_height_axis(self, st, tst, rndr, size, &mut geoms);
             }
             // t.finish();

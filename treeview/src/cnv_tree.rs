@@ -7,7 +7,8 @@ use state::St;
 
 #[derive(Debug)]
 pub(super) struct TreeCnv {
-    pub(super) tre_sty: TreSty,
+    pub(super) cfg: TreeViewConfig,
+    // -------------------------------------------------------------------------
     pub(super) search_is_active: bool,
     // -------------------------------------------------------------------------
     cache_cnv_bnds: CnvCache,
@@ -35,19 +36,11 @@ pub(super) struct TreeCnv {
     pub(super) vis_y_mid_rel: Float,
     // -------------------------------------------------------------------------
     pub(super) draw_debug: bool,
-    pub(super) draw_cursor_line: bool,
     pub(super) draw_labs_allowed: bool,
-    pub(super) draw_labs_brnch: bool,
-    pub(super) draw_labs_int: bool,
-    pub(super) draw_labs_tip: bool,
     pub(super) draw_clade_highlights: bool,
-    pub(super) draw_scale_bar: bool,
-    pub(super) draw_height_axis: bool,
-    pub(super) draw_root: bool,
     pub(super) drawing_enabled: bool,
     // -------------------------------------------------------------------------
     pub(super) tip_labs_vis_max: usize,
-    // pub(super) node_labs_vis_max: usize,
     // -------------------------------------------------------------------------
     pub(super) lab_size_min: Float,
     pub(super) lab_size_max: Float,
@@ -70,14 +63,9 @@ pub(super) struct TreeCnv {
     // -------------------------------------------------------------------------
     pub(super) tree_state: Option<Rc<TreeState>>,
     // -------------------------------------------------------------------------
-    pub(super) align_tip_labs: bool,
-    pub(super) trim_tip_labs: bool,
     pub(super) trim_tip_labs_to_nchar: u16,
     // -------------------------------------------------------------------------
     pub(crate) tip_w_set_by_user: Option<Float>,
-    pub(crate) selection_lock: bool,
-    // -------------------------------------------------------------------------
-    pub(crate) tre_unit: TreUnit,
     // -------------------------------------------------------------------------
     pub(super) height_axis_is_reversed: bool,
     pub(super) height_axis_scale_type: AxisScaleType,
@@ -87,18 +75,18 @@ pub(super) struct TreeCnv {
     pub(crate) height_axis_char_width: Float,
     pub(crate) height_axis_tick_size: Float,
     pub(crate) height_axis_lab_offset: Float,
-    // pub(crate) height_axis_padding_bottom: Float,
 }
 
 impl TreeCnv {
-    pub fn new(draw_debug: bool) -> Self {
+    pub fn new(cfg: TreeViewConfig, draw_debug: bool) -> Self {
         let height_axis_text_size = SF * 1e1;
         let height_axis_char_width = height_axis_text_size * 6e-1;
         let height_axis_tick_size = height_axis_char_width;
         let height_axis_lab_offset = height_axis_char_width / TWO;
 
         Self {
-            tre_sty: TreSty::PhyGrm,
+            cfg,
+            // -----------------------------------------------------------------
             search_is_active: false,
             // -----------------------------------------------------------------
             padd_l: PLOT_PADDING,
@@ -108,18 +96,10 @@ impl TreeCnv {
             // -----------------------------------------------------------------
             draw_debug,
             drawing_enabled: false,
-            draw_root: true,
             draw_labs_allowed: false,
-            draw_labs_tip: true,
             draw_clade_highlights: true,
-            draw_labs_int: false,
-            draw_labs_brnch: false,
-            draw_scale_bar: true,
-            draw_height_axis: true,
-            draw_cursor_line: true,
             // -----------------------------------------------------------------
             tip_labs_vis_max: 1000,
-            // node_labs_vis_max: 900,
             // -----------------------------------------------------------------
             opn_angle: ZRO,
             rot_angle: ZRO,
@@ -161,14 +141,9 @@ impl TreeCnv {
             // -----------------------------------------------------------------
             tree_state: None,
             // -----------------------------------------------------------------
-            align_tip_labs: false,
-            trim_tip_labs: false,
             trim_tip_labs_to_nchar: 20,
             // -----------------------------------------------------------------
             tip_w_set_by_user: None,
-            selection_lock: false,
-            // -----------------------------------------------------------------
-            tre_unit: TreUnit::default(),
             // -----------------------------------------------------------------
             height_axis_is_reversed: false,
             height_axis_scale_type: AxisScaleType::default(),
@@ -178,7 +153,6 @@ impl TreeCnv {
             height_axis_char_width,
             height_axis_tick_size,
             height_axis_lab_offset,
-            // height_axis_padding_bottom: Float::default(),
         }
     }
 
@@ -231,13 +205,13 @@ impl TreeCnv {
         let tre_vs_prelim =
             cnv_vs.padded(self.padd_l, self.padd_r, self.padd_t, self.padd_b);
         let mut tip_w: Float = ZRO;
-        let trim_to = match self.trim_tip_labs {
+        let trim_to = match self.cfg.trim_tip_labs {
             true => Some(self.trim_tip_labs_to_nchar as usize),
             false => None,
         };
-        if self.draw_labs_tip && self.draw_labs_allowed {
+        if self.cfg.draw_labs_tip && self.draw_labs_allowed {
             tip_w = calc_tip_w(
-                self.tre_sty, &tre_vs_prelim, self.tip_w_set_by_user,
+                self.cfg.tre_sty, &tre_vs_prelim, self.tip_w_set_by_user,
                 edges_tip_tallest, self.lab_offset_tip, trim_to, text_w_tip,
             );
         }
@@ -246,14 +220,14 @@ impl TreeCnv {
             offset_due_to_clade_highlight = self.clade_highlights_w;
         }
         let mut root_len = ZRO;
-        match self.tre_sty {
+        match self.cfg.tre_sty {
             TreSty::PhyGrm => {
                 let mut offset_due_to_brnch_lab = ZRO;
                 let mut offset_due_to_tip_lab = ZRO;
-                if self.draw_labs_allowed && self.draw_labs_tip {
+                if self.draw_labs_allowed && self.cfg.draw_labs_tip {
                     offset_due_to_tip_lab = self.lab_size_tip / TWO;
                 }
-                if self.draw_labs_allowed && self.draw_labs_brnch {
+                if self.draw_labs_allowed && self.cfg.draw_labs_brnch {
                     offset_due_to_brnch_lab =
                         self.lab_size_brnch + self.lab_offset_brnch.abs();
                 }

@@ -45,47 +45,59 @@ pub fn modal_element<'a, Msg: 'a>(
 
 pub fn error_container<'a, Msg: Clone + 'a>(
     error_message: impl Into<String>,
-    on_blur: Msg,
+    w: impl Into<Length>,
+    h: impl Into<Length>,
+    padding_inner: impl Into<Padding>,
+    padding_outer: impl Into<Padding>,
+    on_close: Msg,
 ) -> Element<'a, Msg> {
     let error_message = error_message.into();
-    let mut c = center(
-        iced_col![
-            center(txt(format!("Error: {error_message}"))).height(Length::Fill),
-            space_v(Length::Shrink, BTN_H1),
-            iced_row![
-                space_h(Length::Fill, Length::Shrink),
-                btn_txt("OK", Some(on_blur)).width(BTN_H1 * 3e0)
-            ],
-        ]
-        .width(Length::Fill)
-        .height(Length::Fill),
-    );
-    c = c.width(3e2 * SF);
-    c = c.height(1.75e2 * SF);
-    c = c.padding(PADDING * 3e0);
-    c = c.style(sty_cont_message);
+    let padding_inner: Padding = padding_inner.into();
+    let mut c = center(iced_col![
+        center(txt(format!("Error: {error_message}")))
+            .width(Length::Shrink)
+            .height(Length::Shrink)
+            .padding(padding_inner)
+            .style(sty_cont_floating_content),
+        space_v(Length::Shrink, padding_inner.bottom),
+        iced_row![
+            space_h(Length::Fill, Length::Shrink),
+            btn_txt("OK", Some(on_close)).width(BTN_H1 * 3e0)
+        ],
+    ]);
+    c = c.width(w);
+    c = c.height(h);
+    c = c.padding(padding_inner);
+    c = c.style(sty_cont_floating_bg);
+    c = center(c);
+    c = c.padding(padding_outer);
     c.into()
 }
 
 pub fn settings_container<'a, Msg: Clone + 'a>(
-    on_blur: Msg,
+    w: impl Into<Length>,
+    h: impl Into<Length>,
+    padding_inner: impl Into<Padding>,
+    padding_outer: impl Into<Padding>,
+    on_close: Msg,
 ) -> Element<'a, Msg> {
-    let mut c = center(
-        iced_col![
-            center(txt("Settings")).height(Length::Fill),
-            space_v(Length::Shrink, BTN_H1),
-            iced_row![
-                space_h(Length::Fill, Length::Shrink),
-                btn_txt("Close", Some(on_blur)).width(BTN_H1 * 3e0)
-            ],
-        ]
-        .width(Length::Fill)
-        .height(Length::Fill),
-    );
-    c = c.width(6e2 * SF);
-    c = c.height(5e2 * SF);
-    c = c.padding(PADDING * 3e0);
-    c = c.style(sty_cont_message);
+    let padding_inner: Padding = padding_inner.into();
+    let mut c = center(iced_col![
+        center(txt("Settings"))
+            .padding(padding_inner)
+            .style(sty_cont_floating_content),
+        space_v(Length::Shrink, padding_inner.bottom),
+        iced_row![
+            space_h(Length::Fill, Length::Shrink),
+            btn_txt("Close", Some(on_close)).width(BTN_H1 * 3e0)
+        ],
+    ]);
+    c = c.width(w);
+    c = c.height(h);
+    c = c.padding(padding_inner);
+    c = c.style(sty_cont_floating_bg);
+    c = center(c);
+    c = c.padding(padding_outer);
     c.into()
 }
 

@@ -4,11 +4,11 @@ use riced::{
 };
 
 #[cfg(target_os = "linux")]
-use super::consts::APP_ID;
+use super::consts::APP_NAME;
 
 pub fn window_settings() -> WindowSettings {
     WindowSettings {
-        size: Size { width: 900.0 * SF, height: 600.0 * SF },
+        size: Size { width: 1000.0 * SF, height: 700.0 * SF },
         min_size: Some(Size { width: 800.0, height: 600.0 }),
         max_size: None,
         maximized: false,
@@ -41,7 +41,7 @@ pub fn window_settings() -> WindowSettings {
 
         #[cfg(target_os = "linux")]
         platform_specific: PlatformSpecificWindowSettings {
-            application_id: String::from(APP_ID),
+            application_id: String::from(APP_NAME),
             override_redirect: false,
         },
     }

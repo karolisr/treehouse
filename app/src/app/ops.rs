@@ -4,28 +4,22 @@ use thiserror::Error;
 
 use super::AppMsg;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Clone)]
 pub enum FileReadError {
-    #[error("Could not read file.")]
-    InputError,
-    #[error("Could not parse file data as string.")]
-    CouldNotParseDataAsString,
+    #[error("Could not read file.\n{file_path}")]
+    InputError { file_path: PathBuf },
+
+    #[error("Could not parse file data as text.\n{file_path}")]
+    CouldNotParseDataAsText { file_path: PathBuf },
 }
 
 pub async fn choose_file_to_open() -> AppMsg {
-    let chosen = rfd::AsyncFileDialog::new()
-        // .add_filter("newick", &["newick", "tre"])
-        // .add_filter("nexus", &["tree", "trees", "nex", "nexus", "t"])
-        .pick_file()
-        .await;
+    let chosen = rfd::AsyncFileDialog::new().pick_file().await;
     AppMsg::PathToOpen(chosen.map(|file_handle| file_handle.path().into()))
 }
 
 pub fn choose_file_to_open_sync() -> AppMsg {
-    let chosen = rfd::FileDialog::new()
-        // .add_filter("newick", &["newick", "tre"])
-        // .add_filter("nexus", &["tree", "trees", "nex", "nexus", "t"])
-        .pick_file();
+    let chosen = rfd::FileDialog::new().pick_file();
     AppMsg::PathToOpen(chosen.map(|path_buf| path_buf.as_path().into()))
 }
 
@@ -52,16 +46,16 @@ pub async fn choose_file_to_pdf_export() -> AppMsg {
 }
 
 pub fn read_text_file(path_buf: PathBuf) -> Result<String, FileReadError> {
-    let result_io = std::fs::read(path_buf);
+    let result_io = std::fs::read(&path_buf);
     if let Ok(data) = result_io {
         let result_parse = String::from_utf8(data);
         if let Ok(s) = result_parse {
             Ok(s)
         } else {
-            Err(FileReadError::CouldNotParseDataAsString)
+            Err(FileReadError::CouldNotParseDataAsText { file_path: path_buf })
         }
     } else {
-        Err(FileReadError::InputError)
+        Err(FileReadError::InputError { file_path: path_buf })
     }
 }
 

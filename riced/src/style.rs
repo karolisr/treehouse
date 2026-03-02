@@ -82,21 +82,19 @@ pub(crate) fn sty_text_input(
     }
 }
 
-pub fn sty_cont(theme: &Theme) -> ContainerStyle {
+pub(crate) fn sty_cont(theme: &Theme) -> ContainerStyle {
     let pb = theme.palette();
     let pe = theme.extended_palette();
     ContainerStyle {
         text_color: Some(pb.text),
-        background: Some(Background::Color(
-            pe.background.strongest.color.scale_alpha(0.11),
-        )),
+        background: Some(Background::Color(pe.background.weakest.color)),
         border: Border {
             width: BORDER_W,
             color: pe.background.strong.color,
             radius: WIDGET_RADIUS.into(),
         },
         shadow: Shadow {
-            color: pe.background.strong.color.scale_alpha(0.77),
+            color: pe.background.weak.color,
             offset: Vector { x: ZERO, y: ZERO },
             blur_radius: PADDING - PADDING / THREE,
         },
@@ -104,12 +102,41 @@ pub fn sty_cont(theme: &Theme) -> ContainerStyle {
     }
 }
 
-pub fn sty_cont_message(theme: &Theme) -> ContainerStyle {
+pub fn sty_cont_no_shadow(theme: &Theme) -> ContainerStyle {
     let base = sty_cont(theme);
     let pe = theme.extended_palette();
     ContainerStyle {
         background: Some(Background::Color(pe.background.base.color)),
         border: Border { color: pe.background.strongest.color, ..base.border },
+        shadow: Shadow {
+            color: Clr::TRN,
+            offset: Vector { x: ZERO, y: ZERO },
+            blur_radius: ZERO,
+        },
+        ..base
+    }
+}
+
+pub(crate) fn sty_cont_floating_bg(theme: &Theme) -> ContainerStyle {
+    let base = sty_cont(theme);
+    let pe = theme.extended_palette();
+    ContainerStyle {
+        background: Some(Background::Color(pe.background.weakest.color)),
+        border: Border { color: pe.background.strongest.color, ..base.border },
+        shadow: Shadow {
+            color: pe.background.strong.color,
+            offset: Vector { x: ZERO, y: ZERO },
+            blur_radius: PADDING * TWO,
+        },
+        ..base
+    }
+}
+
+pub(crate) fn sty_cont_floating_content(theme: &Theme) -> ContainerStyle {
+    let base = sty_cont_no_shadow(theme);
+    let pe = theme.extended_palette();
+    ContainerStyle {
+        border: Border { color: pe.background.weak.color, ..base.border },
         ..base
     }
 }
@@ -175,21 +202,6 @@ pub fn sty_cont_search_bar(theme: &Theme) -> ContainerStyle {
     sty_cont(theme)
 }
 
-pub fn sty_cont_no_shadow(theme: &Theme) -> ContainerStyle {
-    let base = sty_cont(theme);
-    let pe = theme.extended_palette();
-    ContainerStyle {
-        background: Some(Background::Color(pe.background.base.color)),
-        border: Border { color: pe.background.strongest.color, ..base.border },
-        shadow: Shadow {
-            color: Clr::TRN,
-            offset: Vector { x: ZERO, y: ZERO },
-            blur_radius: ZERO,
-        },
-        ..base
-    }
-}
-
 pub fn sty_pane_grid(theme: &Theme) -> PgStyle {
     let pe = theme.extended_palette();
     PgStyle {
@@ -220,6 +232,10 @@ pub fn sty_pane_body(theme: &Theme) -> ContainerStyle {
         background: Some(Background::Color(pe.background.base.color)),
         ..base
     }
+}
+
+pub fn sty_pane_body_plot(theme: &Theme) -> ContainerStyle {
+    sty_cont(theme)
 }
 
 pub fn sty_pane_body_bottom(theme: &Theme) -> ContainerStyle {
@@ -272,9 +288,7 @@ pub fn sty_table_row_header(theme: &Theme) -> ContainerStyle {
     let pe = theme.extended_palette();
     let base = sty_table_cell(theme);
     ContainerStyle {
-        background: Some(Background::Color(
-            pe.background.strongest.color.scale_alpha(1.0),
-        )),
+        background: Some(Background::Color(pe.background.strongest.color)),
         border: Border {
             radius: Radius {
                 top_left: WIDGET_RADIUS,
@@ -342,7 +356,7 @@ pub fn sty_cont_menu_bar(theme: &Theme) -> ContainerStyle {
             radius: WIDGET_RADIUS.into(),
         },
         shadow: Shadow {
-            color: ep.background.strong.color.scale_alpha(0.77),
+            color: ep.background.weak.color,
             offset: Vector { x: ZERO, y: ZERO },
             blur_radius: PADDING - PADDING / THREE,
         },
@@ -465,7 +479,7 @@ pub(crate) fn sty_menu(theme: &Theme) -> IcedMenuStyle {
         selected_text_color: ep.primary.base.text,
         selected_background: ep.primary.strong.color.into(),
         shadow: Shadow {
-            color: ep.background.strong.color.scale_alpha(0.77),
+            color: ep.background.weak.color,
             offset: Vector { x: ZERO, y: ZERO },
             blur_radius: PADDING - PADDING / THREE,
         },

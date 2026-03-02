@@ -51,7 +51,7 @@ pub(super) fn draw_edges(
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(tst.cache_cnv_edge().draw(rndr, sz, |f| match tc.tre_sty {
+    g.push(tst.cache_cnv_edge().draw(rndr, sz, |f| match tc.cfg.tre_sty {
         TreSty::PhyGrm => {
             stroke_edges_phygrm(
                 tst.edges().unwrap(),
@@ -83,7 +83,7 @@ pub(super) fn draw_tip_lab_w_resize_area(
     g: &mut Vec<Geometry>,
 ) {
     g.push(tc.cache_cnv_tip_lab_w_resize_area.draw(rndr, bnds.size(), |f| {
-        match tc.tre_sty {
+        match tc.cfg.tre_sty {
             TreSty::PhyGrm => {
                 if let Some(tip_lab_w_rect) = st.tip_lab_w_rect {
                     fill_rect(tip_lab_w_rect, FILL_BLU_50, f);
@@ -183,7 +183,7 @@ pub(super) fn draw_scale_bar(
 ) {
     g.push(tc.cache_cnv_scale_bar.draw(rndr, sz, |f| {
         draw_scale_bar_internal(
-            tc.tre_sty,
+            tc.cfg.tre_sty,
             &st.vis_vs,
             &st.tre_vs,
             SF * 12e0,
@@ -194,7 +194,7 @@ pub(super) fn draw_scale_bar(
                 false => 0.0,
             },
             tst.max_first_node_to_tip_distance() as Float,
-            tc.tre_unit,
+            tc.cfg.tre_unit,
             f,
         );
     }));
@@ -208,7 +208,7 @@ pub(super) fn draw_height_axis(
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(tc.cache_cnv_height_axis.draw(rndr, sz, |f| match tc.tre_sty {
+    g.push(tc.cache_cnv_height_axis.draw(rndr, sz, |f| match tc.cfg.tre_sty {
         TreSty::PhyGrm => {
             let n_ticks_x = (st.tre_vs.w / (tc.height_axis_char_width * 10.0))
                 .floor()
@@ -225,7 +225,7 @@ pub(super) fn draw_height_axis(
 
             let bottom = st.vis_vs.y1
                 + PADDING * TWO
-                + match tc.draw_labs_tip {
+                + match tc.cfg.draw_labs_tip {
                     true => -tc.lab_size_tip / TWO,
                     false => ZRO,
                 };
@@ -270,18 +270,20 @@ pub(super) fn draw_cursor_line(
 ) {
     g.push(tc.cache_cnv_cursor_line.draw(rndr, sz, |f| {
         if let Some(p) = st.cursor_tracking_point
-            && tc.draw_cursor_line
+            && tc.cfg.draw_cursor_line
         {
             f.push_transform();
             f.translate(st.translation);
-            match tc.tre_sty {
+            match tc.cfg.tre_sty {
                 TreSty::PhyGrm => {
                     let bottom = st.vis_vs.y1 - PLOT_PADDING * TWO
-                        + match tc.draw_labs_tip {
+                        + match tc.cfg.draw_labs_tip {
                             true => -tc.lab_size_tip,
                             false => ZRO,
                         }
-                        + match tc.draw_scale_bar && tc.draw_height_axis {
+                        + match tc.cfg.show_scale_bar
+                            && tc.cfg.full_width_scale_bar
+                        {
                             true => PADDING * TWO,
                             false => ZRO,
                         };
@@ -428,7 +430,7 @@ pub(super) fn draw_filtered_nodes(
             .map(|&idx| edges[idx].clone())
             .collect();
 
-        match tc.tre_sty {
+        match tc.cfg.tre_sty {
             TreSty::PhyGrm => {
                 stroke_edges_phygrm(
                     &found_edges, &st.tre_vs, st.root_len, None, STRK_2_RED, f,
@@ -441,7 +443,7 @@ pub(super) fn draw_filtered_nodes(
         }
 
         if let Some(edge) = tst.current_found_edge() {
-            let pt = match tc.tre_sty {
+            let pt = match tc.cfg.tre_sty {
                 TreSty::PhyGrm => {
                     node_point_cart(st.tre_vs.w, st.tre_vs.h, &edge)
                 }

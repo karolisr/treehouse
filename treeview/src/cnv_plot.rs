@@ -8,15 +8,13 @@ use state::St;
 
 #[derive(Debug, Default)]
 pub(super) struct PlotCnv {
+    pub(super) cfg: TreeViewConfig,
+    // -------------------------------------------------------------------------
     ltt_plot_data: PlotData,
-    pub(super) tre_unit: TreUnit,
     pub(super) x_axis_is_reversed: bool,
     pub(super) x_axis_scale_type: AxisScaleType,
     pub(super) y_axis_scale_type: AxisScaleType,
     pub(super) draw_debug: bool,
-    pub(super) draw_ltt: bool,
-    pub(super) draw_gts: bool,
-    pub(super) draw_cursor_line: bool,
     pub(super) crsr_x_rel: Option<Float>,
     pub(super) padd_l: Float,
     pub(super) padd_r: Float,
@@ -24,6 +22,7 @@ pub(super) struct PlotCnv {
     pub(super) padd_b: Float,
     pub(super) vis_x0: Float,
     pub(super) vis_y0: Float,
+    pub(super) cache_cnv_background: CnvCache,
     pub(super) cache_cnv_gts: CnvCache,
     pub(super) cache_cnv_ltt: CnvCache,
     pub(super) cache_cnv_cursor_line: CnvCache,
@@ -53,7 +52,7 @@ impl Program<TvMsg> for PlotCnv {
     ) -> Option<Action<TvMsg>> {
         let mut action: Option<Action<TvMsg>> = None;
 
-        if st.tre_unit != self.tre_unit
+        if st.tre_unit != self.cfg.tre_unit
             || st.ltt_plot_data.x_min != self.ltt_plot_data.x_min
             || st.ltt_plot_data.y_min != self.ltt_plot_data.y_min
             || st.ltt_plot_data.x_max != self.ltt_plot_data.x_max
@@ -70,7 +69,7 @@ impl Program<TvMsg> for PlotCnv {
             st.ltt_plot_data = self.ltt_plot_data.clone();
             st.x_axis_scale_type = self.x_axis_scale_type;
             st.y_axis_scale_type = self.y_axis_scale_type;
-            st.tre_unit = self.tre_unit;
+            st.tre_unit = self.cfg.tre_unit;
             st.bnds = bnds;
             st.plt_padd_l = self.padd_l;
             st.plt_padd_r = self.padd_r;
@@ -171,15 +170,17 @@ impl Program<TvMsg> for PlotCnv {
             draw_bounds(self, st, rndr, bnds, &mut geoms);
         }
 
-        if self.draw_gts && self.tre_unit == TreUnit::MillionYears {
+        draw_plot_background(self, st, rndr, bnds.size(), &mut geoms);
+
+        if self.cfg.draw_gts && self.cfg.tre_unit == TreUnit::MillionYears {
             draw_gts(self, st, rndr, bnds.size(), &mut geoms);
         }
 
-        if self.draw_ltt {
+        if self.cfg.draw_ltt {
             draw_ltt(self, st, rndr, bnds.size(), &mut geoms);
         }
 
-        if self.draw_cursor_line {
+        if self.cfg.draw_cursor_line {
             draw_cursor_line(self, st, rndr, bnds.size(), &mut geoms);
         }
 
@@ -244,13 +245,12 @@ pub fn plot_data_from_ltt_points(
 }
 
 impl PlotCnv {
-    pub(super) fn new(
-        draw_debug: bool,
-        draw_ltt: bool,
-        draw_gts: bool,
-        tre_unit: TreUnit,
-    ) -> Self {
-        Self { draw_debug, draw_ltt, draw_gts, tre_unit, ..Default::default() }
+    pub(super) fn new(cfg: TreeViewConfig, draw_debug: bool) -> Self {
+        Self { cfg, draw_debug, ..Default::default() }
+    }
+
+    pub(super) fn clear_cache_cnv_background(&self) {
+        self.cache_cnv_background.clear();
     }
 
     pub(super) fn clear_cache_cnv_gts(&self) {
@@ -278,6 +278,7 @@ impl PlotCnv {
     }
 
     pub(super) fn clear_caches_cnv_all(&self) {
+        self.clear_cache_cnv_background();
         self.clear_cache_cnv_gts();
         self.clear_cache_cnv_ltt();
         self.clear_cache_cnv_cursor_line();
@@ -289,7 +290,6 @@ impl PlotCnv {
     pub(super) fn set_ltt_plot_data(&mut self, data: PlotData) {
         self.ltt_plot_data = data;
         self.clear_caches_cnv_all();
-        // self.is_stale = true;
     }
 }
 

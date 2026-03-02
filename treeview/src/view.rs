@@ -24,19 +24,19 @@ impl TreeView {
 
         tool_bar_and_content_col = tool_bar_and_content_col.spacing(PADDING);
 
-        if self.show_tool_bar {
+        if self.cfg.show_tool_bar {
             tool_bar_and_content_col =
                 tool_bar_and_content_col.push(toolbar(self, ts.clone()));
         }
 
-        if self.show_search_bar {
+        if self.cfg.show_search_bar {
             tool_bar_and_content_col =
                 tool_bar_and_content_col.push(search_bar(self, ts.clone()));
         }
 
         tool_bar_and_content_col = tool_bar_and_content_col.push(content(self));
 
-        if self.show_side_bar {
+        if self.cfg.show_side_bar {
             let side_bar_main = side_bar_main(self, ts.clone());
             let side_bar_annotations = side_bar_annotations(self, ts.clone());
             main_row = main_row.push(side_bar_main);
@@ -50,9 +50,7 @@ impl TreeView {
     }
 }
 
-pub(crate) fn btn_subtree_parent_node<'a>(
-    ts: Rc<TreeState>,
-) -> Button<'a, TvMsg> {
+fn btn_subtree_parent_node<'a>(ts: Rc<TreeState>) -> Button<'a, TvMsg> {
     btn_svg(
         Icon::ArrowLeft,
         if let Some(subtree_view_node_id) = ts.subtree_view_node_id()
@@ -80,14 +78,22 @@ fn content<'a>(tv: &'a TreeView) -> Element<'a, TvMsg> {
     let ele: Element<'a, TvMsg> = if let Some(pane_grid) = &tv.pane_grid {
         PaneGrid::new(pane_grid, |_pane_idx, tv_pane, _is_maximized| {
             PgContent::new(
-                center(responsive(move |size| pane_content(tv, tv_pane, size)))
-                    .padding(PADDING),
+                {
+                    center(responsive({
+                        move |size| pane_content(tv, tv_pane, size)
+                    }))
+                }
+                .padding(PADDING),
             )
-            .style(sty_pane_body)
+            .style(match tv_pane {
+                TreeViewPane::Tree => sty_pane_body,
+                TreeViewPane::Plot => sty_pane_body_plot,
+                TreeViewPane::NodesTable => sty_pane_body,
+            })
         })
         .style(sty_pane_grid)
         .on_resize(ZRO, TvMsg::PaneResized)
-        .min_size(SF * 2e2)
+        .min_size(TXT_SIZE * 12.0)
         .spacing(PADDING)
         .into()
     } else {
@@ -112,11 +118,39 @@ fn pane_content<'a>(
         }
         TreeViewPane::Plot => {
             let mut cnv_w = cnv_w;
-            if tv.tre_cnv.tre_sty == TreSty::Fan {
+            if tv.cfg.tre_sty == TreSty::Fan {
                 cnv_w = w;
             }
-            let cnv = Cnv::new(&tv.plot_cnv).width(cnv_w).height(h);
-            scrollable_cnv_plot(tv.plot_scrollable_id, cnv, w, h).into()
+            let cnv =
+                Cnv::new(&tv.plot_cnv).width(cnv_w - SIDE_BAR_W).height(h);
+            let scrl = scrollable_cnv_plot(
+                tv.plot_scrollable_id,
+                cnv,
+                w - SIDE_BAR_W,
+                h,
+            );
+            let mut pane_row: Row<TvMsg> = Row::new();
+            let mut psc: Column<TvMsg> = Column::new();
+
+            psc = psc.push(toggler_gts(
+                tv.cfg.tre_unit == TreUnit::MillionYears,
+                tv.plot_cnv.cfg.draw_gts,
+            ));
+
+            psc = psc.push(toggler_ltt(true, tv.plot_cnv.cfg.draw_ltt));
+
+            if tv.plot_cnv.cfg.draw_ltt {
+                psc = psc.push(pick_list_plot_y_axis_scale_type(
+                    tv.plot_cnv.y_axis_scale_type,
+                ));
+            }
+
+            psc = psc.spacing(PADDING + SF * TWO).padding(PADDING);
+
+            pane_row = pane_row.push(scrl);
+            pane_row = pane_row.push(psc.clip(true));
+
+            pane_row.into()
         }
         TreeViewPane::NodesTable => {
             data_table_element(tv, tv.nodes_table_scrollable_id, w, h)
@@ -139,7 +173,7 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     tb_row = tb_row.push(
         center(
             iced_row![
-                btn_set_subtree_view(ts.clone()),
+                // btn_set_subtree_view(ts.clone()),
                 btn_subtree_parent_node(ts.clone()),
                 btn_clear_subtree_view(ts.clone())
             ]
@@ -149,7 +183,7 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         .height(Length::Shrink),
     );
 
-    tb_row = tb_row.push(btn_clade_highlight(ts.clone()));
+    // tb_row = tb_row.push(btn_clade_highlight(ts.clone()));
 
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
 
@@ -166,22 +200,22 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
                     Icon::Search,
                     Icon::Search,
                     Some(TvMsg::ToggleSearchBar),
-                    tv.show_search_bar,
+                    tv.cfg.show_search_bar,
                 ),
                 btn_svg_stateful(
                     Icon::Plot,
                     Icon::Plot,
                     match ts.has_brlen() {
-                        true => Some(TvMsg::TogglePlot(!tv.show_plot)),
+                        true => Some(TvMsg::TogglePlot(!tv.cfg.show_plot)),
                         false => None,
                     },
-                    tv.show_plot,
+                    tv.cfg.show_plot,
                 ),
                 btn_svg_stateful(
                     Icon::DataTable,
                     Icon::DataTable,
                     Some(TvMsg::ToggleNodesTable),
-                    tv.show_nodes_table,
+                    tv.cfg.show_nodes_table,
                 ),
             ]
             .spacing(SF),
@@ -304,7 +338,7 @@ fn search_bar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     row1 = row1.push(add_rem_btn_row);
     row2 = row2.push(checkbox(
         "Tips Only",
-        tv.tip_only_search,
+        tv.cfg.tip_only_search,
         TvMsg::TipOnlySearchSelChanged,
     ));
 
@@ -427,14 +461,14 @@ fn side_bar_main<'a>(
     sb = sb.push(stats(ts.clone()));
     sb = sb.push(rule_h(SF));
     if ts.has_brlen() {
-        sb = sb.push(pick_list_tree_unit(tv.tre_unit));
+        sb = sb.push(pick_list_tree_unit(tv.cfg.tre_unit));
         sb = sb.push(rule_h(SF));
     }
-    sb = sb.push(pick_list_tre_sty(tv.tre_cnv.tre_sty));
-    sb = sb.push(pick_list_node_ordering(tv.node_ord_opt));
+    sb = sb.push(pick_list_tre_sty(tv.cfg.tre_sty));
+    sb = sb.push(pick_list_node_ordering(tv.cfg.node_ord_opt));
     sb = sb.push(rule_h(SF));
 
-    match tv.tre_cnv.tre_sty {
+    match tv.cfg.tre_sty {
         TreSty::PhyGrm => {
             if tv.tre_cnv_size_idx_min != tv.tre_cnv_size_idx_max {
                 sb = sb.push(slider(
@@ -490,9 +524,9 @@ fn side_bar_main<'a>(
 
     sb = sb.push(rule_h(SF));
 
-    if ts.is_rooted() && tv.tre_cnv.draw_root && !ts.is_subtree_view_active() {
+    if ts.is_rooted() && tv.cfg.draw_root && !ts.is_subtree_view_active() {
         sb = sb.push(iced_col![
-            toggler_root(true, tv.tre_cnv.draw_root),
+            toggler_root(true, tv.cfg.draw_root),
             space_v(ONE, PADDING / TWO),
             slider(
                 None,
@@ -507,54 +541,46 @@ fn side_bar_main<'a>(
     } else {
         sb = sb.push(toggler_root(
             ts.is_rooted() && !ts.is_subtree_view_active(),
-            tv.tre_cnv.draw_root,
+            tv.cfg.draw_root,
         ));
     }
 
-    sb = sb.push(toggler_selection_lock(true, tv.tre_cnv.selection_lock));
-
-    sb = sb.push(iced_col![toggler_cursor_line(
-        true, tv.tre_cnv.draw_cursor_line, tv.tre_cnv.tre_sty
-    )]);
+    sb = sb.push(toggler_selection_lock(true, tv.cfg.selection_lock));
 
     sb = sb.push(rule_h(SF));
+
+    sb = sb.push(iced_col![toggler_cursor_line(
+        true, tv.cfg.draw_cursor_line, tv.cfg.tre_sty
+    )]);
 
     sb = sb.push(iced_col![toggler_scale_bar(
         ts.has_brlen(),
-        tv.tre_cnv.draw_scale_bar
+        tv.cfg.show_scale_bar
     )]);
 
-    if tv.tre_cnv.draw_scale_bar {
-        sb = sb.push(iced_col![toggler_height_axis(
+    if tv.cfg.show_scale_bar {
+        sb = sb.push(iced_col![toggler_full_width_scale_bar(
             ts.has_brlen(),
-            tv.tre_cnv.draw_height_axis
+            tv.cfg.full_width_scale_bar
         )]);
     }
 
-    sb = sb.push(rule_h(SF));
+    // sb = sb.push(rule_h(SF));
 
-    // if ts.has_brlen() {
-    //     sb = sb.push(toggler_plot(true, tv.show_plot));
+    // if tv.cfg.show_plot && ts.has_brlen() {
+    //     sb = sb.push(toggler_ltt(true, tv.plot_cnv.cfg.draw_ltt));
+
+    //     if tv.plot_cnv.cfg.draw_ltt {
+    //         sb = sb.push(pick_list_plot_y_axis_scale_type(
+    //             tv.plot_cnv.y_axis_scale_type,
+    //         ));
+    //     }
+
+    //     sb = sb.push(toggler_gts(
+    //         tv.cfg.tre_unit == TreUnit::MillionYears,
+    //         tv.plot_cnv.cfg.draw_gts,
+    //     ));
     // }
-
-    if tv.show_plot && ts.has_brlen() {
-        sb = sb.push(toggler_ltt(true, tv.plot_cnv.draw_ltt));
-
-        // sb = sb.push(pick_list_plot_x_axis_scale_type(
-        //     tv.plot_cnv.x_axis_scale_type,
-        // ));
-
-        if tv.plot_cnv.draw_ltt {
-            sb = sb.push(pick_list_plot_y_axis_scale_type(
-                tv.plot_cnv.y_axis_scale_type,
-            ));
-        }
-
-        sb = sb.push(toggler_gts(
-            tv.tre_unit == TreUnit::MillionYears,
-            tv.plot_cnv.draw_gts,
-        ));
-    }
 
     container(sb.clip(true))
         .style(sty_cont_bottom_left)
@@ -574,11 +600,11 @@ fn side_bar_annotations<'a>(
     sb = sb.height(Length::Fill);
 
     if ts.has_tip_labels()
-        && tv.tre_cnv.draw_labs_tip
+        && tv.cfg.draw_labs_tip
         && tv.tre_cnv.draw_labs_allowed
     {
         sb = sb.push(iced_col![
-            toggler_label_tip(true, tv.tre_cnv.draw_labs_tip,),
+            toggler_label_tip(true, tv.cfg.draw_labs_tip,),
             space_v(ONE, PADDING / TWO),
             slider(
                 None,
@@ -590,10 +616,10 @@ fn side_bar_annotations<'a>(
                 TvMsg::TipLabSizeChanged,
             ),
             space_v(ONE, PADDING / TWO),
-            toggler_label_tip_align(true, tv.tre_cnv.align_tip_labs),
+            toggler_label_tip_align(true, tv.cfg.align_tip_labs),
             space_v(ONE, PADDING / TWO),
-            toggler_label_tip_trim(true, tv.tre_cnv.trim_tip_labs),
-            match tv.tre_cnv.trim_tip_labs {
+            toggler_label_tip_trim(true, tv.cfg.trim_tip_labs),
+            match tv.cfg.trim_tip_labs {
                 true => {
                     iced_col![
                         space_v(ONE, PADDING / TWO),
@@ -616,16 +642,14 @@ fn side_bar_annotations<'a>(
     } else {
         sb = sb.push(toggler_label_tip(
             ts.has_tip_labels() && tv.tre_cnv.draw_labs_allowed,
-            tv.tre_cnv.draw_labs_tip,
+            tv.cfg.draw_labs_tip,
         ));
     }
 
-    if ts.has_int_labs()
-        && tv.tre_cnv.draw_labs_int
-        && tv.tre_cnv.draw_labs_allowed
+    if ts.has_int_labs() && tv.cfg.draw_labs_int && tv.tre_cnv.draw_labs_allowed
     {
         sb = sb.push(iced_col![
-            toggler_label_int(true, tv.tre_cnv.draw_labs_int),
+            toggler_label_int(true, tv.cfg.draw_labs_int),
             space_v(ONE, PADDING / TWO),
             slider(
                 None,
@@ -640,16 +664,14 @@ fn side_bar_annotations<'a>(
     } else {
         sb = sb.push(toggler_label_int(
             ts.has_int_labs() && tv.tre_cnv.draw_labs_allowed,
-            tv.tre_cnv.draw_labs_int,
+            tv.cfg.draw_labs_int,
         ));
     }
 
-    if ts.has_brlen()
-        && tv.tre_cnv.draw_labs_brnch
-        && tv.tre_cnv.draw_labs_allowed
+    if ts.has_brlen() && tv.cfg.draw_labs_brnch && tv.tre_cnv.draw_labs_allowed
     {
         sb = sb.push(iced_col![
-            toggler_label_branch(true, tv.tre_cnv.draw_labs_brnch),
+            toggler_label_branch(true, tv.cfg.draw_labs_brnch),
             space_v(ONE, PADDING / TWO),
             slider(
                 None,
@@ -664,7 +686,7 @@ fn side_bar_annotations<'a>(
     } else {
         sb = sb.push(toggler_label_branch(
             ts.has_brlen() && tv.tre_cnv.draw_labs_allowed,
-            tv.tre_cnv.draw_labs_brnch,
+            tv.cfg.draw_labs_brnch,
         ));
     }
 
@@ -675,7 +697,7 @@ fn side_bar_annotations<'a>(
         .into()
 }
 
-pub(crate) fn btn_prev_tre(enabled: bool) -> Button<'static, TvMsg> {
+fn btn_prev_tre(enabled: bool) -> Button<'static, TvMsg> {
     btn_svg(
         Icon::ArrowLeft,
         match enabled {
@@ -687,7 +709,7 @@ pub(crate) fn btn_prev_tre(enabled: bool) -> Button<'static, TvMsg> {
     .height(BTN_H2)
 }
 
-pub(crate) fn btn_next_tre<'a>(enabled: bool) -> Button<'a, TvMsg> {
+fn btn_next_tre<'a>(enabled: bool) -> Button<'a, TvMsg> {
     btn_svg(
         Icon::ArrowRight,
         match enabled {
@@ -699,9 +721,8 @@ pub(crate) fn btn_next_tre<'a>(enabled: bool) -> Button<'a, TvMsg> {
     .height(BTN_H2)
 }
 
-pub(crate) fn btn_clade_highlight<'a>(
-    sel_tre: Rc<TreeState>,
-) -> Button<'a, TvMsg> {
+#[allow(dead_code)]
+fn btn_clade_highlight<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
     let (lab, msg) = match sel_tre.sel_node_ids().len() == 1 {
         true => {
             let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
@@ -721,7 +742,7 @@ pub(crate) fn btn_clade_highlight<'a>(
     btn_txt(lab, msg).width(BTN_H1 * 5.0)
 }
 
-pub(crate) fn btn_root<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
+fn btn_root<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
     btn_txt("Root", {
         if sel_tre.sel_node_ids().len() == 1 {
             let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
@@ -738,7 +759,7 @@ pub(crate) fn btn_root<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
     .width(BTN_H1 * TWO)
 }
 
-pub(crate) fn btn_unroot<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
+fn btn_unroot<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
     btn_txt(
         "Unroot",
         match sel_tre.is_rooted() && !sel_tre.is_subtree_view_active() {
@@ -749,9 +770,8 @@ pub(crate) fn btn_unroot<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
     .width(BTN_H1 * TWO)
 }
 
-pub(crate) fn btn_set_subtree_view<'a>(
-    sel_tre: Rc<TreeState>,
-) -> Button<'a, TvMsg> {
+#[allow(dead_code)]
+fn btn_set_subtree_view<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
     btn_txt("Subtree", {
         if sel_tre.sel_node_ids().len() == 1 {
             let &node_id = sel_tre.sel_node_ids().iter().last().unwrap();
@@ -766,9 +786,7 @@ pub(crate) fn btn_set_subtree_view<'a>(
     .width(BTN_H1 * TWO)
 }
 
-pub(crate) fn btn_clear_subtree_view<'a>(
-    sel_tre: Rc<TreeState>,
-) -> Button<'a, TvMsg> {
+fn btn_clear_subtree_view<'a>(sel_tre: Rc<TreeState>) -> Button<'a, TvMsg> {
     btn_txt(
         "Close Subtree",
         match sel_tre.is_subtree_view_active() {
@@ -780,7 +798,7 @@ pub(crate) fn btn_clear_subtree_view<'a>(
 }
 
 #[allow(dead_code)]
-pub(crate) fn pick_list_plot_x_axis_scale_type<'a>(
+fn pick_list_plot_x_axis_scale_type<'a>(
     axis_scale_type: AxisScaleType,
 ) -> Row<'a, TvMsg> {
     let mut pl: PickList<
@@ -798,7 +816,7 @@ pub(crate) fn pick_list_plot_x_axis_scale_type<'a>(
         .align_y(Vertical::Center)
 }
 
-pub(crate) fn pick_list_plot_y_axis_scale_type<'a>(
+fn pick_list_plot_y_axis_scale_type<'a>(
     axis_scale_type: AxisScaleType,
 ) -> Row<'a, TvMsg> {
     let mut pl: PickList<
@@ -816,9 +834,7 @@ pub(crate) fn pick_list_plot_y_axis_scale_type<'a>(
         .align_y(Vertical::Center)
 }
 
-pub(crate) fn pick_list_node_ordering<'a>(
-    node_ord: TreNodeOrd,
-) -> Row<'a, TvMsg> {
+fn pick_list_node_ordering<'a>(node_ord: TreNodeOrd) -> Row<'a, TvMsg> {
     let mut pl: PickList<TreNodeOrd, &[TreNodeOrd], TreNodeOrd, TvMsg> =
         PickList::new(
             &TRE_NODE_ORD_OPTS,
@@ -830,7 +846,7 @@ pub(crate) fn pick_list_node_ordering<'a>(
         .align_y(Vertical::Center)
 }
 
-pub(crate) fn pick_list_tre_sty<'a>(tre_sty: TreSty) -> Row<'a, TvMsg> {
+fn pick_list_tre_sty<'a>(tre_sty: TreSty) -> Row<'a, TvMsg> {
     let mut pl: PickList<TreSty, &[TreSty], TreSty, TvMsg> =
         PickList::new(&TRE_STY_OPTS, Some(tre_sty), TvMsg::TreStyOptChanged);
     pl = pick_list_common(pl);
@@ -838,7 +854,7 @@ pub(crate) fn pick_list_tre_sty<'a>(tre_sty: TreSty) -> Row<'a, TvMsg> {
         .align_y(Vertical::Center)
 }
 
-pub(crate) fn pick_list_tree_unit<'a>(tre_units: TreUnit) -> Row<'a, TvMsg> {
+fn pick_list_tree_unit<'a>(tre_units: TreUnit) -> Row<'a, TvMsg> {
     let mut pl: PickList<TreUnit, &[TreUnit], TreUnit, TvMsg> =
         PickList::new(&TRE_UNIT_OPTS, Some(tre_units), TvMsg::TreUnitChanged);
     pl = pick_list_common(pl);
@@ -846,7 +862,7 @@ pub(crate) fn pick_list_tree_unit<'a>(tre_units: TreUnit) -> Row<'a, TvMsg> {
         .align_y(Vertical::Center)
 }
 
-pub(crate) fn scrollable_cnv_plot<'a>(
+fn scrollable_cnv_plot<'a>(
     scrollable_id: &'static str,
     cnv: Cnv<&'a PlotCnv, TvMsg>,
     w: impl Into<Length>,
@@ -859,7 +875,7 @@ pub(crate) fn scrollable_cnv_plot<'a>(
     scrollable_common(s, w, h)
 }
 
-pub(crate) fn scrollable_cnv_tre<'a>(
+fn scrollable_cnv_tre<'a>(
     scrollable_id: &'static str,
     cnv: Cnv<&'a TreeCnv, TvMsg>,
     w: impl Into<Length>,
@@ -875,7 +891,7 @@ pub(crate) fn scrollable_cnv_tre<'a>(
     scrollable_common(s, w, h)
 }
 
-pub(crate) fn data_table_element<'a>(
+fn data_table_element<'a>(
     tv: &'a TreeView,
     scrollable_id: &'static str,
     w: Float,
@@ -895,7 +911,7 @@ pub(crate) fn data_table_element<'a>(
     }
 }
 
-pub(crate) fn toggler_cursor_line<'a>(
+fn toggler_cursor_line<'a>(
     enabled: bool,
     draw_cursor_line: bool,
     tre_sty: TreSty,
@@ -911,7 +927,7 @@ pub(crate) fn toggler_cursor_line<'a>(
     tglr
 }
 
-pub(crate) fn toggler_label_branch<'a>(
+fn toggler_label_branch<'a>(
     enabled: bool,
     draw_brnch_labs: bool,
 ) -> Toggler<'a, TvMsg> {
@@ -922,7 +938,7 @@ pub(crate) fn toggler_label_branch<'a>(
     tglr
 }
 
-pub(crate) fn toggler_label_int<'a>(
+fn toggler_label_int<'a>(
     enabled: bool,
     draw_int_labs: bool,
 ) -> Toggler<'a, TvMsg> {
@@ -933,7 +949,7 @@ pub(crate) fn toggler_label_int<'a>(
     tglr
 }
 
-pub(crate) fn toggler_label_tip<'a>(
+fn toggler_label_tip<'a>(
     enabled: bool,
     draw_tip_labs: bool,
 ) -> Toggler<'a, TvMsg> {
@@ -944,7 +960,7 @@ pub(crate) fn toggler_label_tip<'a>(
     tglr
 }
 
-pub(crate) fn toggler_label_tip_align<'a>(
+fn toggler_label_tip_align<'a>(
     enabled: bool,
     align_tip_labs: bool,
 ) -> Toggler<'a, TvMsg> {
@@ -955,7 +971,7 @@ pub(crate) fn toggler_label_tip_align<'a>(
     tglr
 }
 
-pub(crate) fn toggler_label_tip_trim<'a>(
+fn toggler_label_tip_trim<'a>(
     enabled: bool,
     trim_tip_labs: bool,
 ) -> Toggler<'a, TvMsg> {
@@ -966,7 +982,7 @@ pub(crate) fn toggler_label_tip_trim<'a>(
     tglr
 }
 
-pub(crate) fn toggler_scale_bar<'a>(
+fn toggler_scale_bar<'a>(
     enabled: bool,
     draw_scale_bar: bool,
 ) -> Toggler<'a, TvMsg> {
@@ -977,21 +993,18 @@ pub(crate) fn toggler_scale_bar<'a>(
     tglr
 }
 
-pub(crate) fn toggler_height_axis<'a>(
+fn toggler_full_width_scale_bar<'a>(
     enabled: bool,
-    draw_height_axis: bool,
+    full_width_scale_bar: bool,
 ) -> Toggler<'a, TvMsg> {
-    let mut tglr = toggler("Full Width Scale Bar", draw_height_axis);
+    let mut tglr = toggler("Full Width Scale Bar", full_width_scale_bar);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::FullWidthScaleBarSelected);
     }
     tglr
 }
 
-pub(crate) fn toggler_root<'a>(
-    enabled: bool,
-    draw_root: bool,
-) -> Toggler<'a, TvMsg> {
+fn toggler_root<'a>(enabled: bool, draw_root: bool) -> Toggler<'a, TvMsg> {
     let mut tglr = toggler("Root", draw_root);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::RootVisChanged);
@@ -999,7 +1012,7 @@ pub(crate) fn toggler_root<'a>(
     tglr
 }
 
-pub(crate) fn toggler_selection_lock<'a>(
+fn toggler_selection_lock<'a>(
     enabled: bool,
     selection_lock: bool,
 ) -> Toggler<'a, TvMsg> {
@@ -1010,21 +1023,16 @@ pub(crate) fn toggler_selection_lock<'a>(
     tglr
 }
 
-// pub(crate) fn toggler_plot<'a>(
-//     enabled: bool,
-//     show_plot: bool,
-// ) -> Toggler<'a, TvMsg> {
-//     let mut tglr = toggler("Show Plot", show_plot);
-//     if enabled {
-//         tglr = tglr.on_toggle(TvMsg::TogglePlot);
-//     }
-//     tglr
-// }
+#[allow(dead_code)]
+fn toggler_plot<'a>(enabled: bool, show_plot: bool) -> Toggler<'a, TvMsg> {
+    let mut tglr = toggler("Show Plot", show_plot);
+    if enabled {
+        tglr = tglr.on_toggle(TvMsg::TogglePlot);
+    }
+    tglr
+}
 
-pub(crate) fn toggler_ltt<'a>(
-    enabled: bool,
-    show_ltt: bool,
-) -> Toggler<'a, TvMsg> {
+fn toggler_ltt<'a>(enabled: bool, show_ltt: bool) -> Toggler<'a, TvMsg> {
     let mut tglr = toggler("LTT", show_ltt);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::ToggleLtt);
@@ -1032,10 +1040,7 @@ pub(crate) fn toggler_ltt<'a>(
     tglr
 }
 
-pub(crate) fn toggler_gts<'a>(
-    enabled: bool,
-    show_gts: bool,
-) -> Toggler<'a, TvMsg> {
+fn toggler_gts<'a>(enabled: bool, show_gts: bool) -> Toggler<'a, TvMsg> {
     let mut tglr = toggler("Geological Time Scale", show_gts);
     if enabled {
         tglr = tglr.on_toggle(TvMsg::ToggleGts);

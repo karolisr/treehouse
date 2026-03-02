@@ -20,6 +20,7 @@
     oxidize-pdf={workspace=true}
     rayon={workspace=true}
     riced={workspace=true}
+    serde={workspace=true}
 
 [lints]
     workspace=true

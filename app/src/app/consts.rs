@@ -1,5 +1,5 @@
-#[cfg(target_os = "linux")]
-pub const APP_ID: &str = "TreeHouse";
+pub const APP_NAME: &str = "TreeHouse";
+pub const APP_ID: &str = "is.karol.treehouse";
 
 use treeview::SF;
 pub use treeview::TXT_SIZE;
