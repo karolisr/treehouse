@@ -517,6 +517,8 @@ impl TreeView {
                     }
                 }
 
+                self.show_hide_plot();
+
                 self.tre_cnv.clear_cache_cnv_scale_bar();
                 self.tre_cnv.clear_cache_cnv_height_axis();
                 self.plot_cnv.clear_caches_cnv_all();
@@ -1536,12 +1538,16 @@ impl TreeView {
         let pane_id_to_split_opt = self.pane_id_to_split();
         if let Some(pane_grid) = &mut self.pane_grid {
             if let Some(plot_pane_id) = self.plot_pane_id {
-                if !self.cfg.show_plot || !has_brlen {
+                if !self.cfg.show_plot
+                    || !has_brlen
+                    || self.cfg.tre_unit == TreUnit::Unitless
+                {
                     _ = pane_grid.close(plot_pane_id);
                     self.plot_pane_id = None;
                 }
             } else if self.cfg.show_plot
                 && has_brlen
+                && self.cfg.tre_unit != TreUnit::Unitless
                 && let Some(pane_id_to_split) = pane_id_to_split_opt
                 && let Some((plot_pane_id, split)) = pane_grid.split(
                     PgAxis::Horizontal,

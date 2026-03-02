@@ -137,7 +137,10 @@ fn pane_content<'a>(
                 tv.plot_cnv.cfg.draw_gts,
             ));
 
-            psc = psc.push(toggler_ltt(true, tv.plot_cnv.cfg.draw_ltt));
+            psc = psc.push(toggler_ltt(
+                tv.cfg.tre_unit != TreUnit::Unitless,
+                tv.plot_cnv.cfg.draw_ltt,
+            ));
 
             if tv.plot_cnv.cfg.draw_ltt {
                 psc = psc.push(pick_list_plot_y_axis_scale_type(
@@ -173,7 +176,6 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
     tb_row = tb_row.push(
         center(
             iced_row![
-                // btn_set_subtree_view(ts.clone()),
                 btn_subtree_parent_node(ts.clone()),
                 btn_clear_subtree_view(ts.clone())
             ]
@@ -182,8 +184,6 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
         .width(Length::Shrink)
         .height(Length::Shrink),
     );
-
-    // tb_row = tb_row.push(btn_clade_highlight(ts.clone()));
 
     tb_row = tb_row.push(space_h(Length::Fill, Length::Shrink));
 
@@ -205,11 +205,12 @@ fn toolbar<'a>(tv: &'a TreeView, ts: Rc<TreeState>) -> Container<'a, TvMsg> {
                 btn_svg_stateful(
                     Icon::Plot,
                     Icon::Plot,
-                    match ts.has_brlen() {
+                    match ts.has_brlen() && tv.cfg.tre_unit != TreUnit::Unitless
+                    {
                         true => Some(TvMsg::TogglePlot(!tv.cfg.show_plot)),
                         false => None,
                     },
-                    tv.cfg.show_plot,
+                    tv.cfg.show_plot && tv.cfg.tre_unit != TreUnit::Unitless,
                 ),
                 btn_svg_stateful(
                     Icon::DataTable,
@@ -564,23 +565,6 @@ fn side_bar_main<'a>(
             tv.cfg.full_width_scale_bar
         )]);
     }
-
-    // sb = sb.push(rule_h(SF));
-
-    // if tv.cfg.show_plot && ts.has_brlen() {
-    //     sb = sb.push(toggler_ltt(true, tv.plot_cnv.cfg.draw_ltt));
-
-    //     if tv.plot_cnv.cfg.draw_ltt {
-    //         sb = sb.push(pick_list_plot_y_axis_scale_type(
-    //             tv.plot_cnv.y_axis_scale_type,
-    //         ));
-    //     }
-
-    //     sb = sb.push(toggler_gts(
-    //         tv.cfg.tre_unit == TreUnit::MillionYears,
-    //         tv.plot_cnv.cfg.draw_gts,
-    //     ));
-    // }
 
     container(sb.clip(true))
         .style(sty_cont_bottom_left)
