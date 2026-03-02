@@ -18,7 +18,7 @@
         icon=["resources/icons/treehouse*.icns"]
         identifier="is.karol.treehouse"
         # linux_exec_args=[]
-        linux_mime_types=["newick", "tre"]
+        linux_mime_types=["newick", "tre", "nexus", "nex"]
         linux_use_terminal=false
         long_description="""View and edit gene trees and phylogenies."""
         name="TreeHouse"
@@ -30,17 +30,18 @@
 [features]
     default=[
         # "menu-custom",
-        "menu-muda"
+        "menu-muda",
     ]
     menu-custom=["dep:iced_aw"]
     menu-muda=["dep:muda"]
 
 [dependencies.iced_aw]
-    branch="custom"
     default-features=false
     features=["menu"]
-    git="https://github.com/karolisr/iced_aw.git"
     optional=true
+    version="0.13.1"
+    # branch="custom"
+    # git="https://github.com/karolisr/iced_aw.git"
 
 [dependencies.muda]
     branch="custom"
@@ -50,8 +51,10 @@
     optional=true
 
 [dependencies]
+    confy={workspace=true}
     dendros={workspace=true}
     riced={workspace=true}
+    serde={workspace=true}
     thiserror={workspace=true}
     treeview={workspace=true}
     # tracing-subscriber={workspace=true}
@@ -76,9 +79,9 @@
     winreg={workspace=true}
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
-    ico="0.4"
-    image="0.25"
-    winres="0.1"
+    ico="0.5.0"
+    image="0.25.9"
+    winres="0.1.12"
 
 [lints]
     workspace=true
