@@ -348,7 +348,13 @@ impl Program<TvMsg> for TreeCnv {
             Event::Keyboard(e) => match e {
                 KeyboardEvent::ModifiersChanged(modifs) => {
                     let shift = Modifiers::SHIFT;
-                    if modifs.contains(shift) && !st.modifs.contains(shift) {
+                    let cmd = Modifiers::COMMAND;
+
+                    if modifs.contains(cmd) {
+                        // ...
+                    } else if modifs.contains(shift)
+                        && !st.modifs.contains(shift)
+                    {
                         action =
                             Some(Action::publish(TvMsg::SelectionLockChanged(
                                 !self.cfg.selection_lock,

@@ -84,6 +84,8 @@ pub enum TvMsg {
     CursorLineVisChanged(bool),
     CnvWidthSelChanged(u16),
     CnvHeightSelChanged(u16),
+    CnvWidthIncrement,
+    CnvWidthDecrement,
     CnvHeightIncrement,
     CnvHeightDecrement,
     CnvZoomSelChanged(u16),
@@ -165,7 +167,7 @@ impl Default for TreeView {
             rot_angle_idx: 360,
             rot_angle_idx_max: 360 + 180,
             // -----------------------------------------------------------------
-            lab_size_idx_min: 8,
+            lab_size_idx_min: 2,
             lab_size_idx_tip: TIP_LAB_SIZE_IDX,
             lab_size_idx_int: INTERNAL_LAB_SIZE_IDX,
             lab_size_idx_brnch: BRANCH_LAB_SIZE_IDX,
@@ -653,8 +655,6 @@ impl TreeView {
                     self.tre_cnv.root_len_frac = self.calc_root_len_frac();
 
                     self.show_hide_data_table();
-                    // self.plot_cnv.draw_cursor_line =
-                    //     self.tre_cnv.draw_cursor_line;
                     self.update_tree_rect_padding();
                     self.is_new = false;
 
@@ -719,7 +719,7 @@ impl TreeView {
 
             TvMsg::CnvHeightIncrement => match self.cfg.tre_sty {
                 TreSty::PhyGrm => {
-                    if self.tre_cnv_h_idx < u16::MAX {
+                    if self.tre_cnv_h_idx < self.tre_cnv_size_idx_max {
                         task = Some(Task::done(TvMsg::CnvHeightSelChanged(
                             self.tre_cnv_h_idx + 1,
                         )));
@@ -735,6 +735,32 @@ impl TreeView {
                     if self.tre_cnv_h_idx > 1 {
                         task = Some(Task::done(TvMsg::CnvHeightSelChanged(
                             self.tre_cnv_h_idx - 1,
+                        )));
+                    }
+                }
+                TreSty::Fan => {
+                    task = Some(Task::done(TvMsg::CnvZoomDecrement));
+                }
+            },
+
+            TvMsg::CnvWidthIncrement => match self.cfg.tre_sty {
+                TreSty::PhyGrm => {
+                    if self.tre_cnv_w_idx < self.tre_cnv_size_idx_max {
+                        task = Some(Task::done(TvMsg::CnvWidthSelChanged(
+                            self.tre_cnv_w_idx + 1,
+                        )));
+                    }
+                }
+                TreSty::Fan => {
+                    task = Some(Task::done(TvMsg::CnvZoomIncrement));
+                }
+            },
+
+            TvMsg::CnvWidthDecrement => match self.cfg.tre_sty {
+                TreSty::PhyGrm => {
+                    if self.tre_cnv_w_idx > 1 {
+                        task = Some(Task::done(TvMsg::CnvWidthSelChanged(
+                            self.tre_cnv_w_idx - 1,
                         )));
                     }
                 }
@@ -763,7 +789,7 @@ impl TreeView {
             }
 
             TvMsg::CnvZoomIncrement => {
-                if self.tre_cnv_z_idx < u16::MAX {
+                if self.tre_cnv_z_idx < self.tre_cnv_size_idx_max {
                     task = Some(Task::done(TvMsg::CnvZoomSelChanged(
                         self.tre_cnv_z_idx + 1,
                     )));
@@ -962,8 +988,6 @@ impl TreeView {
             TvMsg::CursorLineVisChanged(state) => {
                 self.tre_cnv.crsr_x_rel = None;
                 self.plot_cnv.crsr_x_rel = None;
-                // self.tre_cnv.draw_cursor_line = state;
-                // self.plot_cnv.draw_cursor_line = state;
                 self.cfg.draw_cursor_line = state;
                 self.distribute_config();
                 self.tre_cnv.clear_cache_cnv_cursor_line();

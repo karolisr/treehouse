@@ -278,6 +278,16 @@ impl App {
                                 "e" => {
                                     self.toggle_explain();
                                 }
+                                "=" => {
+                                    task = Some(Task::done(AppMsg::TvMsg(
+                                        TvMsg::CnvWidthIncrement,
+                                    )));
+                                }
+                                "-" => {
+                                    task = Some(Task::done(AppMsg::TvMsg(
+                                        TvMsg::CnvWidthDecrement,
+                                    )));
+                                }
                                 _ => {}
                             }
                         }
