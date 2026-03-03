@@ -24,8 +24,7 @@ use std::path::PathBuf;
 pub fn tree_to_pdf(
     path_buf: PathBuf,
     tre_vs: RectVals<Float>,
-    cnv_w: Float,
-    cnv_h: Float,
+    cnv_vs: RectVals<Float>,
     tree_state: Rc<TreeState>,
     tree_style: TreSty,
     opn_angle: Float,
@@ -53,12 +52,14 @@ pub fn tree_to_pdf(
     // --------------------------------
 ) -> Result<(), PdfError> {
     let scaling: f64 = 1e0;
-    let cnv_w = cnv_w as f64 * scaling;
-    let cnv_h = cnv_h as f64 * scaling;
+    let cnv_w = cnv_vs.w as f64 * scaling;
+    let cnv_h = cnv_vs.h as f64 * scaling;
     let tre_w = tre_vs.w as f64 * scaling;
+    let clade_highlight_max_x = cnv_vs.x1 as f64 * scaling;
     let tre_h = tre_vs.h as f64 * scaling;
-    let radius = tre_vs.radius_min as f64 * scaling;
-    let margin = radius / 1e1;
+    let tre_radius = tre_vs.radius_min as f64 * scaling;
+    let clade_highlight_max_radius = cnv_vs.radius_min as f64 * scaling;
+    let margin = tre_radius / 1e1;
     let root_len = root_len as f64 * scaling;
     let rot_angle = rot_angle as f64;
     let lab_size_tip = lab_size_tip as f64 * scaling;
@@ -123,7 +124,9 @@ pub fn tree_to_pdf(
 
                 let iced_path = path_clade_highlight(
                     node_id, &tree_state, tre_w as Float, tre_h as Float,
-                    radius as Float, root_len as Float, opn_angle, tree_style,
+                    clade_highlight_max_x as Float, tre_radius as Float,
+                    clade_highlight_max_radius as Float, root_len as Float,
+                    opn_angle, tree_style,
                 );
 
                 let color = color_from_iced_color(clade_highlight.color);
@@ -151,7 +154,7 @@ pub fn tree_to_pdf(
             tre_h as Float,
             opn_angle,
             root_len as Float,
-            radius as Float,
+            tre_radius as Float,
             &root_edge,
             scaling,
             pg.graphics(),
@@ -166,7 +169,7 @@ pub fn tree_to_pdf(
         tre_h as Float,
         opn_angle,
         root_len as Float,
-        radius as Float,
+        tre_radius as Float,
         scaling,
         pg.graphics(),
     ); // ----------------------------------------------------------------------
@@ -180,7 +183,7 @@ pub fn tree_to_pdf(
                 node_data_cart(tre_w as Float, tre_h as Float, edge).into()
             }
             TreSty::Fan => node_data_pol(
-                opn_angle, 0e0, radius as Float, root_len as Float, edge,
+                opn_angle, 0e0, tre_radius as Float, root_len as Float, edge,
             )
             .into(),
         })
@@ -229,7 +232,7 @@ pub fn tree_to_pdf(
                 if align_tip_labs {
                     align_at = Some(match tree_style {
                         TreSty::PhyGrm => tre_w,
-                        TreSty::Fan => radius,
+                        TreSty::Fan => tre_radius,
                     });
                 }
             } else if draw_labs_int {

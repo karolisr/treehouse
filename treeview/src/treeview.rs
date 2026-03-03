@@ -304,10 +304,11 @@ impl TreeView {
 
                     let cnv_w = self.calc_tre_cnv_w(self.tre_scr_w);
                     let cnv_h = self.calc_tre_cnv_h(self.tre_scr_h);
+                    let cnv_vs = RectVals::wh(cnv_w, cnv_h);
 
                     _ = tree_to_pdf(
-                        path_buf, tre_vs, cnv_w, cnv_h, tree_state,
-                        self.cfg.tre_sty, opn_angle, rot_angle, root_len,
+                        path_buf, tre_vs, cnv_vs, tree_state, self.cfg.tre_sty,
+                        opn_angle, rot_angle, root_len,
                         self.tre_cnv.lab_size_tip, self.tre_cnv.lab_size_int,
                         self.tre_cnv.lab_size_brnch,
                         self.tre_cnv.lab_offset_tip,

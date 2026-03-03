@@ -522,8 +522,9 @@ fn draw_clade_highlight(
     }
 
     let path = path_clade_highlight(
-        node_id, tst, st.tre_vs.w, st.tre_vs.h, st.tre_vs.radius_min,
-        st.root_len, st.opn_angle, st.tre_sty,
+        node_id, tst, st.tre_vs.w, st.tre_vs.h, st.cnv_vs.x1,
+        st.tre_vs.radius_min, st.cnv_vs.radius_min, st.root_len, st.opn_angle,
+        st.tre_sty,
     );
 
     f.fill(

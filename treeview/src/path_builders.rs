@@ -60,19 +60,21 @@ pub fn path_root_edge_fan(
 pub fn path_clade_highlight(
     node_id: NodeId,
     tree_state: &TreeState,
-    w: Float,
-    h: Float,
-    radius: Float,
+    tre_rect_width: Float,
+    tre_rect_height: Float,
+    max_x: Float,
+    tre_radius: Float,
+    max_radius: Float,
     root_len: Float,
     opn_angle: Float,
     tre_sty: TreSty,
 ) -> IcedPath {
     match tre_sty {
-        TreSty::PhyGrm => {
-            path_clade_highlight_phygrm(node_id, tree_state, w, h)
-        }
+        TreSty::PhyGrm => path_clade_highlight_phygrm(
+            node_id, tree_state, tre_rect_width, tre_rect_height, max_x,
+        ),
         TreSty::Fan => path_clade_highlight_fan(
-            node_id, tree_state, radius, root_len, opn_angle,
+            node_id, tree_state, tre_radius, max_radius, root_len, opn_angle,
         ),
     }
 }
@@ -80,8 +82,9 @@ pub fn path_clade_highlight(
 pub fn path_clade_highlight_phygrm(
     node_id: NodeId,
     tree_state: &TreeState,
-    w: Float,
-    h: Float,
+    tre_rect_width: Float,
+    tre_rect_height: Float,
+    max_x: Float,
 ) -> IcedPath {
     let bounding_edges_opt = tree_state.bounding_edges_for_clade(node_id);
     let mut pb: PathBuilder = PathBuilder::new();
@@ -90,28 +93,28 @@ pub fn path_clade_highlight_phygrm(
         && !edges_bottom.is_empty()
     {
         if let Some(edge_top_first) = edges_top.first() {
-            let y_top = edge_top_first.y as Float * h;
-            let top_right = Point { x: w, y: y_top };
+            let top = edge_top_first.y as Float * tre_rect_height;
+            let top_right = Point { x: max_x, y: top };
             pb = pb.move_to(top_right);
         }
 
         for edge in &edges_top {
-            let nd = node_data_cart(w, h, edge);
+            let nd = node_data_cart(tre_rect_width, tre_rect_height, edge);
             pb = pb.line_to(nd.points.p0);
             let pt_parent = Point { x: nd.points.p0.x, y: nd.y_parent };
             pb = pb.line_to(pt_parent);
         }
 
         for edge in &edges_bottom {
-            let nd = node_data_cart(w, h, edge);
+            let nd = node_data_cart(tre_rect_width, tre_rect_height, edge);
             let pt_parent = Point { x: nd.points.p0.x, y: nd.y_parent };
             pb = pb.line_to(pt_parent);
             pb = pb.line_to(nd.points.p0);
         }
 
         if let Some(edge_bottom_last) = edges_bottom.last() {
-            let y_bottom = edge_bottom_last.y as Float * h;
-            let bottom_right = Point { x: w, y: y_bottom };
+            let bottom = edge_bottom_last.y as Float * tre_rect_height;
+            let bottom_right = Point { x: max_x, y: bottom };
             pb = pb.line_to(bottom_right);
         }
     }
@@ -123,7 +126,8 @@ pub fn path_clade_highlight_phygrm(
 pub fn path_clade_highlight_fan(
     node_id: NodeId,
     tree_state: &TreeState,
-    radius: Float,
+    tree_radius: Float,
+    max_radius: Float,
     root_len: Float,
     opn_angle: Float,
 ) -> IcedPath {
@@ -136,17 +140,17 @@ pub fn path_clade_highlight_fan(
         let nd = node_data_pol(
             opn_angle,
             ZRO,
-            radius,
+            tree_radius,
             root_len,
             edges_top.first().unwrap(),
         );
 
         let angle_top = nd.angle;
-        let top_right = point_pol(angle_top, radius, root_len, ONE);
+        let top_right = point_pol(angle_top, max_radius, root_len, ONE);
         pb = pb.move_to(top_right);
 
         for edge in &edges_top {
-            let nd = node_data_pol(opn_angle, ZRO, radius, root_len, edge);
+            let nd = node_data_pol(opn_angle, ZRO, tree_radius, root_len, edge);
             pb = pb.line_to(nd.points.p0);
             pb = pb.arc(
                 nd.angle,
@@ -157,7 +161,7 @@ pub fn path_clade_highlight_fan(
         }
 
         for edge in &edges_bottom {
-            let nd = node_data_pol(opn_angle, ZRO, radius, root_len, edge);
+            let nd = node_data_pol(opn_angle, ZRO, tree_radius, root_len, edge);
             pb = pb.arc(
                 nd.angle_parent,
                 nd.angle,
@@ -170,12 +174,12 @@ pub fn path_clade_highlight_fan(
         let nd = node_data_pol(
             opn_angle,
             ZRO,
-            radius,
+            tree_radius,
             root_len,
             edges_bottom.last().unwrap(),
         );
 
-        let bottom_right = point_pol(nd.angle, radius, root_len, ONE);
+        let bottom_right = point_pol(nd.angle, max_radius, root_len, ONE);
         pb = pb.line_to(bottom_right);
         pb.arc(nd.angle, angle_top, ORIGIN, ORIGIN.distance(bottom_right))
             .build()
