@@ -63,7 +63,7 @@ use treeview::{
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct TreeViewConfig {
     pub align_tip_labs: bool,

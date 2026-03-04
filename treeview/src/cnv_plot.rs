@@ -8,7 +8,7 @@ use state::St;
 
 #[derive(Debug, Default)]
 pub(super) struct PlotCnv {
-    pub(super) cfg: TreeViewConfig,
+    pub(super) cfg: Rc<TreeViewConfig>,
     // -------------------------------------------------------------------------
     ltt_plot_data: PlotData,
     pub(super) x_axis_is_reversed: bool,
@@ -260,7 +260,7 @@ pub fn plot_data_from_ltt_points(
 }
 
 impl PlotCnv {
-    pub(super) fn new(cfg: TreeViewConfig, draw_debug: bool) -> Self {
+    pub(super) fn new(cfg: Rc<TreeViewConfig>, draw_debug: bool) -> Self {
         Self { cfg, draw_debug, ..Default::default() }
     }
 

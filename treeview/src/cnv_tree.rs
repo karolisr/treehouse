@@ -7,7 +7,7 @@ use state::St;
 
 #[derive(Debug)]
 pub(super) struct TreeCnv {
-    pub(super) cfg: TreeViewConfig,
+    pub(super) cfg: Rc<TreeViewConfig>,
     // -------------------------------------------------------------------------
     pub(super) search_is_active: bool,
     // -------------------------------------------------------------------------
@@ -78,7 +78,7 @@ pub(super) struct TreeCnv {
 }
 
 impl TreeCnv {
-    pub fn new(cfg: TreeViewConfig, draw_debug: bool) -> Self {
+    pub fn new(cfg: Rc<TreeViewConfig>, draw_debug: bool) -> Self {
         let height_axis_text_size = SF * 1e1;
         let height_axis_char_width = height_axis_text_size * 6e-1;
         let height_axis_tick_size = height_axis_char_width;

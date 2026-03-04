@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[allow(missing_debug_implementations)]
 pub struct TreeView {
-    pub(super) cfg: TreeViewConfig,
+    pub(super) cfg: Rc<TreeViewConfig>,
     // -------------------------------------------------------------------------
     pub(super) tre_states: Vec<Rc<TreeState>>,
     tre_state_idx: Option<usize>,
@@ -156,8 +156,11 @@ pub enum TvMsg {
 
 impl Default for TreeView {
     fn default() -> Self {
+        let cfg: Rc<TreeViewConfig> = Rc::default();
         Self {
-            cfg: TreeViewConfig::default(),
+            plot_cnv: PlotCnv::new(cfg.clone(), false),
+            tre_cnv: TreeCnv::new(cfg.clone(), false),
+            cfg,
             // -----------------------------------------------------------------
             opn_angle_idx_min: 45,
             opn_angle_idx: 345,
@@ -201,8 +204,6 @@ impl Default for TreeView {
             tre_pane_id: None,
             plot_pane_id: None,
             nodes_table_pane_id: None,
-            plot_cnv: PlotCnv::new(TreeViewConfig::default(), false),
-            tre_cnv: TreeCnv::new(TreeViewConfig::default(), false),
             keep_scroll_position_requested: false,
             plot_cnv_needs_to_be_scrolled: false,
             plot_cnv_scrolled: false,
@@ -226,13 +227,14 @@ impl Default for TreeView {
 impl TreeView {
     pub fn new(cfg: TreeViewConfig) -> Self {
         let draw_debug: bool = false;
-        let plot_cnv = PlotCnv::new(cfg, draw_debug);
-        let tre_cnv = TreeCnv::new(cfg, draw_debug);
+        let cfg = Rc::new(cfg);
+        let plot_cnv = PlotCnv::new(cfg.clone(), draw_debug);
+        let tre_cnv = TreeCnv::new(cfg.clone(), draw_debug);
         Self { cfg, plot_cnv, tre_cnv, ..Default::default() }
     }
 
     pub fn config(&self) -> TreeViewConfig {
-        self.cfg
+        self.cfg.as_ref().clone()
     }
 
     fn tree_has_clade_highlights(&self) -> bool {
@@ -324,8 +326,9 @@ impl TreeView {
             }
 
             TvMsg::SelectionLockChanged(state) => {
-                self.cfg.selection_lock = state;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.selection_lock = state;
+                });
             }
 
             TvMsg::TipLabWidthSetByUser(opt_w) => {
@@ -476,8 +479,9 @@ impl TreeView {
             }
 
             TvMsg::TogglePlot(state) => {
-                self.cfg.show_plot = state;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.show_plot = state;
+                });
                 self.show_hide_plot();
                 let x =
                     (self.tre_cnv.vis_x_mid - self.tre_scr_w / TWO).max(ZRO);
@@ -488,18 +492,21 @@ impl TreeView {
             }
 
             TvMsg::ToggleLtt(state) => {
-                self.cfg.draw_ltt = state;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.draw_ltt = state;
+                });
             }
 
             TvMsg::ToggleGts(state) => {
-                self.cfg.draw_gts = state;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.draw_gts = state;
+                });
             }
 
             TvMsg::TreUnitChanged(unit) => {
-                self.cfg.tre_unit = unit;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.tre_unit = unit;
+                });
 
                 match unit {
                     TreUnit::Unitless => {
@@ -543,8 +550,9 @@ impl TreeView {
             }
 
             TvMsg::ToggleNodesTable => {
-                self.cfg.show_nodes_table = !self.cfg.show_nodes_table;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.show_nodes_table = !cfg.show_nodes_table;
+                });
                 self.show_hide_data_table();
             }
 
@@ -568,8 +576,9 @@ impl TreeView {
 
             TvMsg::TreNodeOrdOptChanged(node_ord_opt) => {
                 if node_ord_opt != self.cfg.node_ord_opt {
-                    self.cfg.node_ord_opt = node_ord_opt;
-                    self.distribute_config();
+                    self.with_exclusive_config_mut(&mut |cfg| {
+                        cfg.node_ord_opt = node_ord_opt;
+                    });
                     self.sort();
                     task = self.scroll_to_current_found_edge();
                     self.tre_cnv.stale_tre_rect = true;
@@ -807,8 +816,9 @@ impl TreeView {
 
             TvMsg::TreStyOptChanged(tre_sty_opt) => {
                 if tre_sty_opt != self.cfg.tre_sty {
-                    self.cfg.tre_sty = tre_sty_opt;
-                    self.distribute_config();
+                    self.with_exclusive_config_mut(&mut |cfg| {
+                        cfg.tre_sty = tre_sty_opt;
+                    });
                     self.update_rel_scrl_pos();
                     self.update_tree_rect_padding();
                     self.update_draw_labs_allowed();
@@ -820,8 +830,9 @@ impl TreeView {
             }
 
             TvMsg::TipLabVisChanged(state) => {
-                self.cfg.draw_labs_tip = state;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.draw_labs_tip = state;
+                });
                 self.update_tree_rect_padding();
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
@@ -848,8 +859,9 @@ impl TreeView {
             }
 
             TvMsg::TipLabAlignOptChanged(state) => {
-                self.cfg.align_tip_labs = state;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.align_tip_labs = state;
+                });
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_cnv_ts_all();
@@ -857,8 +869,9 @@ impl TreeView {
             }
 
             TvMsg::TipLabTrimOptChanged(state) => {
-                self.cfg.trim_tip_labs = state;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.trim_tip_labs = state;
+                });
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_cnv_ts_all();
@@ -874,8 +887,9 @@ impl TreeView {
             }
 
             TvMsg::IntLabVisChanged(state) => {
-                self.cfg.draw_labs_int = state;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.draw_labs_int = state;
+                });
                 self.clear_cache_cnv_ts_lab_int();
             }
 
@@ -887,8 +901,9 @@ impl TreeView {
             }
 
             TvMsg::BrnchLabVisChanged(state) => {
-                self.cfg.draw_labs_brnch = state;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.draw_labs_brnch = state;
+                });
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_cnv_ts_all();
                 self.tre_cnv.clear_caches_cnv_all();
@@ -904,8 +919,9 @@ impl TreeView {
             }
 
             TvMsg::ScaleBarVisChanged(state) => {
-                self.cfg.show_scale_bar = state;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.show_scale_bar = state;
+                });
                 match self.cfg.full_width_scale_bar {
                     true => {
                         self.update_tree_rect_padding();
@@ -918,8 +934,9 @@ impl TreeView {
             }
 
             TvMsg::FullWidthScaleBarSelected(state) => {
-                self.cfg.full_width_scale_bar = state;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.full_width_scale_bar = state;
+                });
                 self.update_tree_rect_padding();
                 self.tre_cnv.stale_tre_rect = true;
                 self.clear_caches_cnv_ts_all();
@@ -958,8 +975,9 @@ impl TreeView {
             }
 
             TvMsg::RootVisChanged(state) => {
-                self.cfg.draw_root = state;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.draw_root = state;
+                });
                 self.tre_cnv.root_len_frac = self.calc_root_len_frac();
                 task = self.scroll_to_current_found_edge();
                 self.tre_cnv.stale_tre_rect = true;
@@ -989,8 +1007,9 @@ impl TreeView {
             TvMsg::CursorLineVisChanged(state) => {
                 self.tre_cnv.crsr_x_rel = None;
                 self.plot_cnv.crsr_x_rel = None;
-                self.cfg.draw_cursor_line = state;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.draw_cursor_line = state;
+                });
                 self.tre_cnv.clear_cache_cnv_cursor_line();
                 self.plot_cnv.clear_cache_cnv_cursor_line();
             }
@@ -1006,10 +1025,10 @@ impl TreeView {
             }
 
             TvMsg::ToggleSearchBar => {
-                self.cfg.show_search_bar = !self.cfg.show_search_bar;
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.show_search_bar = !cfg.show_search_bar;
+                });
                 self.tre_cnv.search_is_active = self.cfg.show_search_bar;
-                self.distribute_config();
-
                 if self.cfg.show_search_bar {
                     task = Some(Task::done(TvMsg::ShowSearchBar));
                 } else {
@@ -1018,8 +1037,9 @@ impl TreeView {
             }
 
             TvMsg::ShowSearchBar => {
-                self.cfg.show_search_bar = true;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.show_search_bar = true;
+                });
                 self.tre_cnv.search_is_active = true;
                 task = Some(
                     Task::done(TvMsg::Search(self.search_string.clone()))
@@ -1028,8 +1048,9 @@ impl TreeView {
             }
 
             TvMsg::HideSearchBar => {
-                self.cfg.show_search_bar = false;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.show_search_bar = false;
+                });
                 self.tre_cnv.search_is_active = false;
                 self.with_exclusive_sel_tre_mut(&mut |tre| {
                     tre.clear_filter_results();
@@ -1038,8 +1059,9 @@ impl TreeView {
             }
 
             TvMsg::TipOnlySearchSelChanged(state) => {
-                self.cfg.tip_only_search = state;
-                self.distribute_config();
+                self.with_exclusive_config_mut(&mut |cfg| {
+                    cfg.tip_only_search = state;
+                });
                 task =
                     Some(Task::done(TvMsg::Search(self.search_string.clone())));
             }
@@ -1086,11 +1108,6 @@ impl TreeView {
             Some(task) => task,
             None => Task::none(),
         }
-    }
-
-    fn distribute_config(&mut self) {
-        self.tre_cnv.cfg = self.cfg;
-        self.plot_cnv.cfg = self.cfg;
     }
 
     fn populate_cache_of_edges_sorted_by_field(&mut self) {
@@ -1172,6 +1189,26 @@ impl TreeView {
         } else {
             None
         }
+    }
+
+    fn config_mut(&mut self) -> Option<&mut TreeViewConfig> {
+        Rc::get_mut(&mut self.cfg)
+    }
+
+    fn with_exclusive_config_mut(
+        &mut self,
+        f: &mut dyn FnMut(&mut TreeViewConfig),
+    ) {
+        let detached_cfg = Rc::new(self.cfg.as_ref().clone());
+        self.tre_cnv.cfg = detached_cfg.clone();
+        self.plot_cnv.cfg = detached_cfg.clone();
+
+        if let Some(cfg) = self.config_mut() {
+            f(cfg);
+        }
+
+        self.tre_cnv.cfg = self.cfg.clone();
+        self.plot_cnv.cfg = self.cfg.clone();
     }
 
     fn sort(&mut self) {

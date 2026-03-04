@@ -9,10 +9,10 @@ use confy::store;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Default, Serialize, Deserialize, Clone, Copy)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct AppConfig {
-    tv_config: TreeViewConfig,
+    pub tv_config: TreeViewConfig,
 }
 
 impl From<AppConfig> for TreeViewConfig {
@@ -21,18 +21,12 @@ impl From<AppConfig> for TreeViewConfig {
     }
 }
 
-impl From<TreeViewConfig> for AppConfig {
-    fn from(tv_config: TreeViewConfig) -> Self {
-        AppConfig { tv_config }
-    }
-}
-
 impl AppConfig {
     pub fn load() -> Self {
         load_config()
     }
 
-    pub fn store(self) {
+    pub fn store(&self) {
         store_config(self);
     }
 }
@@ -49,7 +43,7 @@ fn print_config_file_path() {
     );
 }
 
-fn store_config(config: AppConfig) {
+fn store_config(config: &AppConfig) {
     change_config_strategy(ConfigStrategy::Native);
     #[cfg(debug_assertions)]
     print_config_file_path();

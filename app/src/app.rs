@@ -597,7 +597,8 @@ impl App {
                     let (window_id, open_window_task) =
                         open_window(window_settings());
                     self.winid = Some(window_id);
-                    self.treeview = Some(TreeView::new(self.settings.into()));
+                    self.treeview =
+                        Some(TreeView::new(self.settings.clone().into()));
                     task = Some(open_window_task.discard());
                 } else {
                     eprintln!("AppMsg::OpenWindow -> Window is already open.");
@@ -681,7 +682,7 @@ impl App {
             AppMsg::WinClose => {
                 if let Some(window_id) = self.winid {
                     if let Some(tv) = &self.treeview {
-                        self.settings = tv.config().into();
+                        self.settings.tv_config = tv.config();
                         self.settings.store();
                     }
 
