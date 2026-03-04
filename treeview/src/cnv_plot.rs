@@ -167,25 +167,40 @@ impl Program<TvMsg> for PlotCnv {
         let mut geoms: Vec<Geometry> = Vec::new();
         // ---------------------------------------------------------------------
         if self.draw_debug {
+            let t = timer("bounds");
             draw_bounds(self, st, rndr, bnds, &mut geoms);
+            t.finish();
         }
 
+        let t = timer("plot_background");
         draw_plot_background(self, st, rndr, bnds.size(), &mut geoms);
+        t.finish();
 
         if self.cfg.draw_gts && self.cfg.tre_unit == TreUnit::MillionYears {
+            let t = timer("gts");
             draw_gts(self, st, rndr, bnds.size(), &mut geoms);
+            t.finish();
         }
 
         if self.cfg.draw_ltt {
+            let t = timer("ltt");
             draw_ltt(self, st, rndr, bnds.size(), &mut geoms);
+            t.finish();
         }
 
         if self.cfg.draw_cursor_line {
+            let t = timer("cursor_line");
             draw_cursor_line(self, st, rndr, bnds.size(), &mut geoms);
+            t.finish();
         }
 
+        let t = timer("ticks");
         draw_ticks(self, st, rndr, bnds.size(), &mut geoms);
+        t.finish();
+
+        let t = timer("axes");
         draw_axes(self, st, rndr, bnds.size(), &mut geoms);
+        t.finish();
         // ---------------------------------------------------------------------
         geoms
     }

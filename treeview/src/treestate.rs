@@ -142,7 +142,7 @@ impl TreeState {
         self.cache_max_first_node_to_tip_distance = None;
 
         self.cache_has_brlen = Some(self.has_brlen());
-        self.cache_has_int_labs = Some(self.has_int_labs());
+        self.cache_has_int_labs = Some(self.has_int_labels());
         self.cache_has_tip_labs = Some(self.has_tip_labels());
         self.cache_is_ultrametric = Some(self.is_ultrametric());
         self.cache_is_rooted = Some(self.is_rooted_tree());
@@ -287,7 +287,7 @@ impl TreeState {
         }
     }
 
-    pub(super) fn has_int_labs(&self) -> bool {
+    pub(super) fn has_int_labels(&self) -> bool {
         if let Some(cached) = self.cache_has_int_labs {
             cached
         } else {

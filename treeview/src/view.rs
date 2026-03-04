@@ -630,7 +630,9 @@ fn side_bar_annotations<'a>(
         ));
     }
 
-    if ts.has_int_labs() && tv.cfg.draw_labs_int && tv.tre_cnv.draw_labs_allowed
+    if ts.has_int_labels()
+        && tv.cfg.draw_labs_int
+        && tv.tre_cnv.draw_labs_allowed
     {
         sb = sb.push(iced_col![
             toggler_label_int(true, tv.cfg.draw_labs_int),
@@ -647,7 +649,7 @@ fn side_bar_annotations<'a>(
         ]);
     } else {
         sb = sb.push(toggler_label_int(
-            ts.has_int_labs() && tv.tre_cnv.draw_labs_allowed,
+            ts.has_int_labels() && tv.tre_cnv.draw_labs_allowed,
             tv.cfg.draw_labs_int,
         ));
     }

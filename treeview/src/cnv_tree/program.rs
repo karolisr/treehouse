@@ -161,7 +161,7 @@ impl Program<TvMsg> for TreeCnv {
                 &mut st.labs_tip,
             );
         } // -------------------------------------------------------------------
-        if tst.has_int_labs()
+        if tst.has_int_labels()
             && self.cfg.draw_labs_int
             && self.draw_labs_allowed
         {
@@ -531,77 +531,104 @@ impl Program<TvMsg> for TreeCnv {
             let size = bnds.size();
 
             if self.draw_debug {
-                // let timer = timer("bounds");
+                let t = timer("bounds");
                 draw_bounds(self, st, rndr, bnds, &mut geoms);
-                // timer.finish();
+                t.finish();
             }
 
-            let t = timer("clade_highlights");
-            draw_clade_highlights(st, tst, rndr, size, &mut geoms);
-            t.finish();
+            if tst.has_clade_highlights() {
+                let t = timer("clade_highlights");
+                draw_clade_highlights(st, tst, rndr, size, &mut geoms);
+                t.finish();
+            }
 
-            let t = timer("edges");
-            draw_edges(self, st, tst, rndr, size, &mut geoms);
-            t.finish();
+            if tst.edges().is_some() {
+                let t = timer("edges");
+                draw_edges(self, st, tst, rndr, size, &mut geoms);
+                t.finish();
+            }
 
             if st.mouse_is_over_tip_w_resize_area
                 || st.tip_lab_w_is_being_resized
             {
-                // let t = timer("tip_lab_w_resize_area");
+                let t = timer("tip_lab_w_resize_area");
                 draw_tip_lab_w_resize_area(self, st, rndr, bnds, &mut geoms);
-                // t.finish();
+                t.finish();
             }
 
-            // let t = timer("hovered_node");
-            draw_hovered_node(self, st, tst, rndr, size, &mut geoms);
-            // t.finish();
+            if st.hovered_node.is_some() {
+                let t = timer("hovered_node");
+                draw_hovered_node(self, st, tst, rndr, size, &mut geoms);
+                t.finish();
+            }
 
-            // let t = timer("scale_bar");
             if tst.has_brlen()
                 && self.cfg.show_scale_bar
                 && !self.cfg.full_width_scale_bar
             {
+                let t = timer("scale_bar");
                 draw_scale_bar(self, st, tst, rndr, size, &mut geoms);
+                t.finish();
             }
-            // t.finish();
 
-            // let t = timer("height_axis");
             if tst.has_brlen()
                 && self.cfg.show_scale_bar
                 && self.cfg.full_width_scale_bar
             {
+                let t = timer("height_axis");
                 draw_height_axis(self, st, tst, rndr, size, &mut geoms);
+                t.finish();
             }
-            // t.finish();
 
-            // let t = timer("cursor_line");
-            draw_cursor_line(self, st, rndr, size, &mut geoms);
-            // t.finish();
+            if self.cfg.draw_cursor_line && st.cursor_tracking_point.is_some() {
+                let t = timer("cursor_line");
+                draw_cursor_line(self, st, rndr, size, &mut geoms);
+                t.finish();
+            }
 
-            let t = timer("labs_tip");
-            draw_labs_tip(self, st, tst, rndr, size, &mut geoms);
-            t.finish();
+            if tst.has_tip_labels()
+                && self.cfg.draw_labs_tip
+                && self.draw_labs_allowed
+            {
+                let t = timer("labs_tip");
+                draw_labs_tip(self, st, tst, rndr, size, &mut geoms);
+                t.finish();
+            }
 
-            let t = timer("labs_int");
-            draw_labs_int(self, st, tst, rndr, size, &mut geoms);
-            t.finish();
+            if tst.has_int_labels()
+                && self.cfg.draw_labs_int
+                && self.draw_labs_allowed
+            {
+                let t = timer("labs_int");
+                draw_labs_int(self, st, tst, rndr, size, &mut geoms);
+                t.finish();
+            }
 
-            let t = timer("labs_brnch");
-            draw_labs_brnch(self, st, tst, rndr, size, &mut geoms);
-            t.finish();
+            if tst.has_brlen()
+                && self.cfg.draw_labs_brnch
+                && self.draw_labs_allowed
+            {
+                let t = timer("labs_brnch");
+                draw_labs_brnch(self, st, tst, rndr, size, &mut geoms);
+                t.finish();
+            }
 
-            let t = timer("selected_nodes");
-            draw_selected_nodes(st, tst, rndr, size, &mut geoms);
-            t.finish();
+            if !st.selected_nodes.is_empty() {
+                let t = timer("selected_nodes");
+                draw_selected_nodes(st, tst, rndr, size, &mut geoms);
+                t.finish();
+            }
 
-            let t = timer("filtered_nodes");
-            draw_filtered_nodes(self, st, tst, rndr, size, &mut geoms);
-            t.finish();
+            if !tst.found_edge_idxs().is_empty() {
+                let t = timer("filtered_nodes");
+                draw_filtered_nodes(self, st, tst, rndr, size, &mut geoms);
+                t.finish();
+            }
 
             if self.draw_debug {
-                // let t = timer("palette");
+                let t = timer("palette");
                 draw_palette(self, st, thm, rndr, size, &mut geoms);
-                // t.finish();
+                t.finish();
             }
         }
         geoms

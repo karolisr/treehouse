@@ -51,27 +51,31 @@ pub(super) fn draw_edges(
     sz: Size,
     g: &mut Vec<Geometry>,
 ) {
-    g.push(tst.cache_cnv_edge().draw(rndr, sz, |f| match tc.cfg.tre_sty {
-        TreSty::PhyGrm => {
-            stroke_edges_phygrm(
-                tst.edges().unwrap(),
-                &st.tre_vs,
-                st.root_len,
-                tst.edge_root(),
-                STRK_EDGE,
-                f,
-            );
+    g.push(tst.cache_cnv_edge().draw(rndr, sz, |f| {
+        if let Some(edges) = tst.edges() {
+            match tc.cfg.tre_sty {
+                TreSty::PhyGrm => {
+                    stroke_edges_phygrm(
+                        edges,
+                        &st.tre_vs,
+                        st.root_len,
+                        tst.edge_root(),
+                        STRK_EDGE,
+                        f,
+                    );
+                }
+                TreSty::Fan => stroke_edges_fan(
+                    edges,
+                    &st.tre_vs,
+                    tc.rot_angle,
+                    tc.opn_angle,
+                    st.root_len,
+                    tst.edge_root(),
+                    STRK_EDGE,
+                    f,
+                ),
+            }
         }
-        TreSty::Fan => stroke_edges_fan(
-            tst.edges().unwrap(),
-            &st.tre_vs,
-            tc.rot_angle,
-            tc.opn_angle,
-            st.root_len,
-            tst.edge_root(),
-            STRK_EDGE,
-            f,
-        ),
     }));
 }
 
@@ -269,9 +273,7 @@ pub(super) fn draw_cursor_line(
     g: &mut Vec<Geometry>,
 ) {
     g.push(tc.cache_cnv_cursor_line.draw(rndr, sz, |f| {
-        if let Some(p) = st.cursor_tracking_point
-            && tc.cfg.draw_cursor_line
-        {
+        if let Some(p) = st.cursor_tracking_point {
             f.push_transform();
             f.translate(st.translation);
             match tc.cfg.tre_sty {
@@ -430,15 +432,17 @@ pub(super) fn draw_filtered_nodes(
             .map(|&idx| edges[idx].clone())
             .collect();
 
+        let stroke = STRK_2_RED;
+
         match tc.cfg.tre_sty {
             TreSty::PhyGrm => {
                 stroke_edges_phygrm(
-                    &found_edges, &st.tre_vs, st.root_len, None, STRK_2_RED, f,
+                    &found_edges, &st.tre_vs, st.root_len, None, stroke, f,
                 );
             }
             TreSty::Fan => stroke_edges_fan(
                 &found_edges, &st.tre_vs, tc.rot_angle, tc.opn_angle,
-                st.root_len, None, STRK_2_RED, f,
+                st.root_len, None, stroke, f,
             ),
         }
 
