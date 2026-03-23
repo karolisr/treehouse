@@ -50,8 +50,7 @@ pub struct TreeView {
     // -------------------------------------------------------------------------
     pub(super) nodes_table_sort_col: EdgeSortField,
     pub(super) nodes_table_sort_ord: SortOrd,
-    pub(super) nodes_table_scroll_y: Float,
-    pub(super) nodes_table_viewport_height: Float,
+    pub(super) nodes_table_scroll_y_offset: Float,
     // -------------------------------------------------------------------------
     keep_scroll_position_requested: bool,
     // -------------------------------------------------------------------------
@@ -127,15 +126,15 @@ pub enum TvMsg {
     TreUnitChanged(TreUnit),
     ToggleNodesTable,
     NodesTableSortColumnChanged(EdgeSortField),
-    NodesTableScrolledOrResized(Viewport),
+    NodesTableScrolledOrResized(ScrollableViewport),
     // -------------------------------------------------------------------------
     AddCladeHighlight((NodeId, Color)),
     RemoveCladeHighlight(NodeId),
     AddRemoveCladeHighlight((NodeId, Color)),
     AddRemoveCladeHighlightForSelectedNode,
     // -------------------------------------------------------------------------
-    TreCnvScrolledOrResized(Viewport),
-    PlotCnvScrolledOrResized(Viewport),
+    TreCnvScrolledOrResized(ScrollableViewport),
+    PlotCnvScrolledOrResized(ScrollableViewport),
     // -------------------------------------------------------------------------
     CursorOnTreCnv { x: Option<Float> },
     CursorOnPlotCnv { x: Option<Float> },
@@ -193,8 +192,7 @@ impl Default for TreeView {
             // -----------------------------------------------------------------
             nodes_table_sort_col: EdgeSortField::NodeId,
             nodes_table_sort_ord: SortOrd::Ascending,
-            nodes_table_scroll_y: ZRO,
-            nodes_table_viewport_height: ZRO,
+            nodes_table_scroll_y_offset: ZRO,
             // -----------------------------------------------------------------
             is_new: true,
             // -----------------------------------------------------------------
@@ -474,8 +472,7 @@ impl TreeView {
             }
 
             TvMsg::NodesTableScrolledOrResized(vp) => {
-                self.nodes_table_scroll_y = vp.absolute_offset().y;
-                self.nodes_table_viewport_height = vp.bounds().height;
+                self.nodes_table_scroll_y_offset = vp.absolute_offset().y;
             }
 
             TvMsg::TogglePlot(state) => {

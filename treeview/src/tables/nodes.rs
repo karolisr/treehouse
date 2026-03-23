@@ -1,253 +1,142 @@
 use crate::*;
 
-fn data_table_header_cell<'a>(
-    tv: &'a TreeView,
-    header_text: &str,
-    column: EdgeSortField,
-    width: Float,
-    height: Float,
-    style: impl Fn(&Theme) -> ContainerStyle + 'a,
-) -> Element<'a, TvMsg> {
-    let sort_indicator = if tv.nodes_table_sort_col == column {
-        match tv.nodes_table_sort_ord {
-            SortOrd::Ascending => "▲",
-            SortOrd::Descending => "▼",
+pub(crate) fn nodes_table_headers(
+    ts: Rc<TreeState>,
+    tv: &TreeView,
+) -> Vec<(String, Option<SortOrd>, TvMsg)> {
+    let fields = [
+        EdgeSortField::NodeId,
+        EdgeSortField::NodeType,
+        EdgeSortField::Selected,
+        EdgeSortField::BranchLength,
+        EdgeSortField::NodeLabel,
+    ];
+
+    let mut headers = Vec::new();
+
+    fields.iter().for_each(|&f| {
+        let mut include_field = true;
+        if !ts.has_brlen() && f == EdgeSortField::BranchLength {
+            include_field = false;
         }
-    } else {
-        ""
-    };
+        if include_field {
+            let mut sort_ord: Option<SortOrd> = None;
+            if tv.nodes_table_sort_col == f {
+                sort_ord = Some(tv.nodes_table_sort_ord);
+            }
+            let sort_msg = TvMsg::NodesTableSortColumnChanged(f);
+            headers.push((String::from(f), sort_ord, sort_msg));
+        }
+    });
 
-    let header_content = container(iced_row!(
-        txt(header_text),
-        space_h(Length::Fixed(PADDING / TWO), Length::Fill),
-        space_h(Length::Fill, Length::Fill),
-        txt(sort_indicator),
-    ))
-    .padding(PADDING / TWO)
-    .width(Length::Fixed(width))
-    .center_y(Length::Fixed(height))
-    .style(style);
-
-    mouse_area(header_content)
-        .on_press(TvMsg::NodesTableSortColumnChanged(column))
-        .into()
+    headers
 }
 
-fn node_data_table_cell<'a>(
-    content: Element<'a, TvMsg>,
-    node_id: NodeId,
-    is_selected: bool,
-    width: Float,
-    height: Float,
-) -> Element<'a, TvMsg> {
-    let cell_container = container(content)
-        .padding(PADDING / TWO)
-        .width(Length::Fixed(width))
-        .height(Length::Fixed(height));
+pub(crate) fn nodes_table_columns<'a>(
+    ts: Rc<TreeState>,
+) -> Vec<Box<dyn Fn(Edge) -> (Element<'a, TvMsg>, bool, Option<TvMsg>)>> {
+    let mut cols: Vec<Box<dyn Fn(_) -> _>> = Vec::new();
+    let text_size = 1e1 * SF;
 
-    let styled_cell = if is_selected {
-        cell_container.style(sty_table_cell_selected)
-    } else {
-        cell_container.style(sty_table_cell)
+    let common = |node_id: NodeId, ts: Rc<TreeState>| {
+        (
+            ts.sel_node_ids().contains(&node_id),
+            Some(TvMsg::SelectDeselectNode(node_id)),
+        )
     };
 
-    mouse_area(styled_cell).on_press(TvMsg::SelectDeselectNode(node_id)).into()
+    let tmp = ts.clone();
+    cols.push(Box::new(move |e: Edge| {
+        let (is_selected, on_click) = common(e.node_id, tmp.clone());
+        (txt(e.node_id).size(text_size).into(), is_selected, on_click)
+    }));
+
+    let tmp = ts.clone();
+    cols.push(Box::new(move |e: Edge| {
+        let node_opt = tmp.tree().node(Some(e.node_id));
+        let node_type = if let Some(node) = node_opt {
+            node.node_type().to_string()
+        } else {
+            "-".to_string()
+        };
+        let (is_selected, on_click) = common(e.node_id, tmp.clone());
+        (txt(node_type).size(text_size).into(), is_selected, on_click)
+    }));
+
+    let tmp = ts.clone();
+    cols.push(Box::new(move |e: Edge| {
+        let (is_selected, on_click) = common(e.node_id, tmp.clone());
+        (txt_bool(is_selected).size(text_size).into(), is_selected, on_click)
+    }));
+
+    if ts.has_brlen() {
+        let tmp = ts.clone();
+        cols.push(Box::new(move |e: Edge| {
+            let (is_selected, on_click) = common(e.node_id, tmp.clone());
+            (
+                txt_float(e.branch_length, 3).size(text_size).into(),
+                is_selected,
+                on_click,
+            )
+        }));
+    }
+
+    let tmp = ts.clone();
+    cols.push(Box::new(move |e: Edge| {
+        let (is_selected, on_click) = common(e.node_id, tmp.clone());
+        (
+            txt(e.label.unwrap_or("-".into()).to_string())
+                .size(text_size)
+                .into(),
+            is_selected,
+            on_click,
+        )
+    }));
+
+    cols
+}
+
+pub(crate) fn nodes_table_column_widths(ts: Rc<TreeState>) -> Vec<f32> {
+    let mut col_ws = vec![8e1 * SF, 5e1 * SF, 6e1 * SF];
+
+    if ts.has_brlen() {
+        col_ws.push(8e1 * SF);
+    }
+
+    col_ws.push(2.5e2 * SF);
+
+    col_ws
 }
 
 pub(crate) fn nodes_table<'a>(
     tv: &'a TreeView,
-    id: &'static str,
-    w: Float,
-    h: Float,
-    sel_node_ids: HashSet<NodeId>,
-    cached_edges: &[Edge],
+    ts: Rc<TreeState>,
+    scroll_y_offset: f32,
+    scrollable_id: &'static str,
+    w: f32,
+    h: f32,
 ) -> Element<'a, TvMsg> {
-    // ToDo: need to determine column count dynamically.
-    let column_count: usize = 4;
+    let start_idx = table_first_visible_row(scroll_y_offset);
+    let table_scrollable_height = table_scrollable_height(h);
+    let max_to_return = table_max_visible_rows(table_scrollable_height);
+    if let Some(edges) = ts.edges_in_range(start_idx, max_to_return) {
+        let table_scrollable_content_height =
+            table_scrollable_content_height(ts.edge_count());
 
-    let row_height = TXT_SIZE + PADDING;
-    // Scrollable height allowing for a header row.
-    let scrollable_height = (h - row_height).max(ZRO);
-    // This is the total height of the table. Parent Scrollable needs to know
-    // table_body_height to draw the scroll bar correctly.
-    let table_body_height = row_height * (cached_edges.len() + 1) as f32;
-
-    // The width of lines drawn between columns or rows.
-    let separator_width = BORDER_W;
-
-    let min_column_width_fraction = ONE / TEN;
-    let width_available_to_columns = if table_body_height + row_height <= h {
-        w - separator_width * (column_count - 1) as f32
+        table(
+            nodes_table_headers(ts.clone(), tv),
+            nodes_table_columns(ts.clone()),
+            Some(nodes_table_column_widths(ts)),
+            edges,
+            scrollable_id,
+            scroll_y_offset,
+            w,
+            h,
+            table_scrollable_height,
+            table_scrollable_content_height,
+            TvMsg::NodesTableScrolledOrResized,
+        )
     } else {
-        w - separator_width * (column_count - 1) as f32 - SCROLLBAR_W - PADDING
-    };
-
-    let node_id_column_width =
-        (width_available_to_columns * min_column_width_fraction).max(7e1 * SF);
-
-    let node_selected_column_width =
-        (width_available_to_columns * min_column_width_fraction).max(7e1 * SF);
-
-    let node_type_column_width =
-        (width_available_to_columns * min_column_width_fraction).max(7e1 * SF);
-
-    let node_label_column_width = width_available_to_columns
-        - node_id_column_width
-        - node_selected_column_width
-        - node_type_column_width;
-
-    // ToDo: should be refectored into a generic "header_row" function.
-    // The header row is created manually, because we want it to stay on top of
-    // the table when the table body is scrolled.
-    let header_row = container(
-        iced_row![
-            data_table_header_cell(
-                tv,
-                "Selected",
-                EdgeSortField::Selected,
-                node_selected_column_width,
-                row_height,
-                sty_table_cell_header_left
-            ),
-            data_table_header_cell(
-                tv,
-                "ID",
-                EdgeSortField::NodeId,
-                node_id_column_width,
-                row_height,
-                sty_table_cell_header
-            ),
-            data_table_header_cell(
-                tv,
-                "Type",
-                EdgeSortField::NodeType,
-                node_type_column_width,
-                row_height,
-                sty_table_cell_header
-            ),
-            data_table_header_cell(
-                tv,
-                "Label",
-                EdgeSortField::NodeLabel,
-                node_label_column_width,
-                row_height,
-                sty_table_cell_header_right
-            ),
-        ]
-        .padding(ZRO)
-        .spacing(separator_width),
-    )
-    .style(sty_table_row_header);
-
-    // ToDo: should be refectored into a generic "columns" function.
-    let columns = vec![
-        table_col(
-            space_h(Length::Shrink, Length::Shrink),
-            |edge: Edge| -> Element<'a, TvMsg> {
-                let is_selected = sel_node_ids.contains(&edge.node_id);
-                node_data_table_cell(
-                    txt_bool(is_selected).into(),
-                    edge.node_id,
-                    is_selected,
-                    node_selected_column_width,
-                    row_height,
-                )
-            },
-        )
-        .width(Length::Fixed(node_selected_column_width)),
-        table_col(
-            space_h(Length::Shrink, Length::Shrink),
-            |edge: Edge| -> Element<'a, TvMsg> {
-                let is_selected = sel_node_ids.contains(&edge.node_id);
-                node_data_table_cell(
-                    txt(edge.node_id).into(),
-                    edge.node_id,
-                    is_selected,
-                    node_id_column_width,
-                    row_height,
-                )
-            },
-        )
-        .width(Length::Fixed(node_id_column_width)),
-        table_col(
-            space_h(Length::Shrink, Length::Shrink),
-            |edge: Edge| -> Element<'a, TvMsg> {
-                let is_selected = sel_node_ids.contains(&edge.node_id);
-                node_data_table_cell(
-                    if let Some(ts) = tv.sel_tre() {
-                        let tre = ts.tree();
-                        if let Some(node) = tre.node(Some(edge.node_id)) {
-                            txt(node.node_type().to_string()).into()
-                        } else {
-                            txt("-").into()
-                        }
-                    } else {
-                        txt("-").into()
-                    },
-                    edge.node_id,
-                    is_selected,
-                    node_type_column_width,
-                    row_height,
-                )
-            },
-        )
-        .width(Length::Fixed(node_type_column_width)),
-        table_col(
-            space_h(Length::Shrink, Length::Shrink),
-            |edge: Edge| -> Element<'a, TvMsg> {
-                let is_selected = sel_node_ids.contains(&edge.node_id);
-                node_data_table_cell(
-                    txt(edge.label.as_deref().unwrap_or("-")).into(),
-                    edge.node_id,
-                    is_selected,
-                    node_label_column_width,
-                    row_height,
-                )
-            },
-        )
-        .width(Length::Fixed(node_label_column_width)),
-    ];
-
-    let max_visible_rows = (scrollable_height / row_height) as usize;
-    let scroll_y = tv.nodes_table_scroll_y;
-    let first_visible_row = (scroll_y / row_height) as usize;
-    let last_visible_row = first_visible_row + max_visible_rows;
-    let start_idx = first_visible_row;
-    let end_idx = last_visible_row.min(cached_edges.len());
-
-    let visible_edges: Vec<Edge> = if start_idx < end_idx {
-        cached_edges[start_idx..end_idx].to_vec()
-    } else {
-        cached_edges.iter().take(max_visible_rows).cloned().collect()
-    };
-
-    let table_body =
-        table(columns, visible_edges).padding(ZRO).separator(separator_width);
-
-    let mut scrollable_body = Scrollable::new(
-        container(table_body)
-            .padding(Padding {
-                top: scroll_y,
-                bottom: ZRO,
-                left: ZRO,
-                right: ZRO,
-            })
-            .height(table_body_height),
-    );
-    scrollable_body = scrollable_body.direction(ScrollableDirection::Both {
-        horizontal: scroll_bar(),
-        vertical: scroll_bar(),
-    });
-    scrollable_body = scrollable_body.id(id);
-    scrollable_body =
-        scrollable_body.on_scroll(TvMsg::NodesTableScrolledOrResized);
-    scrollable_body = scrollable_common(scrollable_body, w, scrollable_height);
-
-    let mut final_table = Column::new();
-    final_table = final_table.push(header_row);
-    final_table = final_table.push(scrollable_body);
-    final_table = final_table.padding(ZRO);
-    final_table = final_table.width(w);
-    final_table = final_table.height(h);
-    final_table.into()
+        txt("No edges available").into()
+    }
 }

@@ -358,6 +358,7 @@ fn write_text(
         .restore_state();
 }
 
+#[allow(clippy::too_many_arguments)]
 fn draw_root(
     tree_style: TreSty,
     w: Float,
@@ -381,6 +382,7 @@ fn draw_root(
     .stroke();
 }
 
+#[allow(clippy::too_many_arguments)]
 fn draw_edges(
     tree_state: Rc<TreeState>,
     tree_style: TreSty,

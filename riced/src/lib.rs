@@ -20,6 +20,7 @@ mod elements;
 mod icons;
 mod path_utils;
 mod style;
+mod table;
 #[cfg(debug_assertions)]
 pub mod template_widget;
 mod text_width;
@@ -36,6 +37,7 @@ pub use elements::*;
 pub use icons::Icon;
 pub use path_utils::*;
 pub use style::*;
+pub use table::*;
 pub use text_width::{TextWidth, text_width, text_width_line_height};
 
 pub use i::advanced::mouse::click::{
@@ -120,21 +122,22 @@ pub use w::rule::{
 pub use w::scrollable::{
     AbsoluteOffset, AutoScroll, Direction as ScrollableDirection,
     Rail as ScrollBarRail, Scrollable, Scrollbar, Scroller,
-    Status as ScrollableStatus, Style as ScrollableStyle, Viewport,
+    Status as ScrollableStatus, Style as ScrollableStyle,
+    Viewport as ScrollableViewport,
 };
 pub use w::slider::{
     Handle as SliderHandle, HandleShape as SliderHandleShape,
     Rail as SliderRail, Slider, Status as SliderStatus, Style as SliderStyle,
 };
-pub use w::space::{
+use w::space::{
     Space, horizontal as horizontal_space, vertical as vertical_space,
 };
 pub use w::svg::{
     Handle as SvgHandle, Status as SvgStatus, Style as SvgStyle, Svg,
 };
 pub use w::table::{
-    Column as TableColumn, Style as TableStyle, Table, column as table_col,
-    table,
+    Column as RicedTableCol, Style as RicedTableStyle, Table as RicedTable,
+    column as riced_table_col, table as riced_table,
 };
 pub use w::text::{Alignment as TextAlignment, LineHeight, Shaping, Text};
 pub use w::text_input::{

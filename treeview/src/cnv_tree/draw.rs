@@ -107,6 +107,7 @@ pub(super) fn draw_tip_lab_w_resize_area(
     }));
 }
 
+#[allow(clippy::too_many_arguments)]
 fn draw_scale_bar_internal(
     tre_sty: TreSty,
     vis_vs: &RectVals<Float>,
@@ -562,6 +563,7 @@ fn stroke_edges_cladogram(
     });
 }
 
+#[allow(clippy::too_many_arguments)]
 fn stroke_edges_fan(
     edges: &[Edge],
     tre_vs: &RectVals<Float>,
@@ -611,6 +613,7 @@ fn stroke_root_fan(
     };
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn node_labs(
     highlighted_node_ids_opt: Option<&HashSet<NodeId>>,
     nodes: &[NodeData],

@@ -57,6 +57,7 @@ pub fn path_root_edge_fan(
     PathBuilder::new().move_to(ORIGIN).line_to(nd.points.p0).build()
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn path_clade_highlight(
     node_id: NodeId,
     tree_state: &TreeState,

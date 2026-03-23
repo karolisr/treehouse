@@ -281,7 +281,7 @@ pub fn txt<'a>(s: impl Into<String>) -> Text<'a> {
     Text::new(s.into()).line_height(LINE_H_PIX).align_y(Vertical::Center)
 }
 
-pub fn txt_bool(b: bool) -> Text<'static> {
+pub fn txt_bool<'a>(b: bool) -> Text<'a> {
     let s = match b {
         true => "Yes",
         false => "No",
@@ -289,14 +289,14 @@ pub fn txt_bool(b: bool) -> Text<'static> {
     txt(s)
 }
 
-pub fn txt_bool_option(ob: Option<bool>) -> Text<'static> {
+pub fn txt_bool_option<'a>(ob: Option<bool>) -> Text<'a> {
     match ob {
         Some(b) => txt_bool(b),
         None => txt("N/A"),
     }
 }
 
-pub fn txt_float(n: impl Into<f32>, decimals: u8) -> Text<'static> {
+pub fn txt_float<'a>(n: impl Into<f32>, decimals: u8) -> Text<'a> {
     let mut num_fmt = numfmt::Formatter::new();
     num_fmt = num_fmt.precision(numfmt::Precision::Decimals(decimals));
     num_fmt = num_fmt.separator(',').unwrap();
@@ -304,7 +304,7 @@ pub fn txt_float(n: impl Into<f32>, decimals: u8) -> Text<'static> {
     txt(s)
 }
 
-pub fn txt_usize(n: impl Into<usize>) -> Text<'static> {
+pub fn txt_usize<'a>(n: impl Into<usize>) -> Text<'a> {
     let mut num_fmt = numfmt::Formatter::new();
     num_fmt = num_fmt.precision(numfmt::Precision::Decimals(0));
     num_fmt = num_fmt.separator(',').unwrap();
@@ -312,7 +312,7 @@ pub fn txt_usize(n: impl Into<usize>) -> Text<'static> {
     txt(s)
 }
 
-pub fn txt_i64(n: impl Into<i64>) -> Text<'static> {
+pub fn txt_i64<'a>(n: impl Into<i64>) -> Text<'a> {
     let mut num_fmt = numfmt::Formatter::new();
     num_fmt = num_fmt.precision(numfmt::Precision::Decimals(0));
     num_fmt = num_fmt.separator(',').unwrap();

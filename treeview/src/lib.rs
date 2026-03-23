@@ -117,12 +117,6 @@ impl Default for TreeViewConfig {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum SortOrd {
-    Ascending,
-    Descending,
-}
-
 #[derive(Debug)]
 pub(crate) enum Zone {
     Top,
