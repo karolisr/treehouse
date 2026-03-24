@@ -36,7 +36,6 @@ pub(crate) fn nodes_table_columns<'a>(
     ts: Rc<TreeState>,
 ) -> Vec<Box<dyn Fn(Edge) -> (Element<'a, TvMsg>, bool, Option<TvMsg>)>> {
     let mut cols: Vec<Box<dyn Fn(_) -> _>> = Vec::new();
-    let text_size = 1e1 * SF;
 
     let common = |node_id: NodeId, ts: Rc<TreeState>| {
         (
@@ -48,7 +47,7 @@ pub(crate) fn nodes_table_columns<'a>(
     let tmp = ts.clone();
     cols.push(Box::new(move |e: Edge| {
         let (is_selected, on_click) = common(e.node_id, tmp.clone());
-        (txt(e.node_id).size(text_size).into(), is_selected, on_click)
+        (txt(e.node_id).size(TABLE_TXT_SIZE).into(), is_selected, on_click)
     }));
 
     let tmp = ts.clone();
@@ -60,13 +59,17 @@ pub(crate) fn nodes_table_columns<'a>(
             "-".to_string()
         };
         let (is_selected, on_click) = common(e.node_id, tmp.clone());
-        (txt(node_type).size(text_size).into(), is_selected, on_click)
+        (txt(node_type).size(TABLE_TXT_SIZE).into(), is_selected, on_click)
     }));
 
     let tmp = ts.clone();
     cols.push(Box::new(move |e: Edge| {
         let (is_selected, on_click) = common(e.node_id, tmp.clone());
-        (txt_bool(is_selected).size(text_size).into(), is_selected, on_click)
+        (
+            txt_bool(is_selected).size(TABLE_TXT_SIZE).into(),
+            is_selected,
+            on_click,
+        )
     }));
 
     if ts.has_brlen() {
@@ -74,7 +77,7 @@ pub(crate) fn nodes_table_columns<'a>(
         cols.push(Box::new(move |e: Edge| {
             let (is_selected, on_click) = common(e.node_id, tmp.clone());
             (
-                txt_float(e.branch_length, 3).size(text_size).into(),
+                txt_float(e.branch_length, 3).size(TABLE_TXT_SIZE).into(),
                 is_selected,
                 on_click,
             )
@@ -86,7 +89,7 @@ pub(crate) fn nodes_table_columns<'a>(
         let (is_selected, on_click) = common(e.node_id, tmp.clone());
         (
             txt(e.label.unwrap_or("-".into()).to_string())
-                .size(text_size)
+                .size(TABLE_TXT_SIZE)
                 .into(),
             is_selected,
             on_click,

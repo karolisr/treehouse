@@ -135,7 +135,7 @@ pub fn table<
     assembly = assembly.padding(BORDER_W);
     assembly = assembly.width(w);
     assembly = assembly.height(h);
-    container(assembly).style(sty_cont_no_shadow).clip(true).into()
+    container(assembly).style(sty_cont_no_shadow_no_border).clip(true).into()
 }
 
 pub fn table_header_cell<'a, Msg: Clone + 'a>(
@@ -155,17 +155,21 @@ pub fn table_header_cell<'a, Msg: Clone + 'a>(
         ""
     };
 
-    let text_size = 1e1 * SF;
-
     let header_content = container(iced_row!(
-        txt(header_text).size(text_size),
-        space_h(Length::Fixed(PADDING / TWO), Length::Shrink),
+        txt(header_text).size(TABLE_TXT_SIZE),
+        space_h(Length::Fixed(TABLE_CELL_PADDING), Length::Shrink),
         space_h(Length::Fill, Length::Shrink),
-        txt(sort_indicator).size(text_size),
+        txt(sort_indicator).size(TABLE_TXT_SIZE),
     ))
-    .padding(Padding { left: PADDING, right: PADDING, top: ZERO, bottom: ZERO })
+    .padding(Padding {
+        left: TABLE_CELL_PADDING,
+        right: TABLE_CELL_PADDING,
+        top: ZERO,
+        bottom: ZERO,
+    })
     .width(Length::Fixed(w))
     .center_y(Length::Fixed(h))
+    .clip(true)
     .style(style);
 
     mouse_area(header_content).on_press(on_click).into()
@@ -180,13 +184,14 @@ pub fn table_cell<'a, Msg: Clone + 'a>(
 ) -> Element<'a, Msg> {
     let cell_container = container(content)
         .padding(Padding {
-            left: PADDING,
-            right: PADDING,
+            left: TABLE_CELL_PADDING,
+            right: TABLE_CELL_PADDING,
             top: ZERO,
             bottom: ZERO,
         })
         .center_y(Length::Fixed(h))
-        .width(Length::Fixed(w));
+        .width(Length::Fixed(w))
+        .clip(true);
 
     let styled_cell = if is_selected {
         cell_container.style(sty_table_cell_selected)
@@ -230,5 +235,6 @@ pub fn table_width_available_to_columns(
         w - TABLE_SEP_W * (column_count - 1) as f32
             - BORDER_W * TWO
             - SCROLLBAR_W
+            - PADDING
     }
 }

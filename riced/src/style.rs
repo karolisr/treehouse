@@ -121,6 +121,18 @@ pub fn sty_cont_no_shadow(theme: &Theme) -> ContainerStyle {
     }
 }
 
+pub fn sty_cont_no_shadow_no_border(theme: &Theme) -> ContainerStyle {
+    let base = sty_cont_no_shadow(theme);
+    ContainerStyle {
+        border: Border {
+            width: ZERO,
+            color: Clr::TRN,
+            radius: WIDGET_RADIUS.into(),
+        },
+        ..base
+    }
+}
+
 pub(crate) fn sty_cont_floating_bg(theme: &Theme) -> ContainerStyle {
     let base = sty_cont(theme);
     let pe = theme.extended_palette();
