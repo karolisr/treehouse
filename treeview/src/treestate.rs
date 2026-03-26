@@ -1,9 +1,11 @@
 use crate::CladeHighlight;
 use crate::CladeHighlightType;
-use crate::SortOrd;
+use crate::NodesTableField;
+use crate::SortOrder;
 use crate::TreNodeOrd;
 
 use dendros::IndexRange;
+use rayon::slice::ParallelSliceMut;
 use riced::CnvCache;
 use riced::Color;
 
@@ -16,6 +18,7 @@ use dendros::TreeFloat;
 use rayon::iter::IntoParallelRefIterator;
 use rayon::iter::ParallelIterator;
 
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
@@ -38,27 +41,6 @@ where
     let value = value.into();
 
     (value - min) / (max - min)
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum EdgeSortField {
-    NodeId,
-    Selected,
-    NodeType,
-    NodeLabel,
-    BranchLength,
-}
-
-impl From<EdgeSortField> for String {
-    fn from(esf: EdgeSortField) -> Self {
-        match esf {
-            EdgeSortField::NodeId => "ID".to_string(),
-            EdgeSortField::Selected => "Selected".to_string(),
-            EdgeSortField::NodeType => "Type".to_string(),
-            EdgeSortField::NodeLabel => "Label".to_string(),
-            EdgeSortField::BranchLength => "Branch Length".to_string(),
-        }
-    }
 }
 
 #[derive(Default, Debug)]
@@ -157,7 +139,7 @@ impl TreeState {
         self.cache_max_first_node_to_tip_distance =
             Some(self.max_first_node_to_tip_distance_tree());
 
-        self.clear_caches_of_edges_sorted_by_field();
+        self.clear_cache_of_edges_for_nodes_table();
         self.clear_caches_cnv();
 
         self.update_selected_node_ids();
@@ -426,7 +408,7 @@ impl TreeState {
         self.subtree_view_edges_tip = Vec::new();
         self.subtree_view_edges_tip_tallest = Vec::new();
         self.subtree_view_sel_edge_idxs = Vec::new();
-        self.clear_caches_of_edges_sorted_by_field();
+        self.clear_cache_of_edges_for_nodes_table();
 
         if let Some(search_query) = &self.search_query.clone()
             && let Some(tip_only_search) = self.tip_only_search
@@ -441,7 +423,7 @@ impl TreeState {
     pub(super) fn set_subtree_view(&mut self, node_id: NodeId) {
         let current_found_node_id = self.current_found_node_id();
         self.close_subtree_view();
-        self.clear_caches_of_edges_sorted_by_field();
+        self.clear_cache_of_edges_for_nodes_table();
         self.clear_caches_cnv();
 
         let idx_range_opt =
@@ -770,7 +752,7 @@ impl TreeState {
             self.remove_clade_highlight(node_id);
         }
         // ---------------------------------------------------------------------
-        self.clear_caches_of_edges_sorted_by_field();
+        self.clear_cache_of_edges_for_nodes_table();
         self.clear_caches_cnv();
 
         if let Some(subtree_view_node_id) = self.subtree_view_node_id() {
@@ -1188,85 +1170,76 @@ impl TreeState {
 
     // =========================================================================
 
-    // --- Caches of Edges Sorted by the Fields in the Edge Struct -------------
+    // --- Cache of Edges for Nodes Table --------------------------------------
 
-    pub(super) fn populate_cache_of_edges_sorted_by_field(
+    fn clear_cache_of_edges_for_nodes_table(&mut self) {
+        self.cache_edges_nodes_table = None;
+    }
+
+    pub(super) fn populate_cache_of_edges_for_nodes_table(
         &mut self,
-        sort_column: EdgeSortField,
-        sort_direction: SortOrd,
+        sort_column: NodesTableField,
+        sort_direction: SortOrder,
     ) {
         if let Some(edges) = self.edges() {
-            let mut sorted_edges = edges.clone();
+            let mut edges = edges.clone();
             let sel_node_ids = &self.sel_node_ids;
 
+            let sorting_order = |ord: Ordering| match sort_direction {
+                SortOrder::Ascending => ord,
+                SortOrder::Descending => ord.reverse(),
+            };
+
             match sort_column {
-                EdgeSortField::NodeId => {
-                    sorted_edges.sort_by(|a, b| {
-                        let ord = a.node_id.cmp(&b.node_id);
-                        match sort_direction {
-                            SortOrd::Ascending => ord,
-                            SortOrd::Descending => ord.reverse(),
-                        }
+                NodesTableField::NodeId => {
+                    edges.par_sort_by(|a, b| {
+                        sorting_order(a.node_id.cmp(&b.node_id))
                     });
                 }
-                EdgeSortField::NodeLabel => {
-                    sorted_edges.sort_by(|a, b| {
-                        let label_a = a.label.as_deref().unwrap_or("");
-                        let label_b = b.label.as_deref().unwrap_or("");
-                        let ord = label_a.cmp(label_b);
-                        match sort_direction {
-                            SortOrd::Ascending => ord,
-                            SortOrd::Descending => ord.reverse(),
-                        }
+
+                NodesTableField::NodeLabel => {
+                    edges.par_sort_by(|a, b| {
+                        let label_a = a.label.as_deref().unwrap_or_default();
+                        let label_b = b.label.as_deref().unwrap_or_default();
+                        sorting_order(label_a.cmp(label_b))
                     });
                 }
-                EdgeSortField::Selected => {
-                    sorted_edges.sort_by(|a, b| {
+
+                NodesTableField::Selected => {
+                    edges.par_sort_by(|a, b| {
                         let sel_a = sel_node_ids.contains(&a.node_id);
                         let sel_b = sel_node_ids.contains(&b.node_id);
-                        let ord = sel_a.cmp(&sel_b);
-                        match sort_direction {
-                            SortOrd::Ascending => ord,
-                            SortOrd::Descending => ord.reverse(),
+                        sorting_order(sel_a.cmp(&sel_b))
+                    });
+                }
+
+                NodesTableField::NodeType => {
+                    edges.par_sort_by(|a, b| {
+                        if let Some(node_id_a) =
+                            self.t_orig.node(Some(a.node_id))
+                            && let Some(node_id_b) =
+                                self.t_orig.node(Some(b.node_id))
+                        {
+                            let type_a = node_id_a.node_type();
+                            let type_b = node_id_b.node_type();
+                            sorting_order(type_a.cmp(&type_b))
+                        } else {
+                            Ordering::Equal
                         }
                     });
                 }
-                EdgeSortField::NodeType => {
-                    sorted_edges.sort_by(|a, b| {
-                        let type_a = self
-                            .t_orig
-                            .node(Some(a.node_id))
-                            .unwrap()
-                            .node_type();
-                        let type_b = self
-                            .t_orig
-                            .node(Some(b.node_id))
-                            .unwrap()
-                            .node_type();
-                        let ord = type_a.cmp(&type_b);
-                        match sort_direction {
-                            SortOrd::Ascending => ord,
-                            SortOrd::Descending => ord.reverse(),
-                        }
-                    });
-                }
-                EdgeSortField::BranchLength => {
-                    sorted_edges.sort_by(|a, b| {
-                        let ord = a.branch_length.total_cmp(&b.branch_length);
-                        match sort_direction {
-                            SortOrd::Ascending => ord,
-                            SortOrd::Descending => ord.reverse(),
-                        }
+
+                NodesTableField::BranchLength => {
+                    edges.par_sort_by(|a, b| {
+                        sorting_order(
+                            a.branch_length.total_cmp(&b.branch_length),
+                        )
                     });
                 }
             }
 
-            self.cache_edges_nodes_table = Some(sorted_edges);
+            self.cache_edges_nodes_table = Some(edges);
         }
-    }
-
-    fn clear_caches_of_edges_sorted_by_field(&mut self) {
-        self.cache_edges_nodes_table = None;
     }
 
     // -------------------------------------------------------------------------

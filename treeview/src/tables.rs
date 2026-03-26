@@ -1,3 +1,3 @@
 mod nodes;
 
-pub(crate) use nodes::nodes_table;
+pub(crate) use nodes::{NodesTableField, nodes_table};

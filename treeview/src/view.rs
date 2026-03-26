@@ -155,9 +155,7 @@ fn pane_content<'a>(
 
             pane_row.into()
         }
-        TreeViewPane::NodesTable => {
-            data_table_element(tv, tv.nodes_table_scrollable_id, w, h)
-        }
+        TreeViewPane::NodesTable => table_nodes(tv, w, h),
     };
     content
 }
@@ -877,14 +875,9 @@ fn scrollable_cnv_tre<'a>(
     scrollable_common(s, w, h)
 }
 
-fn data_table_element<'a>(
-    tv: &'a TreeView,
-    scrollable_id: &'static str,
-    w: Float,
-    h: Float,
-) -> Element<'a, TvMsg> {
+fn table_nodes<'a>(tv: &'a TreeView, w: Float, h: Float) -> Element<'a, TvMsg> {
     if let Some(ts) = tv.sel_tre() {
-        nodes_table(tv, ts, tv.nodes_table_scroll_y_offset, scrollable_id, w, h)
+        nodes_table(tv, ts, w, h)
     } else {
         txt("No tree loaded").into()
     }

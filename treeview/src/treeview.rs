@@ -48,8 +48,8 @@ pub struct TreeView {
     pub nodes_table_scrollable_id: &'static str,
     pub search_text_input_id: &'static str,
     // -------------------------------------------------------------------------
-    pub(super) nodes_table_sort_col: EdgeSortField,
-    pub(super) nodes_table_sort_ord: SortOrd,
+    pub(super) nodes_table_sort_col: NodesTableField,
+    pub(super) nodes_table_sort_ord: SortOrder,
     pub(super) nodes_table_scroll_y_offset: Float,
     // -------------------------------------------------------------------------
     keep_scroll_position_requested: bool,
@@ -125,7 +125,7 @@ pub enum TvMsg {
     ToggleGts(bool),
     TreUnitChanged(TreUnit),
     ToggleNodesTable,
-    NodesTableSortColumnChanged(EdgeSortField),
+    NodesTableSortColumnChanged(NodesTableField),
     NodesTableScrolledOrResized(ScrollableViewport),
     // -------------------------------------------------------------------------
     AddCladeHighlight((NodeId, Color)),
@@ -190,8 +190,8 @@ impl Default for TreeView {
             nodes_table_scrollable_id: "nodes_table",
             search_text_input_id: "search_text_input",
             // -----------------------------------------------------------------
-            nodes_table_sort_col: EdgeSortField::NodeId,
-            nodes_table_sort_ord: SortOrd::Ascending,
+            nodes_table_sort_col: NodesTableField::NodeId,
+            nodes_table_sort_ord: SortOrder::Ascending,
             nodes_table_scroll_y_offset: ZRO,
             // -----------------------------------------------------------------
             is_new: true,
@@ -535,12 +535,12 @@ impl TreeView {
                 if self.nodes_table_sort_col == sort_col {
                     self.nodes_table_sort_ord = match self.nodes_table_sort_ord
                     {
-                        SortOrd::Ascending => SortOrd::Descending,
-                        SortOrd::Descending => SortOrd::Ascending,
+                        SortOrder::Ascending => SortOrder::Descending,
+                        SortOrder::Descending => SortOrder::Ascending,
                     };
                 } else {
                     self.nodes_table_sort_col = sort_col;
-                    self.nodes_table_sort_ord = SortOrd::Ascending;
+                    self.nodes_table_sort_ord = SortOrder::Ascending;
                 }
 
                 self.populate_cache_of_edges_sorted_by_field();
@@ -1111,7 +1111,7 @@ impl TreeView {
         let sort_col = self.nodes_table_sort_col;
         let sort_dir = self.nodes_table_sort_ord;
         self.with_exclusive_sel_tre_mut(&mut |tre| {
-            tre.populate_cache_of_edges_sorted_by_field(sort_col, sort_dir);
+            tre.populate_cache_of_edges_for_nodes_table(sort_col, sort_dir);
         });
     }
 
