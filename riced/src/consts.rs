@@ -1,3 +1,4 @@
+pub mod fonts;
 pub(crate) mod icons;
 
 use crate::*;

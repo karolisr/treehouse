@@ -14,6 +14,7 @@ use oxidize_pdf::{
     text::{Font, measure_text},
 };
 use rayon::prelude::*;
+use riced::fonts::JET_BRAINS_MONO_REGULAR;
 use riced::{
     CnvStrk, IcedPath, LyonPath, LyonPathEvent, PathBuilder, Point, Rectangle,
 };
@@ -189,12 +190,15 @@ pub fn tree_to_pdf(
         })
         .collect();
 
-    let font = Font::Courier.with_recommended_encoding();
+    let font_data = JET_BRAINS_MONO_REGULAR.to_vec();
+    let font_name = "JetBrainsMono-Regular".to_string();
+    let font = Font::Custom(font_name.clone());
+
     for nd in node_data {
         let edge = &edges[nd.edge_idx];
         if edge.parent_node_id != edge.node_id && draw_labs_brnch {
             let text = format!("{:.3}", edge.branch_length);
-            let text_w = measure_text(&text, font.font.clone(), lab_size_brnch);
+            let text_w = measure_text(&text, &font, lab_size_brnch);
             write_text(
                 &text,
                 nd.points.p_mid.x as f64,
@@ -206,7 +210,7 @@ pub fn tree_to_pdf(
                 None,
                 nd.angle as f64,
                 rot_angle,
-                font.font.clone(),
+                font.clone(),
                 scaling,
                 &mut pg,
             );
@@ -243,8 +247,7 @@ pub fn tree_to_pdf(
                 continue;
             }
 
-            let text_w =
-                measure_text(&text_trimmed, font.font.clone(), lab_size);
+            let text_w = measure_text(&text_trimmed, &font, lab_size);
 
             write_text(
                 &text_trimmed,
@@ -257,7 +260,7 @@ pub fn tree_to_pdf(
                 align_at,
                 nd.angle as f64,
                 rot_angle,
-                font.font.clone(),
+                font.clone(),
                 scaling,
                 &mut pg,
             );
@@ -265,7 +268,7 @@ pub fn tree_to_pdf(
     } // -----------------------------------------------------------------------
 
     let mut doc = Document::new();
-    doc.set_default_font_encoding(font.encoding);
+    _ = doc.add_font_from_bytes(font_name, font_data);
     doc.add_page(pg);
     doc.set_title("TreeHouse Exported PDF");
     doc.set_producer("TreeHouse");

@@ -17,6 +17,7 @@
 mod colors;
 mod consts;
 mod elements;
+pub mod fonts;
 mod icons;
 mod path_utils;
 mod style;

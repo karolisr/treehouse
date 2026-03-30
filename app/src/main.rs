@@ -30,5 +30,9 @@ fn main() -> riced::IcedResult {
         .theme(App::theme)
         .style(App::theme_style)
         .settings(App::settings())
+        .font(&riced::fonts::JET_BRAINS_MONO_REGULAR)
+        .font(&riced::fonts::JET_BRAINS_MONO_ITALIC)
+        .font(&riced::fonts::JET_BRAINS_MONO_BOLD)
+        .font(&riced::fonts::JET_BRAINS_MONO_BOLD_ITALIC)
         .run()
 }

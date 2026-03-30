@@ -1,8 +1,9 @@
 use std::env::var_os;
 use std::error::Error;
+use std::ffi::OsString;
 use std::fmt::Display;
-use std::fs;
 use std::fs::File;
+use std::fs::write;
 use std::io::BufReader;
 use std::path::Path;
 use std::str::FromStr;
@@ -24,19 +25,21 @@ type Float = f32;
 fn main() -> Result<(), Box<dyn Error>> {
     println!("cargo::rerun-if-changed=../resources/data/gts.json");
     println!("cargo::rerun-if-changed=build.rs");
-
     let data_dir = Path::new("..").join("resources").join("data");
+    let code_out_dir = var_os("OUT_DIR").unwrap();
+    build_gts(&data_dir, &code_out_dir)?;
+    Ok(())
+}
+
+fn build_gts(
+    data_dir: &Path,
+    code_out_dir: &OsString,
+) -> Result<(), Box<dyn Error>> {
     let gts_json_file = data_dir.join("gts.json");
     let gts_csv_file = data_dir.join("gts.csv");
-
+    let gts_rs_file = Path::new(code_out_dir).join("gts.rs");
     write_gts_csv(&gts_json_file, &gts_csv_file)?;
-
-    let code_out_dir = var_os("OUT_DIR").unwrap();
-    let gts_rs_file = Path::new(&code_out_dir).join("gts.rs");
-
-    write_gts_rs(&gts_csv_file, &gts_rs_file)?;
-
-    Ok(())
+    write_gts_rs(&gts_csv_file, &gts_rs_file)
 }
 
 fn write_gts_rs(
@@ -92,7 +95,7 @@ fn write_gts_rs(
 
     lines.push("\n    ]\n}".to_string());
 
-    fs::write(gts_rs_file, lines.concat())?;
+    write(gts_rs_file, lines.concat())?;
 
     Ok(())
 }
@@ -125,7 +128,7 @@ fn write_gts_csv(
         Err(err) => return Err(Box::new(err)),
     }
 
-    fs::write(gts_csv_file, lines.concat())?;
+    write(gts_csv_file, lines.concat())?;
 
     Ok(())
 }
