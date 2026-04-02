@@ -6,7 +6,7 @@ use crate::*;
 use draw::*;
 use state::St;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub(super) struct PlotCnv {
     pub(super) cfg: Rc<TreeViewConfig>,
     // -------------------------------------------------------------------------
@@ -29,6 +29,33 @@ pub(super) struct PlotCnv {
     pub(super) cache_cnv_axes: CnvCache,
     pub(super) cache_cnv_ticks: CnvCache,
     pub(super) cache_cnv_bnds: CnvCache,
+}
+
+impl Default for PlotCnv {
+    fn default() -> Self {
+        Self {
+            cfg: Default::default(),
+            ltt_plot_data: Default::default(),
+            x_axis_is_reversed: Default::default(),
+            x_axis_scale_type: AxisScaleType::Linear,
+            y_axis_scale_type: AxisScaleType::LogTwo,
+            draw_debug: Default::default(),
+            crsr_x_rel: Default::default(),
+            padd_l: Default::default(),
+            padd_r: Default::default(),
+            padd_t: Default::default(),
+            padd_b: Default::default(),
+            vis_x0: Default::default(),
+            vis_y0: Default::default(),
+            cache_cnv_background: Default::default(),
+            cache_cnv_gts: Default::default(),
+            cache_cnv_ltt: Default::default(),
+            cache_cnv_cursor_line: Default::default(),
+            cache_cnv_axes: Default::default(),
+            cache_cnv_ticks: Default::default(),
+            cache_cnv_bnds: Default::default(),
+        }
+    }
 }
 
 impl Program<TvMsg> for PlotCnv {

@@ -29,14 +29,14 @@ impl Program<TvMsg> for TreeCnv {
         st.tre_sty = self.cfg.tre_sty;
         st.opn_angle = self.opn_angle;
         // ---------------------------------------------------------------------
-        if st.text_w_tip.as_mut()?.font_size() != self.lab_size_tip {
-            st.text_w_tip.as_mut()?.set_font_size(self.lab_size_tip);
+        if st.text_w_tip.font_size() != self.lab_size_tip {
+            st.text_w_tip.set_font_size(self.lab_size_tip);
         }
-        if st.text_w_int.as_mut()?.font_size() != self.lab_size_int {
-            st.text_w_int.as_mut()?.set_font_size(self.lab_size_int);
+        if st.text_w_int.font_size() != self.lab_size_int {
+            st.text_w_int.set_font_size(self.lab_size_int);
         }
-        if st.text_w_brnch.as_mut()?.font_size() != self.lab_size_brnch {
-            st.text_w_brnch.as_mut()?.set_font_size(self.lab_size_brnch);
+        if st.text_w_brnch.font_size() != self.lab_size_brnch {
+            st.text_w_brnch.set_font_size(self.lab_size_brnch);
         } // -------------------------------------------------------------------
         st.stale_vis_rect = false;
         let vis_x0 = self.vis_x0;
@@ -64,7 +64,7 @@ impl Program<TvMsg> for TreeCnv {
                 tst.edges_tip_tallest(),
                 is_rooted,
                 tst.has_clade_highlights(),
-                st.text_w_tip.as_mut()?,
+                &mut st.text_w_tip,
             );
             st.tre_rect = st.tre_vs.clone().into();
 
@@ -157,7 +157,7 @@ impl Program<TvMsg> for TreeCnv {
                     true => Some(self.trim_tip_labs_to_nchar as usize),
                     false => None,
                 },
-                st.text_w_tip.as_mut()?,
+                &mut st.text_w_tip,
                 &mut st.labs_tip,
             );
         } // -------------------------------------------------------------------
@@ -166,31 +166,16 @@ impl Program<TvMsg> for TreeCnv {
             && self.draw_labs_allowed
         {
             node_labs(
-                highlighted_node_ids,
-                &st.vis_nodes,
-                edges,
-                self.lab_size_int,
-                false,
-                false,
-                None,
-                None,
-                st.text_w_int.as_mut()?,
-                &mut st.labs_int,
+                highlighted_node_ids, &st.vis_nodes, edges, self.lab_size_int,
+                false, false, None, None, &mut st.text_w_int, &mut st.labs_int,
             );
         } // -------------------------------------------------------------------
         if tst.has_brlen() && self.cfg.draw_labs_brnch && self.draw_labs_allowed
         {
             node_labs(
-                highlighted_node_ids,
-                &st.vis_nodes,
-                edges,
-                self.lab_size_brnch,
-                false,
-                true,
-                None,
-                None,
-                st.text_w_brnch.as_mut()?,
-                &mut st.labs_brnch,
+                highlighted_node_ids, &st.vis_nodes, edges,
+                self.lab_size_brnch, false, true, None, None,
+                &mut st.text_w_brnch, &mut st.labs_brnch,
             );
         } // -------------------------------------------------------------------
 

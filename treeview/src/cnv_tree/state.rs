@@ -23,9 +23,9 @@ pub struct St {
     pub(crate) root_len: Float,
     pub(crate) rotation: Float,
     pub(crate) translation: Vector,
-    pub(crate) text_w_tip: Option<TextWidth<'static>>,
-    pub(crate) text_w_int: Option<TextWidth<'static>>,
-    pub(crate) text_w_brnch: Option<TextWidth<'static>>,
+    pub(crate) text_w_tip: TextWidth<'static>,
+    pub(crate) text_w_int: TextWidth<'static>,
+    pub(crate) text_w_brnch: TextWidth<'static>,
     pub(crate) labs_tip: Vec<Label>,
     pub(crate) labs_int: Vec<Label>,
     pub(crate) labs_brnch: Vec<Label>,
@@ -63,18 +63,9 @@ impl Default for St {
             root_len: ZRO,
             rotation: ZRO,
             translation: Vector { x: ZRO, y: ZRO },
-            text_w_tip: Some(text_width(
-                SF * TIP_LAB_SIZE_IDX as Float,
-                FNT_NAME_LAB,
-            )),
-            text_w_int: Some(text_width(
-                SF * INTERNAL_LAB_SIZE_IDX as Float,
-                FNT_NAME_LAB,
-            )),
-            text_w_brnch: Some(text_width(
-                SF * BRANCH_LAB_SIZE_IDX as Float,
-                FNT_NAME_LAB,
-            )),
+            text_w_tip: text_width(SF, FNT_NAME_LAB),
+            text_w_int: text_width(SF, FNT_NAME_LAB),
+            text_w_brnch: text_width(SF, FNT_NAME_LAB),
             labs_tip: Vec::new(),
             labs_int: Vec::new(),
             labs_brnch: Vec::new(),
@@ -84,7 +75,7 @@ impl Default for St {
             tip_lab_w_ring: None,
             mouse_is_over_tip_w_resize_area: false,
             tip_lab_w_is_being_resized: false,
-            is_new: true, // sometimes canvas state gets recreated losing all the stored state.
+            is_new: true,
             opn_angle: ZRO,
             tre_sty: TreSty::PhyGrm,
         }

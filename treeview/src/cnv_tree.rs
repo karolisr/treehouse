@@ -43,7 +43,6 @@ pub(super) struct TreeCnv {
     pub(super) tip_labs_vis_max: usize,
     // -------------------------------------------------------------------------
     pub(super) lab_size_min: Float,
-    pub(super) lab_size_max: Float,
     pub(super) lab_size_tip: Float,
     pub(super) lab_size_int: Float,
     pub(super) lab_size_brnch: Float,
@@ -85,7 +84,7 @@ impl TreeCnv {
         let height_axis_lab_offset = height_axis_char_width / TWO;
 
         Self {
-            cfg,
+            cfg: cfg.clone(),
             // -----------------------------------------------------------------
             search_is_active: false,
             // -----------------------------------------------------------------
@@ -101,18 +100,44 @@ impl TreeCnv {
             // -----------------------------------------------------------------
             tip_labs_vis_max: 1000,
             // -----------------------------------------------------------------
-            opn_angle: ZRO,
-            rot_angle: ZRO,
+            opn_angle: angle_from_idx(
+                cfg.clone()
+                    .opn_angle_idx
+                    .clamp(OPN_ANGLE_IDX_MIN, OPN_ANGLE_IDX_MAX),
+            ),
+
+            rot_angle: angle_from_idx(
+                cfg.clone()
+                    .rot_angle_idx
+                    .clamp(ROT_ANGLE_IDX_MIN, ROT_ANGLE_IDX_MAX),
+            ),
             // -----------------------------------------------------------------
             lab_size_min: SF,
-            lab_size_max: SF,
-            lab_size_tip: SF,
-            lab_size_int: SF,
-            lab_size_brnch: SF,
+
+            lab_size_tip: SF
+                * cfg
+                    .clone()
+                    .lab_size_idx_tip
+                    .clamp(LAB_SIZE_IDX_MIN, LAB_SIZE_IDX_MAX)
+                    as Float,
+
+            lab_size_int: SF
+                * cfg
+                    .clone()
+                    .lab_size_idx_int
+                    .clamp(LAB_SIZE_IDX_MIN, LAB_SIZE_IDX_MAX)
+                    as Float,
+
+            lab_size_brnch: SF
+                * cfg
+                    .clone()
+                    .lab_size_idx_brnch
+                    .clamp(LAB_SIZE_IDX_MIN, LAB_SIZE_IDX_MAX)
+                    as Float,
             // -----------------------------------------------------------------
-            lab_offset_tip: ZRO,
-            lab_offset_int: ZRO,
-            lab_offset_brnch: ZRO,
+            lab_offset_tip: SF * 2e0,
+            lab_offset_int: SF * 2e0,
+            lab_offset_brnch: -SF * 2e0,
             // -----------------------------------------------------------------
             clade_highlights_w: ZRO,
             // -----------------------------------------------------------------

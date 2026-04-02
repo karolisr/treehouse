@@ -469,11 +469,11 @@ fn side_bar_main<'a>(
 
     match tv.cfg.tre_sty {
         TreSty::PhyGrm => {
-            if tv.tre_cnv_size_idx_min != tv.tre_cnv_size_idx_max {
+            if TRE_CNV_SIZE_IDX_MIN != TRE_CNV_SIZE_IDX_MAX {
                 sb = sb.push(slider(
                     Some("Edge Spacing"),
-                    tv.tre_cnv_size_idx_min,
-                    tv.tre_cnv_size_idx_max,
+                    TRE_CNV_SIZE_IDX_MIN,
+                    TRE_CNV_SIZE_IDX_MAX,
                     tv.tre_cnv_h_idx,
                     1,
                     2,
@@ -482,8 +482,8 @@ fn side_bar_main<'a>(
             }
             sb = sb.push(slider(
                 Some("Width"),
-                tv.tre_cnv_size_idx_min,
-                tv.tre_cnv_size_idx_max,
+                TRE_CNV_SIZE_IDX_MIN,
+                TRE_CNV_SIZE_IDX_MAX,
                 tv.tre_cnv_w_idx,
                 1,
                 2,
@@ -493,8 +493,8 @@ fn side_bar_main<'a>(
         TreSty::Fan => {
             sb = sb.push(slider(
                 Some("Zoom"),
-                tv.tre_cnv_size_idx_min,
-                tv.tre_cnv_size_idx_max,
+                TRE_CNV_SIZE_IDX_MIN,
+                TRE_CNV_SIZE_IDX_MAX,
                 tv.tre_cnv_z_idx,
                 1,
                 2,
@@ -502,18 +502,22 @@ fn side_bar_main<'a>(
             ));
             sb = sb.push(slider(
                 Some("Opening Angle"),
-                tv.opn_angle_idx_min,
-                tv.opn_angle_idx_max,
-                tv.opn_angle_idx,
+                OPN_ANGLE_IDX_MIN,
+                OPN_ANGLE_IDX_MAX,
+                tv.cfg
+                    .opn_angle_idx
+                    .clamp(OPN_ANGLE_IDX_MIN, OPN_ANGLE_IDX_MAX),
                 1,
                 15,
                 TvMsg::OpnAngleChanged,
             ));
             sb = sb.push(slider(
                 Some("Rotation Angle"),
-                tv.rot_angle_idx_min,
-                tv.rot_angle_idx_max,
-                tv.rot_angle_idx,
+                ROT_ANGLE_IDX_MIN,
+                ROT_ANGLE_IDX_MAX,
+                tv.cfg
+                    .rot_angle_idx
+                    .clamp(ROT_ANGLE_IDX_MIN, ROT_ANGLE_IDX_MAX),
                 1,
                 15,
                 TvMsg::RotAngleChanged,
@@ -529,9 +533,9 @@ fn side_bar_main<'a>(
             space_v(ONE, PADDING / TWO),
             slider(
                 None,
-                tv.root_len_idx_min,
-                tv.root_len_idx_max,
-                tv.root_len_idx,
+                ROOT_LEN_IDX_MIN,
+                ROOT_LEN_IDX_MAX,
+                tv.cfg.root_len_idx.clamp(ROOT_LEN_IDX_MIN, ROOT_LEN_IDX_MAX),
                 1,
                 2,
                 TvMsg::RootLenSelChanged,
@@ -590,9 +594,11 @@ fn side_bar_annotations<'a>(
             space_v(ONE, PADDING / TWO),
             slider(
                 None,
-                tv.lab_size_idx_min,
-                tv.lab_size_idx_max,
-                tv.lab_size_idx_tip,
+                LAB_SIZE_IDX_MIN,
+                LAB_SIZE_IDX_MAX,
+                tv.cfg
+                    .lab_size_idx_tip
+                    .clamp(LAB_SIZE_IDX_MIN, LAB_SIZE_IDX_MAX),
                 1,
                 2,
                 TvMsg::TipLabSizeChanged,
@@ -637,9 +643,11 @@ fn side_bar_annotations<'a>(
             space_v(ONE, PADDING / TWO),
             slider(
                 None,
-                tv.lab_size_idx_min,
-                tv.lab_size_idx_max,
-                tv.lab_size_idx_int,
+                LAB_SIZE_IDX_MIN,
+                LAB_SIZE_IDX_MAX,
+                tv.cfg
+                    .lab_size_idx_int
+                    .clamp(LAB_SIZE_IDX_MIN, LAB_SIZE_IDX_MAX),
                 1,
                 2,
                 TvMsg::IntLabSizeChanged,
@@ -659,9 +667,11 @@ fn side_bar_annotations<'a>(
             space_v(ONE, PADDING / TWO),
             slider(
                 None,
-                tv.lab_size_idx_min,
-                tv.lab_size_idx_max,
-                tv.lab_size_idx_brnch,
+                LAB_SIZE_IDX_MIN,
+                LAB_SIZE_IDX_MAX,
+                tv.cfg
+                    .lab_size_idx_brnch
+                    .clamp(LAB_SIZE_IDX_MIN, LAB_SIZE_IDX_MAX),
                 1,
                 2,
                 TvMsg::BrnchLabSizeChanged,

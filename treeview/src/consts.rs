@@ -14,9 +14,16 @@ use crate::*;
 pub(crate) const FNT_NAME: &str = "JetBrains Mono";
 pub(crate) const FNT_NAME_LAB: &str = FNT_NAME;
 
-pub(crate) const TIP_LAB_SIZE_IDX: u16 = 12;
-pub(crate) const INTERNAL_LAB_SIZE_IDX: u16 = 12;
-pub(crate) const BRANCH_LAB_SIZE_IDX: u16 = 12;
+pub(crate) const TRE_CNV_SIZE_IDX_MIN: u16 = 1;
+pub(crate) const TRE_CNV_SIZE_IDX_MAX: u16 = 22;
+pub(crate) const LAB_SIZE_IDX_MIN: u16 = 2;
+pub(crate) const LAB_SIZE_IDX_MAX: u16 = 22;
+pub(crate) const ROOT_LEN_IDX_MIN: u16 = 5;
+pub(crate) const ROOT_LEN_IDX_MAX: u16 = 100;
+pub(crate) const OPN_ANGLE_IDX_MIN: u16 = 45;
+pub(crate) const OPN_ANGLE_IDX_MAX: u16 = 359;
+pub(crate) const ROT_ANGLE_IDX_MIN: u16 = 360 - 180;
+pub(crate) const ROT_ANGLE_IDX_MAX: u16 = 360 + 180;
 
 pub(crate) const SIDE_BAR_W: Float = TXT_SIZE * 15.0;
 pub(crate) const TREE_CNV_SIZE_DELTA: Float = SF * 5e2;

@@ -87,6 +87,12 @@ pub struct TreeViewConfig {
     pub tre_sty: TreSty,
     pub tre_unit: TreUnit,
     pub trim_tip_labs: bool,
+    pub lab_size_idx_tip: u16,
+    pub lab_size_idx_int: u16,
+    pub lab_size_idx_brnch: u16,
+    pub root_len_idx: u16,
+    pub opn_angle_idx: u16,
+    pub rot_angle_idx: u16,
 }
 
 impl Default for TreeViewConfig {
@@ -113,6 +119,12 @@ impl Default for TreeViewConfig {
             tre_sty: TreSty::PhyGrm,
             tre_unit: TreUnit::MillionYears,
             trim_tip_labs: false,
+            lab_size_idx_tip: 8,
+            lab_size_idx_int: 8,
+            lab_size_idx_brnch: 8,
+            root_len_idx: 25,
+            opn_angle_idx: 345,
+            rot_angle_idx: 360,
         }
     }
 }
@@ -318,6 +330,10 @@ impl Display for RectVals<Float> {
             self.x0, self.y0, self.x1, self.y1
         )
     }
+}
+
+fn angle_from_idx(idx: u16) -> Float {
+    (idx as Float).to_radians()
 }
 
 fn ellipsize_unicode(name: impl Into<String>, width: usize) -> String {
