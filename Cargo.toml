@@ -64,9 +64,9 @@
         [workspace.dependencies.oxidize-pdf]
             default-features=false
             features=["compression", "performance", "rayon"]
-            version="2.4.1"
-            # branch="custom"
-            # git="https://github.com/karolisr/oxidizePdf"
+            # version="2.4.2"
+            branch="custom"
+            git="https://github.com/karolisr/oxidizePdf"
 
         # [workspace.dependencies.tokio]
         #     default-features=false
