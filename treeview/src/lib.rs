@@ -54,7 +54,9 @@ use dendros::{Edge, LttPoint, Node, NodeId, Tree, ltt, write_newick};
 use gts::*;
 use rayon::prelude::*;
 use riced::*;
-use tables::{NodesTableField, nodes_table};
+use tables::{
+    AttributesTableField, NodesTableField, attributes_table, nodes_table,
+};
 use treestate::TreeState;
 use treeview::{
     TRE_NODE_ORD_OPTS, TRE_STY_OPTS, TRE_UNIT_OPTS, TreNodeOrd, TreSty,

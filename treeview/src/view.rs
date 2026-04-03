@@ -155,7 +155,9 @@ fn pane_content<'a>(
 
             pane_row.into()
         }
-        TreeViewPane::NodesTable => table_nodes(tv, w, h),
+        // TreeViewPane::NodesTable => table_nodes(tv, w, h),
+        // TreeViewPane::NodesTable => table_attributes(tv, w, h),
+        TreeViewPane::NodesTable => table_node_data(tv, w, h),
     };
     content
 }
@@ -885,13 +887,41 @@ fn scrollable_cnv_tre<'a>(
     scrollable_common(s, w, h)
 }
 
-fn table_nodes<'a>(tv: &'a TreeView, w: Float, h: Float) -> Element<'a, TvMsg> {
+fn table_node_data<'a>(
+    tv: &'a TreeView,
+    w: Float,
+    h: Float,
+) -> Element<'a, TvMsg> {
     if let Some(ts) = tv.sel_tre() {
-        nodes_table(tv, ts, w, h)
+        iced_col![
+            nodes_table(tv, ts.clone(), w, h / TWO),
+            attributes_table(tv, ts.clone(), w, h / TWO)
+        ]
+        .into()
     } else {
         txt("No tree loaded").into()
     }
 }
+
+// fn table_nodes<'a>(tv: &'a TreeView, w: Float, h: Float) -> Element<'a, TvMsg> {
+//     if let Some(ts) = tv.sel_tre() {
+//         nodes_table(tv, ts, w, h)
+//     } else {
+//         txt("No tree loaded").into()
+//     }
+// }
+
+// fn table_attributes<'a>(
+//     tv: &'a TreeView,
+//     w: Float,
+//     h: Float,
+// ) -> Element<'a, TvMsg> {
+//     if let Some(ts) = tv.sel_tre() {
+//         attributes_table(tv, ts, w, h)
+//     } else {
+//         txt("No tree loaded").into()
+//     }
+// }
 
 fn toggler_cursor_line<'a>(
     enabled: bool,

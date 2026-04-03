@@ -21,6 +21,30 @@ impl From<NodesTableField> for String {
     }
 }
 
+pub(crate) fn nodes_table<'a>(
+    tv: &'a TreeView,
+    ts: Rc<TreeState>,
+    w: f32,
+    h: f32,
+) -> Element<'a, TvMsg> {
+    let fn_visible_rows = |start_idx: usize, max_to_return: usize| {
+        ts.edges_in_range(start_idx, max_to_return).unwrap_or_default()
+    };
+
+    let fn_total_row_count = || ts.edge_count();
+
+    table(
+        nodes_table_columns_spec(ts.clone(), tv),
+        fn_visible_rows,
+        fn_total_row_count,
+        tv.nodes_table_scrollable_id,
+        tv.nodes_table_scroll_y_offset,
+        w,
+        h,
+        TvMsg::NodesTableScrolledOrResized,
+    )
+}
+
 fn nodes_table_columns_spec<'a>(
     ts: Rc<TreeState>,
     tv: &TreeView,
@@ -156,28 +180,4 @@ fn nodes_table_columns_spec<'a>(
     });
 
     columns
-}
-
-pub(crate) fn nodes_table<'a>(
-    tv: &'a TreeView,
-    ts: Rc<TreeState>,
-    w: f32,
-    h: f32,
-) -> Element<'a, TvMsg> {
-    let fn_visible_rows = |start_idx: usize, max_to_return: usize| {
-        ts.edges_in_range(start_idx, max_to_return).unwrap_or_default()
-    };
-
-    let fn_total_row_count = || ts.edge_count();
-
-    table(
-        nodes_table_columns_spec(ts.clone(), tv),
-        fn_visible_rows,
-        fn_total_row_count,
-        tv.nodes_table_scrollable_id,
-        tv.nodes_table_scroll_y_offset,
-        w,
-        h,
-        TvMsg::NodesTableScrolledOrResized,
-    )
 }

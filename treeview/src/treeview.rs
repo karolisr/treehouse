@@ -26,11 +26,16 @@ pub struct TreeView {
     pub plot_scrollable_id: &'static str,
     pub tre_scrollable_id: &'static str,
     pub nodes_table_scrollable_id: &'static str,
+    pub attributes_table_scrollable_id: &'static str,
     pub search_text_input_id: &'static str,
     // -------------------------------------------------------------------------
     pub(super) nodes_table_sort_col: NodesTableField,
     pub(super) nodes_table_sort_ord: SortOrder,
     pub(super) nodes_table_scroll_y_offset: Float,
+    // -------------------------------------------------------------------------
+    pub(super) attributes_table_sort_col: AttributesTableField,
+    pub(super) attributes_table_sort_ord: SortOrder,
+    pub(super) attributes_table_scroll_y_offset: Float,
     // -------------------------------------------------------------------------
     keep_scroll_position_requested: bool,
     // -------------------------------------------------------------------------
@@ -107,6 +112,8 @@ pub enum TvMsg {
     ToggleNodesTable,
     NodesTableSortColumnChanged(NodesTableField),
     NodesTableScrolledOrResized(ScrollableViewport),
+    AttributesTableSortColumnChanged(AttributesTableField),
+    AttributesTableScrolledOrResized(ScrollableViewport),
     // -------------------------------------------------------------------------
     AddCladeHighlight((NodeId, Color)),
     RemoveCladeHighlight(NodeId),
@@ -148,11 +155,16 @@ impl Default for TreeView {
             tre_scrollable_id: "tre_scrollable",
             plot_scrollable_id: "plot_scrollable",
             nodes_table_scrollable_id: "nodes_table",
+            attributes_table_scrollable_id: "attributes_table",
             search_text_input_id: "search_text_input",
             // -----------------------------------------------------------------
             nodes_table_sort_col: NodesTableField::NodeId,
             nodes_table_sort_ord: SortOrder::Ascending,
             nodes_table_scroll_y_offset: ZRO,
+            // -----------------------------------------------------------------
+            attributes_table_sort_col: AttributesTableField::Key,
+            attributes_table_sort_ord: SortOrder::Ascending,
+            attributes_table_scroll_y_offset: ZRO,
             // -----------------------------------------------------------------
             is_new: true,
             // -----------------------------------------------------------------
@@ -432,6 +444,10 @@ impl TreeView {
                 self.nodes_table_scroll_y_offset = vp.absolute_offset().y;
             }
 
+            TvMsg::AttributesTableScrolledOrResized(vp) => {
+                self.attributes_table_scroll_y_offset = vp.absolute_offset().y;
+            }
+
             TvMsg::TogglePlot(state) => {
                 self.with_exclusive_config_mut(&mut |cfg| {
                     cfg.show_plot = state;
@@ -501,6 +517,23 @@ impl TreeView {
                 }
 
                 self.populate_cache_of_edges_sorted_by_field();
+            }
+
+            TvMsg::AttributesTableSortColumnChanged(sort_col) => {
+                if self.attributes_table_sort_col == sort_col {
+                    self.attributes_table_sort_ord =
+                        match self.attributes_table_sort_ord {
+                            SortOrder::Ascending => SortOrder::Descending,
+                            SortOrder::Descending => SortOrder::Ascending,
+                        };
+                } else {
+                    self.attributes_table_sort_col = sort_col;
+                    self.attributes_table_sort_ord = SortOrder::Ascending;
+                }
+
+                println!(
+                    "Not fully implemented: TvMsg::AttributesTableSortColumnChanged"
+                );
             }
 
             TvMsg::ToggleNodesTable => {
