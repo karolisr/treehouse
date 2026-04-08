@@ -47,21 +47,7 @@ if [ $# -gt 2 ]; then
 fi
 
 # -------------------------------------------
-cargo fmt
-# -------------------------------------------
-cargo check --all-targets --profile dev
-cargo clippy --all-targets --profile dev
-# cargo build --all-targets --profile dev
-cargo build --profile dev --bin treehouse
-# -------------------------------------------
-# cargo check --all-targets --profile release
-# cargo clippy --all-targets --profile release
-# cargo build --all-targets --profile release
-cargo build --profile release --bin treehouse
-# -------------------------------------------
-
-# -------------------------------------------
-cargo doc --profile release --document-private-items --no-deps --workspace
+./build.sh
 # -------------------------------------------
 
 # -------------------------------------------
