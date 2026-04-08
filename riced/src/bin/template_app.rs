@@ -2,7 +2,7 @@ use riced::{
     Alignment, BTN_H1, Clr, Element, Horizontal, IcedResult, Key,
     KeyboardEvent, Length, Modifiers, SF, Size, Subscription, Theme, Vertical,
     WindowSettings, btn_txt, center, iced_col, iced_row, keyboard_events,
-    txt_i64, txt_input,
+    txt_input, txt_int,
 };
 
 const PADDING: f32 = 3e1 * SF;
@@ -13,7 +13,7 @@ const MIN_WIN_SIZE: Size = Size { width: MIN_WIN_DIM, height: MIN_WIN_DIM };
 struct App {
     theme: Theme,
     title: String,
-    counter: i64,
+    counter: i32,
     explain: bool,
 }
 
@@ -113,7 +113,7 @@ fn view(app: &App) -> Element<'_, Msg> {
             .align_x(Horizontal::Center),
             iced_row![
                 btn_txt("-", Some(Msg::Decrement)),
-                txt_i64(app.counter)
+                txt_int(app.counter)
                     .width(Length::Fixed(PADDING))
                     .align_x(Alignment::Center)
                     .align_y(Alignment::Center),

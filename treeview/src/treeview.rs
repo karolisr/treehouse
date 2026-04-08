@@ -162,7 +162,7 @@ impl Default for TreeView {
             nodes_table_sort_ord: SortOrder::Ascending,
             nodes_table_scroll_y_offset: ZRO,
             // -----------------------------------------------------------------
-            attributes_table_sort_col: AttributesTableField::Key,
+            attributes_table_sort_col: AttributesTableField::Name,
             attributes_table_sort_ord: SortOrder::Ascending,
             attributes_table_scroll_y_offset: ZRO,
             // -----------------------------------------------------------------
@@ -530,10 +530,6 @@ impl TreeView {
                     self.attributes_table_sort_col = sort_col;
                     self.attributes_table_sort_ord = SortOrder::Ascending;
                 }
-
-                println!(
-                    "Not fully implemented: TvMsg::AttributesTableSortColumnChanged"
-                );
             }
 
             TvMsg::ToggleNodesTable => {

@@ -312,7 +312,7 @@ pub fn txt_usize<'a>(n: impl Into<usize>) -> Text<'a> {
     txt(s)
 }
 
-pub fn txt_i64<'a>(n: impl Into<i64>) -> Text<'a> {
+pub fn txt_int<'a>(n: impl Into<i32>) -> Text<'a> {
     let mut num_fmt = numfmt::Formatter::new();
     num_fmt = num_fmt.precision(numfmt::Precision::Decimals(0));
     num_fmt = num_fmt.separator(',').unwrap();

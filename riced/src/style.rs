@@ -133,6 +133,11 @@ pub fn sty_cont_no_shadow_no_border(theme: &Theme) -> ContainerStyle {
     }
 }
 
+pub fn sty_cont_with_bg_color(theme: &Theme, bg: Color) -> ContainerStyle {
+    let base = sty_cont_no_shadow_no_border(theme);
+    ContainerStyle { background: Some(Background::Color(bg)), ..base }
+}
+
 pub(crate) fn sty_cont_floating_bg(theme: &Theme) -> ContainerStyle {
     let base = sty_cont(theme);
     let pe = theme.extended_palette();

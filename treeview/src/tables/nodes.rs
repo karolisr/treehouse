@@ -2,16 +2,16 @@ use crate::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NodesTableField {
-    NodeId,
     Selected,
+    NodeId,
     NodeType,
-    NodeLabel,
     BranchLength,
+    NodeLabel,
 }
 
 impl From<NodesTableField> for String {
-    fn from(esf: NodesTableField) -> Self {
-        match esf {
+    fn from(f: NodesTableField) -> Self {
+        match f {
             NodesTableField::NodeId => "ID".to_string(),
             NodesTableField::Selected => "Selected".to_string(),
             NodesTableField::NodeType => "Type".to_string(),
@@ -66,28 +66,24 @@ fn nodes_table_columns_spec<'a>(
         };
 
         if include_field {
-            let common = |node_id: NodeId, ts: Rc<TreeState>| {
-                (
-                    ts.sel_node_ids().contains(&node_id),
-                    Some(TvMsg::SelectDeselectNode(node_id)),
-                )
+            let fn_is_selected = |node_id: NodeId, ts: Rc<TreeState>| {
+                ts.sel_node_ids().contains(&node_id)
             };
 
+            let fn_select_msg =
+                |node_id: NodeId| Some(TvMsg::SelectDeselectNode(node_id));
+
             let fn_cell_data: Box<dyn Fn(Edge) -> TableCell<'a, TvMsg> + 'a>;
+            let mut width: f32 = 8e0 * TABLE_TXT_SIZE;
             let ts = ts.clone();
             match f {
                 NodesTableField::NodeId => {
-                    fn_cell_data = Box::new(move |e: Edge| {
-                        let (is_selected, select_msg) =
-                            common(e.node_id, ts.clone());
-
-                        TableCell {
-                            cell_content: txt(e.node_id)
-                                .size(TABLE_TXT_SIZE)
-                                .into(),
-                            is_selected,
-                            select_msg,
-                        }
+                    fn_cell_data = Box::new(move |e: Edge| TableCell {
+                        cell_content: txt(e.node_id)
+                            .size(TABLE_TXT_SIZE)
+                            .into(),
+                        is_selected: fn_is_selected(e.node_id, ts.clone()),
+                        select_msg: fn_select_msg(e.node_id),
                     });
                 }
 
@@ -99,64 +95,51 @@ fn nodes_table_columns_spec<'a>(
                         } else {
                             "-".to_string()
                         };
-                        let (is_selected, select_msg) =
-                            common(e.node_id, ts.clone());
 
                         TableCell {
                             cell_content: txt(node_type)
                                 .size(TABLE_TXT_SIZE)
                                 .into(),
-                            is_selected,
-                            select_msg,
+                            is_selected: fn_is_selected(e.node_id, ts.clone()),
+                            select_msg: fn_select_msg(e.node_id),
                         }
                     });
                 }
 
                 NodesTableField::Selected => {
+                    width = 3e0 * TABLE_TXT_SIZE;
                     fn_cell_data = Box::new(move |e: Edge| {
-                        let (is_selected, select_msg) =
-                            common(e.node_id, ts.clone());
-
+                        let is_selected = fn_is_selected(e.node_id, ts.clone());
                         TableCell {
                             cell_content: txt_bool(is_selected)
                                 .size(TABLE_TXT_SIZE)
                                 .into(),
                             is_selected,
-                            select_msg,
+                            select_msg: fn_select_msg(e.node_id),
                         }
                     });
                 }
 
                 NodesTableField::BranchLength => {
-                    fn_cell_data = Box::new(move |e: Edge| {
-                        let (is_selected, select_msg) =
-                            common(e.node_id, ts.clone());
-
-                        TableCell {
-                            cell_content: txt_float(e.branch_length, 3)
-                                .size(TABLE_TXT_SIZE)
-                                .into(),
-                            is_selected,
-                            select_msg,
-                        }
+                    fn_cell_data = Box::new(move |e: Edge| TableCell {
+                        cell_content: txt_float(e.branch_length, 3)
+                            .size(TABLE_TXT_SIZE)
+                            .into(),
+                        is_selected: fn_is_selected(e.node_id, ts.clone()),
+                        select_msg: fn_select_msg(e.node_id),
                     });
                 }
 
                 NodesTableField::NodeLabel => {
-                    fn_cell_data = Box::new(move |e: Edge| {
-                        let (is_selected, select_msg) =
-                            common(e.node_id, ts.clone());
-
-                        TableCell {
-                            cell_content: txt(e
-                                .label
-                                .unwrap_or("-".into())
-                                .to_string())
-                            .size(TABLE_TXT_SIZE)
-                            .into(),
-                            is_selected,
-                            select_msg,
-                        }
+                    fn_cell_data = Box::new(move |e: Edge| TableCell {
+                        cell_content: txt(e
+                            .label
+                            .unwrap_or("-".into())
+                            .to_string())
+                        .size(TABLE_TXT_SIZE)
+                        .into(),
+                        is_selected: fn_is_selected(e.node_id, ts.clone()),
+                        select_msg: fn_select_msg(e.node_id),
                     });
                 }
             };
@@ -171,7 +154,7 @@ fn nodes_table_columns_spec<'a>(
                 header_text: f.into(),
                 sort_order,
                 sort_msg: TvMsg::NodesTableSortColumnChanged(f),
-                width: 8e0 * TABLE_TXT_SIZE,
+                width,
                 fn_cell_data,
             };
 

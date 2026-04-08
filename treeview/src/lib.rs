@@ -50,7 +50,10 @@ use cnv_plot::transformed_relative_value;
 
 use cnv_tree::TreeCnv;
 use consts::*;
-use dendros::{Edge, LttPoint, Node, NodeId, Tree, ltt, write_newick};
+use dendros::{
+    Attribute, AttributeSelector, AttributeValue, Edge, LttPoint, Node, NodeId,
+    Tree, ltt, write_newick,
+};
 use gts::*;
 use rayon::prelude::*;
 use riced::*;
