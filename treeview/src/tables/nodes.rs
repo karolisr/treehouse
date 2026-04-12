@@ -12,11 +12,11 @@ pub enum NodesTableField {
 impl From<NodesTableField> for String {
     fn from(f: NodesTableField) -> Self {
         match f {
-            NodesTableField::NodeId => "ID".to_string(),
             NodesTableField::Selected => "Selected".to_string(),
+            NodesTableField::NodeId => "ID".to_string(),
             NodesTableField::NodeType => "Type".to_string(),
-            NodesTableField::NodeLabel => "Label".to_string(),
             NodesTableField::BranchLength => "Branch Length".to_string(),
+            NodesTableField::NodeLabel => "Label".to_string(),
         }
     }
 }
@@ -47,7 +47,7 @@ pub(crate) fn nodes_table<'a>(
 
 fn nodes_table_columns_spec<'a>(
     ts: Rc<TreeState>,
-    tv: &TreeView,
+    tv: &'a TreeView,
 ) -> Vec<TableColumnSpecification<'a, TvMsg, Edge>> {
     let mut columns: Vec<TableColumnSpecification<'a, TvMsg, Edge>> = vec![];
 
@@ -70,14 +70,33 @@ fn nodes_table_columns_spec<'a>(
                 ts.sel_node_ids().contains(&node_id)
             };
 
-            let fn_select_msg =
-                |node_id: NodeId| Some(TvMsg::SelectDeselectNode(node_id));
+            let fn_select_msg = |node_id: NodeId| {
+                Some(match tv.cfg.selection_lock {
+                    true => TvMsg::SelectDeselectNode(node_id),
+                    false => TvMsg::SelectDeselectNodeExclusive(node_id),
+                })
+            };
 
             let fn_cell_data: Box<dyn Fn(Edge) -> TableCell<'a, TvMsg> + 'a>;
             let mut width: f32 = 8e0 * TABLE_TXT_SIZE;
             let ts = ts.clone();
             match f {
+                NodesTableField::Selected => {
+                    width = 3e0 * TABLE_TXT_SIZE;
+                    fn_cell_data = Box::new(move |e: Edge| {
+                        let is_selected = fn_is_selected(e.node_id, ts.clone());
+                        TableCell {
+                            cell_content: txt_bool(is_selected)
+                                .size(TABLE_TXT_SIZE)
+                                .into(),
+                            is_selected,
+                            select_msg: fn_select_msg(e.node_id),
+                        }
+                    });
+                }
+
                 NodesTableField::NodeId => {
+                    width = 6e0 * TABLE_TXT_SIZE;
                     fn_cell_data = Box::new(move |e: Edge| TableCell {
                         cell_content: txt(e.node_id)
                             .size(TABLE_TXT_SIZE)
@@ -88,6 +107,7 @@ fn nodes_table_columns_spec<'a>(
                 }
 
                 NodesTableField::NodeType => {
+                    width = 5e0 * TABLE_TXT_SIZE;
                     fn_cell_data = Box::new(move |e: Edge| {
                         let node_opt = ts.tree().node(Some(e.node_id));
                         let node_type = if let Some(node) = node_opt {
@@ -106,21 +126,8 @@ fn nodes_table_columns_spec<'a>(
                     });
                 }
 
-                NodesTableField::Selected => {
-                    width = 3e0 * TABLE_TXT_SIZE;
-                    fn_cell_data = Box::new(move |e: Edge| {
-                        let is_selected = fn_is_selected(e.node_id, ts.clone());
-                        TableCell {
-                            cell_content: txt_bool(is_selected)
-                                .size(TABLE_TXT_SIZE)
-                                .into(),
-                            is_selected,
-                            select_msg: fn_select_msg(e.node_id),
-                        }
-                    });
-                }
-
                 NodesTableField::BranchLength => {
+                    width = 7e0 * TABLE_TXT_SIZE;
                     fn_cell_data = Box::new(move |e: Edge| TableCell {
                         cell_content: txt_float(e.branch_length, 3)
                             .size(TABLE_TXT_SIZE)

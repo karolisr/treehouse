@@ -159,7 +159,7 @@ pub(crate) fn attributes_table<'a>(
 }
 
 fn attributes_table_columns_spec<'a>(
-    ts: Rc<TreeState>,
+    _ts: Rc<TreeState>,
     tv: &TreeView,
 ) -> Vec<TableColumnSpecification<'a, TvMsg, AttributesTableRowData>> {
     let mut columns: Vec<TableColumnSpecification<'_, _, _>> = vec![];
@@ -180,13 +180,14 @@ fn attributes_table_columns_spec<'a>(
             AttributesTableField::Name => 1e1 * TABLE_TXT_SIZE,
             AttributesTableField::Value => 8e0 * TABLE_TXT_SIZE,
         };
-        let common = |key: String| (false, None);
+        // ToDo
+        let fn_is_selected = |_key: String| (false, None);
         let fn_cell_data: Box<
             dyn Fn(AttributesTableRowData) -> TableCell<'a, TvMsg> + 'a,
         > = match f {
             AttributesTableField::Selected => {
                 Box::new(move |kv: AttributesTableRowData| {
-                    let (is_selected, select_msg) = common(kv.name);
+                    let (is_selected, select_msg) = fn_is_selected(kv.name);
                     TableCell {
                         cell_content: txt_bool(is_selected)
                             .size(TABLE_TXT_SIZE)
@@ -198,7 +199,8 @@ fn attributes_table_columns_spec<'a>(
             }
             AttributesTableField::NodeId => {
                 Box::new(move |kv: AttributesTableRowData| {
-                    let (is_selected, select_msg) = common(kv.name.clone());
+                    let (is_selected, select_msg) =
+                        fn_is_selected(kv.name.clone());
                     TableCell {
                         cell_content: txt(kv.node_id.to_string())
                             .size(TABLE_TXT_SIZE)
@@ -210,7 +212,8 @@ fn attributes_table_columns_spec<'a>(
             }
             AttributesTableField::Selector => {
                 Box::new(move |kv: AttributesTableRowData| {
-                    let (is_selected, select_msg) = common(kv.name.clone());
+                    let (is_selected, select_msg) =
+                        fn_is_selected(kv.name.clone());
                     TableCell {
                         cell_content: txt(kv.selector.to_string())
                             .size(TABLE_TXT_SIZE)
@@ -222,7 +225,8 @@ fn attributes_table_columns_spec<'a>(
             }
             AttributesTableField::Name => {
                 Box::new(move |kv: AttributesTableRowData| {
-                    let (is_selected, select_msg) = common(kv.name.clone());
+                    let (is_selected, select_msg) =
+                        fn_is_selected(kv.name.clone());
                     TableCell {
                         cell_content: txt(kv.name.clone())
                             .size(TABLE_TXT_SIZE)
@@ -234,56 +238,19 @@ fn attributes_table_columns_spec<'a>(
             }
             AttributesTableField::Value => {
                 Box::new(move |kv: AttributesTableRowData| {
-                    let (is_selected, select_msg) = common(kv.name);
+                    let (is_selected, select_msg) = fn_is_selected(kv.name);
                     TableCell {
                         cell_content: match kv.attribute {
-                            Attribute::Integer(i) => {
-                                txt_int(i).size(TABLE_TXT_SIZE).into()
-                            }
-                            Attribute::Decimal(f) => {
-                                txt_float(f, 3).size(TABLE_TXT_SIZE).into()
-                            }
-                            Attribute::Color(c) => {
-                                container(txt(&c).size(TABLE_TXT_SIZE))
-                                    .style(move |theme| {
-                                        let bg = Color::from_str(&c)
-                                            .map_or(Clr::TRN, |c| c);
-                                        sty_cont_with_bg_color(theme, bg)
-                                    })
-                                    .into()
-                            }
-                            Attribute::Text(t) => {
-                                txt(t).size(TABLE_TXT_SIZE).into()
+                            Attribute::Value(attr_val) => {
+                                element_from_attribute_value(attr_val)
                             }
                             Attribute::List(attr_vals) => {
                                 let mut row: Row<'_, TvMsg> = Row::new();
-
                                 for attr_val in attr_vals {
-                                    match attr_val {
-                                        AttributeValue::Integer(i) => {
-                                            row = row.push(
-                                                txt_int(i).size(TABLE_TXT_SIZE),
-                                            );
-                                        }
-                                        AttributeValue::Decimal(f) => {
-                                            row = row.push(
-                                                txt_float(f, 3)
-                                                    .size(TABLE_TXT_SIZE),
-                                            );
-                                        }
-                                        AttributeValue::Color(c) => {
-                                            row = row.push(
-                                                txt(c).size(TABLE_TXT_SIZE),
-                                            );
-                                        }
-                                        AttributeValue::Text(t) => {
-                                            row = row.push(
-                                                txt(t).size(TABLE_TXT_SIZE),
-                                            );
-                                        }
-                                    }
+                                    row = row.push(
+                                        element_from_attribute_value(attr_val),
+                                    );
                                 }
-
                                 row.align_y(Vertical::Center)
                                     .width(width)
                                     .spacing(PADDING)
@@ -315,4 +282,22 @@ fn attributes_table_columns_spec<'a>(
     });
 
     columns
+}
+
+fn element_from_attribute_value<'a>(
+    attr_val: AttributeValue,
+) -> Element<'a, TvMsg> {
+    match attr_val {
+        AttributeValue::Integer(i) => txt_int(i).size(TABLE_TXT_SIZE).into(),
+        AttributeValue::Decimal(f) => {
+            txt_float(f, 3).size(TABLE_TXT_SIZE).into()
+        }
+        AttributeValue::Text(t) => txt(t).size(TABLE_TXT_SIZE).into(),
+        AttributeValue::Color(c) => container(txt(&c).size(TABLE_TXT_SIZE))
+            .style(move |theme| {
+                let bg = Color::from_str(&c).map_or(Clr::TRN, |c| c);
+                sty_cont_with_bg_color(theme, bg)
+            })
+            .into(),
+    }
 }

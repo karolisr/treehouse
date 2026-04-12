@@ -62,30 +62,6 @@ impl TreeView {
     }
 }
 
-fn btn_subtree_parent_node<'a>(ts: Rc<TreeState>) -> Button<'a, TvMsg> {
-    btn_svg(
-        Icon::ArrowLeft,
-        if let Some(subtree_view_node_id) = ts.subtree_view_node_id()
-            && let Some(parent_node_id) =
-                ts.tree().parent_node_id(subtree_view_node_id)
-        {
-            if let Some(first_node_id) = ts.tree().first_node_id() {
-                if parent_node_id != first_node_id {
-                    Some(TvMsg::SetSubtreeView(parent_node_id))
-                } else {
-                    Some(TvMsg::ClearSubtreeView)
-                }
-            } else {
-                None
-            }
-        } else {
-            None
-        },
-    )
-    .width(BTN_H1)
-    .height(BTN_H1)
-}
-
 fn content<'a>(tv: &'a TreeView) -> Element<'a, TvMsg> {
     let ele: Element<'a, TvMsg> = if let Some(pane_grid) = &tv.pane_grid {
         PaneGrid::new(pane_grid, |_pane_idx, tv_pane, _is_maximized| {
@@ -105,7 +81,7 @@ fn content<'a>(tv: &'a TreeView) -> Element<'a, TvMsg> {
         })
         .style(sty_pane_grid)
         .on_resize(ZRO, TvMsg::PaneResized)
-        .min_size(TXT_SIZE * 12.0)
+        .min_size(TXT_SIZE * 14.0)
         .spacing(PADDING)
         .into()
     } else {
