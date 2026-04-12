@@ -1,5 +1,31 @@
 use crate::*;
 
+pub(super) fn btn_subtree_parent_node<'a>(
+    ts: Rc<TreeState>,
+) -> Button<'a, TvMsg> {
+    btn_svg(
+        Icon::ArrowLeft,
+        if let Some(subtree_view_node_id) = ts.subtree_view_node_id()
+            && let Some(parent_node_id) =
+                ts.tree().parent_node_id(subtree_view_node_id)
+        {
+            if let Some(first_node_id) = ts.tree().first_node_id() {
+                if parent_node_id != first_node_id {
+                    Some(TvMsg::SetSubtreeView(parent_node_id))
+                } else {
+                    Some(TvMsg::ClearSubtreeView)
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        },
+    )
+    .width(BTN_H1)
+    .height(BTN_H1)
+}
+
 pub(super) fn btn_prev_tre(enabled: bool) -> Button<'static, TvMsg> {
     btn_svg(
         Icon::ArrowLeft,

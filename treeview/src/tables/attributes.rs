@@ -237,53 +237,16 @@ fn attributes_table_columns_spec<'a>(
                     let (is_selected, select_msg) = common(kv.name);
                     TableCell {
                         cell_content: match kv.attribute {
-                            Attribute::Integer(i) => {
-                                txt_int(i).size(TABLE_TXT_SIZE).into()
-                            }
-                            Attribute::Decimal(f) => {
-                                txt_float(f, 3).size(TABLE_TXT_SIZE).into()
-                            }
-                            Attribute::Color(c) => {
-                                container(txt(&c).size(TABLE_TXT_SIZE))
-                                    .style(move |theme| {
-                                        let bg = Color::from_str(&c)
-                                            .map_or(Clr::TRN, |c| c);
-                                        sty_cont_with_bg_color(theme, bg)
-                                    })
-                                    .into()
-                            }
-                            Attribute::Text(t) => {
-                                txt(t).size(TABLE_TXT_SIZE).into()
+                            Attribute::Value(attr_val) => {
+                                element_from_attribute_value(attr_val)
                             }
                             Attribute::List(attr_vals) => {
                                 let mut row: Row<'_, TvMsg> = Row::new();
-
                                 for attr_val in attr_vals {
-                                    match attr_val {
-                                        AttributeValue::Integer(i) => {
-                                            row = row.push(
-                                                txt_int(i).size(TABLE_TXT_SIZE),
-                                            );
-                                        }
-                                        AttributeValue::Decimal(f) => {
-                                            row = row.push(
-                                                txt_float(f, 3)
-                                                    .size(TABLE_TXT_SIZE),
-                                            );
-                                        }
-                                        AttributeValue::Color(c) => {
-                                            row = row.push(
-                                                txt(c).size(TABLE_TXT_SIZE),
-                                            );
-                                        }
-                                        AttributeValue::Text(t) => {
-                                            row = row.push(
-                                                txt(t).size(TABLE_TXT_SIZE),
-                                            );
-                                        }
-                                    }
+                                    row = row.push(
+                                        element_from_attribute_value(attr_val),
+                                    );
                                 }
-
                                 row.align_y(Vertical::Center)
                                     .width(width)
                                     .spacing(PADDING)
@@ -315,4 +278,22 @@ fn attributes_table_columns_spec<'a>(
     });
 
     columns
+}
+
+fn element_from_attribute_value<'a>(
+    attr_val: AttributeValue,
+) -> Element<'a, TvMsg> {
+    match attr_val {
+        AttributeValue::Integer(i) => txt_int(i).size(TABLE_TXT_SIZE).into(),
+        AttributeValue::Decimal(f) => {
+            txt_float(f, 3).size(TABLE_TXT_SIZE).into()
+        }
+        AttributeValue::Text(t) => txt(t).size(TABLE_TXT_SIZE).into(),
+        AttributeValue::Color(c) => container(txt(&c).size(TABLE_TXT_SIZE))
+            .style(move |theme| {
+                let bg = Color::from_str(&c).map_or(Clr::TRN, |c| c);
+                sty_cont_with_bg_color(theme, bg)
+            })
+            .into(),
+    }
 }
