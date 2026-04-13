@@ -1,37 +1,20 @@
 use super::*;
 
-use crate::consts::{STRK_EDGE, STRK_EDGE_LAB_ALN, STRK_ROOT};
-use crate::edge_utils::{node_data_cart, node_data_pol};
+use crate::consts::{STRK_EDGE, STRK_ROOT};
 use crate::path_builders::{
     path_clade_highlight, path_edges_fan, path_edges_phygrm,
     path_root_edge_fan, path_root_edge_phygrm,
 };
-use crate::{
-    Float, NodeData, Rc, RectVals, TreSty, TreeState, ellipsize_unicode,
-};
+use crate::{Float, Rc, RectVals, TreSty, TreeState};
 use dendros::Edge;
-use oxidize_pdf::{
-    Document, Page, PdfError,
-    graphics::{Color, GraphicsContext, LineCap, LineDashPattern, LineJoin},
-    text::{Font, measure_text},
-};
-use rayon::prelude::*;
-use riced::fonts::JET_BRAINS_MONO_REGULAR;
-use riced::{
-    CnvStrk, IcedPath, LyonPath, LyonPathEvent, PathBuilder, Point, Rectangle,
-};
-use std::f64::consts::{FRAC_PI_2, PI, TAU};
-use std::path::PathBuf;
+use oxidize_pdf::{PdfError, graphics::GraphicsContext};
+use riced::{PathBuilder, Rectangle};
 
-#[allow(clippy::too_many_arguments)]
 pub(super) fn draw_clade_highlights(
     tree_state: Rc<TreeState>,
-    tre_w: f64,
-    tre_h: f64,
-    tre_radius: f64,
-    root_len: f64,
-    clade_highlight_max_x: f64,
-    clade_highlight_max_radius: f64,
+    cnv_vs: &RectVals<Float>,
+    tre_vs: &RectVals<Float>,
+    root_len: Float,
     opn_angle: Float,
     tree_style: TreSty,
     gc: &mut GraphicsContext,
@@ -42,10 +25,9 @@ pub(super) fn draw_clade_highlights(
             let clade_highlight = highlighted_clades.get(&node_id).unwrap();
 
             let iced_path = path_clade_highlight(
-                node_id, &tree_state, tre_w as Float, tre_h as Float,
-                clade_highlight_max_x as Float, tre_radius as Float,
-                clade_highlight_max_radius as Float, root_len as Float,
-                opn_angle, tree_style,
+                node_id, &tree_state, tre_vs.w, tre_vs.h, cnv_vs.x1,
+                tre_vs.radius_min, cnv_vs.radius_min, root_len, opn_angle,
+                tree_style,
             );
 
             let color = color_from_iced_color(clade_highlight.color);
@@ -62,28 +44,24 @@ pub(super) fn draw_clade_highlights(
 }
 
 pub(super) fn draw_bounds(
+    cnv_vs: &RectVals<Float>,
     tre_vs: &RectVals<Float>,
-    cnv_w: f64,
-    cnv_h: f64,
-    tre_w: f64,
-    tre_h: f64,
-    scaling: f64,
     gc: &mut GraphicsContext,
 ) {
     let path_cnv_bounds = PathBuilder::new()
         .rectangle(Rectangle {
             x: 0e0,
             y: 0e0,
-            width: cnv_w as Float,
-            height: cnv_h as Float,
+            width: cnv_vs.w,
+            height: cnv_vs.h,
         })
         .build();
     let path_tre_bounds = PathBuilder::new()
         .rectangle(Rectangle {
-            x: tre_vs.x0 * scaling as Float,
-            y: tre_vs.y0 * scaling as Float,
-            width: tre_w as Float,
-            height: tre_h as Float,
+            x: tre_vs.x0,
+            y: tre_vs.y0,
+            width: tre_vs.w,
+            height: tre_vs.h,
         })
         .build();
     _ = gc.save_state();
@@ -93,49 +71,45 @@ pub(super) fn draw_bounds(
     _ = gc.restore_state();
 }
 
-#[allow(clippy::too_many_arguments)]
 pub(super) fn draw_root(
-    tree_style: TreSty,
-    w: Float,
-    h: Float,
+    tre_vs: &RectVals<Float>,
     opn_angle: Float,
     root_len: Float,
-    radius: Float,
     root_edge: &Edge,
     scaling: f64,
+    tree_style: TreSty,
     gc: &mut GraphicsContext,
 ) {
     _ = apply_iced_path_to_gc(
         match tree_style {
-            TreSty::PhyGrm => path_root_edge_phygrm(w, h, root_len, root_edge),
-            TreSty::Fan => {
-                path_root_edge_fan(radius, opn_angle, root_len, root_edge)
+            TreSty::PhyGrm => {
+                path_root_edge_phygrm(tre_vs.w, tre_vs.h, root_len, root_edge)
             }
+            TreSty::Fan => path_root_edge_fan(
+                tre_vs.radius_min, opn_angle, root_len, root_edge,
+            ),
         },
         apply_iced_stroke_to_gc(STRK_ROOT, scaling, gc),
     )
     .stroke();
 }
 
-#[allow(clippy::too_many_arguments)]
 pub(super) fn draw_edges(
+    tre_vs: &RectVals<Float>,
     tree_state: Rc<TreeState>,
-    tree_style: TreSty,
-    w: Float,
-    h: Float,
     opn_angle: Float,
     root_len: Float,
-    radius: Float,
     scaling: f64,
+    tree_style: TreSty,
     gc: &mut GraphicsContext,
 ) {
     if let Some(edges) = tree_state.edges() {
         _ = apply_iced_path_to_gc(
             match tree_style {
-                TreSty::PhyGrm => path_edges_phygrm(edges, w, h),
-                TreSty::Fan => {
-                    path_edges_fan(edges, opn_angle, root_len, radius)
-                }
+                TreSty::PhyGrm => path_edges_phygrm(edges, tre_vs.w, tre_vs.h),
+                TreSty::Fan => path_edges_fan(
+                    edges, opn_angle, root_len, tre_vs.radius_min,
+                ),
             },
             apply_iced_stroke_to_gc(STRK_EDGE, scaling, gc),
         )

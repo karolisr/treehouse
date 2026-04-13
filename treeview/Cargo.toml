@@ -18,6 +18,7 @@
 
 [dependencies]
     dendros={workspace=true}
+    num-traits={workspace=true}
     oxidize-pdf={workspace=true}
     rayon={workspace=true}
     riced={workspace=true}

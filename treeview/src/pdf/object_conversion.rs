@@ -1,25 +1,7 @@
-use crate::consts::{STRK_EDGE, STRK_EDGE_LAB_ALN, STRK_ROOT};
-use crate::edge_utils::{node_data_cart, node_data_pol};
-use crate::path_builders::{
-    path_clade_highlight, path_edges_fan, path_edges_phygrm,
-    path_root_edge_fan, path_root_edge_phygrm,
+use oxidize_pdf::graphics::{
+    Color, GraphicsContext, LineCap, LineDashPattern, LineJoin,
 };
-use crate::{
-    Float, NodeData, Rc, RectVals, TreSty, TreeState, ellipsize_unicode,
-};
-use dendros::Edge;
-use oxidize_pdf::{
-    Document, Page, PdfError,
-    graphics::{Color, GraphicsContext, LineCap, LineDashPattern, LineJoin},
-    text::{Font, measure_text},
-};
-use rayon::prelude::*;
-use riced::fonts::JET_BRAINS_MONO_REGULAR;
-use riced::{
-    CnvStrk, IcedPath, LyonPath, LyonPathEvent, PathBuilder, Point, Rectangle,
-};
-use std::f64::consts::{FRAC_PI_2, PI, TAU};
-use std::path::PathBuf;
+use riced::{CnvStrk, IcedPath, LyonPath, LyonPathEvent};
 
 pub(super) fn color_from_iced_color(color_iced: riced::Color) -> Color {
     let c: [f32; 4] = color_iced.into_linear();

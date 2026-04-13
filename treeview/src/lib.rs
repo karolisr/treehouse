@@ -23,17 +23,21 @@ mod edge_utils;
 mod gts;
 mod path_builders;
 mod pdf;
+mod rect_vals;
 mod tables;
 mod treestate;
 mod treeview;
+mod treeview_config;
 mod view;
 
 pub type Float = f32;
 pub type Integer = i32;
 
 pub use context_menu::{TvContextMenuItem, TvContextMenuSpecification};
+pub use rect_vals::RectVals;
 pub use riced::{SF, TXT_SIZE};
 pub use treeview::{TreUnit, TreeView, TvMsg};
+pub use treeview_config::TreeViewConfig;
 
 use std::collections::HashSet;
 use std::f32 as float;
@@ -65,74 +69,6 @@ use treeview::{
     TRE_NODE_ORD_OPTS, TRE_STY_OPTS, TRE_UNIT_OPTS, TreNodeOrd, TreSty,
     TreeViewPane,
 };
-
-use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(default)]
-pub struct TreeViewConfig {
-    pub align_tip_labs: bool,
-    pub draw_cursor_line: bool,
-    pub draw_gts: bool,
-    pub draw_labs_brnch: bool,
-    pub draw_labs_int: bool,
-    pub draw_labs_tip: bool,
-    pub draw_ltt: bool,
-    pub draw_root: bool,
-    pub full_width_scale_bar: bool,
-    pub node_ord_opt: TreNodeOrd,
-    pub selection_lock: bool,
-    pub show_nodes_table: bool,
-    pub show_plot: bool,
-    pub show_scale_bar: bool,
-    pub show_search_bar: bool,
-    pub show_side_bar: bool,
-    pub show_tool_bar: bool,
-    pub tip_only_search: bool,
-    pub tre_sty: TreSty,
-    pub tre_unit: TreUnit,
-    pub trim_tip_labs: bool,
-    pub lab_size_idx_tip: u16,
-    pub lab_size_idx_int: u16,
-    pub lab_size_idx_brnch: u16,
-    pub root_len_idx: u16,
-    pub opn_angle_idx: u16,
-    pub rot_angle_idx: u16,
-}
-
-impl Default for TreeViewConfig {
-    fn default() -> Self {
-        Self {
-            align_tip_labs: false,
-            draw_cursor_line: true,
-            draw_gts: false,
-            draw_labs_brnch: false,
-            draw_labs_int: false,
-            draw_labs_tip: true,
-            draw_ltt: false,
-            draw_root: true,
-            full_width_scale_bar: false,
-            node_ord_opt: TreNodeOrd::Ascending,
-            selection_lock: false,
-            show_nodes_table: false,
-            show_plot: false,
-            show_scale_bar: false,
-            show_search_bar: false,
-            show_side_bar: true,
-            show_tool_bar: true,
-            tip_only_search: false,
-            tre_sty: TreSty::PhyGrm,
-            tre_unit: TreUnit::MillionYears,
-            trim_tip_labs: false,
-            lab_size_idx_tip: 8,
-            lab_size_idx_int: 8,
-            lab_size_idx_brnch: 8,
-            root_len_idx: 25,
-            opn_angle_idx: 345,
-            rot_angle_idx: 360,
-        }
-    }
-}
 
 #[derive(Debug)]
 pub(crate) enum Zone {
@@ -202,139 +138,6 @@ struct NodeDataPol {
     points: EdgePoints,
     angle: Float,
     angle_parent: Float,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Eq)]
-pub struct RectVals<T> {
-    x0: T,
-    y0: T,
-    x1: T,
-    y1: T,
-    w: T,
-    h: T,
-    dim_min: T,
-    dim_max: T,
-    radius_min: T,
-    radius_max: T,
-    cntr_x: T,
-    cntr_y: T,
-    cntr: Vector<T>,
-    trans: Vector<T>,
-}
-
-impl RectVals<Float> {
-    pub fn cnv(bounds: Rectangle) -> Self {
-        let x = ZRO;
-        let y = ZRO;
-        let w = bounds.width as Float;
-        let h = bounds.height as Float;
-        Rectangle { x, y, width: w, height: h }.into()
-    }
-
-    pub fn wh(w: Float, h: Float) -> Self {
-        let x = ZRO;
-        let y = ZRO;
-        Rectangle { x, y, width: w, height: h }.into()
-    }
-
-    pub fn corners(x0: Float, y0: Float, x1: Float, y1: Float) -> Self {
-        let x = x0;
-        let y = y0;
-        let w = x1 - x0;
-        let h = y1 - y0;
-        Rectangle { x, y, width: w, height: h }.into()
-    }
-
-    pub fn padded(
-        &self,
-        left: Float,
-        right: Float,
-        top: Float,
-        bottom: Float,
-    ) -> RectVals<Float> {
-        let x = self.x0 + left;
-        let y = self.y0 + top;
-        let width = self.w - right - left;
-        let height = self.h - bottom - top;
-        Rectangle { x, y, width, height }.into()
-    }
-
-    pub fn transfer_x_from(&self, other: &RectVals<Float>) -> RectVals<Float> {
-        let x = other.x0;
-        let y = self.y0;
-        let width = other.w;
-        let height = self.h;
-        Rectangle { x, y, width, height }.into()
-    }
-
-    pub fn transfer_y_from(&self, other: &RectVals<Float>) -> RectVals<Float> {
-        let x = self.x0;
-        let y = other.y0;
-        let width = self.w;
-        let height = other.h;
-        Rectangle { x, y, width, height }.into()
-    }
-}
-
-impl From<Rectangle<Float>> for RectVals<Float> {
-    fn from(r: Rectangle<Float>) -> Self {
-        let x0 = r.x;
-        let y0 = r.y;
-        let w = r.width;
-        let h = r.height;
-        let x1 = x0 + w;
-        let y1 = y0 + h;
-
-        let dim_min = w.min(h);
-        let dim_max = w.max(h);
-        let radius_min = dim_min / TWO;
-        let radius_max = dim_min.hypot(dim_max);
-
-        let cntr_untrans_x = w / TWO;
-        let cntr_untrans_y = h / TWO;
-
-        let cntr_x = cntr_untrans_x + x0;
-        let cntr_y = cntr_untrans_y + y0;
-        let cntr = Vector { x: cntr_x, y: cntr_y };
-
-        let trans = Vector { x: x0, y: y0 };
-
-        RectVals {
-            x0,
-            y0,
-            x1,
-            y1,
-            w,
-            h,
-            dim_min,
-            dim_max,
-            radius_min,
-            radius_max,
-            cntr_x,
-            cntr_y,
-            cntr,
-            trans,
-        }
-    }
-}
-
-impl<T> From<RectVals<T>> for Rectangle<T>
-where
-    T: Clone,
-{
-    fn from(v: RectVals<T>) -> Self {
-        Rectangle { x: v.x0, y: v.y0, width: v.w, height: v.h }
-    }
-}
-
-impl Display for RectVals<Float> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(
-            f,
-            "({:7.2}, {:7.2}), ({:7.2}, {:7.2})",
-            self.x0, self.y0, self.x1, self.y1
-        )
-    }
 }
 
 fn angle_from_idx(idx: u16) -> Float {

@@ -1,5 +1,3 @@
-#![allow(unused_imports)]
-
 mod draw;
 mod object_conversion;
 mod utils;
@@ -8,47 +6,40 @@ use draw::*;
 use object_conversion::*;
 use utils::*;
 
-use crate::consts::{STRK_EDGE, STRK_EDGE_LAB_ALN, STRK_ROOT};
 use crate::edge_utils::{node_data_cart, node_data_pol};
-use crate::path_builders::{
-    path_clade_highlight, path_edges_fan, path_edges_phygrm,
-    path_root_edge_fan, path_root_edge_phygrm,
-};
 use crate::{
     Float, NodeData, Rc, RectVals, TreSty, TreeState, ellipsize_unicode,
 };
 use dendros::Edge;
+use num_traits::{AsPrimitive, real::Real};
 use oxidize_pdf::{
     Document, Page, PdfError,
-    graphics::{Color, GraphicsContext, LineCap, LineDashPattern, LineJoin},
     text::{Font, measure_text},
 };
 use rayon::prelude::*;
 use riced::fonts::JET_BRAINS_MONO_REGULAR;
-use riced::{
-    CnvStrk, IcedPath, LyonPath, LyonPathEvent, PathBuilder, Point, Rectangle,
-};
-use std::f64::consts::{FRAC_PI_2, PI, TAU};
 use std::path::PathBuf;
 
 #[allow(clippy::too_many_arguments)]
-pub fn tree_to_pdf(
+pub fn tree_to_pdf<
+    T: Real + AsPrimitive<Float> + AsPrimitive<f64> + AsPrimitive<f32>,
+>(
     path_buf: PathBuf,
-    tre_vs: RectVals<Float>,
-    cnv_vs: RectVals<Float>,
+    tre_vs: RectVals<T>,
+    cnv_vs: RectVals<T>,
     tree_state: Rc<TreeState>,
     tree_style: TreSty,
-    opn_angle: Float,
-    rot_angle: Float,
-    root_len: Float,
+    opn_angle: T,
+    rot_angle: T,
+    root_len: T,
     // --------------------------------
-    lab_size_tip: Float,
-    lab_size_int: Float,
-    lab_size_brnch: Float,
+    lab_size_tip: T,
+    lab_size_int: T,
+    lab_size_brnch: T,
     // --------------------------------
-    lab_offset_tip: Float,
-    lab_offset_int: Float,
-    lab_offset_brnch: Float,
+    lab_offset_tip: T,
+    lab_offset_int: T,
+    lab_offset_brnch: T,
     // --------------------------------
     align_tip_labs: bool,
     trim_tip_labs: bool,
@@ -63,53 +54,45 @@ pub fn tree_to_pdf(
     // --------------------------------
 ) -> Result<(), PdfError> {
     let scaling: f64 = 1e0;
-    let cnv_w = cnv_vs.w as f64 * scaling;
-    let cnv_h = cnv_vs.h as f64 * scaling;
-    let tre_w = tre_vs.w as f64 * scaling;
-    let clade_highlight_max_x = cnv_vs.x1 as f64 * scaling;
-    let tre_h = tre_vs.h as f64 * scaling;
-    let tre_radius = tre_vs.radius_min as f64 * scaling;
-    let clade_highlight_max_radius = cnv_vs.radius_min as f64 * scaling;
-    let margin = tre_radius / 1e1;
-    let root_len = root_len as f64 * scaling;
-    let rot_angle = rot_angle as f64;
-    let lab_size_tip = lab_size_tip as f64 * scaling;
-    let lab_size_int = lab_size_int as f64 * scaling;
-    let lab_size_brnch = lab_size_brnch as f64 * scaling;
-    let lab_offset_tip = lab_offset_tip as f64 * scaling;
-    let lab_offset_int = lab_offset_int as f64 * scaling;
-    let lab_offset_brnch = lab_offset_brnch as f64 * scaling;
 
-    let mut pg = Page::new(cnv_w + margin * 2e0, cnv_h + margin * 2e0);
+    let cnv_vs_float: RectVals<Float> =
+        cnv_vs.type_converted().scale(scaling as Float);
+
+    let tre_vs_float: RectVals<Float> =
+        tre_vs.type_converted().scale(scaling as Float);
+
+    let cnv_vs_f64: RectVals<f64> = cnv_vs.type_converted().scale(scaling);
+    let tre_vs_f64: RectVals<f64> = tre_vs.type_converted().scale(scaling);
+
+    let margin = tre_vs_f64.radius_min / 1e1;
+
+    let rot_angle: f64 = rot_angle.to_f64().unwrap();
+    let opn_angle: Float = opn_angle.as_();
+    let root_len: Float = (root_len.to_f64().unwrap() * scaling) as Float;
+
+    let lab_size_tip: f64 = lab_size_tip.to_f64().unwrap() * scaling;
+    let lab_size_int: f64 = lab_size_int.to_f64().unwrap() * scaling;
+    let lab_size_brnch: f64 = lab_size_brnch.to_f64().unwrap() * scaling;
+    let lab_offset_tip: f64 = lab_offset_tip.to_f64().unwrap() * scaling;
+    let lab_offset_int: f64 = lab_offset_int.to_f64().unwrap() * scaling;
+    let lab_offset_brnch: f64 = lab_offset_brnch.to_f64().unwrap() * scaling;
+
+    let mut pg =
+        Page::new(cnv_vs_f64.w + margin * 2e0, cnv_vs_f64.h + margin * 2e0);
     pg.set_margins(margin, margin, margin, margin);
-
-    _ = pg.graphics().translate(margin, cnv_h + margin);
+    _ = pg.graphics().translate(margin, cnv_vs_f64.h + margin);
 
     // Bounds ------------------------------------------------------------------
     if draw_debug {
-        draw_bounds(
-            &tre_vs,
-            cnv_w,
-            cnv_h,
-            tre_w,
-            tre_h,
-            scaling,
-            pg.graphics(),
-        );
+        draw_bounds(&cnv_vs_float, &tre_vs_float, pg.graphics());
     } // -----------------------------------------------------------------------
 
     match tree_style {
         TreSty::PhyGrm => {
-            _ = pg.graphics().translate(
-                tre_vs.x0 as f64 * scaling,
-                -tre_vs.y0 as f64 * scaling,
-            );
+            _ = pg.graphics().translate(tre_vs_f64.x0, -tre_vs_f64.y0);
         }
         TreSty::Fan => {
-            _ = pg.graphics().translate(
-                tre_vs.cntr_x as f64 * scaling,
-                -tre_vs.cntr_y as f64 * scaling,
-            );
+            _ = pg.graphics().translate(tre_vs_f64.cntr_x, -tre_vs_f64.cntr_y);
             _ = pg.graphics().rotate(-rot_angle);
         }
     };
@@ -118,12 +101,9 @@ pub fn tree_to_pdf(
     if draw_clade_highlights_ok {
         draw_clade_highlights(
             tree_state.clone(),
-            tre_w,
-            tre_h,
-            tre_radius,
+            &cnv_vs_float,
+            &tre_vs_float,
             root_len,
-            clade_highlight_max_x,
-            clade_highlight_max_radius,
             opn_angle,
             tree_style,
             pg.graphics(),
@@ -135,28 +115,24 @@ pub fn tree_to_pdf(
         && root_len > 0.0
     {
         draw_root(
-            tree_style,
-            tre_w as Float,
-            tre_h as Float,
+            &tre_vs_float,
             opn_angle,
-            root_len as Float,
-            tre_radius as Float,
+            root_len,
             &root_edge,
             scaling,
+            tree_style,
             pg.graphics(),
         );
     } // -----------------------------------------------------------------------
 
     // Tree edges --------------------------------------------------------------
     draw_edges(
+        &tre_vs_float,
         tree_state.clone(),
-        tree_style,
-        tre_w as Float,
-        tre_h as Float,
         opn_angle,
-        root_len as Float,
-        tre_radius as Float,
+        root_len,
         scaling,
+        tree_style,
         pg.graphics(),
     ); // ----------------------------------------------------------------------
 
@@ -166,10 +142,10 @@ pub fn tree_to_pdf(
         .par_iter()
         .map(|edge| match tree_style {
             TreSty::PhyGrm => {
-                node_data_cart(tre_w as Float, tre_h as Float, edge).into()
+                node_data_cart(tre_vs_float.w, tre_vs_float.h, edge).into()
             }
             TreSty::Fan => node_data_pol(
-                opn_angle, 0e0, tre_radius as Float, root_len as Float, edge,
+                opn_angle, 0e0, tre_vs_float.radius_min, root_len, edge,
             )
             .into(),
         })
@@ -220,8 +196,8 @@ pub fn tree_to_pdf(
                 lab_offset_y = lab_size_tip / 4e0;
                 if align_tip_labs {
                     align_at = Some(match tree_style {
-                        TreSty::PhyGrm => tre_w,
-                        TreSty::Fan => tre_radius,
+                        TreSty::PhyGrm => tre_vs_f64.w,
+                        TreSty::Fan => tre_vs_f64.radius_min,
                     });
                 }
             } else if draw_labs_int {
