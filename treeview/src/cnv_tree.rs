@@ -170,7 +170,7 @@ impl TreeCnv {
             // -----------------------------------------------------------------
             tip_w_set_by_user: None,
             // -----------------------------------------------------------------
-            height_axis_is_reversed: false,
+            height_axis_is_reversed: cfg.clone().x_axis_is_reversed(),
             height_axis_scale_type: AxisScaleType::default(),
             height_axis_min: Float::default(),
             height_axis_max: Float::default(),

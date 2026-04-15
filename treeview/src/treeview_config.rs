@@ -67,3 +67,14 @@ impl Default for TreeViewConfig {
         }
     }
 }
+
+impl TreeViewConfig {
+    pub fn x_axis_is_reversed(&self) -> bool {
+        match self.tre_unit {
+            TreUnit::Unitless => false,
+            TreUnit::Substitutions => false,
+            TreUnit::MillionYears => true,
+            TreUnit::CoalescentUnits => false,
+        }
+    }
+}

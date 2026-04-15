@@ -288,7 +288,12 @@ pub fn plot_data_from_ltt_points(
 
 impl PlotCnv {
     pub(super) fn new(cfg: Rc<TreeViewConfig>, draw_debug: bool) -> Self {
-        Self { cfg, draw_debug, ..Default::default() }
+        Self {
+            cfg: cfg.clone(),
+            draw_debug,
+            x_axis_is_reversed: cfg.clone().x_axis_is_reversed(),
+            ..Default::default()
+        }
     }
 
     pub(super) fn clear_cache_cnv_background(&self) {

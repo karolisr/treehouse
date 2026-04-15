@@ -478,24 +478,9 @@ impl TreeView {
                     cfg.tre_unit = unit;
                 });
 
-                match unit {
-                    TreUnit::Unitless => {
-                        self.plot_cnv.x_axis_is_reversed = false;
-                        self.tre_cnv.height_axis_is_reversed = false;
-                    }
-                    TreUnit::Substitutions => {
-                        self.plot_cnv.x_axis_is_reversed = false;
-                        self.tre_cnv.height_axis_is_reversed = false;
-                    }
-                    TreUnit::MillionYears => {
-                        self.plot_cnv.x_axis_is_reversed = true;
-                        self.tre_cnv.height_axis_is_reversed = true;
-                    }
-                    TreUnit::CoalescentUnits => {
-                        self.plot_cnv.x_axis_is_reversed = false;
-                        self.tre_cnv.height_axis_is_reversed = false;
-                    }
-                }
+                let x_axis_is_reversed = self.cfg.x_axis_is_reversed();
+                self.plot_cnv.x_axis_is_reversed = x_axis_is_reversed;
+                self.tre_cnv.height_axis_is_reversed = x_axis_is_reversed;
 
                 self.show_hide_plot();
 
