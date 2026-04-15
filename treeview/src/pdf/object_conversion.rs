@@ -58,7 +58,7 @@ pub(super) fn apply_iced_stroke_to_gc<'a>(
 ) -> &'a mut GraphicsContext {
     let line_cap = line_cap_from_iced(stroke_iced.line_cap);
     let line_join = line_join_from_iced(stroke_iced.line_join);
-    let line_width = stroke_iced.width as f64;
+    let line_width = stroke_iced.width as f64 * scaling;
     let stroke_color = color_from_iced_stroke(stroke_iced);
     let line_dash = line_dash_from_iced(stroke_iced.line_dash, scaling);
     gc.set_line_cap(line_cap)

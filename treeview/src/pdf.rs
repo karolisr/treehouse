@@ -53,7 +53,14 @@ pub fn tree_to_pdf<
     draw_debug: bool,
     // --------------------------------
 ) -> Result<(), PdfError> {
-    let scaling: f64 = 1e0;
+    let dim_max = AsPrimitive::<f64>::as_(cnv_vs.dim_max);
+    let margin = 72.0 / 2.0;
+    let max_page_dim_points = (72.0 * 200.0) - (margin * 2.0);
+    let scaling: f64 = if dim_max >= max_page_dim_points {
+        max_page_dim_points / dim_max
+    } else {
+        1e0
+    };
 
     let cnv_vs_float: RectVals<Float> =
         cnv_vs.type_converted().scale(scaling as Float);
@@ -64,18 +71,18 @@ pub fn tree_to_pdf<
     let cnv_vs_f64: RectVals<f64> = cnv_vs.type_converted().scale(scaling);
     let tre_vs_f64: RectVals<f64> = tre_vs.type_converted().scale(scaling);
 
-    let margin = tre_vs_f64.radius_min / 1e1;
-
-    let rot_angle: f64 = rot_angle.to_f64().unwrap();
+    let rot_angle: f64 = rot_angle.as_();
     let opn_angle: Float = opn_angle.as_();
-    let root_len: Float = (root_len.to_f64().unwrap() * scaling) as Float;
+    let root_len: Float =
+        (AsPrimitive::<f64>::as_(root_len) * scaling) as Float;
 
-    let lab_size_tip: f64 = lab_size_tip.to_f64().unwrap() * scaling;
-    let lab_size_int: f64 = lab_size_int.to_f64().unwrap() * scaling;
-    let lab_size_brnch: f64 = lab_size_brnch.to_f64().unwrap() * scaling;
-    let lab_offset_tip: f64 = lab_offset_tip.to_f64().unwrap() * scaling;
-    let lab_offset_int: f64 = lab_offset_int.to_f64().unwrap() * scaling;
-    let lab_offset_brnch: f64 = lab_offset_brnch.to_f64().unwrap() * scaling;
+    let lab_size_tip: f64 = AsPrimitive::<f64>::as_(lab_size_tip) * scaling;
+    let lab_size_int: f64 = AsPrimitive::<f64>::as_(lab_size_int) * scaling;
+    let lab_size_brnch: f64 = AsPrimitive::<f64>::as_(lab_size_brnch) * scaling;
+    let lab_offset_tip: f64 = AsPrimitive::<f64>::as_(lab_offset_tip) * scaling;
+    let lab_offset_int: f64 = AsPrimitive::<f64>::as_(lab_offset_int) * scaling;
+    let lab_offset_brnch: f64 =
+        AsPrimitive::<f64>::as_(lab_offset_brnch) * scaling;
 
     let mut pg =
         Page::new(cnv_vs_f64.w + margin * 2e0, cnv_vs_f64.h + margin * 2e0);
@@ -233,5 +240,6 @@ pub fn tree_to_pdf<
     doc.add_page(pg);
     doc.set_title("TreeHouse Exported PDF");
     doc.set_producer("TreeHouse");
+    doc.set_creator("TreeHouse");
     doc.save(path_buf)
 }
