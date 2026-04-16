@@ -586,12 +586,10 @@ impl TreeView {
                 self.tre_cnv.drawing_enabled = false;
                 self.tre_states = Vec::new();
 
-                let mut i: usize = 1;
-                for tre in trees {
+                for (i, tre) in (1..).zip(trees) {
                     let mut ts = TreeState::new(i);
                     ts.init(tre);
                     self.tre_states.push(Rc::new(ts));
-                    i += 1;
                 }
 
                 if !self.tre_states.is_empty() {
