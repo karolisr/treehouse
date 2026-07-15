@@ -23,7 +23,7 @@
         readme="README.md"
         repository="https://github.com/karolisr/treehouse"
         rust-version="1.88"
-        version="0.34.4"
+        version="0.34.5"
 
     [workspace.dependencies] # -------------------------------------------------
         convert_case="0.11.0"
@@ -36,7 +36,7 @@
         rayon="1.12.0"
         riced={path="riced", features=["crisp"]}
         serde="1.0.228"
-        serde_json="1.0.149"
+        serde_json="1.0.150"
         thiserror="2.0.18"
         treeview={path="treeview"}
         windows="0.62.2"
@@ -64,7 +64,7 @@
         [workspace.dependencies.oxidize-pdf]
             default-features=false
             features=["compression", "performance", "rayon"]
-            version="2.5.1"
+            version="4.1.0"
             # branch="custom"
             # git="https://github.com/karolisr/oxidizePdf"
 
@@ -121,26 +121,26 @@
     iced_core={git="https://github.com/karolisr/iced.git", branch="custom"}
     iced_widget={git="https://github.com/karolisr/iced.git", branch="custom"}
 
-[profile.dev] # ----------------------------------------------------------------
-    codegen-units=6       # 256
-    debug=true            # true
+[profile.dev] # ───────────────────────────────────────────────────────────────
+    codegen-units=256     # 256
+    debug=1               # true
     debug-assertions=true # true
     incremental=true      # true
     lto=false             # false
-    opt-level=1           # 1
+    opt-level=0           # 0
     overflow-checks=true  # true
-    panic="abort"         # "unwind"
+    panic="unwind"        # "unwind"
     rpath=false           # false
     strip=false           # false
 
-[profile.release] # ------------------------------------------------------------
+[profile.release] # ───────────────────────────────────────────────────────────
     codegen-units=1        # 16
     debug=false            # false
     debug-assertions=false # false
     incremental=false      # false
     lto=true               # false
     opt-level=3            # 3
-    overflow-checks=true   # false
+    overflow-checks=false  # false
     panic="abort"          # "unwind"
     rpath=false            # false
     strip=true             # "none"

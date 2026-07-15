@@ -10,4 +10,3 @@ icons-unused
 /release
 /other
 /docs/**/*.html
-Cargo.lock

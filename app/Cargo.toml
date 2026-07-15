@@ -39,7 +39,7 @@
     default-features=false
     features=["menu"]
     optional=true
-    version="0.13.1"
+    version="0.14.1"
     # branch="custom"
     # git="https://github.com/karolisr/iced_aw.git"
 
