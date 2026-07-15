@@ -338,6 +338,10 @@ impl PlotCnv {
         self.ltt_plot_data = data;
         self.clear_caches_cnv_all();
     }
+
+    pub(crate) fn ltt_plot_data(&self) -> &PlotData {
+        &self.ltt_plot_data
+    }
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]

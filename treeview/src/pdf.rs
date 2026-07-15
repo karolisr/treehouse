@@ -6,9 +6,12 @@ use draw::*;
 use object_conversion::*;
 use utils::*;
 
+use crate::cnv_plot::{AxisScaleType, PlotData};
+use crate::cnv_utils::calc_ticks;
 use crate::edge_utils::{node_data_cart, node_data_pol};
 use crate::{
-    Float, NodeData, Rc, RectVals, TreSty, TreeState, ellipsize_unicode,
+    Float, NodeData, Rc, RectVals, TreSty, TreUnit, TreeState,
+    ellipsize_unicode,
 };
 use dendros::Edge;
 use num_traits::{AsPrimitive, real::Real};
@@ -18,7 +21,24 @@ use oxidize_pdf::{
 };
 use rayon::prelude::*;
 use riced::fonts::JET_BRAINS_MONO_REGULAR;
+use riced::{PADDING, SF};
 use std::path::PathBuf;
+
+/// Height of the GTS/LTT plot region, in pre-scaling canvas points.
+pub(super) const PDF_PLOT_H: f64 = 120.0;
+/// Clear gap between the lowest tree-canvas overlay and the plot top, in
+/// pre-scaling canvas points.
+pub(super) const PDF_PLOT_GAP: f64 = 36.0;
+
+fn pdf_plot_enabled(
+    tree_style: TreSty,
+    draw_gts: bool,
+    draw_ltt: bool,
+    tre_unit: TreUnit,
+) -> bool {
+    matches!(tree_style, TreSty::PhyGrm)
+        && (draw_ltt || (draw_gts && tre_unit == TreUnit::MillionYears))
+}
 
 #[allow(clippy::too_many_arguments)]
 pub fn tree_to_pdf<
@@ -49,7 +69,23 @@ pub fn tree_to_pdf<
     draw_labs_int: bool,
     draw_labs_brnch: bool,
     draw_clade_highlights_ok: bool,
-    _draw_scale_bar: bool,
+    show_scale_bar: bool,
+    full_width_scale_bar: bool,
+    tre_unit: TreUnit,
+    height_axis_scale_type: AxisScaleType,
+    height_axis_min: Float,
+    height_axis_max: Float,
+    height_axis_is_reversed: bool,
+    height_axis_text_size: T,
+    height_axis_char_width: T,
+    height_axis_tick_size: T,
+    height_axis_lab_offset: T,
+    draw_gts: bool,
+    draw_ltt: bool,
+    x_axis_scale_type: AxisScaleType,
+    y_axis_scale_type: AxisScaleType,
+    x_axis_is_reversed: bool,
+    ltt_plot_data: PlotData,
     draw_debug: bool,
     // --------------------------------
 ) -> Result<(), PdfError> {
@@ -84,16 +120,74 @@ pub fn tree_to_pdf<
     let lab_offset_brnch: f64 =
         AsPrimitive::<f64>::as_(lab_offset_brnch) * scaling;
 
-    let mut pg =
-        Page::new(cnv_vs_f64.w + margin * 2e0, cnv_vs_f64.h + margin * 2e0);
+    let plot_enabled =
+        pdf_plot_enabled(tree_style, draw_gts, draw_ltt, tre_unit);
+
+    // Provisional left inset using y tick label width (same idea as
+    // cnv_plot update):
+    let text_size = (SF * 10.0) as f64 * scaling;
+    let char_width = text_size * 0.6;
+    let tick_size = char_width;
+    let lab_offset = char_width / 2.0;
+    let n_ticks_y =
+        ((PDF_PLOT_H * scaling) / (text_size * 3.0)).floor().max(3.0) as usize;
+    let (_ticks_y, y_max_lab_nchar) = calc_ticks(
+        n_ticks_y, y_axis_scale_type, ltt_plot_data.y_data_type,
+        ltt_plot_data.y_min, ltt_plot_data.y_max, false,
+    );
+    let plot_left_inset = if plot_enabled {
+        (tick_size + lab_offset + char_width * y_max_lab_nchar as f64).max(0.0)
+    } else {
+        0.0
+    };
+
+    // Full-width height axis is drawn below cnv_vs.y1 (see draw_height_axis).
+    // Start the plot gap after that overhang so axis labels don't collide.
+    let tree_below_cnv = if plot_enabled
+        && show_scale_bar
+        && full_width_scale_bar
+        && matches!(tree_style, TreSty::PhyGrm)
+    {
+        let ha_text = AsPrimitive::<f64>::as_(height_axis_text_size) * scaling;
+        let ha_tick = AsPrimitive::<f64>::as_(height_axis_tick_size) * scaling;
+        let ha_lab_off =
+            AsPrimitive::<f64>::as_(height_axis_lab_offset) * scaling;
+        let axis_y = (PADDING as f64) * 2.0 * scaling
+            + if draw_labs_tip { -(lab_size_tip / 2.0) } else { 0.0 };
+        axis_y.max(0.0) + ha_tick + ha_lab_off + ha_text
+    } else {
+        0.0
+    };
+
+    let plot_gap = PDF_PLOT_GAP * scaling;
+    let plot_h = PDF_PLOT_H * scaling;
+    let plot_y0 = cnv_vs_f64.h + tree_below_cnv + plot_gap;
+    let plot_extra_h = if plot_enabled {
+        // Overhang + gap + plot body + room for plot x-axis ticks/labels.
+        tree_below_cnv + plot_gap + plot_h + tick_size + lab_offset + text_size
+    } else {
+        0.0
+    };
+
+    let page_w = cnv_vs_f64.w + margin * 2.0 + plot_left_inset;
+    let page_h = cnv_vs_f64.h + margin * 2.0 + plot_extra_h;
+    let mut pg = Page::new(page_w, page_h);
     pg.set_margins(margin, margin, margin, margin);
-    _ = pg.graphics().translate(margin, cnv_vs_f64.h + margin);
+    // PDF y grows up from the page bottom. Iced y grows down and is negated when
+    // stroking, so iced y=0 maps to this translate Y. Plot content sits at iced
+    // y > cnv_h (further down the page); include plot_extra_h here so that
+    // reserved height is below the tree instead of empty space above it.
+    _ = pg.graphics().translate(
+        margin + plot_left_inset,
+        cnv_vs_f64.h + margin + plot_extra_h,
+    );
 
     // Bounds ------------------------------------------------------------------
     if draw_debug {
         draw_bounds(&cnv_vs_float, &tre_vs_float, pg.graphics());
     } // -----------------------------------------------------------------------
 
+    _ = pg.graphics().save_state();
     match tree_style {
         TreSty::PhyGrm => {
             _ = pg.graphics().translate(tre_vs_f64.x0, -tre_vs_f64.y0);
@@ -233,6 +327,67 @@ pub fn tree_to_pdf<
                 &mut pg,
             );
         }
+    } // -----------------------------------------------------------------------
+
+    _ = pg.graphics().restore_state();
+
+    // Scale bar / height axis -----------------------------------------------
+    if show_scale_bar && tree_state.has_brlen() {
+        if !full_width_scale_bar {
+            let subtree_node_len: Float = if tree_state.is_subtree_view_active()
+            {
+                tree_state.subtree_view_node_branch_length().unwrap_or(0.0)
+                    as Float
+            } else {
+                0.0
+            };
+            let tre_height =
+                tree_state.max_first_node_to_tip_distance() as Float;
+            draw::draw_scale_bar(
+                tree_style,
+                &cnv_vs_float,
+                &tre_vs_float,
+                root_len,
+                subtree_node_len,
+                tre_height,
+                tre_unit,
+                scaling,
+                font.clone(),
+                &mut pg,
+            );
+        } else {
+            draw::draw_height_axis(
+                &cnv_vs_float,
+                &tre_vs_float,
+                draw_labs_tip,
+                lab_size_tip as Float,
+                height_axis_scale_type,
+                height_axis_min,
+                height_axis_max,
+                height_axis_is_reversed,
+                (AsPrimitive::<f64>::as_(height_axis_text_size) * scaling)
+                    as Float,
+                (AsPrimitive::<f64>::as_(height_axis_char_width) * scaling)
+                    as Float,
+                (AsPrimitive::<f64>::as_(height_axis_tick_size) * scaling)
+                    as Float,
+                (AsPrimitive::<f64>::as_(height_axis_lab_offset) * scaling)
+                    as Float,
+                tree_style,
+                scaling,
+                font.clone(),
+                &mut pg,
+            );
+        }
+    } // -----------------------------------------------------------------------
+
+    // GTS/LTT plot ------------------------------------------------------------
+    if plot_enabled {
+        draw::draw_plot(
+            &tre_vs_float, plot_y0 as Float, plot_h as Float, draw_gts,
+            draw_ltt, tre_unit, x_axis_scale_type, y_axis_scale_type,
+            x_axis_is_reversed, &ltt_plot_data, scaling, font, &mut pg,
+        )?;
     } // -----------------------------------------------------------------------
 
     let mut doc = Document::new();

@@ -258,6 +258,7 @@ impl TreeView {
             }
 
             TvMsg::ExportPdf(path_buf) => {
+                self.set_ltt_plot_data();
                 if let Some(tree_state) = self.sel_tre() {
                     let root_len = self.update_tre_vs();
                     let tre_vs = self.tre_cnv.tre_vs.clone();
@@ -276,18 +277,45 @@ impl TreeView {
                     let cnv_vs = RectVals::wh(cnv_w, cnv_h);
 
                     _ = tree_to_pdf(
-                        path_buf, tre_vs, cnv_vs, tree_state, self.cfg.tre_sty,
-                        opn_angle, rot_angle, root_len,
-                        self.tre_cnv.lab_size_tip, self.tre_cnv.lab_size_int,
+                        path_buf,
+                        tre_vs,
+                        cnv_vs,
+                        tree_state,
+                        self.cfg.tre_sty,
+                        opn_angle,
+                        rot_angle,
+                        root_len,
+                        self.tre_cnv.lab_size_tip,
+                        self.tre_cnv.lab_size_int,
                         self.tre_cnv.lab_size_brnch,
                         self.tre_cnv.lab_offset_tip,
                         self.tre_cnv.lab_offset_int,
-                        self.tre_cnv.lab_offset_brnch, self.cfg.align_tip_labs,
+                        self.tre_cnv.lab_offset_brnch,
+                        self.cfg.align_tip_labs,
                         self.cfg.trim_tip_labs,
-                        self.tre_cnv.trim_tip_labs_to_nchar, draw_labs_tip,
-                        draw_labs_int, draw_labs_brnch,
+                        self.tre_cnv.trim_tip_labs_to_nchar,
+                        draw_labs_tip,
+                        draw_labs_int,
+                        draw_labs_brnch,
                         self.tre_cnv.draw_clade_highlights,
-                        self.cfg.show_scale_bar, self.tre_cnv.draw_debug,
+                        self.cfg.show_scale_bar,
+                        self.cfg.full_width_scale_bar,
+                        self.cfg.tre_unit,
+                        self.tre_cnv.height_axis_scale_type,
+                        self.tre_cnv.height_axis_min,
+                        self.tre_cnv.height_axis_max,
+                        self.tre_cnv.height_axis_is_reversed,
+                        self.tre_cnv.height_axis_text_size,
+                        self.tre_cnv.height_axis_char_width,
+                        self.tre_cnv.height_axis_tick_size,
+                        self.tre_cnv.height_axis_lab_offset,
+                        self.cfg.draw_gts,
+                        self.cfg.draw_ltt,
+                        self.plot_cnv.x_axis_scale_type,
+                        self.plot_cnv.y_axis_scale_type,
+                        self.plot_cnv.x_axis_is_reversed,
+                        self.plot_cnv.ltt_plot_data().clone(),
+                        self.tre_cnv.draw_debug,
                     );
                 }
             }
