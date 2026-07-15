@@ -14,7 +14,13 @@ pub struct TreeViewConfig {
     pub draw_ltt: bool,
     pub draw_root: bool,
     pub full_width_scale_bar: bool,
+    pub lab_size_idx_brnch: u16,
+    pub lab_size_idx_int: u16,
+    pub lab_size_idx_tip: u16,
     pub node_ord_opt: TreNodeOrd,
+    pub opn_angle_idx: u16,
+    pub root_len_idx: u16,
+    pub rot_angle_idx: u16,
     pub selection_lock: bool,
     pub show_nodes_table: bool,
     pub show_plot: bool,
@@ -26,12 +32,6 @@ pub struct TreeViewConfig {
     pub tre_sty: TreSty,
     pub tre_unit: TreUnit,
     pub trim_tip_labs: bool,
-    pub lab_size_idx_tip: u16,
-    pub lab_size_idx_int: u16,
-    pub lab_size_idx_brnch: u16,
-    pub root_len_idx: u16,
-    pub opn_angle_idx: u16,
-    pub rot_angle_idx: u16,
 }
 
 impl Default for TreeViewConfig {
@@ -46,7 +46,13 @@ impl Default for TreeViewConfig {
             draw_ltt: false,
             draw_root: true,
             full_width_scale_bar: false,
+            lab_size_idx_brnch: 8,
+            lab_size_idx_int: 8,
+            lab_size_idx_tip: 8,
             node_ord_opt: TreNodeOrd::Ascending,
+            opn_angle_idx: 345,
+            root_len_idx: 25,
+            rot_angle_idx: 360,
             selection_lock: false,
             show_nodes_table: false,
             show_plot: false,
@@ -58,12 +64,6 @@ impl Default for TreeViewConfig {
             tre_sty: TreSty::PhyGrm,
             tre_unit: TreUnit::MillionYears,
             trim_tip_labs: false,
-            lab_size_idx_tip: 8,
-            lab_size_idx_int: 8,
-            lab_size_idx_brnch: 8,
-            root_len_idx: 25,
-            opn_angle_idx: 345,
-            rot_angle_idx: 360,
         }
     }
 }

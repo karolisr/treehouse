@@ -17,6 +17,7 @@
 mod cnv_plot;
 mod cnv_tree;
 mod cnv_utils;
+mod config;
 mod consts;
 mod context_menu;
 mod edge_utils;
@@ -27,17 +28,16 @@ mod rect_vals;
 mod tables;
 mod treestate;
 mod treeview;
-mod treeview_config;
 mod view;
 
 pub type Float = f32;
 pub type Integer = i32;
 
+pub use config::TreeViewConfig;
 pub use context_menu::{TvContextMenuItem, TvContextMenuSpecification};
 pub use rect_vals::RectVals;
 pub use riced::{SF, TXT_SIZE};
 pub use treeview::{TreUnit, TreeView, TvMsg};
-pub use treeview_config::TreeViewConfig;
 
 use std::collections::HashSet;
 use std::f32 as float;
