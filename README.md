@@ -1,4 +1,7 @@
-# TreeHouse
+
+![TreeHouse logo](./img/th_for_github.png "TreeHouse icon")
+
+# TreeHouse 
 
 Welcome to TreeHouse!
 <!-- View and edit gene trees and phylogenies -->
@@ -14,7 +17,7 @@ TreeHouse runs natively on Linux, macOS, and Windows.
 
 ## How to get started with TreeHouse?
 
-The easiest way to install TreeHouse is to [download the latest release](releases) and follow the instructions for installation. Then, open a tree file of your choice ([examples available here](tree/main/tests/data)).
+The easiest way to install TreeHouse is to [download the latest release](https://github.com/karolisr/treehouse/releases) and follow the instructions for installation. Then, open a tree file of your choice ([examples available here](https://github.com/karolisr/treehouse/tree/main/tests/data)).
 
 ## Who maintains TreeHouse?
 
@@ -22,6 +25,8 @@ TreeHouse is developed and maintained by Dr. Karolis Ramanauskas ([kraman2@uic.e
 
 ## How do I get help with TreeHouse? How do I request a feature?
 
-The best way to get help or request a feature is by posting an issue on the [github issues page](issues).
+The best way to get help or request a feature is by posting an issue on the [GitHub Issues page](https://github.com/karolisr/treehouse/issues).
 
-![TreeHouse logo](./img/treehouse.png "TreeHouse logo placeholder")
+The [TreeHouse Wiki](https://github.com/karolisr/treehouse/wiki) is under construction but will soon contain a tutorial and an FAQ page. 
+
+
