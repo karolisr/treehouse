@@ -1,28 +1,23 @@
 {
-    "folders": [
-        {
-            "name": "treehouse",
-            "path": "."
-        },
-    ],
-    "settings": {
-        "editor.rulers": [
-            80,
-        ],
-        "launch": {
-            "configurations": [],
-            "compounds": []
-        },
-        "editor.wordWrap": "off",
-        "editor.formatOnPaste": false,
-        "editor.minimap.autohide": "none",
-        "rust-analyzer.completion.hideDeprecated": true,
-        "rust-analyzer.cargo.autoreload": true,
+  "folders": [
+    {
+      "name": "treehouse",
+      "path": ".",
     },
-    "extensions": {
-        "recommendations": [
-            "rust-lang.rust-analyzer",
-            "tamasfe.even-better-toml"
-        ]
-    }
+  ],
+  "settings": {
+    "editor.rulers": [80],
+    "launch": {
+      "configurations": [],
+      "compounds": [],
+    },
+    "editor.wordWrap": "off",
+    "editor.formatOnPaste": false,
+    "editor.minimap.autohide": false,
+    "rust-analyzer.completion.hideDeprecated": true,
+    "rust-analyzer.cargo.autoreload": true,
+  },
+  "extensions": {
+    "recommendations": ["rust-lang.rust-analyzer", "tamasfe.even-better-toml"],
+  },
 }
